@@ -24,6 +24,8 @@ import { SkillsPanel }                      from './panels/SkillsPanel.js';
 import { TechPanel }                        from './panels/TechPanel.js';
 import { TrainingDiagnostics }              from './visualizations/TrainingDiagnostics.js';
 import { PhaseJourney }                     from './visualizations/PhaseJourney.js';
+import { CompareView }                      from './visualizations/CompareView.js';
+import { Distributions }                    from './visualizations/Distributions.js';
 
 // ── i18n ─────────────────────────────────────────────────────────────────────
 
@@ -152,8 +154,18 @@ async function main() {
   const diagnosticsEl = document.getElementById('training-diagnostics');
   if (diagnosticsEl) new TrainingDiagnostics(diagnosticsEl).mount(store);
 
+  const distributionsEl = document.getElementById('distributions');
+  if (distributionsEl) new Distributions(distributionsEl).mount(store);
+
   // Sidebar navigation (smooth scroll to section + scrollspy)
   setupSidebarNav();
+
+  // Honour a #section deep-link once canvases have settled (their late resize
+  // shifts offsets, so the browser's initial hash scroll undershoots).
+  if (location.hash) {
+    const target = document.getElementById(location.hash.slice(1));
+    if (target) setTimeout(() => target.scrollIntoView({ block: 'start' }), 500);
+  }
 
   // ── header controls ────────────────────────────────────────────────────────
 
@@ -178,7 +190,13 @@ async function main() {
     return; // no WS needed
   }
 
-  // Case 2: Live / batch view — load from API
+  // Case 2: Multi-run comparison view
+  if (location.pathname === '/compare') {
+    await showCompare();
+    return;
+  }
+
+  // Case 3: Live / batch view — load from API
   const runId = getRunId();
   if (!runId) {
     // Landing page — show run list
@@ -255,6 +273,39 @@ function setupSidebarNav() {
   onScroll();
 }
 
+// ── multi-run comparison view ───────────────────────────────────────────────────
+
+async function showCompare() {
+  _adaptShellForLanding();
+  const title = document.getElementById('run-name');
+  if (title) title.textContent = 'Compare runs';
+
+  const ids = (getParam('runs') ?? '').split(',').map((s) => s.trim()).filter(Boolean);
+  const sub = document.querySelector('.greet-sub');
+  if (sub) sub.textContent = ids.length ? `${ids.length} runs` : 'Pick runs to compare';
+
+  const main = document.getElementById('app-main');
+  if (!main) return;
+  main.innerHTML = `
+    <section class="compare-row">
+      <div class="panel panel-compare">
+        <div class="panel-label">Run Comparison
+          <span class="panel-label-sub">overlay metrics across runs · click a run to toggle it</span>
+        </div>
+        <div id="compare-view"></div>
+      </div>
+    </section>`;
+
+  const el = document.getElementById('compare-view');
+  if (!el) return;
+  if (ids.length === 0) {
+    el.innerHTML = `<div class="cmp-loading">Select runs from the
+      <a href="/">runs list</a> and click “Compare”.</div>`;
+    return;
+  }
+  await new CompareView(el).load(ids);
+}
+
 // ── run list (landing page) ───────────────────────────────────────────────────
 
 /** Adapt the sidebar/topbar for the landing (no single run loaded). */
@@ -287,6 +338,10 @@ async function showRunList() {
       <div id="run-list" class="run-grid">
         <div class="run-list-loading">Loading…</div>
       </div>
+    </div>
+    <div class="compare-bar" id="compare-bar" hidden>
+      <span class="cb-count">0 selected</span>
+      <button class="cb-go" id="compare-go">Compare →</button>
     </div>
   `;
 
@@ -324,24 +379,53 @@ async function showRunList() {
         ? new Date(run.finished_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
         : 'In progress';
       return `
-        <a class="run-card" href="/v/${run.id}" style="--g: var(--grade-${gradeKey}, var(--accent-primary))">
-          <span class="rc-grade">${_esc(grade)}</span>
-          <div class="rc-body">
-            <div class="rc-name">${_esc(name)}</div>
-            <div class="rc-meta">
-              <span class="rc-chip">${_esc(task)}</span>
-              <span class="${finished ? '' : 'rc-live'}">${_esc(date)}</span>
+        <div class="run-card" style="--g: var(--grade-${gradeKey}, var(--accent-primary))">
+          <input type="checkbox" class="run-pick" data-id="${_esc(run.id)}"
+                 title="Select to compare" aria-label="Select ${_esc(name)} to compare">
+          <a class="run-open" href="/v/${run.id}">
+            <span class="rc-grade">${_esc(grade)}</span>
+            <div class="rc-body">
+              <div class="rc-name">${_esc(name)}</div>
+              <div class="rc-meta">
+                <span class="rc-chip">${_esc(task)}</span>
+                <span class="${finished ? '' : 'rc-live'}">${_esc(date)}</span>
+              </div>
             </div>
-          </div>
-          <span class="rc-arrow">→</span>
-        </a>
+            <span class="rc-arrow">→</span>
+          </a>
+        </div>
       `;
     }).join('');
+
+    _wireCompareSelection(listEl);
 
   } catch (err) {
     document.getElementById('run-list').innerHTML =
       `<div class="run-list-empty">Could not load runs: ${_esc(err.message)}</div>`;
   }
+}
+
+/** Wire run-card checkboxes → the sticky "Compare" bar. */
+function _wireCompareSelection(listEl) {
+  const selected = new Set();
+  const bar   = document.getElementById('compare-bar');
+  const count = bar?.querySelector('.cb-count');
+  const go    = document.getElementById('compare-go');
+
+  listEl.querySelectorAll('.run-pick').forEach((cb) => {
+    cb.addEventListener('change', () => {
+      if (cb.checked) selected.add(cb.dataset.id);
+      else selected.delete(cb.dataset.id);
+      const n = selected.size;
+      if (count) count.textContent = `${n} selected`;
+      if (bar) bar.hidden = n < 2;
+    });
+  });
+  go?.addEventListener('click', () => {
+    if (selected.size >= 2) {
+      window.location.href = `/compare?runs=${[...selected].join(',')}`;
+    }
+  });
 }
 
 function _esc(s) {

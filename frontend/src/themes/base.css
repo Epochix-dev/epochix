@@ -149,6 +149,8 @@ body {
   margin: 0 auto;
   scroll-behavior: smooth;
 }
+/* offset deep-link / nav scroll for the sticky topbar */
+#app-main > section[id] { scroll-margin-top: 80px; }
 
 /* ── Panel base ──────────────────────────────────────────────────────────── */
 .panel {
@@ -221,6 +223,26 @@ body {
   flex: 1;
   min-height: 320px;
 }
+.brain-wlegend {
+  position: absolute; bottom: 8px; left: 12px; z-index: 2;
+  display: flex; gap: 12px; align-items: center;
+  font-size: 9px; color: var(--text-muted); pointer-events: none;
+}
+.brain-wlegend span { display: flex; align-items: center; gap: 4px; }
+.brain-wlegend i { width: 14px; height: 3px; border-radius: 2px; display: inline-block; }
+.brain-wlegend .bw-hint { font-style: italic; opacity: 0.7; }
+.brain-tooltip {
+  position: absolute; z-index: 5; pointer-events: none;
+  min-width: 110px; padding: 8px 10px; border-radius: 8px;
+  background: color-mix(in srgb, var(--bg-elevated) 94%, transparent);
+  border: 1px solid var(--border-default);
+  box-shadow: var(--shadow-card); backdrop-filter: blur(6px);
+  font-size: 11px; color: var(--text-secondary);
+}
+.brain-tooltip .bt-title { font-weight: 700; color: var(--text-primary); font-size: 12px; }
+.brain-tooltip .bt-sub { color: var(--text-muted); margin-bottom: 4px; }
+.brain-tooltip .bt-row { display: flex; justify-content: space-between; gap: 14px; }
+.brain-tooltip .bt-row b { color: var(--text-primary); font-variant-numeric: tabular-nums; }
 #brain-canvas {
   position: absolute;
   inset: 0;
@@ -484,6 +506,15 @@ body {
   grid-template-columns: 1fr 1fr;
   gap: 16px;
 }
+.tech-controls {
+  display: flex; align-items: center; gap: 20px; flex-wrap: wrap;
+  padding: 0 22px 12px;
+}
+.cmp-ctl-check { cursor: pointer; color: var(--text-secondary); }
+.cmp-ctl-check input { accent-color: var(--accent-primary); margin-right: 4px; }
+.arc-smooth-ctl { margin-left: auto; font-weight: 400; letter-spacing: 0; text-transform: none; }
+.arc-smooth-ctl input[type="range"] { accent-color: var(--accent-primary); width: 110px; vertical-align: middle; }
+
 .chart-wrap {
   min-height: 220px;
   position: relative;
@@ -515,14 +546,12 @@ body {
 .run-list-loading { color: var(--text-muted); font-size: 14px; padding: 24px 0; }
 
 .run-card {
-  display: flex; align-items: center; gap: 14px;
-  padding: 16px 18px;
+  position: relative;
   background:
     radial-gradient(120% 130% at 100% 0%, color-mix(in srgb, var(--g, var(--accent-primary)) 14%, transparent), transparent 55%),
     var(--bg-surface);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-lg);
-  cursor: pointer; text-decoration: none; color: var(--text-primary);
   box-shadow: var(--shadow-card);
   transition: border-color var(--transition-base), box-shadow var(--transition-base),
               transform var(--transition-base);
@@ -531,6 +560,16 @@ body {
   border-color: color-mix(in srgb, var(--g, var(--accent-primary)) 55%, transparent);
   box-shadow: var(--shadow-elevated);
   transform: translateY(-3px);
+}
+.run-open {
+  display: flex; align-items: center; gap: 14px;
+  padding: 16px 18px;
+  text-decoration: none; color: var(--text-primary);
+}
+.run-pick {
+  position: absolute; top: 12px; right: 14px; z-index: 2;
+  width: 16px; height: 16px; cursor: pointer;
+  accent-color: var(--accent-primary);
 }
 .rc-grade {
   width: 54px; height: 54px; flex-shrink: 0;
@@ -555,6 +594,54 @@ body {
 .run-card:hover .rc-arrow { color: var(--g, var(--accent-primary)); transform: translateX(3px); }
 .run-list-empty { color: var(--text-muted); font-size: 14px; padding: 32px 0; line-height: 1.8; }
 .run-list-empty code { background: var(--bg-surface-alt); padding: 2px 7px; border-radius: 6px; color: var(--text-secondary); }
+
+/* Sticky "compare selected runs" bar */
+.compare-bar {
+  position: sticky; bottom: 16px;
+  margin: 18px auto 0; width: max-content;
+  display: flex; align-items: center; gap: 14px;
+  padding: 10px 12px 10px 18px;
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--bg-elevated) 92%, transparent);
+  border: 1px solid var(--border-default);
+  box-shadow: var(--shadow-elevated);
+  backdrop-filter: blur(8px);
+}
+.compare-bar .cb-count { font-size: 13px; color: var(--text-secondary); }
+.compare-bar .cb-go {
+  border: none; cursor: pointer;
+  padding: 8px 16px; border-radius: var(--radius-pill);
+  font-size: 13px; font-weight: 600; color: #fff;
+  background: var(--grad-primary);
+  box-shadow: 0 4px 14px var(--accent-glow);
+}
+
+/* ── Multi-run comparison view ───────────────────────────────────────────── */
+.panel-compare { display: flex; flex-direction: column; }
+.cmp-loading { color: var(--text-muted); font-size: 14px; padding: 24px 0; }
+.cmp-controls { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; margin-bottom: 12px; }
+.cmp-ctl { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text-muted); }
+.cmp-ctl select {
+  background: var(--bg-surface-alt); color: var(--text-primary);
+  border: 1px solid var(--border-default); border-radius: var(--radius-sm);
+  padding: 5px 8px; font-size: 12px; font-family: inherit; cursor: pointer;
+}
+.cmp-ctl input[type="range"] { accent-color: var(--accent-primary); width: 120px; }
+.cmp-count { margin-left: auto; font-size: 11px; color: var(--text-muted); }
+.cmp-chart-wrap { position: relative; flex: 1; min-height: 360px; }
+.cmp-chart-wrap canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+.cmp-legend { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+.cmp-leg-item {
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 12px; border-radius: var(--radius-pill);
+  background: var(--bg-surface-alt); border: 1px solid var(--border-subtle);
+  cursor: pointer; font-size: 12px; color: var(--text-primary);
+  transition: opacity var(--transition-fast);
+}
+.cmp-leg-item.is-off { opacity: 0.4; }
+.cmp-leg-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+.cmp-leg-name { max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cmp-leg-grade { font-family: var(--font-serif); font-size: 15px; color: var(--text-secondary); }
 
 /* ── Learning-curve hover tooltip ────────────────────────────────────────── */
 .arc-tooltip {
@@ -650,6 +737,43 @@ body {
   font-family: var(--font-serif); font-size: 30px;
   color: var(--diag-c, var(--text-primary));
 }
+
+/* ── Distributions panel ─────────────────────────────────────────────────── */
+.dist-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 18px;
+}
+.dist-empty { color: var(--text-muted); font-size: 13px; padding: 16px 0; }
+.dist-card {
+  background: var(--bg-surface-alt);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: 14px 16px;
+}
+.dist-head {
+  font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em;
+  color: var(--text-secondary); margin-bottom: 12px;
+  display: flex; flex-direction: column; gap: 2px;
+}
+.dist-sub { font-weight: 400; letter-spacing: 0; text-transform: none; font-size: 10.5px; color: var(--text-muted); }
+.dist-row {
+  display: grid; grid-template-columns: 96px 1fr 92px;
+  align-items: center; gap: 10px; margin-bottom: 9px;
+}
+.dist-row-label {
+  font-size: 11px; font-weight: 600; color: var(--text-primary);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.dist-row-val { font-size: 11px; color: var(--text-secondary); text-align: right; font-variant-numeric: tabular-nums; }
+.dist-pct { color: var(--text-muted); font-size: 10px; }
+.dist-bar-track { height: 10px; background: color-mix(in srgb, var(--bg-base) 60%, transparent); border-radius: var(--radius-pill); overflow: hidden; }
+.dist-bar-fill { height: 100%; border-radius: var(--radius-pill); transition: width var(--transition-base); }
+/* metric box-summary */
+.dist-box-track { position: relative; height: 14px; background: color-mix(in srgb, var(--bg-base) 60%, transparent); border-radius: var(--radius-pill); }
+.dist-box-iqr { position: absolute; top: 3px; height: 8px; background: color-mix(in srgb, var(--accent-primary) 35%, transparent); border-radius: 4px; }
+.dist-box-med { position: absolute; top: 1px; width: 2px; height: 12px; background: var(--text-secondary); }
+.dist-box-last { position: absolute; top: 3px; width: 8px; height: 8px; margin-left: -4px; border-radius: 50%; background: var(--accent-primary); box-shadow: 0 0 6px var(--accent-glow); }
 
 /* ── Phase Journey ribbon ────────────────────────────────────────────────── */
 .pj-bar {
