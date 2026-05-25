@@ -240,3 +240,38 @@ class TestMultiMetric:
         keys = {e["canonical_key"] for e in events}
         assert "val_accuracy" in keys
         assert "train_loss" in keys
+
+
+# ── Multi-run comparison ────────────────────────────────────────────────────────
+
+class TestCompare:
+    def test_compare_returns_multiple_runs(self, server: tuple[TestClient, RunStore]) -> None:
+        from model_story.models import MetricEvent
+
+        client, store = server
+        for rid in ("cmp-a", "cmp-b"):
+            store.create_run(_make_run(rid))
+            for i in range(3):
+                store.append_metric_event(MetricEvent(
+                    run_id=rid, seq=i + 1, timestamp=datetime.now(tz=timezone.utc),
+                    epoch=float(i + 1), canonical_key="val_accuracy",
+                    raw_key="acc", value=0.5 + i * 0.1,
+                ))
+        r = client.get("/api/compare?run_ids=cmp-a,cmp-b")
+        assert r.status_code == 200
+        data = r.json()
+        assert data["total"] == 2
+        ids = {cr["run"]["id"] for cr in data["runs"]}
+        assert ids == {"cmp-a", "cmp-b"}
+        assert len(data["runs"][0]["metrics"]) == 3
+
+    def test_compare_skips_unknown_ids(self, server: tuple[TestClient, RunStore]) -> None:
+        client, store = server
+        store.create_run(_make_run("cmp-real"))
+        r = client.get("/api/compare?run_ids=cmp-real,ghost-run")
+        assert r.status_code == 200
+        assert r.json()["total"] == 1
+
+    def test_compare_empty(self, server: tuple[TestClient, RunStore]) -> None:
+        client, _ = server
+        assert client.get("/api/compare?run_ids=").json()["total"] == 0

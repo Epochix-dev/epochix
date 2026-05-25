@@ -102,9 +102,13 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     if _index_html.is_file():
         from fastapi.responses import FileResponse
 
-        # SPA catch-all: /v/<run_id> and root return index.html
+        # SPA catch-all: /v/<run_id>, /compare and root return index.html
         @app.get("/v/{path:path}", include_in_schema=False)
         async def _spa_view(path: str) -> FileResponse:  # noqa: ARG001
+            return FileResponse(str(_index_html))
+
+        @app.get("/compare", include_in_schema=False)
+        async def _spa_compare() -> FileResponse:
             return FileResponse(str(_index_html))
 
         @app.get("/", include_in_schema=False)

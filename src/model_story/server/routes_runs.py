@@ -7,7 +7,7 @@ from typing import Annotated, Any
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from pydantic import BaseModel
 
-from model_story.models import MetricEvent, Run
+from model_story.models import MetricEvent, Run, StoryFrame
 from model_story.server.auth import require_auth
 from model_story.store.sqlite_store import RunStore
 
@@ -63,6 +63,19 @@ class RunCreateRequest(BaseModel):
 class DeleteResponse(BaseModel):
     deleted: bool
     run_id: str
+
+
+class CompareRun(BaseModel):
+    """One run's data for the multi-run comparison view."""
+
+    run: Run
+    frames: list[StoryFrame]
+    metrics: list[MetricEvent]
+
+
+class CompareResponse(BaseModel):
+    runs: list[CompareRun]
+    total: int
 
 
 # ------------------------------------------------------------------
@@ -126,6 +139,30 @@ async def list_runs(
     """Return the most recent *limit* runs (newest first)."""
     runs = store.list_runs(limit=limit)
     return RunListResponse(runs=runs, total=len(runs))
+
+
+@router.get("/compare", response_model=CompareResponse, dependencies=[Depends(require_auth)])
+async def compare_runs(
+    store: StoreDep,
+    run_ids: str = "",
+) -> CompareResponse:
+    """Return frames + metric series for several runs in one call.
+
+    ``GET /api/compare?run_ids=a,b,c`` — used by the multi-run comparison view.
+    Unknown ids are skipped; at most 12 runs are returned.
+    """
+    ids = [r.strip() for r in run_ids.split(",") if r.strip()][:12]
+    out: list[CompareRun] = []
+    for rid in ids:
+        run = store.get_run(rid)
+        if run is None:
+            continue
+        out.append(CompareRun(
+            run=run,
+            frames=store.get_story_frames(rid),
+            metrics=store.get_metric_events(rid),
+        ))
+    return CompareResponse(runs=out, total=len(out))
 
 
 @router.get("/runs/{run_id}", response_model=Run, dependencies=[Depends(require_auth)])
