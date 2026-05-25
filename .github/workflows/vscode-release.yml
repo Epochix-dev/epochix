@@ -1,0 +1,188 @@
+name: VS Code Extension Release
+
+# Triggered on every version tag.  The workflow:
+#  1. Builds the Vite frontend bundle (the webview assets).
+#  2. Bumps the extension version in package.json to match the tag.
+#  3. Packages the .vsix with @vscode/vsce.
+#  4. Publishes to the VS Code Marketplace (requires VSCE_PAT secret).
+#  5. Publishes to the Open VSX Registry (requires OVSX_PAT secret).
+#  6. Attaches the .vsix to the GitHub Release as a downloadable asset.
+#
+# Required repository secrets:
+#   VSCE_PAT  — Azure DevOps Personal Access Token for VS Marketplace
+#               (scope: Marketplace → Publish)
+#   OVSX_PAT  — Open VSX Registry access token
+#               (https://open-vsx.org → User Settings → Access Tokens)
+#
+# To test without publishing, create a tag prefixed with "test/":
+#   git tag test/v0.1.0 && git push origin test/v0.1.0
+# The publish steps are skipped for test/ tags.
+
+on:
+  push:
+    tags:
+      - "v*"
+      - "test/v*"
+
+env:
+  NODE_VERSION: "20"
+  EXTENSION_DIR: model-story-vscode
+
+jobs:
+  # ── 1. Build the Vite frontend bundle ──────────────────────────────────────
+  build-frontend:
+    name: Build frontend bundle
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install & build frontend
+        run: cd frontend && npm ci && npm run build
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: frontend-dist
+          path: frontend/dist/
+          retention-days: 1
+
+  # ── 2. Package the .vsix ───────────────────────────────────────────────────
+  package-vsix:
+    name: Package .vsix
+    needs: build-frontend
+    runs-on: ubuntu-latest
+    outputs:
+      vsix-path: ${{ steps.package.outputs.vsix-path }}
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download frontend bundle
+        uses: actions/download-artifact@v4
+        with:
+          name: frontend-dist
+          path: ${{ env.EXTENSION_DIR }}/webview-dist/
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: ${{ env.EXTENSION_DIR }}/package-lock.json
+
+      - name: Install extension dependencies
+        run: cd ${{ env.EXTENSION_DIR }} && npm ci
+
+      # Strip the leading "v" (and optional "test/") from the tag to get the
+      # semver string, e.g. refs/tags/v0.1.0 → 0.1.0
+      - name: Extract version from tag
+        id: version
+        run: |
+          TAG="${GITHUB_REF_NAME}"
+          VERSION="${TAG#test/}"   # strip optional test/ prefix
+          VERSION="${VERSION#v}"   # strip leading v
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "Packaging version ${VERSION}"
+
+      - name: Bump package.json version
+        run: |
+          cd ${{ env.EXTENSION_DIR }}
+          npm version "${{ steps.version.outputs.version }}" --no-git-tag-version
+
+      - name: Run TypeScript type-check
+        run: cd ${{ env.EXTENSION_DIR }} && npx tsc --noEmit
+
+      - name: Package .vsix
+        id: package
+        run: |
+          cd ${{ env.EXTENSION_DIR }}
+          npx vsce package --no-dependencies
+          VSIX=$(ls *.vsix | head -1)
+          echo "vsix-path=${{ env.EXTENSION_DIR }}/${VSIX}" >> "$GITHUB_OUTPUT"
+          echo "Packaged: ${VSIX}"
+
+      - name: Upload .vsix artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: vsix-${{ steps.version.outputs.version }}
+          path: ${{ env.EXTENSION_DIR }}/*.vsix
+          retention-days: 30
+
+  # ── 3. Publish to VS Code Marketplace ─────────────────────────────────────
+  publish-marketplace:
+    name: Publish → VS Code Marketplace
+    needs: package-vsix
+    runs-on: ubuntu-latest
+    # Only publish for real release tags (not test/ prefixed ones)
+    if: ${{ !startsWith(github.ref_name, 'test/') }}
+    environment:
+      name: vscode-marketplace
+      url: https://marketplace.visualstudio.com/items?itemName=model-story.model-story
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: vsix-${{ needs.package-vsix.outputs.version }}
+          path: ./vsix/
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Install vsce
+        run: npm install -g @vscode/vsce
+
+      - name: Publish to VS Code Marketplace
+        run: vsce publish --packagePath ./vsix/*.vsix
+        env:
+          VSCE_PAT: ${{ secrets.VSCE_PAT }}
+
+  # ── 4. Publish to Open VSX Registry ───────────────────────────────────────
+  publish-openvsx:
+    name: Publish → Open VSX
+    needs: package-vsix
+    runs-on: ubuntu-latest
+    if: ${{ !startsWith(github.ref_name, 'test/') }}
+    environment:
+      name: open-vsx
+      url: https://open-vsx.org/extension/model-story/model-story
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: vsix-${{ needs.package-vsix.outputs.version }}
+          path: ./vsix/
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Install ovsx
+        run: npm install -g ovsx
+
+      - name: Publish to Open VSX
+        run: ovsx publish ./vsix/*.vsix --pat "$OVSX_PAT"
+        env:
+          OVSX_PAT: ${{ secrets.OVSX_PAT }}
+
+  # ── 5. Attach .vsix to the GitHub Release ─────────────────────────────────
+  attach-release-asset:
+    name: Attach .vsix to GitHub Release
+    needs: [package-vsix, publish-marketplace, publish-openvsx]
+    runs-on: ubuntu-latest
+    if: ${{ !startsWith(github.ref_name, 'test/') }}
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: vsix-${{ needs.package-vsix.outputs.version }}
+          path: ./vsix/
+
+      - name: Upload .vsix to GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ./vsix/*.vsix
+          fail_on_unmatched_files: true

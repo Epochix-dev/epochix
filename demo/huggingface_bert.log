@@ -1,0 +1,25 @@
+{'loss': 2.3456, 'learning_rate': 5e-05, 'epoch': 0.5}
+{'loss': 2.1234, 'learning_rate': 5e-05, 'epoch': 1.0}
+{'eval_loss': 2.0123, 'eval_accuracy': 0.3456, 'eval_f1': 0.3123, 'epoch': 1.0}
+{'loss': 1.8976, 'learning_rate': 4.5e-05, 'epoch': 1.5}
+{'loss': 1.7234, 'learning_rate': 4.5e-05, 'epoch': 2.0}
+{'eval_loss': 1.6543, 'eval_accuracy': 0.4567, 'eval_f1': 0.4312, 'epoch': 2.0}
+{'loss': 1.5678, 'learning_rate': 4e-05, 'epoch': 2.5}
+{'loss': 1.4321, 'learning_rate': 4e-05, 'epoch': 3.0}
+{'eval_loss': 1.3456, 'eval_accuracy': 0.5678, 'eval_f1': 0.5412, 'epoch': 3.0}
+{'loss': 1.2876, 'learning_rate': 3.5e-05, 'epoch': 3.5}
+{'loss': 1.1543, 'learning_rate': 3.5e-05, 'epoch': 4.0}
+{'eval_loss': 1.0876, 'eval_accuracy': 0.6543, 'eval_f1': 0.6312, 'epoch': 4.0}
+{'loss': 0.9876, 'learning_rate': 3e-05, 'epoch': 4.5}
+{'loss': 0.8765, 'learning_rate': 3e-05, 'epoch': 5.0}
+{'eval_loss': 0.8234, 'eval_accuracy': 0.7234, 'eval_f1': 0.7089, 'epoch': 5.0}
+{'loss': 0.7654, 'learning_rate': 2.5e-05, 'epoch': 5.5}
+{'loss': 0.6987, 'learning_rate': 2.5e-05, 'epoch': 6.0}
+{'eval_loss': 0.6543, 'eval_accuracy': 0.7812, 'eval_f1': 0.7698, 'epoch': 6.0}
+{'loss': 0.6123, 'learning_rate': 2e-05, 'epoch': 6.5}
+{'loss': 0.5678, 'learning_rate': 2e-05, 'epoch': 7.0}
+{'eval_loss': 0.5432, 'eval_accuracy': 0.8123, 'eval_f1': 0.8034, 'epoch': 7.0}
+{'loss': 0.5123, 'learning_rate': 1.5e-05, 'epoch': 7.5}
+{'loss': 0.4765, 'learning_rate': 1.5e-05, 'epoch': 8.0}
+{'eval_loss': 0.4543, 'eval_accuracy': 0.8456, 'eval_f1': 0.8389, 'epoch': 8.0}
+Training completed. Best model saved.

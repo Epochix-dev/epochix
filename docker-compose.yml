@@ -1,0 +1,47 @@
+version: "3.9"
+
+services:
+  server:
+    build: .
+    ports:
+      - "7860:7860"
+    environment:
+      MODEL_STORY_DB: /data/runs.db
+      MODEL_STORY_REDIS_URL: redis://redis:6379/0
+    volumes:
+      - model_story_data:/data
+    depends_on:
+      - redis
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    command: redis-server --save 60 1
+
+  # Phase 5 (hosted) — not used in local mode
+  postgres:
+    image: postgres:16-alpine
+    profiles: ["hosted"]
+    environment:
+      POSTGRES_DB: model_story
+      POSTGRES_USER: model_story
+      POSTGRES_PASSWORD: model_story_dev
+    ports:
+      - "5432:5432"
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+
+  # Optional: local LLM fallback
+  ollama:
+    image: ollama/ollama:latest
+    profiles: ["llm"]
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+
+volumes:
+  model_story_data:
+  pg_data:
+  ollama_data:

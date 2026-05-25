@@ -1,0 +1,29 @@
+BiometricNet v2 — Fingerprint Matching Training
+Dataset: FVC2002-DB1 | Train: 4200 | Val: 800
+Architecture: SiameseNet + ArcFace margin
+==========================================================
+Epoch 1/50
+  train_loss=1.4232  EER=0.4123  TAR_at_FAR_0001=0.1234  lr=0.001
+Epoch 2/50
+  train_loss=1.2341  EER=0.3812  TAR_at_FAR_0001=0.1567  lr=0.001
+Epoch 5/50
+  train_loss=1.0123  EER=0.2901  TAR_at_FAR_0001=0.2345  lr=0.001
+Epoch 10/50
+  train_loss=0.8234  EER=0.2012  TAR_at_FAR_0001=0.3678  lr=0.001
+Epoch 15/50
+  train_loss=0.6543  EER=0.1523  TAR_at_FAR_0001=0.5012  lr=0.0005
+Epoch 20/50
+  train_loss=0.5012  EER=0.1098  TAR_at_FAR_0001=0.6234  lr=0.0005
+Epoch 25/50
+  train_loss=0.3987  EER=0.0812  TAR_at_FAR_0001=0.7123  lr=0.0005
+Epoch 30/50
+  train_loss=0.3123  EER=0.0623  TAR_at_FAR_0001=0.7812  lr=0.0002
+Epoch 35/50
+  train_loss=0.2567  EER=0.0456  TAR_at_FAR_0001=0.8234  lr=0.0002
+Epoch 40/50
+  train_loss=0.2123  EER=0.0345  TAR_at_FAR_0001=0.8678  lr=0.0001
+Epoch 45/50
+  train_loss=0.1834  EER=0.0267  TAR_at_FAR_0001=0.8934  lr=0.0001
+Epoch 50/50
+  train_loss=0.1623  EER=0.0212  TAR_at_FAR_0001=0.9123  lr=0.0001
+Training complete. Final EER: 0.0212 | Grade: A
