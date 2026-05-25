@@ -109,10 +109,12 @@ def _require_bundle() -> None:
 def _json_for_script(obj: object) -> str:
     """Serialise *obj* to JSON that is safe to embed inside a ``<script>`` tag.
 
-    Escapes ``<``, ``>``, ``&`` and the JS line separators U+2028/U+2029 to their
-    ``\\uXXXX`` forms. These characters only occur inside JSON string values, so
-    the result is still valid JSON — but a malicious run name like
-    ``</script>`` can no longer break out of the script element (XSS).
+    Escapes ``<``, ``>`` and ``&`` to their ``\\uXXXX`` forms. These characters
+    occur only inside JSON string values, so the result is still valid JSON — but
+    a malicious run name like ``</script>`` can no longer break out of the script
+    element (XSS). The data is read via ``JSON.parse`` (the script is
+    ``type="application/json"``), which already handles U+2028/U+2029, so those
+    need no special treatment here.
     """
     s = json.dumps(obj, ensure_ascii=False, separators=(",", ":"))
     # Only <, >, & need escaping for safe <script> embedding; they appear
