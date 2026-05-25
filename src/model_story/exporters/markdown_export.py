@@ -1,0 +1,147 @@
+"""Markdown export — plain-English summary of a training run."""
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from model_story.store.sqlite_store import RunStore
+
+_GRADE_EMOJI: dict[str, str] = {
+    "A+": "🏆", "A": "🥇", "A-": "🥈",
+    "B+": "🥉", "B": "✅", "B-": "👍",
+    "C+": "🙂", "C": "😐", "C-": "😕",
+    "D": "⚠️", "F": "❌", "I": "⏳",
+}
+
+_PHASE_LABEL: dict[str, str] = {
+    "awakening":     "🌱 Awakening",
+    "learning":      "📚 Learning",
+    "understanding": "💡 Understanding",
+    "mastering":     "⚡ Mastering",
+    "polishing":     "✨ Polishing",
+}
+
+_MILESTONE_EMOJI: dict[str, str] = {
+    "first_above_25":    "🎯",
+    "first_above_50":    "🌟",
+    "first_above_75":    "🚀",
+    "first_above_90":    "🏆",
+    "best_so_far":       "✅",
+    "biggest_jump":      "⚡",
+    "overfit_warning":   "⚠️",
+    "plateau":           "😴",
+    "lr_drop":           "📉",
+    "divergence":        "💥",
+    "training_complete": "🎓",
+}
+
+
+def build_markdown(run_id: str, store: RunStore) -> str:
+    """Build a Markdown summary for a finished run.
+
+    Returns
+    -------
+    str
+        UTF-8 Markdown document.
+    """
+    run = store.get_run(run_id)
+    if run is None:
+        raise ValueError(f"Run not found: {run_id!r}")
+
+    frames = store.get_story_frames(run_id)
+    events = store.get_metric_events(run_id)
+
+    lines: list[str] = []
+
+    # ── Title & metadata ──────────────────────────────────────────────────
+    title = run.name or run.id
+    lines.append(f"# {title}")
+    lines.append("")
+
+    grade_str = run.final_grade.value if run.final_grade else "—"
+    grade_emoji = _GRADE_EMOJI.get(grade_str, "")
+    task_str  = run.task_type.value if run.task_type else "custom"
+    phase_str = ""
+    if frames:
+        last_phase = frames[-1].phase
+        phase_str = _PHASE_LABEL.get(last_phase.value if last_phase else "", "")
+
+    lines.append("| Field | Value |")
+    lines.append("|-------|-------|")
+    lines.append(f"| **Grade** | {grade_emoji} **{grade_str}** |")
+    lines.append(f"| **Task** | {task_str} |")
+    lines.append(f"| **Final phase** | {phase_str or '—'} |")
+    lines.append(f"| **Primary metric** | {run.primary_metric} |")
+    if run.total_epochs_est:
+        lines.append(f"| **Epochs** | {run.total_epochs_est} |")
+    if run.framework_detected:
+        lines.append(f"| **Framework** | {run.framework_detected} |")
+    if run.finished_at:
+        lines.append(f"| **Finished** | {run.finished_at.strftime('%Y-%m-%d %H:%M')} |")
+    lines.append("")
+
+    # ── Story summary ─────────────────────────────────────────────────────
+    if run.story_summary:
+        lines.append("## Summary")
+        lines.append("")
+        lines.append(run.story_summary)
+        lines.append("")
+
+    # ── Final narrative ───────────────────────────────────────────────────
+    if frames:
+        last = frames[-1]
+        if last.narrative:
+            lines.append("## Final State")
+            lines.append("")
+            lines.append(f"*{last.narrative}*")
+            lines.append("")
+
+    # ── Key metrics ───────────────────────────────────────────────────────
+    if events:
+        # Latest value per canonical key
+        latest: dict[str, float] = {}
+        for ev in events:
+            latest[ev.canonical_key] = ev.value
+
+        lines.append("## Key Metrics")
+        lines.append("")
+        lines.append("| Metric | Final Value |")
+        lines.append("|--------|-------------|")
+        for key, val in sorted(latest.items()):
+            lines.append(f"| `{key}` | `{val:.4f}` |")
+        lines.append("")
+
+    # ── Milestones ────────────────────────────────────────────────────────
+    milestone_frames = [f for f in frames if f.milestones]
+    if milestone_frames:
+        lines.append("## Milestones")
+        lines.append("")
+        for frame in milestone_frames:
+            for m in frame.milestones:
+                emoji = _MILESTONE_EMOJI.get(m.kind, "📌")
+                epoch_str = f" (epoch {frame.epoch})" if frame.epoch is not None else ""
+                msg = m.message or m.kind.replace("_", " ").title()
+                lines.append(f"- {emoji} **{msg}**{epoch_str}")
+        lines.append("")
+
+    # ── Warnings ─────────────────────────────────────────────────────────
+    warning_frames = [f for f in frames if f.warnings]
+    if warning_frames:
+        lines.append("## Warnings")
+        lines.append("")
+        seen: set[str] = set()
+        for frame in warning_frames:
+            for w in frame.warnings:
+                if w.message not in seen:
+                    seen.add(w.message)
+                    lines.append(f"> ⚠️ {w.message}")
+        lines.append("")
+
+    # ── Footer ────────────────────────────────────────────────────────────
+    lines.append("---")
+    lines.append("")
+    repo = "https://github.com/model-story/model-story"
+    lines.append(f"*Generated by [model-story]({repo}) · Run ID: `{run_id}`*")
+    lines.append("")
+
+    return "\n".join(lines)
