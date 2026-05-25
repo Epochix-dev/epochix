@@ -5,7 +5,7 @@
  * metrics. Updates incrementally as new metric events arrive. TensorBoard-style
  * controls: EMA smoothing, log-scale loss, and an epoch/step x-axis toggle.
  */
-import { emaSmooth } from '../viz-util.js';
+import { emaSmooth, metricLabel } from '../viz-util.js';
 
 export class TechPanel {
   /** @param {import('../store.js').AppState} store */
@@ -13,6 +13,7 @@ export class TechPanel {
     this._store      = store;
     this._lossChart  = null;
     this._accChart   = null;
+    this._gapChart   = null;
     this._unsub      = null;
     this._chartJs    = null;
     this._smoothing  = 0.3;
@@ -62,6 +63,7 @@ export class TechPanel {
     if (this._unsub) this._unsub();
     if (this._lossChart) this._lossChart.destroy();
     if (this._accChart)  this._accChart.destroy();
+    if (this._gapChart)  this._gapChart.destroy();
   }
 
   // ── internal ──────────────────────────────────────────────────────────────
@@ -147,7 +149,27 @@ export class TechPanel {
             ...baseOpts.plugins,
             title: {
               display: true,
-              text: 'Primary Metric',
+              text: 'Accuracy',
+              color: this._cssVar('--text-secondary'),
+              font: { size: 12 },
+            },
+          },
+        },
+      });
+    }
+
+    const gapCanvas = document.getElementById('gap-chart');
+    if (gapCanvas) {
+      this._gapChart = new Chart(gapCanvas, {
+        type: 'line',
+        data: { labels: [], datasets: [] },
+        options: {
+          ...baseOpts,
+          plugins: {
+            ...baseOpts.plugins,
+            title: {
+              display: true,
+              text: 'Overfitting gap (val − train)',
               color: this._cssVar('--text-secondary'),
               font: { size: 12 },
             },
@@ -167,10 +189,21 @@ export class TechPanel {
       ? frames.map((f, i) => f.step ?? f.epoch ?? i)
       : frames.map((f, i) => f.epoch ?? i);
 
-    const trainLoss  = frames.map((f) => _findMetric(s.metrics, f, 'train_loss'));
-    const valLoss    = frames.map((f) => _findMetric(s.metrics, f, 'val_loss'));
-    const primary    = frames.map((f) => f.primary_metric_value ?? null);
-    const confidence = frames.map((f) => f.confidence ?? null);
+    const trainLoss = frames.map((f) => _findMetric(s.metrics, f, 'train_loss'));
+    const valLoss   = frames.map((f) => _findMetric(s.metrics, f, 'val_loss'));
+    let   trainAcc  = frames.map((f) => _findMetric(s.metrics, f, 'accuracy'));
+    let   valAcc    = frames.map((f) => _findMetric(s.metrics, f, 'val_accuracy'));
+
+    // Fall back to the frame's primary metric if no explicit accuracy series.
+    const hasAcc = trainAcc.some((v) => v != null) || valAcc.some((v) => v != null);
+    if (!hasAcc) {
+      valAcc   = frames.map((f) => f.primary_metric_value ?? null);
+      trainAcc = frames.map(() => null);
+    }
+
+    // Overfitting gap: how far val is behind train (val − train loss).
+    const gap = frames.map((_, i) =>
+      (valLoss[i] != null && trainLoss[i] != null) ? valLoss[i] - trainLoss[i] : null);
 
     const sm = (arr) => emaSmooth(arr, this._smoothing);
 
@@ -182,9 +215,49 @@ export class TechPanel {
     ]);
 
     this._setChartData(this._accChart, labels, [
-      { label: 'primary metric', data: sm(primary),    color: '#7c6dff' },
-      { label: 'confidence',     data: sm(confidence), color: '#22d3ee' },
+      { label: 'train acc', data: sm(trainAcc), color: '#7c6dff' },
+      { label: 'val acc',   data: sm(valAcc),   color: '#22d3ee' },
+    ].filter((d) => d.data.some((v) => v != null)));
+
+    this._setChartData(this._gapChart, labels, [
+      { label: 'val − train loss', data: sm(gap), color: '#f87171' },
     ]);
+
+    this._renderStats(s);
+  }
+
+  /** Compact per-metric stats table: latest · best · @epoch. */
+  _renderStats(s) {
+    const host = document.getElementById('tech-stats');
+    if (!host) return;
+    const lowerBetter = new Set(['train_loss', 'val_loss', 'loss', 'MAE', 'RMSE', 'perplexity']);
+    const byKey = new Map();
+    for (const m of s.metrics ?? []) {
+      if (!Number.isFinite(m.value)) continue;
+      let arr = byKey.get(m.canonical_key);
+      if (!arr) { arr = []; byKey.set(m.canonical_key, arr); }
+      arr.push({ epoch: m.epoch ?? 0, value: m.value });
+    }
+    if (byKey.size === 0) { host.innerHTML = ''; return; }
+
+    const rows = [...byKey.entries()].map(([key, pts]) => {
+      const latest = pts[pts.length - 1].value;
+      const lower = lowerBetter.has(key);
+      const best = pts.reduce((b, p) => (lower ? p.value < b.value : p.value > b.value) ? p : b, pts[0]);
+      return `
+        <tr>
+          <td class="ts-key">${_esc(metricLabel(key))}</td>
+          <td>${_num(latest)}</td>
+          <td class="ts-best">${_num(best.value)}</td>
+          <td class="ts-ep">ep ${best.epoch}</td>
+        </tr>`;
+    }).join('');
+
+    host.innerHTML = `
+      <table class="ts-table">
+        <thead><tr><th>metric</th><th>latest</th><th>best</th><th>@</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>`;
   }
 
   _setChartData(chart, labels, series) {
@@ -236,6 +309,17 @@ function _hexA(hex, a) {
   const g = parseInt(hex.slice(3, 5), 16);
   const b = parseInt(hex.slice(5, 7), 16);
   return `rgba(${r},${g},${b},${a})`;
+}
+
+function _num(v) {
+  if (!Number.isFinite(v)) return '—';
+  if (Math.abs(v) >= 100) return v.toFixed(1);
+  if (Math.abs(v) >= 1) return v.toFixed(3);
+  return v.toFixed(4);
+}
+
+function _esc(s) {
+  return String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
 /**
