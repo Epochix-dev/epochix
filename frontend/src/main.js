@@ -26,6 +26,7 @@ import { TrainingDiagnostics }              from './visualizations/TrainingDiagn
 import { PhaseJourney }                     from './visualizations/PhaseJourney.js';
 import { CompareView }                      from './visualizations/CompareView.js';
 import { Distributions }                    from './visualizations/Distributions.js';
+import { Educational }                       from './visualizations/Educational.js';
 
 // ── i18n ─────────────────────────────────────────────────────────────────────
 
@@ -156,6 +157,9 @@ async function main() {
 
   const distributionsEl = document.getElementById('distributions');
   if (distributionsEl) new Distributions(distributionsEl).mount(store);
+
+  const educationalEl = document.getElementById('educational');
+  if (educationalEl) new Educational(educationalEl).mount(store);
 
   // Sidebar navigation (smooth scroll to section + scrollspy)
   setupSidebarNav();

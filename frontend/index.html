@@ -39,6 +39,7 @@
 
       <nav class="sidebar-nav" id="sidebar-nav">
         <a class="nav-item is-active" data-target="sec-overview"><span class="nav-ico">◎</span>Overview</a>
+        <a class="nav-item" data-target="sec-explain"><span class="nav-ico">💬</span>Explain</a>
         <a class="nav-item" data-target="sec-network"><span class="nav-ico">⬡</span>Network</a>
         <a class="nav-item" data-target="sec-curve"><span class="nav-ico">📈</span>Learning</a>
         <a class="nav-item" data-target="sec-diagnostics"><span class="nav-ico">🩺</span>Diagnostics</a>
@@ -108,6 +109,16 @@
           </div>
           <div class="stat-row" id="stat-row"></div>
           <div class="metaphor-cards" id="metaphor-cards"></div>
+        </div>
+      </section>
+
+      <!-- ── Row 1.5: Educational explainer (plain English, non-technical) ─── -->
+      <section class="educational-row" id="sec-explain">
+        <div class="panel panel-educational">
+          <div class="panel-label">In Plain English
+            <span class="panel-label-sub">what your model learned — no jargon</span>
+          </div>
+          <div id="educational"></div>
         </div>
       </section>
 
@@ -208,7 +219,11 @@
               <div class="chart-wrap">
                 <canvas id="accuracy-chart"></canvas>
               </div>
+              <div class="chart-wrap">
+                <canvas id="gap-chart"></canvas>
+              </div>
             </div>
+            <div class="tech-stats" id="tech-stats"></div>
           </div>
         </details>
       </section>
