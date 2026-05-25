@@ -5,10 +5,11 @@ import json
 import logging
 from collections.abc import AsyncIterator
 
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, HTTPException, Request, status
 from fastapi.responses import StreamingResponse
 
 from model_story.models import WSMessage
+from model_story.server.auth import token_ok
 from model_story.server.hub import Hub
 
 logger = logging.getLogger(__name__)
@@ -24,6 +25,7 @@ async def sse_live(
     request: Request,
     run_id: str,
     last_seq: int = -1,
+    token: str | None = None,
 ) -> StreamingResponse:
     """SSE live feed: ``GET /sse/live/{run_id}?last_seq=N``.
 
@@ -36,7 +38,14 @@ async def sse_live(
 
     Heartbeat comments (``:``) are sent every 15 s to keep the connection
     alive through intermediaries.
+
+    When ``MODEL_STORY_AUTH_TOKEN`` is set, clients must pass a matching
+    ``?token=`` query parameter (EventSource cannot set Authorization headers).
     """
+    if not token_ok(request.app.state.settings, token):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid or missing token"
+        )
     hub: Hub = request.app.state.hub
     queue = await hub.subscribe(run_id, last_seq=last_seq)
 

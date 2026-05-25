@@ -121,9 +121,16 @@ class TestSnapshotEndpoints:
 
 class TestExportEndpoints:
     def test_html_export_returns_501_when_bundle_not_built(
-        self, server: tuple[TestClient, RunStore]
+        self, server: tuple[TestClient, RunStore], monkeypatch
     ) -> None:
-        # 501 when the Vite bundle hasn't been built yet
+        # 501 when the Vite bundle hasn't been built yet. Force the missing-bundle
+        # condition so the test is deterministic regardless of build state.
+        import model_story.server.routes_export as rex
+
+        def _no_bundle(**_kwargs: object) -> str:
+            raise FileNotFoundError("frontend bundle not built")
+
+        monkeypatch.setattr(rex, "build_html", _no_bundle)
         client, store = server
         store.create_run(_make_run("exp-run"))
         r = client.get("/api/export/exp-run/html")

@@ -68,11 +68,16 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.settings = settings
 
     # --- CORS -----------------------------------------------------------
-    # Wide-open for local-first mode.  Tighten when hosted (§20).
+    # Local-first default is wide-open ("*"). Credentials are only enabled when
+    # explicit origins are configured: the wildcard-origin + allow-credentials
+    # combination is rejected by browsers and is a security anti-pattern, so we
+    # never ship it. Set MODEL_STORY_CORS_ORIGINS to lock down a hosted deploy.
+    _origins = [o.strip() for o in settings.cors_origins.split(",") if o.strip()] or ["*"]
+    _wildcard = _origins == ["*"]
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=["*"],
-        allow_credentials=True,
+        allow_origins=_origins,
+        allow_credentials=not _wildcard,
         allow_methods=["*"],
         allow_headers=["*"],
     )

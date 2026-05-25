@@ -37,6 +37,10 @@ class Settings(BaseSettings):
     # Security
     auth_token: str = ""
     scrub_secrets: bool = False
+    # Comma-separated allowed CORS origins. Default "*" (local-first). Set to
+    # specific origins (e.g. "https://app.example.com") when hosting publicly so
+    # that credentialed cross-origin requests can be enabled safely.
+    cors_origins: str = "*"
 
     # Telemetry — always off by default
     telemetry: bool = False

@@ -236,3 +236,32 @@ class TestHubDirect:
         result = buf.since(5)
         seqs = [m.seq for m in result]
         assert seqs == [6, 7, 8, 9, 10]
+
+
+# ── Auth guard (token via query param when MODEL_STORY_AUTH_TOKEN is set) ───────
+
+class TestWSAuth:
+    def test_rejects_without_token_when_auth_configured(self) -> None:
+        from starlette.websockets import WebSocketDisconnect
+
+        app = create_app(settings=Settings(db=":memory:", auth_token="s3cret"))
+        with TestClient(app) as client, pytest.raises(WebSocketDisconnect):
+            with client.websocket_connect("/ws/live/r1?last_seq=0"):
+                pass
+
+    def test_rejects_with_wrong_token(self) -> None:
+        from starlette.websockets import WebSocketDisconnect
+
+        app = create_app(settings=Settings(db=":memory:", auth_token="s3cret"))
+        with TestClient(app) as client, pytest.raises(WebSocketDisconnect):
+            with client.websocket_connect("/ws/live/r1?last_seq=0&token=nope"):
+                pass
+
+    def test_accepts_with_correct_token(self) -> None:
+        app = create_app(settings=Settings(db=":memory:", auth_token="s3cret"))
+        with TestClient(app) as client:
+            hub: Hub = app.state.hub  # created by the lifespan on startup
+            hub.publish("authrun", _make_frame_msg("authrun", seq=1))
+            with client.websocket_connect("/ws/live/authrun?last_seq=0&token=s3cret") as ws:
+                msg = json.loads(ws.receive_text())
+                assert msg["run_id"] == "authrun"

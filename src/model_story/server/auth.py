@@ -10,6 +10,19 @@ from model_story.config import Settings, get_settings
 
 _bearer = HTTPBearer(auto_error=False)
 
+
+def token_ok(settings: Settings, token: str | None) -> bool:
+    """Return True if *token* satisfies the configured auth policy.
+
+    Used by the WebSocket/SSE endpoints, which cannot send an ``Authorization``
+    header from the browser and therefore pass the token as a ``?token=`` query
+    parameter. When no token is configured (the local-first default) access is
+    always allowed.
+    """
+    if not settings.auth_token:
+        return True
+    return token is not None and secrets.compare_digest(token, settings.auth_token)
+
 _SettingsDep = Annotated[Settings, Depends(get_settings)]
 _BearerDep = Annotated[HTTPAuthorizationCredentials | None, Security(_bearer)]
 

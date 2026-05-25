@@ -3,9 +3,10 @@ from __future__ import annotations
 import asyncio
 import logging
 
-from fastapi import APIRouter, WebSocket, WebSocketDisconnect
+from fastapi import APIRouter, WebSocket, WebSocketDisconnect, status
 
 from model_story.models import WSMessage
+from model_story.server.auth import token_ok
 from model_story.server.hub import Hub
 
 logger = logging.getLogger(__name__)
@@ -20,6 +21,7 @@ async def ws_live(
     websocket: WebSocket,
     run_id: str,
     last_seq: int = -1,
+    token: str | None = None,
 ) -> None:
     """WebSocket live feed: ``WS /ws/live/{run_id}?last_seq=N``.
 
@@ -42,7 +44,13 @@ async def ws_live(
 
     Heartbeat pings are sent every 15 s; a ``complete`` message signals
     end-of-run.
+
+    When ``MODEL_STORY_AUTH_TOKEN`` is set, clients must pass a matching
+    ``?token=`` query parameter (browsers cannot set WS Authorization headers).
     """
+    if not token_ok(websocket.app.state.settings, token):
+        await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
+        return
     await websocket.accept()
     hub: Hub = websocket.app.state.hub
     queue = await hub.subscribe(run_id, last_seq=last_seq)

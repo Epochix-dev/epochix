@@ -43,8 +43,9 @@ def narrate(
     """Select and fill a narrative template deterministically for this run + epoch."""
     templates = _load_templates(task, phase, locale)
 
-    # Deterministic variant selection: same run_id always gives same story
-    seed = int(hashlib.md5(run_id.encode()).hexdigest()[:8], 16)
+    # Deterministic variant selection: same run_id always gives same story.
+    # MD5 here is a non-cryptographic seed only (not a security primitive).
+    seed = int(hashlib.md5(run_id.encode(), usedforsecurity=False).hexdigest()[:8], 16)
     rng = random.Random(seed)
     template = rng.choice(templates)
 

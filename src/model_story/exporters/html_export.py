@@ -1,15 +1,17 @@
 """HTML export — self-contained single-file report.
 
-The HTML file inlines:
-- The compiled Vite JS bundle (inline ``<script type="module">``)
-- The compiled CSS (inline ``<style>``)
-- Run data as ``<script type="application/json" id="run-data">``
+The exported file is the *built* dashboard (``_frontend/dist/index.html``) with
+its CSS and JS inlined and the run data embedded as
+``<script type="application/json" id="run-data">``. Deriving from the built
+index.html (rather than a hand-maintained template) keeps the export in lock-step
+with the live app — no DOM drift.
 
-Target size: < 2 MB.  No network requests are required at view time.
+Target size: < 2 MB. No network requests are required at view time.
 """
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -19,20 +21,27 @@ if TYPE_CHECKING:
 # Path to the vendored Vite build output
 _DIST = Path(__file__).parents[1] / "_frontend" / "dist"
 
+_CSS_LINK_RE = re.compile(r'<link\b[^>]*\bhref="(/assets/[^"]+\.css)"[^>]*>', re.IGNORECASE)
+_JS_TAG_RE = re.compile(
+    r'<script\b[^>]*\bsrc="(/assets/[^"]+\.js)"[^>]*>\s*</script>', re.IGNORECASE
+)
+_RUN_DATA_RE = re.compile(
+    r'<script type="application/json" id="run-data">\s*</script>', re.IGNORECASE
+)
+
 
 def build_html(run_id: str, store: RunStore) -> str:
-    """Build a self-contained HTML report for a finished run.
+    """Build a self-contained HTML report for a run.
 
     Returns
     -------
     str
-        Complete HTML document, safe to write to a ``.html`` file.
+        Complete, offline-viewable HTML document.
 
     Raises
     ------
     FileNotFoundError
-        If the frontend bundle has not been built yet
-        (run ``make build-frontend`` first).
+        If the frontend bundle has not been built yet.
     ValueError
         If the run is not found in the store.
     """
@@ -45,33 +54,46 @@ def build_html(run_id: str, store: RunStore) -> str:
     frames = store.get_story_frames(run_id)
     events = store.get_metric_events(run_id)
 
-    run_data_json = json.dumps(
+    run_data = _json_for_script(
         {
             "run":    run.model_dump(mode="json"),
             "frames": [f.model_dump(mode="json") for f in frames],
             "events": [e.model_dump(mode="json") for e in events],
-        },
-        ensure_ascii=False,
-        separators=(",", ":"),
+        }
     )
 
-    run_name  = _esc(run.name or run_id)
-    grade_str = run.final_grade.value if run.final_grade else ""
-    grade_esc = _esc(grade_str)
-    sep       = " · " if grade_str else ""
-    doc_title = f"{run_name}{sep}{grade_esc} — Model Learning Story"
+    html = (_DIST / "index.html").read_text(encoding="utf-8")
 
-    js_blob  = _read_asset("js")
-    css_blob = _read_asset("css")
+    # 1. Inline the stylesheet ( <link href="/assets/*.css"> → <style> ).
+    def _css_sub(m: re.Match[str]) -> str:
+        css = (_DIST / m.group(1).lstrip("/")).read_text(encoding="utf-8")
+        return f"<style>\n{css}\n</style>"
 
-    return _build(
-        doc_title=doc_title,
-        run_name=run_name,
-        grade=grade_esc,
-        run_data_json=run_data_json,
-        js_blob=js_blob,
-        css_blob=css_blob,
+    html = _CSS_LINK_RE.sub(_css_sub, html, count=1)
+
+    # 2. Inline the entry module ( <script src="/assets/*.js"> → inline ).
+    def _js_sub(m: re.Match[str]) -> str:
+        js = (_DIST / m.group(1).lstrip("/")).read_text(encoding="utf-8")
+        # Prevent a literal </script> inside JS strings from closing the tag.
+        js = js.replace("</script>", "<\\/script>")
+        return f'<script type="module">\n{js}\n</script>'
+
+    html = _JS_TAG_RE.sub(_js_sub, html, count=1)
+
+    # 3. Embed run data into the (empty) run-data script element.
+    html = _RUN_DATA_RE.sub(
+        lambda _m: f'<script type="application/json" id="run-data">{run_data}</script>',
+        html,
+        count=1,
     )
+
+    # 4. Friendly document title.
+    grade = run.final_grade.value if run.final_grade else ""
+    sep = " · " if grade else ""
+    title = _esc(f"{run.name or run_id}{sep}{grade} — Model Learning Story")
+    html = re.sub(r"<title>.*?</title>", f"<title>{title}</title>", html, count=1, flags=re.S)
+
+    return html
 
 
 # ── helpers ───────────────────────────────────────────────────────────────────
@@ -84,15 +106,18 @@ def _require_bundle() -> None:
         )
 
 
-def _read_asset(kind: str) -> str:
-    """Read and concatenate all .js or .css asset files from dist/assets/."""
-    assets_dir = _DIST / "assets"
-    if not assets_dir.is_dir():
-        return ""
-    return "\n".join(
-        p.read_text(encoding="utf-8")
-        for p in sorted(assets_dir.glob(f"*.{kind}"))
-    )
+def _json_for_script(obj: object) -> str:
+    """Serialise *obj* to JSON that is safe to embed inside a ``<script>`` tag.
+
+    Escapes ``<``, ``>``, ``&`` and the JS line separators U+2028/U+2029 to their
+    ``\\uXXXX`` forms. These characters only occur inside JSON string values, so
+    the result is still valid JSON — but a malicious run name like
+    ``</script>`` can no longer break out of the script element (XSS).
+    """
+    s = json.dumps(obj, ensure_ascii=False, separators=(",", ":"))
+    # Only <, >, & need escaping for safe <script> embedding; they appear
+    # solely inside JSON string values, so the result stays valid JSON.
+    return s.replace("<", "\\u003c").replace(">", "\\u003e").replace("&", "\\u0026")
 
 
 def _esc(s: str) -> str:
@@ -102,95 +127,3 @@ def _esc(s: str) -> str:
          .replace(">", "&gt;")
          .replace('"', "&quot;")
     )
-
-
-def _build(  # noqa: PLR0913
-    *,
-    doc_title: str,
-    run_name: str,
-    grade: str,
-    run_data_json: str,
-    js_blob: str,
-    css_blob: str,
-) -> str:
-    return f"""<!DOCTYPE html>
-<html lang="en" data-theme="dark">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>{doc_title}</title>
-  <style>
-{css_blob}
-  </style>
-  <!-- Inline run data – read by main.js on startup (export mode) -->
-  <script type="application/json" id="run-data">{run_data_json}</script>
-</head>
-<body>
-  <div id="app">
-    <header id="app-header">
-      <div class="header-left">
-        <span class="app-logo">&#9672;</span>
-        <span class="run-name" id="run-name">{run_name}</span>
-      </div>
-      <div class="header-center">
-        <span class="phase-badge" id="phase-badge">&mdash;</span>
-      </div>
-      <div class="header-right">
-        <span class="grade-pill" id="grade-pill">{grade or "&mdash;"}</span>
-        <button class="theme-toggle" id="theme-toggle" title="Toggle theme">&#9680;</button>
-      </div>
-    </header>
-    <main id="app-main">
-      <section class="hero-row">
-        <div id="hero-panel" class="panel panel-brain">
-          <canvas id="brain-canvas"></canvas>
-        </div>
-        <div id="journey-panel" class="panel panel-story">
-          <div class="grade-card-wrap" id="grade-card-wrap"></div>
-          <div class="narrative-text" id="narrative-text">
-            <p class="narrative-placeholder">Loading&hellip;</p>
-          </div>
-          <div class="metaphor-cards" id="metaphor-cards"></div>
-        </div>
-      </section>
-      <section class="metrics-row">
-        <div id="skills-panel" class="panel panel-skills">
-          <h3 class="panel-title">Skills</h3>
-          <canvas id="skill-radar"></canvas>
-        </div>
-        <div class="panel panel-meter">
-          <h3 class="panel-title">Confidence</h3>
-          <div id="learning-meter"></div>
-        </div>
-        <div class="panel panel-confidence">
-          <h3 class="panel-title">Metrics</h3>
-          <div id="confidence-bars"></div>
-        </div>
-      </section>
-      <section class="timeline-row">
-        <div id="timeline-panel" class="panel panel-timeline">
-          <h3 class="panel-title">Training Journey</h3>
-          <div id="timeline-story"></div>
-          <div id="epoch-scrubber-wrap"></div>
-        </div>
-      </section>
-      <section class="engineer-row">
-        <details id="tech-panel" class="panel panel-tech">
-          <summary class="panel-title">
-            Engineer Panel <span class="toggle-hint">&#9656;</span>
-          </summary>
-          <div id="tech-panel-content">
-            <div class="chart-wrap"><canvas id="loss-chart"></canvas></div>
-            <div class="chart-wrap"><canvas id="accuracy-chart"></canvas></div>
-          </div>
-        </details>
-      </section>
-    </main>
-    <div id="toasts" aria-live="polite"></div>
-  </div>
-  <script type="module">
-{js_blob}
-  </script>
-</body>
-</html>
-"""

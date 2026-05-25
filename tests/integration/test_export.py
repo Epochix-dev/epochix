@@ -160,6 +160,35 @@ class TestHtmlExport:
         client, _ = server
         assert client.get("/api/export/ghost/html").status_code == 404
 
+    def test_html_escapes_script_breakout_in_run_data(self) -> None:
+        """A malicious run name must not break out of the inlined <script>."""
+        import pytest
+
+        from model_story.exporters.html_export import build_html
+
+        store = RunStore(":memory:")
+        run = Run(
+            id="xss-run",
+            name="</script><img src=x onerror=alert(1)>",
+            task_type=TaskType.CUSTOM,
+            started_at=datetime.now(tz=timezone.utc),
+            primary_metric="val_loss",
+            parser_used="pytorch_lightning",
+            final_grade=Grade.A_MINUS,
+        )
+        store.create_run(run)
+        try:
+            html = build_html("xss-run", store)
+        except FileNotFoundError:
+            pytest.skip("frontend bundle not built")
+
+        # The raw breakout sequence must not appear inside the run-data block.
+        start = html.index('id="run-data">') + len('id="run-data">')
+        end = html.index("</script>", start)
+        run_data = html[start:end]
+        assert "</script" not in run_data
+        assert "\\u003c" in run_data  # '<' was escaped to its \uXXXX form
+
 
 # ── Re-import from JSON ───────────────────────────────────────────────────────
 
