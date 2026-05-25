@@ -75,6 +75,8 @@ const ZONE_FLASH_LABELS = {
 const DEPTH_DX = 24;
 const DEPTH_DY = 22;
 const GRAD_COLOR = '#fb923c'; // warm orange for gradient/backprop stream
+const EDGE_POS = '#5b8def';   // positive weight (blue) — TF-Playground style
+const EDGE_NEG = '#fb923c';   // negative weight (orange)
 
 // Vertical layout lanes (px)
 const TOP_STRIP = 24;   // reserved top band for HTML overlays (toggles/summary)
@@ -149,6 +151,12 @@ export class BrainCanvas {
 
     // Active flash labels on particles
     this._flashes = []; // [{x, y, label, alpha}]
+
+    // Hover-to-enlarge state
+    this._hoverNode = null;
+    this._tooltip   = null;
+    this._onMove    = null;
+    this._onLeave   = null;
   }
 
   start(store) {
@@ -158,6 +166,27 @@ export class BrainCanvas {
     this._resizeObs = new ResizeObserver(() => this._resize());
     this._resizeObs.observe(this._canvas.parentElement);
     this._resize();
+
+    // Hover tooltip (enlarge a neuron + show its layer details)
+    const wrap = this._canvas.parentElement;
+    if (wrap) {
+      const tip = document.createElement('div');
+      tip.className = 'brain-tooltip';
+      tip.style.display = 'none';
+      wrap.appendChild(tip);
+      this._tooltip = tip;
+      this._onMove = (e) => {
+        const rect = this._canvas.getBoundingClientRect();
+        this._handleHover(e.clientX - rect.left, e.clientY - rect.top);
+      };
+      this._onLeave = () => {
+        this._hoverNode = null;
+        if (this._tooltip) this._tooltip.style.display = 'none';
+      };
+      this._canvas.addEventListener('mousemove', this._onMove);
+      this._canvas.addEventListener('mouseleave', this._onLeave);
+    }
+
     this._loop();
   }
 
@@ -165,6 +194,37 @@ export class BrainCanvas {
     cancelAnimationFrame(this._raf);
     if (this._unsub) this._unsub();
     if (this._resizeObs) this._resizeObs.disconnect();
+    if (this._onMove)  this._canvas.removeEventListener('mousemove', this._onMove);
+    if (this._onLeave) this._canvas.removeEventListener('mouseleave', this._onLeave);
+    if (this._tooltip) this._tooltip.remove();
+  }
+
+  /** Find the neuron under the cursor → enlarge it + show a details tooltip. */
+  _handleHover(px, py) {
+    let best = null, bestD = Infinity, bestZone = null;
+    for (const zone of this._zones) {
+      for (const n of zone.nodes) {
+        const d = (n.x - px) ** 2 + (n.y - py) ** 2;
+        if (d < bestD) { bestD = d; best = n; bestZone = zone; }
+      }
+    }
+    const r = best ? 5 + best.activation * 5 : 0;
+    if (best && bestD <= (r + 9) ** 2 && this._tooltip) {
+      this._hoverNode = best;
+      const paramStr = bestZone.paramsStr
+        ?? (bestZone.params ? _fmtParams(bestZone.params) : null);
+      this._tooltip.innerHTML = `
+        <div class="bt-title">${_escTip(bestZone.layerType ?? bestZone.techLabel)}</div>
+        <div class="bt-sub">${_escTip(bestZone.plainLabel)}</div>
+        <div class="bt-row"><span>activation</span><b>${Math.round(best.activation * 100)}%</b></div>
+        ${paramStr ? `<div class="bt-row"><span>params</span><b>${_escTip(paramStr)}</b></div>` : ''}`;
+      this._tooltip.style.display = 'block';
+      this._tooltip.style.left = `${Math.min(px + 14, this._cw - 130)}px`;
+      this._tooltip.style.top  = `${Math.max(4, py - 10)}px`;
+    } else {
+      this._hoverNode = null;
+      if (this._tooltip) this._tooltip.style.display = 'none';
+    }
   }
 
   /** Public toggles for the panel overlay buttons. */
@@ -314,7 +374,12 @@ export class BrainCanvas {
     for (let zi = 0; zi < this._zones.length - 1; zi++) {
       for (const a of this._zones[zi].nodes) {
         for (const b of this._zones[zi + 1].nodes) {
-          this._edges.push({ a, b, fromZoneIdx: zi, weight: Math.random() * 0.7 + 0.3 });
+          // Signed weight: magnitude → thickness, sign → colour (blue/orange).
+          const mag = Math.random() * 0.9 + 0.1;
+          this._edges.push({
+            a, b, fromZoneIdx: zi,
+            weight: Math.random() < 0.5 ? -mag : mag,
+          });
         }
       }
     }
@@ -467,17 +532,16 @@ export class BrainCanvas {
       }
     }
 
-    // ── Edges ─────────────────────────────────────────────────────────────
+    // ── Edges (signed weights: blue = +, orange = −, thickness = |w|) ──────
+    const flow = 0.4 + 0.6 * this._trainLoss;
     for (const e of this._edges) {
-      const alpha = e.weight * this._trainLoss * 0.3;
+      const mag = Math.abs(e.weight);
+      const alpha = (0.10 + mag * 0.5) * flow;
       ctx.beginPath();
       ctx.moveTo(e.a.x, e.a.y);
       ctx.lineTo(e.b.x, e.b.y);
-      ctx.strokeStyle = hexAlpha(
-        this._zones[e.fromZoneIdx]?.color ?? ZONE_COLORS.generic,
-        alpha
-      );
-      ctx.lineWidth = 0.5;
+      ctx.strokeStyle = hexAlpha(e.weight >= 0 ? EDGE_POS : EDGE_NEG, alpha);
+      ctx.lineWidth = 0.4 + mag * 2.4;
       ctx.stroke();
     }
 
@@ -548,7 +612,8 @@ export class BrainCanvas {
       const zone = this._zones[zi];
       const col  = zone.color;
       for (const node of zone.nodes) {
-        const r     = 5 + node.activation * 5;
+        const hovered = node === this._hoverNode;
+        const r     = (5 + node.activation * 5) * (hovered ? 1.6 : 1);
         const alpha = node.dead ? 0.08 : 0.3 + node.activation * 0.7;
 
         // Outer glow
@@ -571,6 +636,15 @@ export class BrainCanvas {
         ctx.arc(node.x, node.y, r * 0.35, 0, Math.PI * 2);
         ctx.fillStyle = hexAlpha('#ffffff', alpha * 0.7);
         ctx.fill();
+
+        // Hover ring
+        if (hovered) {
+          ctx.beginPath();
+          ctx.arc(node.x, node.y, r + 3, 0, Math.PI * 2);
+          ctx.strokeStyle = hexAlpha('#ffffff', 0.85);
+          ctx.lineWidth = 1.5;
+          ctx.stroke();
+        }
       }
     }
 
@@ -799,4 +873,16 @@ function _roundRect(ctx, x, y, w, h, r) {
   ctx.lineTo(x, y + r);
   ctx.quadraticCurveTo(x, y, x + r, y);
   ctx.closePath();
+}
+
+/** Compact parameter-count label, e.g. 23.5M / 2.1K. */
+function _fmtParams(n) {
+  if (n >= 1e6) return `${(n / 1e6).toFixed(1)}M`;
+  if (n >= 1e3) return `${(n / 1e3).toFixed(1)}K`;
+  return String(n);
+}
+
+function _escTip(s) {
+  return String(s ?? '')
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }

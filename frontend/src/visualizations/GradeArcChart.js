@@ -11,6 +11,7 @@
  * This makes the "story" legible as a graph: you see exactly when the model
  * crossed from B to B+, when loss plateaued, when the phase changed.
  */
+import { emaSmooth } from '../viz-util.js';
 
 const PHASE_BG = {
   awakening:     'rgba(167,139,250,0.10)',
@@ -53,6 +54,7 @@ export class GradeArcChart {
     this._tooltip  = null;
     this._onMove   = null;
     this._onLeave  = null;
+    this._smoothing = 0;
   }
 
   mount(store) {
@@ -87,6 +89,14 @@ export class GradeArcChart {
       this._canvas.addEventListener('mouseleave', this._onLeave);
     }
 
+    // Smoothing slider
+    const smooth = document.getElementById('arc-smooth');
+    if (smooth) {
+      this._onSmooth = (e) => { this._smoothing = parseFloat(e.target.value); this._draw(); };
+      smooth.addEventListener('input', this._onSmooth);
+      this._smoothEl = smooth;
+    }
+
     // Pulse loop for the "current position" dot
     const loop = () => {
       this._t += 0.04;
@@ -102,6 +112,7 @@ export class GradeArcChart {
     cancelAnimationFrame(this._raf);
     if (this._onMove)  this._canvas.removeEventListener('mousemove', this._onMove);
     if (this._onLeave) this._canvas.removeEventListener('mouseleave', this._onLeave);
+    if (this._smoothEl && this._onSmooth) this._smoothEl.removeEventListener('input', this._onSmooth);
     if (this._tooltip) this._tooltip.remove();
   }
 
@@ -256,6 +267,10 @@ export class GradeArcChart {
     let lossData = _buildMetricSeries(this._metrics, frames, 'val_loss', xScale);
     if (lossData.length < 2)
       lossData = _buildMetricSeries(this._metrics, frames, 'train_loss', xScale);
+    if (this._smoothing > 0 && lossData.length > 1) {
+      const sv = emaSmooth(lossData.map((p) => p.v), this._smoothing);
+      lossData = lossData.map((p, i) => ({ x: p.x, v: sv[i] }));
+    }
     const lossLabel = this._metrics.some((m) => m.canonical_key === 'val_loss')
       ? 'val loss' : 'train loss (↓ better)';
     if (lossData.length >= 2) {
@@ -277,6 +292,10 @@ export class GradeArcChart {
       x: xScale(f.epoch ?? i),
       v: f.primary_metric_value ?? 0,
     }));
+    if (this._smoothing > 0 && accPts.length > 1) {
+      const sv = emaSmooth(accPts.map((p) => p.v), this._smoothing);
+      accPts.forEach((p, i) => { p.v = sv[i]; });
+    }
 
     // Stash geometry for hover interaction
     this._geom = { ML, MT, cw, ch, minEpoch, maxEpoch, xScale, yScale, accPts };

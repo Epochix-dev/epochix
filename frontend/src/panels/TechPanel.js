@@ -2,8 +2,10 @@
  * TechPanel.js — Engineer panel with Chart.js loss/accuracy charts.
  *
  * Renders two line charts: one for loss metrics, one for accuracy/primary
- * metrics. Updates incrementally as new metric events arrive.
+ * metrics. Updates incrementally as new metric events arrive. TensorBoard-style
+ * controls: EMA smoothing, log-scale loss, and an epoch/step x-axis toggle.
  */
+import { emaSmooth } from '../viz-util.js';
 
 export class TechPanel {
   /** @param {import('../store.js').AppState} store */
@@ -13,6 +15,9 @@ export class TechPanel {
     this._accChart   = null;
     this._unsub      = null;
     this._chartJs    = null;
+    this._smoothing  = 0.3;
+    this._logScale   = false;
+    this._xStep      = false;
   }
 
   async mount() {
@@ -27,8 +32,30 @@ export class TechPanel {
     }
 
     this._buildCharts();
+    this._wireControls();
     this._unsub = this._store.subscribe((s) => this._update(s));
     this._update(this._store.get());
+  }
+
+  _wireControls() {
+    const smooth = document.getElementById('tech-smooth');
+    const logsc  = document.getElementById('tech-logscale');
+    const xstep  = document.getElementById('tech-xstep');
+    smooth?.addEventListener('input', (e) => {
+      this._smoothing = parseFloat(e.target.value);
+      this._update(this._store.get());
+    });
+    logsc?.addEventListener('change', (e) => {
+      this._logScale = e.target.checked;
+      if (this._lossChart) {
+        this._lossChart.options.scales.y.type = this._logScale ? 'logarithmic' : 'linear';
+        this._lossChart.update('none');
+      }
+    });
+    xstep?.addEventListener('change', (e) => {
+      this._xStep = e.target.checked;
+      this._update(this._store.get());
+    });
   }
 
   unmount() {
@@ -135,23 +162,28 @@ export class TechPanel {
     const frames = s.frames;
     if (frames.length === 0) return;
 
-    // Build series from frames
-    const labels     = frames.map((f) => f.epoch ?? frames.indexOf(f));
+    // X axis: epoch (default) or step.
+    const labels = this._xStep
+      ? frames.map((f, i) => f.step ?? f.epoch ?? i)
+      : frames.map((f, i) => f.epoch ?? i);
+
     const trainLoss  = frames.map((f) => _findMetric(s.metrics, f, 'train_loss'));
     const valLoss    = frames.map((f) => _findMetric(s.metrics, f, 'val_loss'));
     const primary    = frames.map((f) => f.primary_metric_value ?? null);
     const confidence = frames.map((f) => f.confidence ?? null);
 
+    const sm = (arr) => emaSmooth(arr, this._smoothing);
+
     // Cool family for quality metrics, warm family for losses — matches the
     // dashboard's purple→cyan / pink→orange gradient system.
     this._setChartData(this._lossChart, labels, [
-      { label: 'train loss', data: trainLoss,  color: '#fb923c' },
-      { label: 'val loss',   data: valLoss,    color: '#f472b6' },
+      { label: 'train loss', data: sm(trainLoss), color: '#fb923c' },
+      { label: 'val loss',   data: sm(valLoss),   color: '#f472b6' },
     ]);
 
     this._setChartData(this._accChart, labels, [
-      { label: 'primary metric', data: primary,    color: '#7c6dff' },
-      { label: 'confidence',     data: confidence, color: '#22d3ee' },
+      { label: 'primary metric', data: sm(primary),    color: '#7c6dff' },
+      { label: 'confidence',     data: sm(confidence), color: '#22d3ee' },
     ]);
   }
 
