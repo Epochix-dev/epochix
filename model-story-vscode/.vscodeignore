@@ -1,0 +1,34 @@
+# Files excluded from the .vsix package.
+# Everything not listed here is included by default.
+
+# TypeScript sources — compiled output (dist/) is included instead
+src/**
+
+# Build tooling
+esbuild.config.mjs
+tsconfig.json
+.eslintrc*
+.eslintignore
+
+# Node tooling / metadata
+node_modules/**
+package-lock.json
+.npmrc
+
+# Test / dev artefacts
+**/*.test.ts
+**/*.spec.ts
+out/**
+coverage/**
+.nyc_output/**
+
+# Editor / OS noise
+.vscode/**
+!.vscode/extensions.json
+.DS_Store
+Thumbs.db
+*.map
+
+# CI / docs
+.github/**
+CHANGELOG.md

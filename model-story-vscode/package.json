@@ -1,0 +1,144 @@
+{
+  "name": "model-story",
+  "displayName": "Model Learning Story",
+  "description": "Visual storytelling for deep learning training runs — live animated dashboard in your editor.",
+  "publisher": "model-story",
+  "version": "0.1.0",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/model-story/model-story"
+  },
+  "engines": { "vscode": "^1.92.0" },
+  "categories": ["Visualization", "Data Science", "Machine Learning"],
+  "keywords": ["machine learning", "deep learning", "training", "visualization", "dashboard"],
+  "activationEvents": [
+    "onCommand:modelStory.openDashboard",
+    "onCommand:modelStory.watchTerminal",
+    "onLanguage:python",
+    "onView:modelStoryRuns",
+    "workspaceContains:**/*.log"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "modelStory.openDashboard",
+        "title": "Model Story: Open Dashboard",
+        "icon": "$(graph)"
+      },
+      {
+        "command": "modelStory.watchTerminal",
+        "title": "Model Story: Watch Active Terminal",
+        "icon": "$(terminal)"
+      },
+      {
+        "command": "modelStory.openLogFile",
+        "title": "Model Story: Open Log File…",
+        "icon": "$(file-text)"
+      },
+      {
+        "command": "modelStory.exportRun",
+        "title": "Model Story: Export Current Run",
+        "icon": "$(export)"
+      },
+      {
+        "command": "modelStory.compareRuns",
+        "title": "Model Story: Compare Two Runs",
+        "icon": "$(diff)"
+      }
+    ],
+    "menus": {
+      "explorer/context": [
+        {
+          "command": "modelStory.openLogFile",
+          "when": "resourceExtname == .log",
+          "group": "navigation"
+        }
+      ],
+      "editor/title": [
+        {
+          "command": "modelStory.openLogFile",
+          "when": "resourceExtname == .log",
+          "group": "navigation"
+        }
+      ]
+    },
+    "views": {
+      "explorer": [
+        {
+          "id": "modelStoryRuns",
+          "name": "Model Story Runs"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "Model Learning Story",
+      "properties": {
+        "modelStory.autoWatchTerminal": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically open the dashboard when ML training is detected in an integrated terminal."
+        },
+        "modelStory.taskHint": {
+          "type": "string",
+          "enum": ["auto", "classification", "detection", "regression", "biometric", "gaze", "nlp"],
+          "default": "auto",
+          "description": "Force a task type instead of auto-detecting from the log."
+        },
+        "modelStory.useSidecar": {
+          "type": "string",
+          "enum": ["auto", "always", "never"],
+          "default": "auto",
+          "description": "Use the Python model-story package as a sidecar server if available."
+        },
+        "modelStory.sidecarPath": {
+          "type": "string",
+          "default": "",
+          "description": "Override the path to the model-story executable."
+        },
+        "modelStory.llmFallback": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable Ollama LLM fallback parsing for unknown log formats (requires Ollama running locally)."
+        },
+        "modelStory.theme": {
+          "type": "string",
+          "enum": ["auto", "light", "dark"],
+          "default": "auto",
+          "description": "Dashboard theme. 'auto' follows VS Code's colour theme."
+        },
+        "modelStory.locale": {
+          "type": "string",
+          "enum": ["en", "fa", "fr"],
+          "default": "en",
+          "description": "Dashboard language."
+        }
+      }
+    },
+    "keybindings": [
+      {
+        "command": "modelStory.openDashboard",
+        "key": "ctrl+alt+m",
+        "mac": "cmd+alt+m"
+      }
+    ]
+  },
+  "scripts": {
+    "compile": "node esbuild.config.mjs",
+    "watch": "node esbuild.config.mjs --watch",
+    "package": "vsce package",
+    "lint": "eslint src --ext ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/vscode": "^1.92.0",
+    "@typescript-eslint/eslint-plugin": "^7.0.0",
+    "@typescript-eslint/parser": "^7.0.0",
+    "@vscode/vsce": "^3.0.0",
+    "esbuild": "^0.23.0",
+    "eslint": "^8.0.0",
+    "typescript": "^5.5.0"
+  }
+}
