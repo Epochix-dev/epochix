@@ -1,0 +1,51 @@
+{
+  "phases": {
+    "awakening":    "🌱 Éveil",
+    "learning":     "📚 Apprentissage",
+    "understanding":"💡 Compréhension",
+    "mastering":    "⚡ Maîtrise",
+    "polishing":    "✨ Perfectionnement"
+  },
+  "milestones": {
+    "first_above_25":     "Premier 25% atteint",
+    "first_above_50":     "À mi-chemin",
+    "first_above_75":     "75% atteint",
+    "first_above_90":     "Plus de 90%",
+    "best_so_far":        "Nouveau record personnel",
+    "biggest_jump":       "Plus grande progression",
+    "overfit_warning":    "Sur-apprentissage détecté",
+    "plateau":            "Plateau d'apprentissage",
+    "lr_drop":            "Taux d'apprentissage réduit",
+    "divergence":         "Divergence de l'entraînement",
+    "training_complete":  "Entraînement terminé"
+  },
+  "warnings": {
+    "overfit":    "Le modèle mémorise peut-être les exemples plutôt que de généraliser.",
+    "plateau":    "L'apprentissage ralentit. Le modèle ne trouve plus de nouveaux schémas.",
+    "divergence": "Un problème est survenu — le score du modèle a augmenté de façon inattendue."
+  },
+  "labels": {
+    "epoch":        "Époque",
+    "grade":        "Note",
+    "phase":        "Phase",
+    "connected":    "En direct",
+    "disconnected": "Hors ligne",
+    "loading":      "Chargement…",
+    "waiting":      "En attente des données d'entraînement…",
+    "engineer":     "Panneau Ingénieur",
+    "skills":       "Compétences",
+    "confidence":   "Confiance",
+    "timeline":     "Parcours d'entraînement",
+    "export":       "Exporter"
+  },
+  "tasks": {
+    "classification": "Classification",
+    "detection":      "Détection d'objets",
+    "regression":     "Régression",
+    "biometric":      "Biométrique",
+    "gaze":           "Estimation du regard",
+    "nlp":            "TALN",
+    "generative":     "Génératif",
+    "custom":         "Tâche personnalisée"
+  }
+}

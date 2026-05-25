@@ -1,0 +1,70 @@
+/* ── Dark theme (default) ────────────────────────────────────────────────── */
+:root[data-theme="dark"],
+:root {
+  /* Deep navy base with a blue undertone (Vision-UI / fintech inspired) */
+  --bg-base:          #070b16;
+  --bg-surface:       #0f1424;
+  --bg-surface-alt:   #161d33;
+  --bg-elevated:      #1f2842;
+  --bg-sidebar:       #0a0e1c;
+
+  --text-primary:     #eef1fb;
+  --text-secondary:   #9aa3c4;
+  --text-muted:       #5b6488;
+  --text-inverse:     #070b16;
+
+  --border-subtle:    rgba(255, 255, 255, 0.06);
+  --border-default:   rgba(255, 255, 255, 0.12);
+
+  --accent-primary:   #7c6dff;
+  --accent-secondary: #5b8def;
+  --accent-glow:      rgba(124, 109, 255, 0.35);
+
+  /* Gradient tokens (used on hero card, sidebar pill, icon tiles, charts) */
+  --grad-primary:     linear-gradient(135deg, #7c6dff 0%, #5b8def 100%);
+  --grad-violet:      linear-gradient(135deg, #a78bfa 0%, #7c6dff 100%);
+  --grad-cool:        linear-gradient(135deg, #22d3ee 0%, #5b8def 60%, #7c6dff 100%);
+  --grad-warm:        linear-gradient(135deg, #f472b6 0%, #fb923c 100%);
+  --grad-rainbow:     conic-gradient(from 210deg, #22d3ee, #5b8def, #7c6dff, #a78bfa, #f472b6, #fb923c, #22d3ee);
+
+  --grade-a-plus:     #52e88a;
+  --grade-a:          #3cd06a;
+  --grade-a-minus:    #7ee84a;
+  --grade-b-plus:     #60a5fa;
+  --grade-b:          #4a8cf7;
+  --grade-b-minus:    #7bb4f8;
+  --grade-c-plus:     #fb923c;
+  --grade-c:          #fbbf24;
+  --grade-c-minus:    #fcd34d;
+  --grade-d:          #f97316;
+  --grade-f:          #ef4444;
+  --grade-i:          #6b7280;
+
+  --phase-awakening:  #a78bfa;
+  --phase-learning:   #60a5fa;
+  --phase-understanding: #34d399;
+  --phase-mastering:  #fbbf24;
+  --phase-polishing:  #f472b6;
+
+  --brain-neuron:     #7c6dff;
+  --brain-pulse:      rgba(124, 109, 255, 0.50);
+  --brain-bg:         #0f1424;
+
+  --milestone-border: #7c6dff;
+  --warning-border:   #fb923c;
+
+  --shadow-card:      0 2px 8px rgba(0,0,0,0.35), 0 12px 32px rgba(0,0,0,0.28);
+  --shadow-elevated:  0 8px 40px rgba(0,0,0,0.55), 0 2px 10px rgba(0,0,0,0.40);
+
+  --radius-sm:        6px;
+  --radius-md:        12px;
+  --radius-lg:        20px;
+  --radius-pill:      999px;
+
+  --font-sans:        'DM Sans', system-ui, sans-serif;
+  --font-serif:       'Instrument Serif', Georgia, serif;
+
+  --transition-fast:  120ms ease;
+  --transition-base:  240ms ease;
+  --transition-slow:  400ms ease;
+}

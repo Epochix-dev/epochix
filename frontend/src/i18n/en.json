@@ -1,0 +1,51 @@
+{
+  "phases": {
+    "awakening":    "🌱 Awakening",
+    "learning":     "📚 Learning",
+    "understanding":"💡 Understanding",
+    "mastering":    "⚡ Mastering",
+    "polishing":    "✨ Polishing"
+  },
+  "milestones": {
+    "first_above_25":     "First 25% achieved",
+    "first_above_50":     "Halfway milestone",
+    "first_above_75":     "75% reached",
+    "first_above_90":     "90%+ performance",
+    "best_so_far":        "New personal best",
+    "biggest_jump":       "Biggest single-epoch leap",
+    "overfit_warning":    "Overfitting detected",
+    "plateau":            "Learning plateau",
+    "lr_drop":            "Learning rate reduced",
+    "divergence":         "Training diverged",
+    "training_complete":  "Training complete"
+  },
+  "warnings": {
+    "overfit":    "The model may be memorising examples instead of learning to generalise.",
+    "plateau":    "Learning has slowed. The model has stopped finding new patterns.",
+    "divergence": "Something went wrong — the model's score has spiked unexpectedly."
+  },
+  "labels": {
+    "epoch":        "Epoch",
+    "grade":        "Grade",
+    "phase":        "Phase",
+    "connected":    "Live",
+    "disconnected": "Offline",
+    "loading":      "Loading…",
+    "waiting":      "Waiting for training data…",
+    "engineer":     "Engineer Panel",
+    "skills":       "Skills",
+    "confidence":   "Confidence",
+    "timeline":     "Training Journey",
+    "export":       "Export"
+  },
+  "tasks": {
+    "classification": "Classification",
+    "detection":      "Object Detection",
+    "regression":     "Regression",
+    "biometric":      "Biometric",
+    "gaze":           "Gaze Estimation",
+    "nlp":            "NLP",
+    "generative":     "Generative",
+    "custom":         "Custom Task"
+  }
+}

@@ -1,0 +1,67 @@
+/* ── Light theme ─────────────────────────────────────────────────────────── */
+:root[data-theme="light"] {
+  --bg-base:          #eef1f8;
+  --bg-surface:       #ffffff;
+  --bg-surface-alt:   #f4f6fc;
+  --bg-elevated:      #e8ecf7;
+  --bg-sidebar:       #ffffff;
+
+  --text-primary:     #131726;
+  --text-secondary:   #4a5170;
+  --text-muted:       #8a90a8;
+  --text-inverse:     #ffffff;
+
+  --border-subtle:    rgba(20, 26, 50, 0.07);
+  --border-default:   rgba(20, 26, 50, 0.14);
+
+  --accent-primary:   #5b4cff;
+  --accent-secondary: #5b8def;
+  --accent-glow:      rgba(91, 76, 255, 0.25);
+
+  --grad-primary:     linear-gradient(135deg, #6c5cff 0%, #4a8cf7 100%);
+  --grad-violet:      linear-gradient(135deg, #9c83ff 0%, #6c5cff 100%);
+  --grad-cool:        linear-gradient(135deg, #22d3ee 0%, #4a8cf7 60%, #6c5cff 100%);
+  --grad-warm:        linear-gradient(135deg, #f472b6 0%, #fb923c 100%);
+  --grad-rainbow:     conic-gradient(from 210deg, #22d3ee, #4a8cf7, #6c5cff, #a78bfa, #f472b6, #fb923c, #22d3ee);
+
+  --grade-a-plus:     #00a854;
+  --grade-a:          #52c41a;
+  --grade-a-minus:    #7ec900;
+  --grade-b-plus:     #1677ff;
+  --grade-b:          #4096ff;
+  --grade-b-minus:    #69b1ff;
+  --grade-c-plus:     #fa8c16;
+  --grade-c:          #ffa940;
+  --grade-c-minus:    #ffc53d;
+  --grade-d:          #ff7a45;
+  --grade-f:          #ff4d4f;
+  --grade-i:          #8c8c8c;
+
+  --phase-awakening:  #8b5cf6;
+  --phase-learning:   #3b82f6;
+  --phase-understanding: #10b981;
+  --phase-mastering:  #f59e0b;
+  --phase-polishing:  #ec4899;
+
+  --brain-neuron:     #5b4cff;
+  --brain-pulse:      rgba(91, 76, 255, 0.6);
+  --brain-bg:         #ffffff;
+
+  --milestone-border: #5b4cff;
+  --warning-border:   #fa8c16;
+
+  --shadow-card:      0 1px 4px rgba(0,0,0,0.10), 0 4px 16px rgba(0,0,0,0.06);
+  --shadow-elevated:  0 4px 24px rgba(0,0,0,0.14);
+
+  --radius-sm:        6px;
+  --radius-md:        12px;
+  --radius-lg:        20px;
+  --radius-pill:      999px;
+
+  --font-sans:        'DM Sans', system-ui, sans-serif;
+  --font-serif:       'Instrument Serif', Georgia, serif;
+
+  --transition-fast:  120ms ease;
+  --transition-base:  240ms ease;
+  --transition-slow:  400ms ease;
+}

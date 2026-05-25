@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Model Learning Story</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300..700;1,9..40,300..700&family=Instrument+Serif:ital@0;1&display=swap"
+    rel="stylesheet"
+  />
+
+  <!-- Inline run data for export mode (empty when served live) -->
+  <script type="application/json" id="run-data"></script>
+
+  <style>
+    @property --gradient-angle {
+      syntax: "<angle>";
+      initial-value: 0deg;
+      inherits: false;
+    }
+    @property --liquid-fill {
+      syntax: "<percentage>";
+      initial-value: 0%;
+      inherits: false;
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+
+    <!-- ── Sidebar ───────────────────────────────────────────────────────── -->
+    <aside id="sidebar">
+      <a class="sidebar-logo" href="/">
+        <span class="sidebar-logo-mark">◈</span>
+        <span class="sidebar-logo-text">Gradus</span>
+      </a>
+
+      <nav class="sidebar-nav" id="sidebar-nav">
+        <a class="nav-item is-active" data-target="sec-overview"><span class="nav-ico">◎</span>Overview</a>
+        <a class="nav-item" data-target="sec-network"><span class="nav-ico">⬡</span>Network</a>
+        <a class="nav-item" data-target="sec-curve"><span class="nav-ico">📈</span>Learning</a>
+        <a class="nav-item" data-target="sec-diagnostics"><span class="nav-ico">🩺</span>Diagnostics</a>
+        <a class="nav-item" data-target="sec-engineer"><span class="nav-ico">⚙</span>Engineer</a>
+        <a class="nav-item" href="/"><span class="nav-ico">▦</span>All runs</a>
+      </nav>
+
+      <div class="sidebar-foot" id="sidebar-foot">
+        <div class="sidebar-card">
+          <div class="sc-grade" id="sc-grade">—</div>
+          <div class="sc-label">Current grade</div>
+          <svg class="sc-spark" id="sc-spark" viewBox="0 0 120 34" preserveAspectRatio="none" hidden></svg>
+          <div class="sc-phase" id="sc-phase">—</div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- ── Body (topbar + scrollable content) ────────────────────────────── -->
+    <div class="app-body" id="app-body">
+
+      <!-- Topbar -->
+      <header id="app-topbar">
+        <div class="topbar-greet">
+          <h1 class="greet-title" id="run-name">Model Learning Story</h1>
+          <p class="greet-sub">Your model's training story</p>
+        </div>
+        <div class="topbar-controls">
+          <span class="phase-badge" id="phase-badge">—</span>
+          <span class="grade-pill" id="grade-pill">—</span>
+          <span class="connection-dot" id="connection-dot" title="Disconnected"></span>
+          <button class="theme-toggle" id="theme-toggle" title="Toggle theme">◐</button>
+          <button class="export-btn" id="export-btn" title="Export">↓</button>
+        </div>
+      </header>
+
+    <!-- Main grid -->
+    <main id="app-main">
+
+      <!-- ── Row 1: Hero (network viz + live story) ─────────────────────────── -->
+      <section class="hero-row" id="sec-overview">
+        <!-- Left: Science-based neural network visualization -->
+        <div id="hero-panel" class="panel panel-brain" data-sec="sec-network">
+          <div class="brain-header">
+            <span class="panel-label">Network State</span>
+            <div class="brain-controls" id="brain-controls">
+              <button class="brain-toggle is-on" data-toggle="depth" title="Toggle 3D depth">◳ 3D</button>
+              <button class="brain-toggle is-on" data-toggle="grad" title="Toggle gradient flow (backprop)">∇ Gradients</button>
+            </div>
+            <div class="brain-summary" id="brain-summary" hidden></div>
+          </div>
+          <div class="brain-canvas-wrap">
+            <canvas id="brain-canvas"></canvas>
+          </div>
+        </div>
+
+        <!-- Right: Grade + narrative -->
+        <div id="journey-panel" class="panel panel-story">
+          <div class="grade-card-wrap" id="grade-card-wrap"></div>
+          <div class="narrative-text" id="narrative-text">
+            <p class="narrative-placeholder">Waiting for training data…</p>
+          </div>
+          <div class="stat-row" id="stat-row"></div>
+          <div class="metaphor-cards" id="metaphor-cards"></div>
+        </div>
+      </section>
+
+      <!-- ── Row 2: Grade progression arc (THE main learning curve) ─────────── -->
+      <section class="arc-row" id="sec-curve">
+        <div class="panel panel-arc">
+          <div class="panel-label">
+            Learning Curve
+            <span class="panel-label-sub">grade &amp; accuracy vs epoch — grade thresholds shown as dashed lines</span>
+          </div>
+          <div class="arc-chart-wrap">
+            <canvas id="grade-arc-chart"></canvas>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── Row 2.5: Phase journey ribbon (educational at-a-glance story) ── -->
+      <section class="phase-journey-row">
+        <div class="panel panel-phase-journey">
+          <div class="panel-label">Phase Journey
+            <span class="panel-label-sub">the five learning phases mapped to epochs</span>
+          </div>
+          <div id="phase-journey"></div>
+        </div>
+      </section>
+
+      <!-- ── Row 2.6: Training diagnostics (interpreted health readout) ────── -->
+      <section class="diagnostics-row" id="sec-diagnostics">
+        <div class="panel panel-diagnostics">
+          <div class="panel-label">Training Diagnostics
+            <span class="panel-label-sub">what the curves mean — overfitting, convergence, stability &amp; health</span>
+          </div>
+          <div id="training-diagnostics"></div>
+        </div>
+      </section>
+
+      <!-- ── Row 3: Timeline (epoch-by-epoch progression) ─────────────────── -->
+      <section class="timeline-row">
+        <div id="timeline-panel" class="panel panel-timeline">
+          <div class="panel-label">Training Journey
+            <span class="panel-label-sub">drag scrubber to replay any epoch</span>
+          </div>
+          <div id="timeline-story"></div>
+          <div id="epoch-scrubber-wrap"></div>
+        </div>
+      </section>
+
+      <!-- ── Row 4: Skills + Metrics (detail row) ──────────────────────────── -->
+      <section class="detail-row">
+        <div id="skills-panel" class="panel panel-skills">
+          <div class="panel-label">Skill Dimensions
+            <span class="panel-label-sub">radar of key metric axes</span>
+          </div>
+          <div id="skill-radar"></div>
+        </div>
+        <div class="panel panel-confidence">
+          <div class="panel-label">Live Metrics</div>
+          <div id="confidence-bars"></div>
+        </div>
+      </section>
+
+      <!-- ── Row 5: Engineer panel (open by default) ───────────────────────── -->
+      <section class="engineer-row" id="sec-engineer">
+        <details id="tech-panel" class="panel panel-tech" open>
+          <summary class="panel-title">
+            Engineer Panel
+            <span class="panel-label-sub">raw loss &amp; accuracy curves — the numbers behind the story</span>
+          </summary>
+          <div id="tech-panel-content" class="tech-charts">
+            <div class="chart-wrap">
+              <canvas id="loss-chart"></canvas>
+            </div>
+            <div class="chart-wrap">
+              <canvas id="accuracy-chart"></canvas>
+            </div>
+          </div>
+        </details>
+      </section>
+
+    </main>
+    </div><!-- /.app-body -->
+
+    <!-- Toast container -->
+    <div id="toasts" aria-live="polite"></div>
+  </div>
+
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>

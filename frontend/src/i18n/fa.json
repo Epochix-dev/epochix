@@ -1,0 +1,51 @@
+{
+  "phases": {
+    "awakening":    "🌱 بیداری",
+    "learning":     "📚 یادگیری",
+    "understanding":"💡 درک",
+    "mastering":    "⚡ تسلط",
+    "polishing":    "✨ پالایش"
+  },
+  "milestones": {
+    "first_above_25":     "اولین ۲۵٪ حاصل شد",
+    "first_above_50":     "نقطه میانی",
+    "first_above_75":     "۷۵٪ رسید",
+    "first_above_90":     "بیش از ۹۰٪",
+    "best_so_far":        "بهترین نتیجه تاکنون",
+    "biggest_jump":       "بزرگ‌ترین پیشرفت",
+    "overfit_warning":    "بیش‌برازش تشخیص داده شد",
+    "plateau":            "توقف یادگیری",
+    "lr_drop":            "کاهش نرخ یادگیری",
+    "divergence":         "واگرایی آموزش",
+    "training_complete":  "آموزش کامل شد"
+  },
+  "warnings": {
+    "overfit":    "مدل ممکن است داده‌های آموزشی را حفظ کند نه تعمیم دهد.",
+    "plateau":    "یادگیری کند شده. مدل الگوی جدیدی نمی‌یابد.",
+    "divergence": "مشکلی رخ داده — امتیاز مدل به‌طور غیرمنتظره افزایش یافته."
+  },
+  "labels": {
+    "epoch":        "دوره",
+    "grade":        "نمره",
+    "phase":        "مرحله",
+    "connected":    "زنده",
+    "disconnected": "آفلاین",
+    "loading":      "در حال بارگذاری…",
+    "waiting":      "در انتظار داده آموزشی…",
+    "engineer":     "پانل مهندس",
+    "skills":       "مهارت‌ها",
+    "confidence":   "اطمینان",
+    "timeline":     "مسیر آموزش",
+    "export":       "خروجی"
+  },
+  "tasks": {
+    "classification": "دسته‌بندی",
+    "detection":      "تشخیص اشیاء",
+    "regression":     "رگرسیون",
+    "biometric":      "بیومتریک",
+    "gaze":           "تخمین نگاه",
+    "nlp":            "پردازش زبان طبیعی",
+    "generative":     "مولد",
+    "custom":         "وظیفه سفارشی"
+  }
+}

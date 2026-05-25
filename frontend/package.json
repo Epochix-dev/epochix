@@ -1,0 +1,28 @@
+{
+  "name": "@model-story/web",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "build:singlefile": "vite build --config vite.singlefile.config.js",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "coverage": "vitest run --coverage"
+  },
+  "dependencies": {
+    "chart.js": "^4.4.4",
+    "d3-path": "^3.1.0",
+    "d3-scale": "^4.0.2",
+    "d3-shape": "^3.2.0"
+  },
+  "devDependencies": {
+    "@vitest/coverage-v8": "^2.1.4",
+    "jsdom": "^29.1.1",
+    "vite": "^5.4.11",
+    "vite-plugin-singlefile": "^2.0.2",
+    "vitest": "^2.1.4"
+  }
+}
