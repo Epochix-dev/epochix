@@ -61,7 +61,7 @@ Repository    = "https://github.com/hexorax/model-story"
 Issues        = "https://github.com/hexorax/model-story/issues"
 
 [project.scripts]
-model-story = "model_story.cli:app"
+model-story = "model_story.cli:main_entry"
 
 [project.entry-points."model_story.parsers"]
 pytorch_lightning = "model_story.parsers.pytorch_lightning:PLParser"
@@ -120,6 +120,12 @@ ignore = [
   "ANN001", "ANN002", "ANN003",  # allow unannotated *args/**kwargs in tests/scripts
   "B008",  # Typer + FastAPI use function-calls-as-defaults by design
 ]
+
+[tool.ruff.lint.per-file-ignores]
+# Aligned layer-type → metadata mapping table reads better as wide columns.
+"src/model_story/parsers/architecture_parser.py" = ["E501"]
+# Tests may use long inline SQL/fixtures and nested context managers.
+"tests/**" = ["E501", "SIM117"]
 
 [tool.mypy]
 python_version   = "3.10"

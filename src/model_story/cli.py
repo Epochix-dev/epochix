@@ -21,6 +21,7 @@ Usage
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import logging
 import sys
 import webbrowser
@@ -87,9 +88,8 @@ def _task_from_str(task_str: str | None) -> TaskType | None:
 # ------------------------------------------------------------------
 
 
-@app.callback(invoke_without_command=True)
-def main(  # noqa: C901
-    ctx: typer.Context,
+@app.command("run")
+def cmd_run(  # noqa: C901
     log_file: Path | None = typer.Argument(
         None,
         help="Log file to parse (batch mode).",
@@ -112,10 +112,7 @@ def main(  # noqa: C901
     name: str | None = typer.Option(None, "--name", "-n", help="Run name.", show_default=False),
     log_level: str = typer.Option("INFO", "--log-level", help="Logging level."),
 ) -> None:
-    """Parse a training log and visualize it in the browser."""
-    if ctx.invoked_subcommand is not None:
-        return  # sub-command handles the rest
-
+    """Parse a training log and visualize it in the browser (the default action)."""
     _configure_logging(log_level)
     settings = get_settings()
     if no_llm:
@@ -233,10 +230,8 @@ async def _run_batch_or_live(
             await asyncio.wait_for(server_task, timeout=3.0)
         except (asyncio.TimeoutError, asyncio.CancelledError):
             server_task.cancel()
-            try:
+            with contextlib.suppress(asyncio.CancelledError, Exception):
                 await server_task
-            except (asyncio.CancelledError, Exception):
-                pass
 
     # Print summary
     typer.echo("")
@@ -252,8 +247,8 @@ async def _run_batch_or_live(
         _cli_export(run_id=run_id, fmt=export_format, store=store)
 
 
-def _cli_export(run_id: str, fmt: str, store: RunStore) -> None:
-    outfile = Path(f"{run_id}.{fmt}")
+def _cli_export(run_id: str, fmt: str, store: RunStore, outfile: Path | None = None) -> None:
+    outfile = outfile or Path(f"{run_id}.{fmt}")
     typer.echo(f"  Exporting {fmt.upper()} → {outfile}")
 
     if fmt == "json":
@@ -271,15 +266,34 @@ def _cli_export(run_id: str, fmt: str, store: RunStore) -> None:
     elif fmt == "md":
         from model_story.exporters.markdown_export import build_markdown
 
+        outfile.write_text(build_markdown(run_id=run_id, store=store), encoding="utf-8")
+    elif fmt == "html":
+        from model_story.exporters.html_export import build_html
+
         try:
-            md = build_markdown(run_id=run_id, store=store)
-            outfile.write_text(md, encoding="utf-8")
-        except NotImplementedError:
-            typer.echo("  Markdown exporter not yet implemented.", err=True)
-    elif fmt in ("html", "pdf"):
-        typer.echo(f"  {fmt.upper()} exporter not yet implemented (Phase 11).", err=True)
+            outfile.write_text(build_html(run_id=run_id, store=store), encoding="utf-8")
+        except FileNotFoundError:
+            typer.echo(
+                "  HTML export needs the frontend bundle. Run `make build-frontend` first.",
+                err=True,
+            )
+            raise typer.Exit(1) from None
+    elif fmt == "pdf":
+        from model_story.exporters.pdf_export import build_pdf
+
+        try:
+            outfile.write_bytes(build_pdf(run_id=run_id, store=store))
+        except (NotImplementedError, ImportError):
+            typer.echo(
+                "  PDF export needs the 'pdf' extra: pip install 'model-story[pdf]'.",
+                err=True,
+            )
+            raise typer.Exit(1) from None
     else:
-        typer.echo(f"  Unknown export format: {fmt!r}", err=True)
+        typer.echo(
+            f"  Unknown export format: {fmt!r}. Use html, pdf, md, or json.", err=True
+        )
+        raise typer.Exit(1)
 
 
 # ------------------------------------------------------------------
@@ -362,9 +376,7 @@ def cmd_export(
     if store.get_run(run_id) is None:
         typer.echo(f"Run not found: {run_id}", err=True)
         raise typer.Exit(1)
-    out = output or Path(f"{run_id}.{fmt}")
-    _cli_export(run_id=run_id, fmt=fmt, store=store)
-    typer.echo(f"  Saved → {out}")
+    _cli_export(run_id=run_id, fmt=fmt, store=store, outfile=output)
 
 
 @app.command("prune")
@@ -453,5 +465,40 @@ def _open_store(settings: Settings) -> RunStore:
     return RunStore(db_path=settings.db)
 
 
-if __name__ == "__main__":
+# ------------------------------------------------------------------
+# Console entry point
+# ------------------------------------------------------------------
+
+# Real subcommands. Anything else in first position is treated as a log file
+# and routed to the implicit ``run`` command, so both of these work:
+#   model-story train.log          (shorthand → `run train.log`)
+#   model-story --live             (shorthand → `run --live`)
+#   model-story serve --port 8000  (dispatches the serve subcommand)
+_SUBCOMMANDS = frozenset({"run", "serve", "list", "open", "export", "prune", "config"})
+
+
+def main_entry() -> None:
+    """Console-script entry point (``model-story``).
+
+    Typer cannot mix a positional argument on the group callback with
+    subcommands without the subcommand name being swallowed as that argument.
+    To keep the friendly ``model-story <log>`` shorthand *and* working
+    subcommands, we route any invocation whose first positional token is not a
+    known subcommand to the default ``run`` command.
+    """
+    argv = sys.argv[1:]
+
+    # No args, or a top-level help flag → let Typer show the group help.
+    if not argv or argv[0] in ("-h", "--help"):
+        app()
+        return
+
+    first_positional = next((a for a in argv if not a.startswith("-")), None)
+    if first_positional not in _SUBCOMMANDS:
+        sys.argv = [sys.argv[0], "run", *argv]
+
     app()
+
+
+if __name__ == "__main__":
+    main_entry()
