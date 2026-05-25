@@ -1,0 +1,41 @@
+# Build outputs
+frontend/dist/
+frontend/node_modules/
+model-story-vscode/node_modules/
+model-story-vscode/dist/
+model-story-vscode/*.vsix
+**/__pycache__/
+**/*.pyc
+**/*.pyo
+dist/
+*.egg-info/
+.eggs/
+
+# Test / dev artefacts
+tests/
+scripts/
+docs/
+.github/
+htmlcov/
+.coverage
+.hypothesis/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Editor / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.swp
+
+# Secrets / env
+.env
+.env.*
+*.pem
+*.key
+
+# Git
+.git/
+.gitignore

@@ -1,0 +1,122 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+*.pyd
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Distribution / packaging
+*.whl
+*.tar.gz
+
+# Unit test / coverage
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+htmlcov/
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# ruff
+.ruff_cache/
+
+# Jupyter
+.ipynb_checkpoints
+*.ipynb
+
+# SQLite databases
+*.db
+*.sqlite
+*.sqlite3
+model_story.db
+
+# Frontend
+node_modules/
+frontend/node_modules/
+model-story-vscode/node_modules/
+frontend/dist/
+frontend/coverage/
+model-story-vscode/dist/
+model-story-vscode/webview-dist/
+*.vsix
+
+# VS Code
+.vscode/
+!.vscode/extensions.json
+!.vscode/launch.json
+
+# Claude Code local (personal) settings
+.claude/settings.local.json
+
+# PyCharm
+.idea/
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Linux
+*~
+
+# Secrets
+.env.local
+.env.*.local
+*.pem
+*.key
+secrets.json
+
+# model-story run data
+~/.model-story/
+.model-story.db
+
+# Logs (keep demo/ but ignore generated ones)
+*.log
+!demo/*.log
+!tests/fixtures/**/*.log
+
+# Build artefacts
+src/model_story/_frontend/dist/

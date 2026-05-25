@@ -1,0 +1,137 @@
+[build-system]
+requires = ["hatchling>=1.25"]
+build-backend = "hatchling.build"
+
+[project]
+name = "model-story"
+version = "0.1.0"
+description = "Visual storytelling for deep learning training runs."
+authors = [{ name = "HexoraX", email = "hello@hexorax.com" }]
+license = "Apache-2.0"
+readme = "README.md"
+requires-python = ">=3.10"
+keywords = ["machine-learning", "training", "visualization", "mlops", "deep-learning"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Intended Audience :: Science/Research",
+  "License :: OSI Approved :: Apache Software License",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+dependencies = [
+  "pydantic>=2.7",
+  "pydantic-settings>=2.4",
+  "fastapi>=0.116",
+  "uvicorn[standard]>=0.30",
+  "sqlalchemy>=2.0",
+  "typer>=0.12",
+  "structlog>=24.1",
+  "python-ulid>=3.0",
+  "anyio>=4.4",
+  "aiofiles>=24.1",
+]
+
+[project.optional-dependencies]
+pdf       = ["weasyprint>=62"]
+lightning = ["pytorch-lightning>=2.3"]
+hf        = ["transformers>=4.40"]
+llm       = ["httpx>=0.27"]
+postgres  = ["asyncpg>=0.30"]
+redis     = ["redis>=5.0"]
+all       = ["model-story[pdf,lightning,hf,llm]"]
+dev       = [
+  "pytest>=8",
+  "pytest-asyncio>=0.24",
+  "pytest-benchmark>=4.0",
+  "hypothesis>=6.108",
+  "ruff>=0.5",
+  "mypy>=1.11",
+  "playwright>=1.45",
+  "schemathesis>=3.34",
+  "pre-commit>=3.8",
+  "httpx>=0.27",
+]
+
+[project.urls]
+Homepage      = "https://github.com/hexorax/model-story"
+Documentation = "https://docs.model-story.dev"
+Repository    = "https://github.com/hexorax/model-story"
+Issues        = "https://github.com/hexorax/model-story/issues"
+
+[project.scripts]
+model-story = "model_story.cli:app"
+
+[project.entry-points."model_story.parsers"]
+pytorch_lightning = "model_story.parsers.pytorch_lightning:PLParser"
+keras_tensorflow  = "model_story.parsers.keras_tensorflow:KerasParser"
+huggingface       = "model_story.parsers.huggingface:HFParser"
+ultralytics_yolo  = "model_story.parsers.ultralytics_yolo:YOLOParser"
+fastai            = "model_story.parsers.fastai:FastAIParser"
+accelerate        = "model_story.parsers.accelerate:AccelerateParser"
+universal         = "model_story.parsers.universal:UniversalParser"
+
+# Metaphor packs: entry point value = path to a YAML file
+# [project.entry-points."model_story.metaphor_packs"]
+# my_pack = "my_package:METAPHORS_YAML"
+
+# Custom task types: entry point value = TaskDefinition instance or dict
+# [project.entry-points."model_story.tasks"]
+# audio = "my_package.task:TASK_DEFINITION"
+
+# Custom exporters: entry point value = callable(run, frames, events, output_path)
+# [project.entry-points."model_story.exporters"]
+# latex = "my_package.exporter:EXPORTER"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/model_story"]
+
+[tool.hatch.build.targets.wheel.shared-data]
+# non-Python assets that must ship inside the wheel
+"src/model_story/py.typed" = "model_story/py.typed"
+
+[tool.hatch.build.targets.wheel.force-include]
+# Narrative templates (text files alongside the story_engine package)
+"src/model_story/story_engine/templates" = "model_story/story_engine/templates"
+# Claude artifact (JSX)
+"src/model_story/_artifacts" = "model_story/_artifacts"
+# Frontend bundle is vendored at release time via CI (build-frontend step).
+# In local editable installs the dist/ stub is used.
+"frontend/dist" = "model_story/_frontend/dist"
+
+[tool.hatch.envs.default]
+features = ["dev"]
+
+[tool.hatch.envs.default.scripts]
+test      = "pytest {args}"
+typecheck = "mypy --strict src/model_story"
+lint      = "ruff check src tests && ruff format --check src tests"
+fmt       = "ruff format src tests && ruff check --fix src tests"
+bench     = "pytest tests/benchmarks --benchmark-only"
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B", "SIM", "ANN"]
+ignore = [
+  "ANN001", "ANN002", "ANN003",  # allow unannotated *args/**kwargs in tests/scripts
+  "B008",  # Typer + FastAPI use function-calls-as-defaults by design
+]
+
+[tool.mypy]
+python_version   = "3.10"
+strict           = true
+warn_return_any  = true
+warn_unused_configs = true
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths    = ["tests"]
+addopts      = "-q --tb=short"
+
+[tool.coverage.run]
+source = ["src/model_story"]
+omit   = ["src/model_story/_frontend/*"]
