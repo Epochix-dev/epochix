@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import contextlib
 from datetime import datetime, timezone
 from typing import Annotated, Any
 
@@ -92,10 +93,8 @@ async def create_run(
 
     task: TaskType | None = None
     if body.task:
-        try:
+        with contextlib.suppress(ValueError):
             task = TaskType(body.task)
-        except ValueError:
-            pass
 
     run = Run(
         id=run_id,

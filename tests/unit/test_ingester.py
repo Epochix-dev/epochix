@@ -73,9 +73,17 @@ class TestMakeIngester:
             make_ingester(source="file", run_id="r1")
 
     def test_file_ingester_with_path(self, tmp_path: object) -> None:
-        from model_story.ingester.file_tail import FileTailIngester
+        # "file" = batch mode: read the file once and stop.
+        from model_story.ingester.file_batch import FileBatchIngester
 
         ing = make_ingester(source="file", run_id="r1", path="/tmp/test.log")
+        assert isinstance(ing, FileBatchIngester)
+
+    def test_file_tail_ingester_with_path(self) -> None:
+        # "file_tail" = live mode: poll the file indefinitely.
+        from model_story.ingester.file_tail import FileTailIngester
+
+        ing = make_ingester(source="file_tail", run_id="r1", path="/tmp/test.log")
         assert isinstance(ing, FileTailIngester)
 
     def test_unknown_source_raises(self) -> None:

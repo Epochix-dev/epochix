@@ -16,7 +16,7 @@ from __future__ import annotations
 
 import logging
 from datetime import datetime, timezone
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from model_story.enums import TaskType
 from model_story.models import Run
@@ -37,7 +37,7 @@ logger = logging.getLogger(__name__)
 def _emit_line(
     *,
     text: str,
-    timestamp: Any,
+    timestamp: datetime,
     parser: BaseParser,
     ctx: ParserContext,
     run_id: str,
@@ -171,7 +171,7 @@ async def run_pipeline(
     # Buffer lines received before the parser is detected so we can replay
     # them.  This is critical for short log files (< SNIFF_SAMPLE_LINES lines)
     # where the sniff window never fills while streaming.
-    sniff_buffer: list[tuple[int, Any, str]] = []  # (seq, timestamp, text)
+    sniff_buffer: list[tuple[int, datetime, str]] = []  # (seq, timestamp, text)
 
     # Collect the first 200 lines for architecture detection (model summary
     # tables always appear in the header, before training starts).
@@ -271,7 +271,7 @@ async def run_pipeline(
             logger.debug(
                 "Architecture detected: %d layers (%s)",
                 len(arch_layers),
-                ", ".join(f"{l.name}({l.layer_type})" for l in arch_layers),
+                ", ".join(f"{lyr.name}({lyr.layer_type})" for lyr in arch_layers),
             )
     except Exception:
         logger.debug("Architecture detection failed (non-fatal)", exc_info=True)

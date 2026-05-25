@@ -22,7 +22,6 @@ import re
 from dataclasses import asdict, dataclass
 from typing import TypedDict
 
-
 # ── layer-type → (tech_label, plain_label, visual_type) ─────────────────────
 
 class _LayerMeta(TypedDict):
@@ -105,7 +104,7 @@ class ArchLayer:
     plain_label: str
     visual_type: str   # conv | dense | recurrent | attention | norm | generic
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, object]:
         return asdict(self)
 
 
