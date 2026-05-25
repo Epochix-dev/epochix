@@ -1,0 +1,69 @@
+site_name: Model Learning Story
+site_url: https://docs.model-story.dev
+site_description: Visual storytelling for deep learning training runs.
+site_author: model-story contributors
+repo_url: https://github.com/model-story/model-story
+repo_name: model-story/model-story
+edit_uri: edit/main/docs/
+
+theme:
+  name: material
+  palette:
+    - scheme: default
+      primary: deep purple
+      accent: purple
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - scheme: slate
+      primary: deep purple
+      accent: purple
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - navigation.instant
+    - navigation.tracking
+    - navigation.sections
+    - navigation.expand
+    - search.highlight
+    - content.code.copy
+    - content.tabs.link
+
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          options:
+            docstring_style: numpy
+            show_source: true
+            show_root_heading: true
+
+nav:
+  - Home: index.md
+  - Quickstart: quickstart.md
+  - Parsers: parsers.md
+  - Plugins: plugins.md
+  - Deployment: deployment.md
+
+markdown_extensions:
+  - admonition
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.details
+  - tables
+  - toc:
+      permalink: true
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/model-story/model-story
+    - icon: fontawesome/brands/python
+      link: https://pypi.org/project/model-story/
+
+copyright: "Copyright &copy; 2024 model-story contributors — Apache-2.0 License"
