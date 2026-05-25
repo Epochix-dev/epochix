@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import logging
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -23,6 +24,8 @@ from sqlalchemy.engine import Engine
 
 from model_story.enums import Grade, TaskType
 from model_story.models import MetricEvent, Run, StoryFrame
+
+logger = logging.getLogger(__name__)
 
 metadata = MetaData()
 
@@ -122,6 +125,59 @@ class RunStore:
             self._engine = create_engine(f"sqlite:///{db_path}", echo=False)
         event.listen(self._engine, "connect", _configure_sqlite)
         metadata.create_all(self._engine)
+        self._heal_metric_events_pk()
+
+    def _heal_metric_events_pk(self) -> None:
+        """Upgrade pre-0.1 databases in place.
+
+        Early schemas keyed ``metric_events`` on ``(run_id, seq)`` only, so the
+        several metrics emitted on a single log line (loss, acc, val_loss, …)
+        collided and all but the first were silently dropped on insert. The
+        primary key now includes ``canonical_key``; rebuild the table if an old
+        database is opened so existing users get the fix automatically.
+
+        Foreign-key enforcement is disabled for the rebuild (standard SQLite
+        table-migration practice) so the copy can't fail on legacy rows.
+        """
+        new_ddl = (
+            "CREATE TABLE metric_events ("
+            " run_id TEXT NOT NULL REFERENCES runs(id),"
+            " seq INTEGER NOT NULL,"
+            " canonical_key TEXT NOT NULL,"
+            " ts TIMESTAMP NOT NULL,"
+            " epoch FLOAT, step INTEGER,"
+            " raw_key TEXT NOT NULL, value FLOAT NOT NULL, unit TEXT,"
+            " PRIMARY KEY (run_id, seq, canonical_key))"
+        )
+        cols = "run_id, seq, ts, epoch, step, canonical_key, raw_key, value, unit"
+
+        raw = self._engine.raw_connection()
+        try:
+            cur = raw.cursor()
+            info = cur.execute("PRAGMA table_info(metric_events)").fetchall()
+            if not info:
+                return  # table will be created fresh with the correct schema
+            pk_cols = {row[1] for row in info if row[5]}  # row[5] = pk position (>0)
+            if "canonical_key" in pk_cols:
+                return  # already migrated / fresh DB
+
+            logger.info("Migrating metric_events to composite PK (adds canonical_key)…")
+            cur.execute("PRAGMA foreign_keys=OFF")
+            cur.execute("ALTER TABLE metric_events RENAME TO _metric_events_old")
+            cur.execute("DROP INDEX IF EXISTS idx_metric_run_epoch")
+            cur.execute("DROP INDEX IF EXISTS idx_metric_run_key")
+            cur.execute(new_ddl)
+            cur.execute("CREATE INDEX idx_metric_run_epoch ON metric_events (run_id, epoch)")
+            cur.execute("CREATE INDEX idx_metric_run_key ON metric_events (run_id, canonical_key)")
+            cur.execute(
+                f"INSERT OR IGNORE INTO metric_events ({cols}) "
+                f"SELECT {cols} FROM _metric_events_old"
+            )
+            cur.execute("DROP TABLE _metric_events_old")
+            raw.commit()
+            cur.execute("PRAGMA foreign_keys=ON")
+        finally:
+            raw.close()
 
     # ------------------------------------------------------------------ runs
 
@@ -176,7 +232,7 @@ class RunStore:
             ).fetchall()
         return [self._row_to_run(r) for r in rows]
 
-    def update_run_config(self, run_id: str, config: dict) -> None:
+    def update_run_config(self, run_id: str, config: dict[str, Any]) -> None:
         """Persist an updated config dict for a run (e.g. to store architecture)."""
         with self._engine.begin() as conn:
             conn.execute(
