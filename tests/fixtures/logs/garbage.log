@@ -1,0 +1,10 @@
+Starting application...
+Loading configuration from /etc/app/config.yaml
+Database connection established
+Worker pool initialized with 4 threads
+Server listening on port 8080
+Request received: GET /api/status
+Response sent: 200 OK
+Garbage line: @@##$$%%^^&&
+Unicode: 日本語テスト αβγδ
+Numbers but no keys: 0.234 0.456 0.789

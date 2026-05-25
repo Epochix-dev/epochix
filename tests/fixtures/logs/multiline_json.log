@@ -1,0 +1,9 @@
+{'loss': 2.3456, 'learning_rate': 5e-05, 'epoch': 0.5}
+{'loss': 1.9876, 'learning_rate': 5e-05, 'epoch': 1.0}
+{'eval_loss': 2.1234, 'eval_accuracy': 0.4321, 'eval_f1': 0.3987, 'epoch': 1.0}
+{'loss': 1.6543, 'learning_rate': 4.5e-05, 'epoch': 1.5}
+{'loss': 1.3210, 'learning_rate': 4.5e-05, 'epoch': 2.0}
+{'eval_loss': 1.5432, 'eval_accuracy': 0.5678, 'eval_f1': 0.5234, 'epoch': 2.0}
+{'loss': 0.9876, 'learning_rate': 4e-05, 'epoch': 2.5}
+{'loss': 0.7654, 'learning_rate': 4e-05, 'epoch': 3.0}
+{'eval_loss': 0.9876, 'eval_accuracy': 0.6789, 'eval_f1': 0.6543, 'epoch': 3.0}
