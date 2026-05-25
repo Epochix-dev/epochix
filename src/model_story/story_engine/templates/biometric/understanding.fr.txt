@@ -1,0 +1,2 @@
+À l'époque {epoch}, EER = {value_pct}. Le modèle discerne les subtilités biométriques.
+EER {value_pct} — le modèle comprend les caractéristiques identitaires complexes.

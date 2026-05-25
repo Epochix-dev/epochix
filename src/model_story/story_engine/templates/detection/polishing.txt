@@ -1,0 +1,4 @@
+Final calibration. mAP50 {value_pct} at epoch {epoch} — the detector is ready for deployment.
+The last mAP points are won by patience. mAP50 {value_pct}. Excellence refined.
+Epoch {epoch}: detection is robust across scales and occlusions. mAP50 {value_pct}.
+The model sees all. mAP50 {value_pct} — every anchor finds its object.

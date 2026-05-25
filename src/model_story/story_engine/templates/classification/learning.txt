@@ -1,0 +1,4 @@
+Gradients flow, features sharpen. Accuracy climbs to {value_pct} — the model is finding the signal in the noise.
+At epoch {epoch}, patterns crystallise. The delta this step was {delta}. The upward trend is clear.
+The model discovers structure in its world. Accuracy {value_pct}, improving steadily. Keep going.
+Loss curves bend downward. Accuracy reaches {value_pct} at epoch {epoch}. The model is a diligent student.

@@ -1,0 +1,2 @@
+Le modèle détecte ses premiers objets à l'époque {epoch}. mAP50 : {value_pct} — la vision artificielle s'éveille.
+Les premières boîtes de détection émergent du bruit. mAP50 {value_pct}. Le modèle apprend à voir les objets.

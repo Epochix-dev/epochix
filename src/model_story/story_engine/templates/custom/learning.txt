@@ -1,0 +1,3 @@
+The model makes steady progress. Metric: {value} at epoch {epoch}, delta {delta}.
+Patterns emerge from the data. Value {value} — the trend is positive.
+Epoch {epoch}: improvement continues. {value} and climbing.

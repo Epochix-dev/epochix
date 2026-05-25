@@ -1,0 +1,2 @@
+EER = {value_pct} — le modèle maîtrise la vérification biométrique. Résultats très précis.
+À l'époque {epoch}, EER {value_pct}. Le système biométrique atteint une haute précision.

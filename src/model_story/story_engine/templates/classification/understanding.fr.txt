@@ -1,0 +1,2 @@
+Des représentations profondes se forment. Précision {value_pct} — le modèle saisit la structure.
+La généralisation s'améliore. Précision {value_pct} à l'époque {epoch}.

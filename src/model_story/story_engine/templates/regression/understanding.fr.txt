@@ -1,0 +1,2 @@
+À l'époque {epoch}, MAE = {value}. Le modèle saisit les motifs complexes.
+MAE {value} — les prédictions se précisent. Le modèle voit des relations plus profondes.

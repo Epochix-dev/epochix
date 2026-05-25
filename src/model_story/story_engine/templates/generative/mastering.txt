@@ -1,0 +1,4 @@
+Realistic outputs at FID {value}. Epoch {epoch} — generation is compelling.
+Fine textures and coherent structure. FID {value}. The model has mastered the domain.
+Epoch {epoch}: samples fool most observers. FID {value}.
+Near-photorealistic quality approaches. FID {value}, delta {delta}.

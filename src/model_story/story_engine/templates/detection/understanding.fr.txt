@@ -1,0 +1,2 @@
+À l'époque {epoch}, mAP50 = {value_pct}. Le modèle saisit le contexte visuel.
+mAP50 {value_pct} — le modèle comprend les caractéristiques complexes de détection.

@@ -1,0 +1,2 @@
+À l'époque {epoch}, MAE regard = {value}°. Le modèle comprend le contexte visuel et la direction oculaire.
+MAE {value}° — le suivi du regard atteint une compréhension plus profonde.

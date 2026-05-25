@@ -1,0 +1,4 @@
+Semantic relationships emerge. Perplexity {value} at epoch {epoch} — the model grasps grammar.
+Long-range dependencies form. Perplexity {value}. The model reads meaning, not just form.
+Epoch {epoch}: topic coherence improves. Perplexity {value}.
+The model builds a world model in miniature. Perplexity {value}, delta {delta}.

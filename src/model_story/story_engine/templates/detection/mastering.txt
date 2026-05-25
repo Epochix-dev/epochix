@@ -1,0 +1,4 @@
+Precise localisation at mAP50 {value_pct}. Epoch {epoch} — the detector operates with surgical accuracy.
+Small objects emerge from background. mAP50 {value_pct}. The model finds what the eye might miss.
+Epoch {epoch}: bounding boxes are tight and confident. mAP50 {value_pct}.
+Competition-grade performance approaches. mAP50 {value_pct}, delta {delta}.

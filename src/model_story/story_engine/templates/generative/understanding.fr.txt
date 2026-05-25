@@ -1,0 +1,2 @@
+À l'époque {epoch}, FID = {value}. Le modèle comprend la distribution des données réelles.
+FID {value} — les images génératives se rapprochent de la réalité.

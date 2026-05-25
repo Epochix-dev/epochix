@@ -1,0 +1,4 @@
+Final touches. FID {value} at epoch {epoch} — the generator refines its masterwork.
+Each sample is a plausible specimen of the domain. FID {value}.
+Epoch {epoch}: diversity and fidelity balanced. FID {value}.
+The model creates. FID {value} at epoch {epoch} — indistinguishable from real.

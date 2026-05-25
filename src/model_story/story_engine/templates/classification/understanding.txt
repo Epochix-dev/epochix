@@ -1,0 +1,4 @@
+Deep representations form. Accuracy {value_pct} at epoch {epoch} — the model grasps the underlying structure.
+Generalisation improves. The gap between train and val narrows. Accuracy: {value_pct}.
+The model has moved beyond memorisation. At {value_pct}, it understands the task.
+Epoch {epoch}: high-level features emerge. The model reads the data, not just the surface. Accuracy {value_pct}.

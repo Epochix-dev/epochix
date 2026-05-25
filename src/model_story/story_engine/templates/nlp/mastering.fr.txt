@@ -1,0 +1,2 @@
+Perplexité {value} — le modèle maîtrise bien le langage. Résultats impressionnants.
+À l'époque {epoch}, perplexité = {value}. Le modèle linguistique atteint la maîtrise.

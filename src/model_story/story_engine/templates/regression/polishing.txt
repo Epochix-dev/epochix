@@ -1,0 +1,4 @@
+Last refinements at MAE {value}. Epoch {epoch} — the model squeezes residual error.
+The final decimal places are the hardest. MAE {value}. The model is near its capacity.
+Epoch {epoch}: prediction uncertainty is minimal. MAE {value} — ready to deploy.
+Excellence. MAE {value} at epoch {epoch}. The regressor has found its form.

@@ -1,0 +1,2 @@
+Les gradients coulent, les représentations s'affinent. Précision {value_pct} à l'époque {epoch}.
+Le modèle découvre la structure de ses données. Précision {value_pct}, delta {delta}.

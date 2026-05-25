@@ -1,0 +1,4 @@
+Rough structure appears. FID {value} at epoch {epoch} — the model finds coarse domain features.
+The generator beats the random baseline. FID {value}, delta {delta}.
+Epoch {epoch}: blobs resolve into shapes. FID {value}.
+Frequency statistics align with the real distribution. FID {value} and falling.

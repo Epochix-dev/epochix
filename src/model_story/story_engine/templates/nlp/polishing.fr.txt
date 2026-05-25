@@ -1,0 +1,2 @@
+Polissage final. Perplexité = {value} — modèle linguistique très précis.
+Époque {epoch} : perplexité {value}. Chaque optimisation mineure améliore la qualité linguistique.

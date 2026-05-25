@@ -1,0 +1,3 @@
+The model grasps the task structure. Metric {value} at epoch {epoch}.
+Generalisation improves. Value {value}, delta {delta}.
+Epoch {epoch}: deep patterns are captured. {value}.

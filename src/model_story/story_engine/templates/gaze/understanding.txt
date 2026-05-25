@@ -1,0 +1,4 @@
+Gaze estimation improves to MAE {value}° at epoch {epoch}. Fine angular features emerge.
+The model reads subtle iris cues. MAE {value}°. Human-level understanding approaches.
+Epoch {epoch}: vertical and horizontal gaze both captured well. MAE {value}°.
+Reliable gaze tracking in natural conditions. MAE {value}°.

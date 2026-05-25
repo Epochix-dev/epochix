@@ -1,0 +1,4 @@
+Final refinements. Perplexity {value} at epoch {epoch} — the language model approaches its limit.
+Each epoch squeezes perplexity lower. {value}. Excellence within reach.
+Epoch {epoch}: calibrated, coherent, ready. Perplexity {value}.
+The model speaks clearly. Perplexity {value} at epoch {epoch}.

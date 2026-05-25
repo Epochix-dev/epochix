@@ -1,0 +1,3 @@
+Le modèle maîtrise la détection à l'époque {epoch}. mAP50 {value_pct} — précision remarquable.
+mAP50 = {value_pct}. L'algorithme de détection atteint son efficacité maximale.
+À l'époque {epoch}, mAP50 {value_pct} — niveau expert atteint.

@@ -1,0 +1,4 @@
+Near-expert performance at {value_pct}. Epoch {epoch} — the model has mastered the fundamentals.
+Fine boundaries sharpen. At {value_pct} accuracy, the model operates with confidence and precision.
+The model has internalised the task. Accuracy {value_pct}. Only refinement remains.
+Epoch {epoch}: the model thinks like an expert. Accuracy {value_pct}, delta {delta}.

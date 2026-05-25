@@ -1,0 +1,4 @@
+Faces begin to separate. EER falls to {value_pct} at epoch {epoch}. Identity clusters form.
+The model learns that two photos of the same person share something. EER {value_pct}.
+Epoch {epoch}: intra-class variance shrinks. EER {value_pct}, delta {delta}.
+Genuine pairs pull together, impostors push apart. EER {value_pct} and falling.

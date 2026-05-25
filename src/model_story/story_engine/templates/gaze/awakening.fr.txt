@@ -1,0 +1,2 @@
+Le modèle estime ses premiers vecteurs du regard à l'époque {epoch}. MAE : {value}° — le suivi oculaire commence.
+Premières prédictions de direction du regard. MAE = {value}° à l'époque {epoch}. Le modèle apprend à comprendre le regard humain.

@@ -1,0 +1,2 @@
+Le modèle s'éveille à l'époque {epoch}. Précision : {value_pct} — le voyage commence.
+Les premiers motifs émergent du bruit. Précision {value_pct}. Le modèle apprend à voir.

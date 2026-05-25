@@ -1,0 +1,2 @@
+Le modèle traite ses premiers échantillons biométriques à l'époque {epoch}. EER : {value_pct} — l'identification commence.
+L'empreinte numérique prend forme. EER = {value_pct} à l'époque {epoch}. Le modèle apprend à vérifier l'identité.

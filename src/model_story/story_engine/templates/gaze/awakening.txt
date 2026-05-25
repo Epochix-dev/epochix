@@ -1,0 +1,4 @@
+The gaze model is lost. MAE {value}° at epoch {epoch} — predictions scatter across the visual field.
+Epoch {epoch}: gaze vectors point nowhere useful. MAE {value}°. The eye has not yet learned to follow.
+Random fixations define the beginning. MAE {value}° at epoch {epoch}.
+The model sees the face but not the gaze. MAE {value}°. The signal is there, hidden in the features.

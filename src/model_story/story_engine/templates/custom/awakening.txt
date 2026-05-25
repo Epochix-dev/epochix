@@ -1,0 +1,3 @@
+Training begins at epoch {epoch}. Primary metric: {value}. The journey starts here.
+Epoch {epoch}: the model takes its first steps. Metric value {value}.
+The baseline is set at {value}. Every iteration from here is improvement.

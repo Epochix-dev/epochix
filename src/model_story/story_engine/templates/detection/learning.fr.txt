@@ -1,0 +1,3 @@
+mAP50 atteint {value_pct}. À l'époque {epoch}, le modèle apprend les motifs visuels.
+La précision de détection s'améliore — mAP50 {value_pct}. Le modèle comprend les proportions.
+À l'époque {epoch}, mAP50 {value_pct} — les objets sont identifiés avec plus de confiance.

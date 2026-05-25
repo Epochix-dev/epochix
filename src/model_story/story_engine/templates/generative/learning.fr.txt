@@ -1,0 +1,3 @@
+FID descend à {value}. La qualité des images génératives s'améliore à l'époque {epoch}.
+FID = {value} — les images génératives deviennent plus réalistes. Le modèle apprend la distribution.
+À l'époque {epoch}, FID {value}. Le modèle génératif apprend les motifs visuels réels.

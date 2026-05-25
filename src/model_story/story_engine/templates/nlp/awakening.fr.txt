@@ -1,0 +1,2 @@
+Le modèle linguistique traite ses premiers tokens à l'époque {epoch}. Perplexité : {value} — le langage est en cours d'exploration.
+Les premiers mots émergent du bruit statistique. Perplexité = {value} à l'époque {epoch}.

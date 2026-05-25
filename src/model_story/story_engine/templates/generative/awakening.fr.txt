@@ -1,0 +1,2 @@
+Le modèle génératif crée ses premières images à l'époque {epoch}. FID : {value} — la créativité commence.
+Les premiers échantillons génératifs émergent du bruit. FID = {value} à l'époque {epoch}.

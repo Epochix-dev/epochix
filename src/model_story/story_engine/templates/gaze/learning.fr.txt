@@ -1,0 +1,3 @@
+L'erreur de regard descend à {value}°. À l'époque {epoch}, le modèle apprend l'orientation oculaire.
+MAE regard = {value}° — le suivi se précise. Le modèle apprend les angles subtils.
+À l'époque {epoch}, MAE oculaire {value}°. La prédiction de direction du regard s'améliore.

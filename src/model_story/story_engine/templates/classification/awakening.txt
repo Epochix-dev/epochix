@@ -1,0 +1,4 @@
+The model stirs to life at epoch {epoch}. Accuracy is {value_pct} — the journey of a thousand epochs begins with a single gradient.
+First patterns emerge from the noise. At {value_pct} accuracy, the model is learning to see.
+Epoch {epoch}: neurons fire for the first time. The baseline is set at {value_pct} accuracy — only one direction from here.
+The model awakens, uncertain but ready. Accuracy {value_pct}. Every weight is an open question.

@@ -1,0 +1,4 @@
+Clinical precision at MAE {value}°. Epoch {epoch} — ready for gaze-contingent applications.
+The last half-degree is won by careful attention. MAE {value}°.
+Epoch {epoch}: robust across head poses and distances. MAE {value}°.
+Exceptional gaze estimation. MAE {value}° at epoch {epoch}.

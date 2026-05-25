@@ -1,0 +1,4 @@
+Objects snap into focus. mAP50 {value_pct} at epoch {epoch} — the model understands what it seeks.
+Class boundaries sharpen. mAP50 {value_pct}. The model distinguishes car from bicycle, cat from dog.
+Epoch {epoch}: NMS clears the clutter. mAP50 {value_pct} — clean detections emerge.
+The model reads the scene. mAP50 {value_pct}. Confidence scores grow meaningful.

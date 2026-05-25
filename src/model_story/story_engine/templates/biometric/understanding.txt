@@ -1,0 +1,4 @@
+Identity representations stabilise. EER {value_pct} at epoch {epoch} — the model knows a face.
+The embedding space separates identity clusters cleanly. EER {value_pct}.
+Epoch {epoch}: the model distinguishes similar individuals by context. EER {value_pct}.
+Feature distances carry meaning. EER {value_pct}. The model reads identity.

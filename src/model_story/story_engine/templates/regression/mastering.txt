@@ -1,0 +1,4 @@
+Tight predictions at MAE {value}. Epoch {epoch} — the regression model operates with precision.
+Outliers shrink. MAE {value}. The model handles edge cases with grace.
+Epoch {epoch}: the prediction surface matches the target manifold. MAE {value}.
+Near-perfect approximation. MAE {value}, delta {delta}.

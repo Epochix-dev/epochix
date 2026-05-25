@@ -1,0 +1,4 @@
+Final calibration at EER {value_pct}. Epoch {epoch} — the identity model is ready for the field.
+Last decimal points of separation. EER {value_pct}. The model operates near theoretical limits.
+Epoch {epoch}: threshold calibrated, confidence high. EER {value_pct}.
+Exceptional identity verification. EER {value_pct} at epoch {epoch}.

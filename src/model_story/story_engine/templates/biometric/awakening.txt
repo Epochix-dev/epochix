@@ -1,0 +1,4 @@
+The identity model is blind at epoch {epoch}. EER {value_pct} — genuine and impostor are indistinguishable.
+All faces look alike. EER {value_pct} at epoch {epoch}. The model has yet to learn identity.
+Epoch {epoch}: feature space is undifferentiated. EER {value_pct}. The journey to recognition begins.
+The model sees faces but not people. EER {value_pct}. Random is the baseline.

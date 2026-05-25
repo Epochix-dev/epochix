@@ -1,0 +1,4 @@
+Error falls steadily. MAE {value} at epoch {epoch} — the regression surface bends toward truth.
+Predictions begin to track the target. MAE {value}, delta {delta}.
+At epoch {epoch}, the model finds coarse structure. MAE {value} and falling.
+The curve of error tilts downward. MAE {value}. Momentum builds.

@@ -1,0 +1,2 @@
+Polissage final. FID = {value} — images génératives de très haute qualité.
+Époque {epoch} : FID {value}. Chaque epoch affine légèrement la qualité visuelle.

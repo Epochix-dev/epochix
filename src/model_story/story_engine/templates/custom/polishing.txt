@@ -1,0 +1,3 @@
+Final refinements. Metric {value} at epoch {epoch} — the model is ready.
+Last improvements are incremental. {value}. Excellence within reach.
+Epoch {epoch}: the model is polished and ready for deployment. {value}.

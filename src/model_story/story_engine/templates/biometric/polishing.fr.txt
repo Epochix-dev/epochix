@@ -1,0 +1,2 @@
+Polissage final. EER = {value_pct} — haute précision d'identification atteinte.
+Époque {epoch} : EER {value_pct}. Optimisations mineures mais importantes en précision biométrique.

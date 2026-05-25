@@ -1,0 +1,2 @@
+FID = {value} — le modèle génératif maîtrise sa tâche. Images très réalistes.
+À l'époque {epoch}, FID {value}. La compétence générative culmine.

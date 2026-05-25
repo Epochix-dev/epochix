@@ -1,0 +1,2 @@
+Polissage final. mAP50 {value_pct} — le modèle de détection atteint son apogée.
+Époque {epoch} : mAP50 {value_pct}. Chaque ajustement affine la précision de détection.

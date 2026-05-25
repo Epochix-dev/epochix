@@ -1,0 +1,4 @@
+The generator produces noise. FID {value} at epoch {epoch} — output and reality share nothing yet.
+Epoch {epoch}: samples are blobs of colour. FID {value}. The discriminator wins every round.
+Random textures emerge from the latent space. FID {value}. The model has not yet learned to imagine.
+Epoch {epoch}: the generator guesses the distribution. FID {value}. The journey begins.

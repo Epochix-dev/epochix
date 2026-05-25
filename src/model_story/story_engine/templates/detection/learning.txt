@@ -1,0 +1,4 @@
+Boxes tighten around objects. mAP50 reaches {value_pct} at epoch {epoch}. The detector is learning to see.
+Recall climbs as anchors find their footing. mAP50 {value_pct}. The model learns object shape.
+At epoch {epoch}, the detector discovers scale. mAP50 {value_pct}, delta {delta}.
+Precision and recall dance toward balance. mAP50 {value_pct} and rising.

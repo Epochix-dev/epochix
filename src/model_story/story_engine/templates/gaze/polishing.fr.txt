@@ -1,0 +1,2 @@
+Polissage final. MAE = {value}° — suivi du regard très précis atteint.
+Époque {epoch} : MAE regard {value}°. Chaque epoch affine légèrement la précision du suivi oculaire.

@@ -1,0 +1,2 @@
+Le modèle fait ses premières prédictions à l'époque {epoch}. MAE : {value} — l'erreur commence à baisser.
+La régression s'éveille. MAE = {value} à l'époque {epoch}. Le modèle apprend les relations entre données.

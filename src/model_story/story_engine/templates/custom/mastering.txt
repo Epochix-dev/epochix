@@ -1,0 +1,3 @@
+Strong performance at {value}. Epoch {epoch} — the model has mastered its task.
+The model operates with precision. {value}, delta {delta}.
+Epoch {epoch}: near-optimal performance. Metric {value}.

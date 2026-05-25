@@ -1,0 +1,4 @@
+Domain-specific features emerge. FID {value} at epoch {epoch} — outputs are recognisably on-task.
+The generator captures object-level structure. FID {value}.
+Epoch {epoch}: samples pass a casual inspection. FID {value}.
+The model has learned what things look like. FID {value}, delta {delta}.

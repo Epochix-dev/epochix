@@ -1,0 +1,4 @@
+Fluent predictions at perplexity {value}. Epoch {epoch} — the model generates coherent text.
+Rare words become tractable. Perplexity {value}. The model handles the long tail.
+Epoch {epoch}: discourse structure is captured. Perplexity {value}.
+Near-human fluency approaches. Perplexity {value}, delta {delta}.

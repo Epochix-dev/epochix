@@ -1,0 +1,4 @@
+Strong identity separation. EER {value_pct} at epoch {epoch} — near publication-ready performance.
+The model handles pose, illumination, and ageing variation. EER {value_pct}.
+Epoch {epoch}: robust verification under challenging conditions. EER {value_pct}.
+Impostor rejection is reliable. EER {value_pct}, delta {delta}.

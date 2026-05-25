@@ -1,0 +1,4 @@
+The model guesses blindly. MAE {value} at epoch {epoch} — the distance between prediction and truth is vast.
+Epoch {epoch}: error is high at MAE {value}. The regression surface is flat and uninformed.
+The model knows nothing yet. MAE {value}. The gradient will guide it from here.
+Random predictions define epoch {epoch}. MAE {value}. The model has nowhere to go but down.

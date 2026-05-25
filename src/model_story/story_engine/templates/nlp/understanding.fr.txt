@@ -1,0 +1,2 @@
+À l'époque {epoch}, perplexité = {value}. Le modèle comprend le sens et le contexte.
+Perplexité {value} — le modèle linguistique atteint une compréhension plus profonde.

@@ -1,0 +1,2 @@
+Performance proche de l'expert à {value_pct}. Époque {epoch}.
+Le modèle a intériorisé la tâche. Précision {value_pct}.

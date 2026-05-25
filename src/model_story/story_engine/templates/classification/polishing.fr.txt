@@ -1,0 +1,2 @@
+Peaufinage à {value_pct}. Les derniers réglages portent le modèle à son sommet. Époque {epoch}.
+Excellence atteinte. Précision {value_pct} — un modèle prêt pour le monde.

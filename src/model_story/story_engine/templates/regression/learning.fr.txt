@@ -1,0 +1,3 @@
+L'erreur MAE descend à {value}. À l'époque {epoch}, le modèle apprend les relations cachées.
+MAE = {value} — l'erreur est en baisse. Le modèle découvre les motifs non-linéaires.
+À l'époque {epoch}, MAE {value}. Amélioration continue de la précision des prédictions.
