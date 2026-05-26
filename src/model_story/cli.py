@@ -99,6 +99,24 @@ def cmd_run(  # noqa: C901
     tail: Path | None = typer.Option(
         None, "--tail", help="Tail a file in live mode.", show_default=False
     ),
+    ssh: str | None = typer.Option(
+        None, "--ssh",
+        help="Tail a remote log over SSH: '[user@]host:/path/to/log'.",
+        show_default=False,
+    ),
+    ssh_port: int | None = typer.Option(
+        None, "--ssh-port", help="SSH port (default uses ~/.ssh/config).",
+        show_default=False,
+    ),
+    ssh_identity: str | None = typer.Option(
+        None, "--ssh-identity", help="Path to SSH private key.",
+        show_default=False,
+    ),
+    ssh_opt: list[str] = typer.Option(
+        [], "--ssh-opt",
+        help="Extra ssh -o option(s); repeatable, e.g. --ssh-opt ProxyJump=bastion.",
+        show_default=False,
+    ),
     port: int = typer.Option(7860, "--port", "-p", help="Server port."),
     task: str | None = typer.Option(
         None, "--task", "-t", help="Force task type (e.g. biometric).", show_default=False
@@ -120,8 +138,23 @@ def cmd_run(  # noqa: C901
 
     effective_task = _task_from_str(task)
 
+    ssh_target_host: str | None = None
+    ssh_remote_path: str | None = None
+    if ssh is not None:
+        from model_story.ingester.ssh import parse_ssh_target
+
+        try:
+            ssh_target_host, ssh_remote_path = parse_ssh_target(ssh)
+        except ValueError as exc:
+            typer.echo(f"Error: --ssh {exc}", err=True)
+            raise typer.Exit(2) from exc
+
     # Determine ingestion source
-    if log_file is not None:
+    if ssh is not None:
+        source = "ssh"
+        source_path = ssh_remote_path
+        live = True
+    elif log_file is not None:
         source = "file"          # batch: read once and stop
         source_path = str(log_file)
         if not log_file.exists():
@@ -136,7 +169,8 @@ def cmd_run(  # noqa: C901
         source_path = None
     else:
         typer.echo(
-            "Provide a log file, --live, or pipe stdin.  Use --help for usage.", err=True
+            "Provide a log file, --live, --tail, --ssh, or pipe stdin. "
+            "Use --help for usage.", err=True
         )
         raise typer.Exit(1)
 
@@ -154,6 +188,10 @@ def cmd_run(  # noqa: C901
             port=port,
             headless=headless,
             export_format=export_format,
+            ssh_target=ssh_target_host,
+            ssh_port=ssh_port,
+            ssh_identity=ssh_identity,
+            ssh_opts=tuple(ssh_opt),
         )
     )
 
@@ -169,6 +207,10 @@ async def _run_batch_or_live(
     port: int,
     headless: bool,
     export_format: str | None,
+    ssh_target: str | None = None,
+    ssh_port: int | None = None,
+    ssh_identity: str | None = None,
+    ssh_opts: tuple[str, ...] = (),
 ) -> None:
     from model_story.ingester import make_ingester
     from model_story.pipeline import run_pipeline
@@ -189,6 +231,10 @@ async def _run_batch_or_live(
         source=source,
         run_id=run_id,
         path=source_path,
+        ssh_target=ssh_target,
+        ssh_port=ssh_port,
+        ssh_identity=ssh_identity,
+        ssh_opts=ssh_opts,
     )
 
     # Start the uvicorn server in a background task
@@ -476,6 +522,10 @@ def cmd_demo(
         log_file=Path(str(demo_path)),
         live=False,
         tail=None,
+        ssh=None,
+        ssh_port=None,
+        ssh_identity=None,
+        ssh_opt=[],
         port=port,
         task=None,
         no_llm=True,

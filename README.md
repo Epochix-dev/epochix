@@ -62,6 +62,33 @@ python train.py 2>&1 | model-story --live
 model-story training.log    # any subcommand can be omitted — it's the default
 ```
 
+### Stream a remote log over SSH
+
+Training on a GPU box / cluster node, dashboard on your laptop:
+
+```bash
+# Direct: tail any remote log into the local dashboard
+model-story --ssh kv@trainbox:/workspace/runs/train.log
+
+# With extras (jump host, custom port, key)
+model-story --ssh kv@trainbox:/workspace/train.log \
+            --ssh-port 2222 \
+            --ssh-identity ~/.ssh/id_ed25519 \
+            --ssh-opt ProxyJump=bastion.example.com
+```
+
+We spawn `ssh -o BatchMode=yes -o ServerAliveInterval=30 <host> 'tail -F …'`
+under the hood — your credentials, `~/.ssh/config`, agent and keys are
+inherited automatically. The remote path is shell-quoted before being sent so
+exotic filenames are safe. Connection drops surface as a clear error rather
+than hanging.
+
+The classic Unix pipe still works too if you prefer:
+
+```bash
+ssh trainbox 'tail -F /workspace/runs/train.log' | model-story --live
+```
+
 ### Start the local dashboard server
 
 ```bash

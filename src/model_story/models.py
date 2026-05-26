@@ -11,7 +11,7 @@ from model_story.enums import Grade, Phase, TaskType
 class RawLogLine(BaseModel):
     seq: int
     timestamp: datetime
-    source: Literal["stdin", "file", "sdk"]
+    source: Literal["stdin", "file", "sdk", "ssh"]
     text: str
 
 
