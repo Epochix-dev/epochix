@@ -42,6 +42,20 @@ class TestNormalize:
         assert event.value == 0.85
         assert event.run_id == "run-1"
 
+    def test_percentage_accuracy_normalised_to_fraction(self) -> None:
+        # Logged as a percentage (87.6) → stored as a [0,1] fraction.
+        event = normalize(self._raw("accuracy", 87.6), run_id="run-1")
+        assert event.value == pytest.approx(0.876)
+
+    def test_fractional_accuracy_left_unchanged(self) -> None:
+        event = normalize(self._raw("accuracy", 0.876), run_id="run-1")
+        assert event.value == pytest.approx(0.876)
+
+    def test_non_ratio_metric_not_rescaled(self) -> None:
+        # Loss is unitless and may legitimately exceed 1 — must not be divided.
+        event = normalize(self._raw("loss", 2.5), run_id="run-1")
+        assert event.value == pytest.approx(2.5)
+
     def test_raises_on_non_numeric(self) -> None:
         raw = RawMetric(seq=1, key="status", value="running", parser_name="test", confidence=0.5)
         with pytest.raises(ValueError):
