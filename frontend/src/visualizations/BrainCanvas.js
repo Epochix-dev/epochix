@@ -213,11 +213,16 @@ export class BrainCanvas {
       this._hoverNode = best;
       const paramStr = bestZone.paramsStr
         ?? (bestZone.params ? _fmtParams(bestZone.params) : null);
+      // Activity is a layer-level reading of the real training signal (val
+      // accuracy), not per-node noise — so every neuron in a layer reads the
+      // same, and the number reflects actual data rather than animation.
+      const sig = this._valAcc;
+      const activity = sig >= 0.66 ? 'High' : sig >= 0.33 ? 'Medium' : 'Low';
       this._tooltip.innerHTML = `
         <div class="bt-title">${_escTip(bestZone.layerType ?? bestZone.techLabel)}</div>
         <div class="bt-sub">${_escTip(bestZone.plainLabel)}</div>
-        <div class="bt-row"><span>activation</span><b>${Math.round(best.activation * 100)}%</b></div>
-        ${paramStr ? `<div class="bt-row"><span>params</span><b>${_escTip(paramStr)}</b></div>` : ''}`;
+        ${paramStr ? `<div class="bt-row"><span>params</span><b>${_escTip(paramStr)}</b></div>` : ''}
+        <div class="bt-row"><span>activity</span><b>${activity}</b></div>`;
       this._tooltip.style.display = 'block';
       this._tooltip.style.left = `${Math.min(px + 14, this._cw - 130)}px`;
       this._tooltip.style.top  = `${Math.max(4, py - 10)}px`;
