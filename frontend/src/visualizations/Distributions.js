@@ -43,12 +43,13 @@ export class Distributions {
 
     const params = _paramSection(arch);
     const spread = _spreadSection(metrics);
-    if (!params && !spread) {
+    const hist = _histogramSection(metrics);
+    if (!params && !spread && !hist) {
       this._el.innerHTML = `<div class="dist-empty">Distributions appear once the model
         architecture or metrics are available.</div>`;
       return;
     }
-    this._el.innerHTML = `<div class="dist-grid">${params}${spread}</div>`;
+    this._el.innerHTML = `<div class="dist-grid">${params}${spread}${hist}</div>`;
   }
 }
 
@@ -123,6 +124,58 @@ function _spreadSection(metrics) {
       </div>
       ${rows}
     </div>`;
+}
+
+// ── section: value histograms (binned distribution per metric) ──────────────
+
+function _histogramSection(metrics) {
+  const byKey = new Map();
+  for (const m of metrics) {
+    if (!Number.isFinite(m.value)) continue;
+    let arr = byKey.get(m.canonical_key);
+    if (!arr) { arr = []; byKey.set(m.canonical_key, arr); }
+    arr.push(m.value);
+  }
+  if (byKey.size === 0) return '';
+
+  const rows = [...byKey.entries()].map(([key, vals]) => {
+    const col = LOWER_IS_BETTER.has(key) ? '#fb923c' : '#7c6dff';
+    return `
+      <div class="dist-hrow">
+        <span class="dist-row-label" title="${_esc(key)}">${_esc(metricLabel(key))}</span>
+        ${_histogram(vals, col)}
+        <span class="dist-row-val">n=${vals.length}</span>
+      </div>`;
+  }).join('');
+
+  return `
+    <div class="dist-card">
+      <div class="dist-head">Value histograms
+        <span class="dist-sub">how often each value occurred over training</span>
+      </div>
+      ${rows}
+    </div>`;
+}
+
+/** Binned histogram (SVG bars) of a value series. */
+function _histogram(values, color) {
+  const BINS = 12;
+  const min = Math.min(...values), max = Math.max(...values);
+  const span = max - min || 1;
+  const counts = new Array(BINS).fill(0);
+  for (const v of values) {
+    const b = Math.min(BINS - 1, Math.floor(((v - min) / span) * BINS));
+    counts[b] += 1;
+  }
+  const maxC = Math.max(...counts, 1);
+  const bw = 100 / BINS;
+  const bars = counts.map((c, i) => {
+    const h = (c / maxC) * 22;
+    return `<rect x="${(i * bw + 0.6).toFixed(2)}" y="${(24 - h).toFixed(2)}"
+      width="${(bw - 1.2).toFixed(2)}" height="${h.toFixed(2)}" rx="0.6"
+      fill="${color}" opacity="${c ? 0.85 : 0.15}"></rect>`;
+  }).join('');
+  return `<svg class="dist-hist" viewBox="0 0 100 24" preserveAspectRatio="none">${bars}</svg>`;
 }
 
 // ── helpers ─────────────────────────────────────────────────────────────────

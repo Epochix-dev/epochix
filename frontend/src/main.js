@@ -168,7 +168,7 @@ async function main() {
   // shifts offsets, so the browser's initial hash scroll undershoots).
   if (location.hash) {
     const target = document.getElementById(location.hash.slice(1));
-    if (target) setTimeout(() => target.scrollIntoView({ block: 'start' }), 500);
+    if (target) setTimeout(() => target.scrollIntoView({ block: 'start' }), 600);
   }
 
   // ── header controls ────────────────────────────────────────────────────────
