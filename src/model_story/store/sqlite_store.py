@@ -204,16 +204,32 @@ class RunStore:
         final_grade: Grade | None,
         story_summary: str | None,
         finished_at: datetime | None = None,
+        task_type: TaskType | None = None,
+        parser_used: str | None = None,
+        primary_metric: str | None = None,
     ) -> None:
+        """Mark a run finished and persist its final summary fields.
+
+        Optional ``task_type`` / ``parser_used`` / ``primary_metric`` overrides
+        let the pipeline write back values discovered DURING the run (the
+        engine's auto-detected task type, the parser that actually claimed
+        the log, the engine's effective primary metric) — without these the
+        DB row would keep the placeholder values set at run creation.
+        """
+        values: dict[str, Any] = {
+            "finished_at": finished_at or datetime.now(tz=timezone.utc),
+            "final_grade": final_grade.value if final_grade else None,
+            "story_summary": story_summary,
+        }
+        if task_type is not None:
+            values["task_type"] = task_type.value
+        if parser_used is not None:
+            values["parser_used"] = parser_used
+        if primary_metric is not None:
+            values["primary_metric"] = primary_metric
         with self._engine.begin() as conn:
             conn.execute(
-                runs_table.update()
-                .where(runs_table.c.id == run_id)
-                .values(
-                    finished_at=finished_at or datetime.now(tz=timezone.utc),
-                    final_grade=final_grade.value if final_grade else None,
-                    story_summary=story_summary,
-                )
+                runs_table.update().where(runs_table.c.id == run_id).values(**values)
             )
 
     def get_run(self, run_id: str) -> Run | None:

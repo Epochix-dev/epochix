@@ -293,10 +293,16 @@ async def run_pipeline(
     final_grade = last_frame.grade if last_frame else None
     story_summary = last_frame.narrative if last_frame else None
 
+    # Persist the auto-detected values the engine / parser locked in during
+    # the run — they were placeholders at run creation time and must be
+    # written back so the dashboard, exports and listings all show the truth.
     store.finish_run(
         run_id=run_id,
         final_grade=final_grade,
         story_summary=story_summary,
+        task_type=engine.task,
+        parser_used=parser.name if parser is not None else None,
+        primary_metric=engine._effective_primary_key() if engine.task else None,
     )
 
     # Signal end-of-run to all live subscribers
