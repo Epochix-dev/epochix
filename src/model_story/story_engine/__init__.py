@@ -5,10 +5,14 @@ from dataclasses import dataclass, field
 from model_story.enums import Grade, Phase, TaskType
 from model_story.models import MetaphorCard, MetricEvent, Milestone, StoryFrame
 from model_story.story_engine.config_loader import GradeConfig
-from model_story.story_engine.grade import compute_grade
+from model_story.story_engine.grade import compute_grade, is_lower_better
 from model_story.story_engine.milestones import MilestoneTracker
 from model_story.story_engine.narrator import narrate
-from model_story.story_engine.phases import compute_phase, estimate_progress
+from model_story.story_engine.phases import (
+    compute_phase,
+    estimate_progress,
+    relative_improvement,
+)
 from model_story.story_engine.task_classifier import classify_task, refine_gaze
 from model_story.story_engine.warnings import WarningDetector
 
@@ -37,7 +41,6 @@ class StoryEngine:
     _events_count: int = field(default=0, init=False)
     _task_locked: bool = field(default=False, init=False)
     _baseline: float | None = field(default=None, init=False)
-    _target: float = field(default=1.0, init=False)
     _prev_frame: StoryFrame | None = field(default=None, init=False)
     _prev_primary: float | None = field(default=None, init=False)
     _milestones: MilestoneTracker | None = field(default=None, init=False)
@@ -95,12 +98,23 @@ class StoryEngine:
             step=event.step,
         )
 
+        lower_better = is_lower_better(self._effective_task(), self.grade_config)
+
         phase = compute_phase(
             progress=progress,
             primary_value=primary_value,
             baseline=self._baseline,
-            target=self._target,
+            lower_better=lower_better,
         )
+
+        # Honest "advancement" 0–1: the clock when total length is known, else
+        # the fraction of achievable metric improvement realised so far. Used
+        # for both the progress bar and the maturity signal (NOT a statistical
+        # prediction confidence).
+        rel = relative_improvement(
+            primary_value, self._baseline, lower_better=lower_better,
+        )
+        advancement = progress if progress is not None else (rel if rel is not None else 0.0)
 
         grade = compute_grade(
             task=self._effective_task(),
@@ -146,11 +160,14 @@ class StoryEngine:
             run_id=self.run_id,
             seq=event.seq,
             epoch=event.epoch,
-            progress=progress,
+            progress=advancement,
             phase=phase,
             grade=grade,
             primary_metric_value=primary_value,
-            confidence=min(progress * 2, 1.0),  # confidence grows with training
+            # "confidence" is the run's *advancement/maturity* (0–1), not a
+            # prediction-confidence estimate — kept under this field name for
+            # storage/back-compat; UI labels it "Maturity".
+            confidence=advancement,
             narrative=narrative,
             metaphor_cards=self._build_metaphor_cards(phase, grade),
             skill_dimensions=skill_dims,

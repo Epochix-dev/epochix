@@ -109,6 +109,18 @@ _LABEL_ALIASES: dict[str, str] = {
 }
 
 
+def is_lower_better(task: TaskType, config: GradeConfig | None = None) -> bool:
+    """Whether *task*'s primary metric improves by decreasing (loss/MAE/EER/…).
+
+    A ``GradeConfig`` override takes precedence over the built-in default set.
+    """
+    if config is not None:
+        override = config.get_lower_better(task)
+        if override is not None:
+            return override
+    return task in _LOWER_BETTER
+
+
 def _dict_to_thresholds(
     d: dict[str, float], *, lower_better: bool = False
 ) -> list[tuple[Grade, float]]:

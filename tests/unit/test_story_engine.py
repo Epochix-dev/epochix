@@ -31,19 +31,28 @@ def _event(
 
 class TestPhaseDetector:
     def test_awakening_at_start(self) -> None:
-        assert compute_phase(0.05, 0.1, 0.1, 1.0) == Phase.AWAKENING
+        assert compute_phase(0.05, 0.1, 0.1) == Phase.AWAKENING
 
     def test_learning_early(self) -> None:
-        assert compute_phase(0.20, 0.3, 0.0, 1.0) == Phase.LEARNING
+        assert compute_phase(0.20, 0.3, 0.0) == Phase.LEARNING
 
     def test_understanding_midway(self) -> None:
-        assert compute_phase(0.55, 0.80, 0.0, 1.0) == Phase.UNDERSTANDING
+        assert compute_phase(0.55, 0.80, 0.0) == Phase.UNDERSTANDING
 
     def test_mastering_late(self) -> None:
-        assert compute_phase(0.85, 0.92, 0.0, 1.0) == Phase.MASTERING
+        assert compute_phase(0.85, 0.92, 0.0) == Phase.MASTERING
 
     def test_polishing_at_end(self) -> None:
-        assert compute_phase(0.98, 0.98, 0.0, 1.0) == Phase.POLISHING
+        assert compute_phase(0.98, 0.98, 0.0) == Phase.POLISHING
+
+    def test_lower_better_advances_on_loss_drop(self) -> None:
+        # A loss falling from 2.0 → 0.2 with unknown total length should NOT be
+        # stuck in AWAKENING — relative improvement drives advancement.
+        assert compute_phase(None, 0.2, 2.0, lower_better=True) != Phase.AWAKENING
+
+    def test_lower_better_early_is_awakening(self) -> None:
+        # Barely any improvement yet → still awakening.
+        assert compute_phase(None, 1.95, 2.0, lower_better=True) == Phase.AWAKENING
 
 
 class TestGrader:
