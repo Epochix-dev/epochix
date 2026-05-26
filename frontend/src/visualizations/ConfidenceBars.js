@@ -1,34 +1,24 @@
 /**
- * ConfidenceBars.js — horizontal metric value bars.
+ * ConfidenceBars.js — "Live Metrics" as scalar cards.
  *
- * Shows the most recent values for each canonical metric key.
- * Bars grow/shrink with CSS transitions.
+ * One card per metric (TensorBoard scalar-card style): big latest value, a ↑/↓
+ * delta vs the previous epoch coloured by whether it improved, and a gradient
+ * sparkline of the whole trend.
  */
-
-/** Keys where lower is better (losses, error rates) */
-const LOWER_IS_BETTER = new Set([
-  'train_loss', 'val_loss', 'loss', 'MAE', 'RMSE',
-  'EER', 'epoch_time', 'eta', 'perplexity',
-]);
+import { emaSmooth, LOWER_IS_BETTER, metricLabel, seriesFromMetrics } from '../viz-util.js';
 
 export class ConfidenceBars {
   /** @param {HTMLElement} container */
   constructor(container) {
     this._el = container;
     this._unsub = null;
-    this._rows = {};
+    this._sig = '';
   }
 
   /** @param {import('../store.js').AppState} store */
   mount(store) {
-    this._unsub = store.subscribe((s) => {
-      const f = s.currentFrame;
-      if (!f) return;
-
-      // Gather metric values from the frame
-      const vals = _extractValues(s);
-      this._render(vals);
-    });
+    this._render(store.get());
+    this._unsub = store.subscribe((s) => this._render(s));
   }
 
   unmount() {
@@ -37,87 +27,95 @@ export class ConfidenceBars {
 
   // ── internal ──────────────────────────────────────────────────────────────
 
-  /** @param {Record<string, number>} vals */
-  _render(vals) {
-    const keys = Object.keys(vals).slice(0, 8); // max 8 rows
+  _render(s) {
+    const keys = _keys(s);
     if (keys.length === 0) return;
 
-    // Add new rows
-    for (const key of keys) {
-      if (!this._rows[key]) {
-        const row = document.createElement('div');
-        row.className = 'conf-bar-row';
-        row.innerHTML = `
-          <span class="conf-bar-label" title="${key}">${_shortKey(key)}</span>
-          <div class="conf-bar-track">
-            <div class="conf-bar-fill" style="width:0%"></div>
-          </div>
-          <span class="conf-bar-value">—</span>
-        `;
-        this._el.appendChild(row);
-        this._rows[key] = {
-          fill:  row.querySelector('.conf-bar-fill'),
-          value: row.querySelector('.conf-bar-value'),
-        };
-      }
+    // Build per-metric series.
+    const cards = keys.map((key) => {
+      const series = _seriesFor(s, key);
+      const ys = series.map((p) => p.y);
+      const latest = ys[ys.length - 1];
+      const prev = ys.length > 1 ? ys[ys.length - 2] : latest;
+      return { key, ys, latest, delta: latest - prev };
+    }).filter((c) => Number.isFinite(c.latest));
 
-      const v    = vals[key];
-      const norm = _normalize(key, v, vals);
-      const pct  = (norm * 100).toFixed(1);
-      const col  = LOWER_IS_BETTER.has(key)
-        ? `hsl(${200 + norm * 20}, 70%, 55%)`
-        : `hsl(${140 + (1 - norm) * 80}, 70%, 55%)`;
+    const sig = cards.map((c) => `${c.key}:${c.latest}:${c.ys.length}`).join('|');
+    if (sig === this._sig) return;       // nothing changed
+    this._sig = sig;
 
-      const { fill, value } = this._rows[key];
-      fill.style.width  = `${pct}%`;
-      fill.style.background = col;
-      value.textContent = _fmt(v);
-    }
+    this._el.innerHTML = `<div class="metric-cards">${cards.map(_card).join('')}</div>`;
   }
 }
 
-/** @param {import('../store.js').AppState} s */
-function _extractValues(s) {
-  // Use latest metric_events if available; else fall back to frame skills
-  const vals = {};
+function _card(c) {
+  const lower = LOWER_IS_BETTER.has(c.key);
+  const improved = c.delta === 0 ? null : (lower ? c.delta < 0 : c.delta > 0);
+  const arrow = c.delta > 1e-9 ? '▲' : (c.delta < -1e-9 ? '▼' : '·');
+  const cls = improved == null ? 'flat' : (improved ? 'good' : 'bad');
+  const col = lower ? '#fb923c' : '#7c6dff';
+  return `
+    <div class="mc">
+      <div class="mc-top">
+        <span class="mc-name" title="${_esc(c.key)}">${_esc(metricLabel(c.key))}</span>
+        <span class="mc-delta ${cls}">${arrow} ${_fmt(Math.abs(c.delta))}</span>
+      </div>
+      <div class="mc-value">${_fmt(c.latest)}</div>
+      ${_spark(c.ys, col)}
+    </div>`;
+}
+
+/** Tiny gradient-area sparkline SVG for a value series. */
+function _spark(values, color) {
+  const v = emaSmooth(values, 0.2).filter(Number.isFinite);
+  if (v.length < 2) return '<svg class="mc-spark" viewBox="0 0 100 28"></svg>';
+  const min = Math.min(...v), max = Math.max(...v), span = max - min || 1;
+  const x = (i) => (i / (v.length - 1)) * 100;
+  const y = (val) => 26 - ((val - min) / span) * 24 - 1;
+  let line = '';
+  v.forEach((val, i) => { line += `${i ? 'L' : 'M'} ${x(i).toFixed(1)} ${y(val).toFixed(1)} `; });
+  const area = `${line} L 100 28 L 0 28 Z`;
+  const gid = `sp-${Math.random().toString(36).slice(2, 7)}`;
+  return `
+    <svg class="mc-spark" viewBox="0 0 100 28" preserveAspectRatio="none">
+      <defs><linearGradient id="${gid}" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="${color}" stop-opacity="0.45"/>
+        <stop offset="100%" stop-color="${color}" stop-opacity="0"/>
+      </linearGradient></defs>
+      <path d="${area}" fill="url(#${gid})"/>
+      <path d="${line}" fill="none" stroke="${color}" stroke-width="1.6"
+            stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/>
+    </svg>`;
+}
+
+// ── data ────────────────────────────────────────────────────────────────────
+
+function _keys(s) {
   const metrics = s.metrics ?? [];
   if (metrics.length > 0) {
-    // latest value per key
-    for (const ev of metrics) {
-      vals[ev.canonical_key] = ev.value;
-    }
-  } else if (s.currentFrame?.skill_dimensions) {
-    Object.assign(vals, s.currentFrame.skill_dimensions);
-    vals['confidence'] = s.currentFrame.confidence ?? 0;
+    const seen = [];
+    for (const m of metrics) if (!seen.includes(m.canonical_key)) seen.push(m.canonical_key);
+    return seen.slice(0, 8);
   }
-  return vals;
+  // Fallback to frame skill_dimensions when no metric events exist.
+  const sk = s.currentFrame?.skill_dimensions;
+  return sk ? Object.keys(sk).slice(0, 8) : [];
 }
 
-function _normalize(key, value, allVals) {
-  if (LOWER_IS_BETTER.has(key)) {
-    // Normalise: assume 0 is best, current value is worst seen
-    const max = Math.max(...Object.values(allVals).filter(Number.isFinite), 1);
-    return 1 - Math.min(1, value / max);
-  }
-  return Math.max(0, Math.min(1, value));
-}
-
-function _shortKey(key) {
-  const map = {
-    train_loss: 'train loss', val_loss: 'val loss',
-    val_accuracy: 'val acc', accuracy: 'accuracy',
-    mAP50: 'mAP50', mAP: 'mAP',
-    MAE: 'MAE', RMSE: 'RMSE',
-    EER: 'EER', perplexity: 'perplexity',
-    bleu: 'BLEU', f1: 'F1',
-    precision: 'precision', recall: 'recall',
-  };
-  return map[key] ?? key.replace(/_/g, ' ').slice(0, 12);
+function _seriesFor(s, key) {
+  const fromMetrics = seriesFromMetrics(s.metrics ?? [], key);
+  if (fromMetrics.length) return fromMetrics;
+  // Fallback: single point from skill_dimensions.
+  const val = s.currentFrame?.skill_dimensions?.[key];
+  return Number.isFinite(val) ? [{ x: 0, y: val }] : [];
 }
 
 function _fmt(v) {
   if (!Number.isFinite(v)) return '—';
   if (Math.abs(v) >= 100) return v.toFixed(1);
-  if (Math.abs(v) >= 1)   return v.toFixed(3);
+  if (Math.abs(v) >= 1) return v.toFixed(3);
   return v.toFixed(4);
+}
+function _esc(s) {
+  return String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
