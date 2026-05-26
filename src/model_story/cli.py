@@ -313,6 +313,19 @@ def cmd_serve(
 
     settings = get_settings()
     _app = create_app(settings=settings)
+
+    # Loud warning when binding non-loopback with no auth token. The server
+    # treats loopback clients as trusted for writes; binding publicly without
+    # a token would otherwise let anyone reach the same machine create or
+    # delete runs.
+    if host not in {"127.0.0.1", "::1", "localhost"} and not settings.auth_token:
+        typer.secho(
+            f"⚠  Binding {host}:{port} without MODEL_STORY_AUTH_TOKEN — the "
+            "server is exposed on the network with no authentication. "
+            "Set MODEL_STORY_AUTH_TOKEN before publishing this endpoint.",
+            fg=typer.colors.YELLOW, err=True,
+        )
+
     typer.echo(f"Starting model-story server on http://{host}:{port}")
     uvicorn.run(_app, host=host, port=port, log_level=log_level.lower())
 

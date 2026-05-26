@@ -5,10 +5,10 @@ from datetime import datetime, timezone
 from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from model_story.models import MetricEvent, Run, StoryFrame
-from model_story.server.auth import require_auth
+from model_story.server.auth import require_auth, require_destructive
 from model_story.store.sqlite_store import RunStore
 
 router = APIRouter(prefix="/api", tags=["runs"])
@@ -37,27 +37,31 @@ class RunListResponse(BaseModel):
 
 
 class EventPushRequest(BaseModel):
-    """SDK push payload: a single metric event (pre-normalised)."""
+    """SDK push payload: a single metric event (pre-normalised).
+
+    String fields are length-capped so a misconfigured client (or a hostile
+    one on an open instance) can't bloat the DB with arbitrary blobs.
+    """
 
     seq: int
     timestamp: datetime | None = None
     epoch: float | None = None
     step: int | None = None
-    canonical_key: str
-    raw_key: str
+    canonical_key: str = Field(max_length=128)
+    raw_key: str = Field(max_length=256)
     value: float
-    unit: str | None = None
+    unit: str | None = Field(default=None, max_length=32)
 
 
 class RunCreateRequest(BaseModel):
     """Create a new run and register a live StoryEngine for it."""
 
-    run_id: str | None = None
-    name: str | None = None
-    task: str | None = None
-    primary_metric: str | None = None
-    total_epochs: int | None = None
-    locale: str = "en"
+    run_id: str | None = Field(default=None, max_length=64)
+    name: str | None = Field(default=None, max_length=256)
+    task: str | None = Field(default=None, max_length=32)
+    primary_metric: str | None = Field(default=None, max_length=64)
+    total_epochs: int | None = Field(default=None, ge=0, le=10_000_000)
+    locale: str = Field(default="en", max_length=8)
 
 
 class DeleteResponse(BaseModel):
@@ -84,7 +88,7 @@ class CompareResponse(BaseModel):
 
 
 @router.post("/runs", response_model=Run, status_code=status.HTTP_201_CREATED,
-             dependencies=[Depends(require_auth)])
+             dependencies=[Depends(require_destructive)])
 async def create_run(
     body: RunCreateRequest,
     request: Request,
@@ -180,7 +184,7 @@ async def get_run(
 @router.delete(
     "/runs/{run_id}",
     response_model=DeleteResponse,
-    dependencies=[Depends(require_auth)],
+    dependencies=[Depends(require_destructive)],
 )
 async def delete_run(
     run_id: str,
@@ -197,7 +201,7 @@ async def delete_run(
 @router.post(
     "/runs/{run_id}/event",
     status_code=status.HTTP_202_ACCEPTED,
-    dependencies=[Depends(require_auth)],
+    dependencies=[Depends(require_destructive)],
 )
 async def push_event(
     run_id: str,

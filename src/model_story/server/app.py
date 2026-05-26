@@ -54,33 +54,42 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
         settings = get_settings()
 
+    # API docs reveal every route (incl. delete / event push). Hide them by
+    # default; expose only when an auth_token is configured (the operator has
+    # opted in) or MODEL_STORY_EXPOSE_DOCS is set explicitly.
+    _docs_visible = settings.expose_docs or bool(settings.auth_token)
+
     app = FastAPI(
         title="model-story",
         description="Visual storytelling for deep learning training runs.",
         version="0.1.0",
         lifespan=_lifespan,
-        docs_url="/api/docs",
-        redoc_url="/api/redoc",
-        openapi_url="/api/openapi.json",
+        docs_url="/api/docs" if _docs_visible else None,
+        redoc_url="/api/redoc" if _docs_visible else None,
+        openapi_url="/api/openapi.json" if _docs_visible else None,
     )
 
     # Store settings so lifespan can read them
     app.state.settings = settings
 
     # --- CORS -----------------------------------------------------------
-    # Local-first default is wide-open ("*"). Credentials are only enabled when
-    # explicit origins are configured: the wildcard-origin + allow-credentials
-    # combination is rejected by browsers and is a security anti-pattern, so we
-    # never ship it. Set MODEL_STORY_CORS_ORIGINS to lock down a hosted deploy.
-    _origins = [o.strip() for o in settings.cors_origins.split(",") if o.strip()] or ["*"]
-    _wildcard = _origins == ["*"]
-    app.add_middleware(
-        CORSMiddleware,
-        allow_origins=_origins,
-        allow_credentials=not _wildcard,
-        allow_methods=["*"],
-        allow_headers=["*"],
-    )
+    # Default is *no* CORS middleware → same-origin only (the browser's SOP
+    # protects the local dashboard from drive-by exfiltration by pages on
+    # other sites). Cross-origin access is opt-in via MODEL_STORY_CORS_ORIGINS,
+    # which accepts a comma-separated list (or the explicit "*" wildcard).
+    # Credentialed CORS (cookies) is only enabled with explicit origins —
+    # wildcard-origin + allow-credentials is rejected by browsers anyway and
+    # is a known foot-gun.
+    _origins = [o.strip() for o in settings.cors_origins.split(",") if o.strip()]
+    if _origins:
+        _wildcard = _origins == ["*"]
+        app.add_middleware(
+            CORSMiddleware,
+            allow_origins=_origins,
+            allow_credentials=not _wildcard,
+            allow_methods=["*"],
+            allow_headers=["*"],
+        )
 
     # --- API routers ----------------------------------------------------
     from model_story.server.routes_export import router as export_router

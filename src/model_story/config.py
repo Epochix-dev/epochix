@@ -37,10 +37,15 @@ class Settings(BaseSettings):
     # Security
     auth_token: str = ""
     scrub_secrets: bool = False
-    # Comma-separated allowed CORS origins. Default "*" (local-first). Set to
-    # specific origins (e.g. "https://app.example.com") when hosting publicly so
-    # that credentialed cross-origin requests can be enabled safely.
-    cors_origins: str = "*"
+    # Comma-separated allowed CORS origins. Default empty = same-origin only
+    # (browsers' SOP keeps drive-by pages from reading /api). Set to specific
+    # origins (e.g. "https://app.example.com") for hosted deploys; the explicit
+    # wildcard "*" stays available for opt-in open APIs.
+    cors_origins: str = ""
+    # Expose Swagger UI / OpenAPI schema. Off by default to avoid revealing the
+    # full endpoint surface to unauthenticated visitors; can be turned on
+    # explicitly, and is auto-enabled when an auth_token is configured.
+    expose_docs: bool = False
 
     # Telemetry — always off by default
     telemetry: bool = False
