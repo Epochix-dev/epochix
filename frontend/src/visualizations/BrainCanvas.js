@@ -29,12 +29,18 @@
  *     bottom bars + warm particles streaming output→input. Earlier layers show
  *     weaker flow, visualising the vanishing-gradient effect.
  *
- * Training-signal encoding (all modes)
- * ──────────────────────────────────────
- *  Node brightness  → activation (driven by val_accuracy)
- *  Edge alpha       → gradient flow (driven by 1 − train_loss proxy)
- *  Particle speed   → learning progress
- *  Dead node (grey) → neurons that stopped contributing
+ * Honesty note
+ * ────────────
+ * This is an ILLUSTRATIVE schematic, not a readout of the model's actual
+ * parameters. Individual neuron positions and the per-edge signed weights are
+ * generated for the diagram (like TF-Playground's generic network) — only the
+ * AGGREGATE dynamics below are tied to real training metrics:
+ *  Overall node brightness → scaled by val_accuracy (the learned signal)
+ *  Particle speed/spawn     → training advancement
+ *  Gradient-bar heights     → per-layer |Δmetric| proxy (vanishing-gradient story)
+ *  Overfitting halo         → real train/val gap (val_loss − train_loss)
+ * Edge colour/thickness are schematic (illustrative +/− connections), not the
+ * model's measured weights.
  */
 
 // ── zone colour palette ───────────────────────────────────────────────────────
@@ -265,9 +271,13 @@ export class BrainCanvas {
     this._targetTrainLoss = Math.max(0.05, Math.min(1, f.skill_dimensions?.Fitting ?? 0.5));
     this._progress        = Math.max(0.05, Math.min(1, f.progress ?? 0.1));
 
-    // Overfitting: confidence drops while primary metric is high
-    const conf = f.confidence ?? 1;
-    this._overfit = acc > 0.7 && conf < 0.5;
+    // Overfitting: the model fits training data well but validation lags —
+    // a REAL train/val gap from skill dimensions (Fitting≈1−train_loss,
+    // Generalisation≈1−val_loss), not a progress proxy.
+    const fit = f.skill_dimensions?.Fitting;
+    const gen = f.skill_dimensions?.Generalisation;
+    this._overfit =
+      Number.isFinite(fit) && Number.isFinite(gen) && fit > 0.5 && (fit - gen) > 0.15;
   }
 
   _resize() {

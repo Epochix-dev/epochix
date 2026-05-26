@@ -143,17 +143,21 @@ function _diagnoseConvergence(series, name) {
              plain: 'Not enough epochs yet.', tech: `${name}: <2 points` };
   }
   const tail = series.slice(-Math.min(5, series.length));
-  const slope = _slope(tail);                 // per-epoch change
+  const slope = _slope(tail);                 // per-epoch change (absolute)
   const span  = tail[tail.length - 1].value - tail[0].value;
+  // Scale-relative slope so the thresholds hold for any loss magnitude
+  // (a 0.005/epoch drop is huge for a loss near 0.1 but noise for perplexity~300).
+  const scale = Math.max(_mean(tail.map((p) => Math.abs(p.value))), 1e-6);
+  const relSlope = slope / scale;             // fractional change per epoch
   // Loss: negative slope = improving.
   let status, verdict, head;
-  if (slope < -0.005)      { status = 'good';    head = 'Improving';  verdict = `${name} is still dropping — more training will likely help.`; }
-  else if (slope > 0.004)  { status = 'bad';     head = 'Diverging';  verdict = `${name} is rising — try a lower learning rate.`; }
-  else                     { status = 'warn';    head = 'Plateaued';  verdict = `${name} has flattened — near its best, consider stopping.`; }
+  if (relSlope < -0.01)      { status = 'good';    head = 'Improving';  verdict = `${name} is still dropping — more training will likely help.`; }
+  else if (relSlope > 0.008) { status = 'bad';     head = 'Diverging';  verdict = `${name} is rising — try a lower learning rate.`; }
+  else                       { status = 'warn';    head = 'Plateaued';  verdict = `${name} has flattened — near its best, consider stopping.`; }
   return {
     label: 'Convergence', status, big: head,
     plain: verdict,
-    tech: `slope ${slope.toFixed(4)}/epoch · Δ(last ${tail.length}) ${span.toFixed(3)}`,
+    tech: `slope ${slope.toFixed(4)}/epoch (${(relSlope * 100).toFixed(1)}%) · Δ(last ${tail.length}) ${span.toFixed(3)}`,
   };
 }
 

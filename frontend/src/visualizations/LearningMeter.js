@@ -1,8 +1,9 @@
 /**
- * LearningMeter.js — SVG liquid-fill confidence meter.
+ * LearningMeter.js — SVG liquid-fill meter of the primary metric.
  *
- * Shows the primary metric value as a rising liquid column.
- * Uses CSS @property animated gradient for the shimmer effect.
+ * Fills with the primary metric value (clamped to [0,1]) as a rising liquid
+ * column. The second arg ("maturity") is accepted for callers but the column
+ * tracks the metric itself. Uses CSS @property animated gradient for shimmer.
  */
 
 export class LearningMeter {
