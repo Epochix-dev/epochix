@@ -181,18 +181,60 @@ class StoryEngine:
         return frame
 
     def _build_skill_dimensions(self) -> dict[str, float]:
+        """Per-task radar axes, populated from whatever the parser captured.
+
+        The axes are chosen so every supported task type gets a meaningful
+        radar — not just classification. All values are clamped to [0, 1] so
+        the radar render is uniform; lower-is-better metrics are inverted.
+        """
+        h = self._metric_history
+
+        def _last(key: str) -> float | None:
+            seq = h.get(key)
+            return seq[-1] if seq else None
+
+        def _inv(v: float | None, *, scale: float = 1.0) -> float | None:
+            """Invert a lower-is-better metric into a [0,1] "skill" score."""
+            return None if v is None else max(0.0, 1.0 - min(v / scale, 1.0))
+
         dims: dict[str, float] = {}
-        if self._metric_history.get("accuracy"):
-            dims["Accuracy"] = self._metric_history["accuracy"][-1]
-        if self._metric_history.get("val_accuracy"):
-            dims["Val Accuracy"] = self._metric_history["val_accuracy"][-1]
-        if self._metric_history.get("train_loss"):
-            # Invert loss for radar (lower is better → show as higher bar)
-            loss = self._metric_history["train_loss"][-1]
-            dims["Fitting"] = max(0.0, 1.0 - min(loss, 1.0))
-        if self._metric_history.get("val_loss"):
-            loss = self._metric_history["val_loss"][-1]
-            dims["Generalisation"] = max(0.0, 1.0 - min(loss, 1.0))
+        task = self._effective_task()
+
+        def _add(key: str, value: float | None) -> None:
+            if value is not None:
+                dims[key] = value
+
+        if task == TaskType.DETECTION:
+            # YOLO / object-detection axes — every one is reported by the
+            # Ultralytics parser, so the radar is full on real detection runs.
+            _add("mAP50", _last("mAP50"))
+            _add("mAP50-95", _last("mAP"))
+            _add("Precision", _last("precision"))
+            _add("Recall", _last("recall"))
+            # Localisation quality: low box_loss → tight boxes.
+            _add("Localisation", _inv(_last("box_loss"), scale=4.0))
+        elif task == TaskType.BIOMETRIC:
+            _add("1 − EER", _inv(_last("EER"), scale=0.5))
+            _add("TAR", _last("TAR"))
+            _add("TAR@FAR=1e-3", _last("TAR_at_FAR_0_001"))
+        elif task == TaskType.GAZE:
+            _add("1 − MAE", _inv(_last("MAE"), scale=30.0))
+            _add("1 − RMSE", _inv(_last("RMSE"), scale=30.0))
+        elif task == TaskType.NLP:
+            _add("1 − Perplexity", _inv(_last("perplexity"), scale=200.0))
+            _add("BLEU", _last("bleu"))
+            _add("ROUGE", _last("rouge"))
+        elif task == TaskType.REGRESSION:
+            _add("1 − MAE", _inv(_last("MAE"), scale=2.0))
+            _add("1 − RMSE", _inv(_last("RMSE"), scale=2.0))
+
+        # Classification axes — also act as the universal fallback so any run
+        # that happens to log these gets them on the radar regardless of task.
+        _add("Accuracy", _last("accuracy"))
+        _add("Val Accuracy", _last("val_accuracy"))
+        _add("Fitting", _inv(_last("train_loss")))
+        _add("Generalisation", _inv(_last("val_loss")))
+
         return dims
 
     def _build_metaphor_cards(self, phase: Phase, grade: Grade) -> list[MetaphorCard]:

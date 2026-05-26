@@ -217,8 +217,8 @@ export class TechPanel {
       ? frames.map((f, i) => f.step ?? f.epoch ?? i)
       : frames.map((f, i) => f.epoch ?? i);
 
-    const trainLoss = frames.map((f) => _findMetric(s.metrics, f, 'train_loss'));
-    const valLoss   = frames.map((f) => _findMetric(s.metrics, f, 'val_loss'));
+    let trainLoss = frames.map((f) => _findMetric(s.metrics, f, 'train_loss'));
+    let valLoss   = frames.map((f) => _findMetric(s.metrics, f, 'val_loss'));
     let   trainAcc  = frames.map((f) => _findMetric(s.metrics, f, 'accuracy'));
     let   valAcc    = frames.map((f) => _findMetric(s.metrics, f, 'val_accuracy'));
 
@@ -226,19 +226,55 @@ export class TechPanel {
     const boxLoss = frames.map((f) => _findMetric(s.metrics, f, 'box_loss'));
     const clsLoss = frames.map((f) => _findMetric(s.metrics, f, 'cls_loss'));
     const dflLoss = frames.map((f) => _findMetric(s.metrics, f, 'dfl_loss'));
+    // Detection-specific quality metrics — used as accuracy fallback below.
+    const map50    = frames.map((f) => _findMetric(s.metrics, f, 'mAP50'));
+    const map50_95 = frames.map((f) => _findMetric(s.metrics, f, 'mAP'));
+    const precision = frames.map((f) => _findMetric(s.metrics, f, 'precision'));
+    const recall    = frames.map((f) => _findMetric(s.metrics, f, 'recall'));
     // Learning-rate schedule.
     const lr = frames.map((f) => _findMetric(s.metrics, f, 'lr'));
 
-    // Fall back to the frame's primary metric if no explicit accuracy series.
-    const hasAcc = trainAcc.some((v) => v != null) || valAcc.some((v) => v != null);
-    if (!hasAcc) {
-      valAcc   = frames.map((f) => f.primary_metric_value ?? null);
-      trainAcc = frames.map(() => null);
+    // Detection runs have no train_loss/val_loss but DO have box+cls+dfl.
+    // Fall back to the aux-loss sum as a sensible "total training loss"
+    // proxy so the loss chart isn't empty.
+    const hasClassicLoss =
+      trainLoss.some((v) => v != null) || valLoss.some((v) => v != null);
+    if (!hasClassicLoss && boxLoss.some((v) => v != null)) {
+      trainLoss = frames.map((_, i) => {
+        const parts = [boxLoss[i], clsLoss[i], dflLoss[i]].filter((v) => v != null);
+        return parts.length ? parts.reduce((a, b) => a + b, 0) : null;
+      });
+      // No separate val loss in detection logs — leave valLoss as null array.
     }
 
-    // Overfitting gap: how far val is behind train (val − train loss).
-    const gap = frames.map((_, i) =>
+    // Accuracy fallbacks for detection/regression/etc:
+    //  1. explicit accuracy series
+    //  2. mAP50 + mAP50-95 (detection — labelled honestly, not as "val acc")
+    //  3. the frame's primary metric value (universal last-ditch)
+    let accLabels = { train: 'train acc', val: 'val acc' };
+    const hasAcc = trainAcc.some((v) => v != null) || valAcc.some((v) => v != null);
+    if (!hasAcc) {
+      if (map50.some((v) => v != null)) {
+        valAcc    = map50;
+        trainAcc  = map50_95;
+        accLabels = { train: 'mAP50-95', val: 'mAP50' };
+      } else {
+        valAcc   = frames.map((f) => f.primary_metric_value ?? null);
+        trainAcc = frames.map(() => null);
+        accLabels = { train: 'train acc', val: 'primary metric' };
+      }
+    }
+
+    // Overfitting gap — fall back to (precision − recall) when train/val loss
+    // are absent; it's the closest detection-domain analogue.
+    let gap = frames.map((_, i) =>
       (valLoss[i] != null && trainLoss[i] != null) ? valLoss[i] - trainLoss[i] : null);
+    let gapLabel = 'val − train loss';
+    if (!gap.some((v) => v != null) && precision.some((v) => v != null)) {
+      gap = frames.map((_, i) =>
+        (precision[i] != null && recall[i] != null) ? precision[i] - recall[i] : null);
+      gapLabel = 'precision − recall';
+    }
 
     const sm = (arr) => emaSmooth(arr, this._smoothing);
 
@@ -264,14 +300,14 @@ export class TechPanel {
     ]);
 
     this._setChartData(this._accChart, labels, [
-      { label: 'train acc', data: sm(trainAcc), color: '#7c6dff' },
-      { label: 'val acc',   data: smValAcc,     color: '#22d3ee' },
+      { label: accLabels.train, data: sm(trainAcc), color: '#7c6dff' },
+      { label: accLabels.val,   data: smValAcc,     color: '#22d3ee' },
     ].filter((d) => d.data.some((v) => v != null)), [
-      { label: 'best val ★', data: bestValAccMarker, color: '#22d3ee', marker: true },
+      { label: `best ${accLabels.val} ★`, data: bestValAccMarker, color: '#22d3ee', marker: true },
     ]);
 
     this._setChartData(this._gapChart, labels, [
-      { label: 'val − train loss', data: sm(gap), color: '#f87171' },
+      { label: gapLabel, data: sm(gap), color: '#f87171' },
     ]);
 
     // Learning-rate schedule — never smoothed (it's a deterministic schedule),

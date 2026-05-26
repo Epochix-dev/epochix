@@ -94,7 +94,9 @@ class Run(BaseModel):
 
 class WSMessage(BaseModel):
     v: int = 1
-    type: Literal["story_frame", "milestone", "warning", "complete", "ping"]
+    type: Literal[
+        "story_frame", "milestone", "warning", "complete", "ping", "architecture",
+    ]
     run_id: str
     seq: int
     ts: datetime

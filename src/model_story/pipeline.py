@@ -194,6 +194,42 @@ async def run_pipeline(
     # tables always appear in the header, before training starts).
     _ARCH_SCAN_LIMIT = 200
     arch_scan_lines: list[str] = []
+    arch_detected = False
+
+    def _try_detect_architecture(*, broadcast: bool) -> bool:
+        """Run architecture detection on collected header lines.
+
+        Returns True if architecture was detected and stored. Called once
+        during ingestion (as soon as enough lines have accumulated so the
+        dashboard can show layers LIVE while training is still running)
+        and again at end as a safety net.
+        """
+        try:
+            from model_story.parsers.architecture_parser import parse_architecture
+
+            arch_layers = parse_architecture(arch_scan_lines)
+        except Exception:  # noqa: BLE001
+            logger.debug("Architecture detection failed (non-fatal)", exc_info=True)
+            return False
+        if not arch_layers:
+            return False
+        arch_data = [layer.to_dict() for layer in arch_layers]
+        existing = store.get_run(run_id)
+        current_cfg = existing.config if existing else {}
+        new_config = {**current_cfg, "architecture": arch_data}
+        store.update_run_config(run_id, new_config)
+        if broadcast:
+            arch_msg = hub.make_message(
+                msg_type="architecture",
+                run_id=run_id,
+                seq=-1,
+                payload={"architecture": arch_data},
+            )
+            hub.publish(run_id, arch_msg)
+        logger.debug(
+            "Architecture detected: %d layers", len(arch_layers),
+        )
+        return True
 
     async for raw_line in ingester.lines():
         ctx.seq = raw_line.seq
@@ -204,9 +240,14 @@ async def run_pipeline(
         # tqdm) emit these heavily when their stdout is redirected.
         clean_text = _clean_line(raw_line.text)
 
-        # Collect lines for architecture parsing (first 200 only)
+        # Collect lines for architecture parsing (first 200 only). As soon as
+        # the scan buffer fills, try architecture detection — for tail/live
+        # mode this is the only way layers ever land in the dashboard while
+        # training is still running.
         if len(arch_scan_lines) < _ARCH_SCAN_LIMIT:
             arch_scan_lines.append(clean_text)
+            if len(arch_scan_lines) >= _ARCH_SCAN_LIMIT and not arch_detected:
+                arch_detected = _try_detect_architecture(broadcast=True)
 
         if effective_keep:
             store.append_raw_line(
@@ -281,22 +322,11 @@ async def run_pipeline(
             if epoch is not None:
                 last_epoch = epoch
 
-    # --- Detect model architecture (from header lines) -------------------
-    try:
-        from model_story.parsers.architecture_parser import parse_architecture
-        arch_layers = parse_architecture(arch_scan_lines)
-        if arch_layers:
-            arch_data = [layer.to_dict() for layer in arch_layers]
-            new_config = {**run.config, "architecture": arch_data}
-            run = Run(**{**run.model_dump(), "config": new_config})
-            store.update_run_config(run_id, new_config)
-            logger.debug(
-                "Architecture detected: %d layers (%s)",
-                len(arch_layers),
-                ", ".join(f"{lyr.name}({lyr.layer_type})" for lyr in arch_layers),
-            )
-    except Exception:
-        logger.debug("Architecture detection failed (non-fatal)", exc_info=True)
+    # --- Architecture detection (end-of-stream fallback) ----------------
+    # If the scan limit was never reached (short logs) we get one more shot
+    # here. Idempotent — already-detected runs no-op.
+    if not arch_detected and arch_scan_lines:
+        _try_detect_architecture(broadcast=False)
 
     # --- Finalise -------------------------------------------------------
     final_milestones = engine.finalize(last_seq, last_epoch)

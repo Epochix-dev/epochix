@@ -116,7 +116,9 @@ class Hub:
     @staticmethod
     def make_message(
         *,
-        msg_type: Literal["story_frame", "milestone", "warning", "complete", "ping"],
+        msg_type: Literal[
+            "story_frame", "milestone", "warning", "complete", "ping", "architecture",
+        ],
         run_id: str,
         seq: int,
         payload: dict[str, Any],
