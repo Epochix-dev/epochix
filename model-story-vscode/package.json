@@ -125,8 +125,11 @@
     ]
   },
   "scripts": {
+    "build:webview": "npm --prefix ../frontend run build:webview",
     "compile": "node esbuild.config.mjs",
+    "compile:prod": "node esbuild.config.mjs --production",
     "watch": "node esbuild.config.mjs --watch",
+    "vscode:prepublish": "npm run build:webview && npm run compile:prod",
     "package": "vsce package",
     "lint": "eslint src --ext ts",
     "typecheck": "tsc --noEmit"
