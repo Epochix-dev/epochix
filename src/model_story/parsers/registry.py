@@ -13,7 +13,10 @@ _registry: list[BaseParser] = []
 _loaded_plugins = False
 
 SNIFF_THRESHOLD = 0.3
-SNIFF_SAMPLE_LINES = 50
+# Larger window so verbose modern CLIs (ultralytics, lightning) whose preamble
+# easily exceeds 50 lines (model summary table, AMP checks, dataset scan)
+# still have training rows in the sample by the time we sniff.
+SNIFF_SAMPLE_LINES = 200
 
 
 def register_parser(cls: type) -> type:

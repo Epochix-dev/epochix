@@ -15,6 +15,7 @@ Architecture (§6.2)::
 from __future__ import annotations
 
 import logging
+import re
 from datetime import datetime, timezone
 from typing import TYPE_CHECKING
 
@@ -24,6 +25,22 @@ from model_story.normalizer import normalize
 from model_story.parsers.base import ParserContext
 from model_story.parsers.registry import SNIFF_SAMPLE_LINES, detect_parser
 from model_story.story_engine import StoryEngine
+
+# ANSI escape sequences (color codes + "erase line" \x1b[K, used by every
+# modern "rich" CLI: ultralytics, lightning, tqdm). They land in the log
+# when stdout is redirected to a file/pipe and break our regex-based parsers,
+# so strip them before any downstream sees the text.
+_ANSI_RE = re.compile(r"\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])")
+
+
+def _clean_line(text: str) -> str:
+    """Strip ANSI escapes and unify carriage-return progress updates into the
+    final state of the line (most progress bars emit ``\\rstep1\\rstep2``;
+    we only care about the last update before the actual newline)."""
+    cleaned = _ANSI_RE.sub("", text)
+    if "\r" in cleaned:
+        cleaned = cleaned.rsplit("\r", 1)[-1]
+    return cleaned
 
 if TYPE_CHECKING:
     from model_story.ingester import BaseIngester
@@ -182,22 +199,27 @@ async def run_pipeline(
         ctx.seq = raw_line.seq
         last_seq = raw_line.seq
 
+        # Strip ANSI escapes + carriage-return progress-bar updates so the
+        # downstream parsers see clean text. Modern tools (ultralytics, rich,
+        # tqdm) emit these heavily when their stdout is redirected.
+        clean_text = _clean_line(raw_line.text)
+
         # Collect lines for architecture parsing (first 200 only)
         if len(arch_scan_lines) < _ARCH_SCAN_LIMIT:
-            arch_scan_lines.append(raw_line.text)
+            arch_scan_lines.append(clean_text)
 
         if effective_keep:
             store.append_raw_line(
                 run_id=run_id,
                 seq=raw_line.seq,
                 ts=raw_line.timestamp,
-                text=raw_line.text,
+                text=clean_text,
             )
 
         if parser is None:
             # Still collecting the sniff window.
-            sample_lines.append(raw_line.text)
-            sniff_buffer.append((raw_line.seq, raw_line.timestamp, raw_line.text))
+            sample_lines.append(clean_text)
+            sniff_buffer.append((raw_line.seq, raw_line.timestamp, clean_text))
 
             if len(sample_lines) >= SNIFF_SAMPLE_LINES:
                 # Sniff window full — detect and replay.
@@ -224,7 +246,7 @@ async def run_pipeline(
 
         # Normal path: parser already known.
         epoch = _emit_line(
-            text=raw_line.text,
+            text=clean_text,
             timestamp=raw_line.timestamp,
             parser=parser,
             ctx=ctx,
