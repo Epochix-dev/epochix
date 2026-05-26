@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "build:webview": "vite build --config vite.webview.config.js",
     "build:singlefile": "vite build --config vite.singlefile.config.js",
     "preview": "vite preview",
     "test": "vitest run",

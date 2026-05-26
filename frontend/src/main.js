@@ -185,6 +185,12 @@ async function main() {
 
   // ── data loading ───────────────────────────────────────────────────────────
 
+  // Case 0: VS Code standalone webview — data arrives via postMessage, not HTTP.
+  if (window.__MS_VSCODE__) {
+    const { startVscodeBridge } = await import('./vscode-bridge.js');
+    if (startVscodeBridge(applyTheme)) return;
+  }
+
   // Case 1: Export mode — run data is inlined in the HTML
   const inline = readInlineRunData();
   if (inline) {
