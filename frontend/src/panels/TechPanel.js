@@ -14,6 +14,7 @@ export class TechPanel {
     this._lossChart  = null;
     this._accChart   = null;
     this._gapChart   = null;
+    this._lrChart    = null;
     this._unsub      = null;
     this._chartJs    = null;
     this._smoothing  = 0.3;
@@ -64,6 +65,7 @@ export class TechPanel {
     if (this._lossChart) this._lossChart.destroy();
     if (this._accChart)  this._accChart.destroy();
     if (this._gapChart)  this._gapChart.destroy();
+    if (this._lrChart)   this._lrChart.destroy();
   }
 
   // ── internal ──────────────────────────────────────────────────────────────
@@ -158,6 +160,32 @@ export class TechPanel {
       });
     }
 
+    const lrCanvas = document.getElementById('lr-chart');
+    if (lrCanvas) {
+      // LR is plotted on a log scale by default — schedules typically span
+      // orders of magnitude (1e-3 → 1e-5 with cosine decay etc.).
+      this._lrChart = new Chart(lrCanvas, {
+        type: 'line',
+        data: { labels: [], datasets: [] },
+        options: {
+          ...baseOpts,
+          plugins: {
+            ...baseOpts.plugins,
+            title: {
+              display: true,
+              text: 'Learning rate (log)',
+              color: this._cssVar('--text-secondary'),
+              font: { size: 12 },
+            },
+          },
+          scales: {
+            ...baseOpts.scales,
+            y: { ...baseOpts.scales.y, type: 'logarithmic' },
+          },
+        },
+      });
+    }
+
     const gapCanvas = document.getElementById('gap-chart');
     if (gapCanvas) {
       this._gapChart = new Chart(gapCanvas, {
@@ -194,6 +222,13 @@ export class TechPanel {
     let   trainAcc  = frames.map((f) => _findMetric(s.metrics, f, 'accuracy'));
     let   valAcc    = frames.map((f) => _findMetric(s.metrics, f, 'val_accuracy'));
 
+    // Auxiliary loss components (YOLO/multi-task): only surfaced if present.
+    const boxLoss = frames.map((f) => _findMetric(s.metrics, f, 'box_loss'));
+    const clsLoss = frames.map((f) => _findMetric(s.metrics, f, 'cls_loss'));
+    const dflLoss = frames.map((f) => _findMetric(s.metrics, f, 'dfl_loss'));
+    // Learning-rate schedule.
+    const lr = frames.map((f) => _findMetric(s.metrics, f, 'lr'));
+
     // Fall back to the frame's primary metric if no explicit accuracy series.
     const hasAcc = trainAcc.some((v) => v != null) || valAcc.some((v) => v != null);
     if (!hasAcc) {
@@ -207,21 +242,49 @@ export class TechPanel {
 
     const sm = (arr) => emaSmooth(arr, this._smoothing);
 
+    // Best-epoch markers: single-point datasets that highlight the optimum on
+    // the curve itself (researchers shouldn't have to look at the table).
+    const smValLoss = sm(valLoss);
+    const smValAcc  = sm(valAcc);
+    const bestValLossMarker = _bestMarker(smValLoss, 'min');
+    const bestValAccMarker  = _bestMarker(smValAcc,  'max');
+
     // Cool family for quality metrics, warm family for losses — matches the
-    // dashboard's purple→cyan / pink→orange gradient system.
-    this._setChartData(this._lossChart, labels, [
+    // dashboard's purple→cyan / pink→orange gradient system. Multi-loss
+    // components stack onto the loss chart only when actually reported.
+    const lossSeries = [
       { label: 'train loss', data: sm(trainLoss), color: '#fb923c' },
-      { label: 'val loss',   data: sm(valLoss),   color: '#f472b6' },
+      { label: 'val loss',   data: smValLoss,     color: '#f472b6' },
+      { label: 'box',        data: sm(boxLoss),   color: '#a78bfa', dashed: true },
+      { label: 'cls',        data: sm(clsLoss),   color: '#22d3ee', dashed: true },
+      { label: 'dfl',        data: sm(dflLoss),   color: '#34d399', dashed: true },
+    ].filter((d) => d.data.some((v) => v != null));
+    this._setChartData(this._lossChart, labels, lossSeries, [
+      { label: 'best val ★', data: bestValLossMarker, color: '#f472b6', marker: true },
     ]);
 
     this._setChartData(this._accChart, labels, [
       { label: 'train acc', data: sm(trainAcc), color: '#7c6dff' },
-      { label: 'val acc',   data: sm(valAcc),   color: '#22d3ee' },
-    ].filter((d) => d.data.some((v) => v != null)));
+      { label: 'val acc',   data: smValAcc,     color: '#22d3ee' },
+    ].filter((d) => d.data.some((v) => v != null)), [
+      { label: 'best val ★', data: bestValAccMarker, color: '#22d3ee', marker: true },
+    ]);
 
     this._setChartData(this._gapChart, labels, [
       { label: 'val − train loss', data: sm(gap), color: '#f87171' },
     ]);
+
+    // Learning-rate schedule — never smoothed (it's a deterministic schedule),
+    // hide chart when no `lr` events were logged.
+    const hasLr = lr.some((v) => v != null && v > 0);
+    if (this._lrChart) {
+      this._lrChart.canvas.parentElement.style.display = hasLr ? '' : 'none';
+      if (hasLr) {
+        this._setChartData(this._lrChart, labels, [
+          { label: 'lr', data: lr, color: '#fbbf24' },
+        ]);
+      }
+    }
 
     this._renderStats(s);
   }
@@ -260,24 +323,41 @@ export class TechPanel {
       </table>`;
   }
 
-  _setChartData(chart, labels, series) {
+  _setChartData(chart, labels, series, markers = []) {
     if (!chart) return;
     chart.data.labels = labels;
-    chart.data.datasets = series.map(({ label, data, color }) => ({
+    const lineDatasets = series.map(({ label, data, color, dashed }) => ({
       label,
       data,
       borderColor:          color,
       backgroundColor:      _gradientFill(color),
       borderWidth:          2,
+      borderDash:           dashed ? [4, 4] : [],
       pointRadius:          0,
       pointHoverRadius:     4,
       pointBackgroundColor: color,
       pointBorderColor:     '#fff',
       pointBorderWidth:     1,
-      fill:                 true,
+      fill:                 !dashed,   // dashed aux series don't get area fill
       tension:              0.4,
       spanGaps:             true,
     }));
+    // Best-epoch markers: a star at the single best-value point on the curve.
+    const markerDatasets = markers.map(({ label, data, color }) => ({
+      label,
+      data,
+      borderColor:          color,
+      backgroundColor:      color,
+      pointStyle:           'star',
+      pointRadius:          10,
+      pointHoverRadius:     12,
+      pointBorderColor:     '#fff',
+      pointBorderWidth:     1.5,
+      showLine:             false,
+      fill:                 false,
+      spanGaps:             true,
+    }));
+    chart.data.datasets = [...lineDatasets, ...markerDatasets];
     chart.update('none');
   }
 
@@ -329,6 +409,24 @@ function _esc(s) {
  * @param {object} frame
  * @param {string} key
  */
+/**
+ * Single-point dataset that highlights the argmin/argmax of a series so the
+ * best checkpoint is visible on the curve itself (not just in the table).
+ * @param {Array<number|null>} arr
+ * @param {'min'|'max'} mode
+ */
+function _bestMarker(arr, mode) {
+  let bestI = -1;
+  let bestV = mode === 'min' ? Infinity : -Infinity;
+  for (let i = 0; i < arr.length; i++) {
+    const v = arr[i];
+    if (v == null || !Number.isFinite(v)) continue;
+    if (mode === 'min' ? v < bestV : v > bestV) { bestV = v; bestI = i; }
+  }
+  if (bestI < 0) return arr.map(() => null);
+  return arr.map((_, i) => (i === bestI ? bestV : null));
+}
+
 function _findMetric(metrics, frame, key) {
   if (!metrics?.length) return null;
   // Find the metric event closest to this frame's epoch
