@@ -428,6 +428,64 @@ def cmd_prune(
         typer.echo(f"  Pruned {len(to_delete)} run(s).")
 
 
+@app.command("demo")
+def cmd_demo(
+    name: str = typer.Argument(
+        "seq2seq",
+        help="Which bundled demo to load: seq2seq · yolov8 · keras.",
+    ),
+    port: int = typer.Option(7860, "--port", "-p", help="Server port."),
+    headless: bool = typer.Option(False, "--headless", help="Do not open the browser."),
+    log_level: str = typer.Option("INFO", "--log-level"),
+) -> None:
+    """Visualise a bundled demo log — no training of your own needed.
+
+    Newcomers can see the dashboard in one command::
+
+        model-story demo            # seq2seq + attention (NLP)
+        model-story demo yolov8     # YOLO object detection
+        model-story demo keras      # Keras image classifier
+    """
+    from importlib.resources import files
+
+    _configure_logging(log_level)
+
+    aliases = {
+        "seq2seq":  "seq2seq_attention.log",
+        "yolov8":   "yolov8_detection.log",
+        "yolo":     "yolov8_detection.log",
+        "keras":    "keras_image_classifier.log",
+    }
+    fname = aliases.get(name.lower(), name)
+    demo_root = files("model_story").joinpath("_demos")
+    demo_path = demo_root.joinpath(fname)
+    if not demo_path.is_file():
+        available = ", ".join(sorted(aliases))
+        typer.secho(
+            f"Demo {name!r} not found. Available: {available}",
+            fg=typer.colors.RED, err=True,
+        )
+        raise typer.Exit(1)
+
+    typer.secho(
+        f"▶ Running bundled demo: {fname}", fg=typer.colors.CYAN,
+    )
+    # Reuse the regular `run` path so behaviour matches what users see with
+    # their own logs (parsing, story engine, browser open).
+    cmd_run(
+        log_file=Path(str(demo_path)),
+        live=False,
+        tail=None,
+        port=port,
+        task=None,
+        no_llm=True,
+        headless=headless,
+        export_format=None,
+        name=f"Demo · {fname}",
+        log_level=log_level,
+    )
+
+
 @app.command("config")
 def cmd_config(
     action: str = typer.Argument(..., help="show | set"),
@@ -487,7 +545,9 @@ def _open_store(settings: Settings) -> RunStore:
 #   model-story train.log          (shorthand → `run train.log`)
 #   model-story --live             (shorthand → `run --live`)
 #   model-story serve --port 8000  (dispatches the serve subcommand)
-_SUBCOMMANDS = frozenset({"run", "serve", "list", "open", "export", "prune", "config"})
+_SUBCOMMANDS = frozenset(
+    {"run", "serve", "list", "open", "export", "prune", "config", "demo"}
+)
 
 
 def main_entry() -> None:

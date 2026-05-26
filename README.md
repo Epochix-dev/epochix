@@ -42,6 +42,14 @@ pip install "model-story[all]"       # everything above
 
 ## Quick start
 
+### Try it instantly — no log of your own needed
+
+```bash
+model-story demo            # seq2seq + attention narrative
+model-story demo yolov8     # YOLO object detection
+model-story demo keras      # Keras image classifier
+```
+
 ### One-liner: pipe any training log
 
 ```bash
@@ -51,7 +59,7 @@ python train.py 2>&1 | model-story --live
 ### Parse a saved log file
 
 ```bash
-model-story batch training.log
+model-story training.log    # any subcommand can be omitted — it's the default
 ```
 
 ### Start the local dashboard server
@@ -103,11 +111,15 @@ docker run -p 7860:7860 ghcr.io/model-story/server:latest
 
 ## Security & deployment
 
-model-story is **local-first**: by default the server binds to `127.0.0.1`, requires
-no token, and allows any origin — convenient and safe on your own machine.
+model-story is **secure-by-default**:
 
-If you expose it beyond localhost (a shared box, a container, the internet), turn on
-authentication and lock down CORS:
+- the server binds to `127.0.0.1` (loopback only),
+- read endpoints are open to any same-origin page on your machine,
+- **write/delete endpoints require either a Bearer token or a same-machine (loopback) caller** — so a malicious tab on another site cannot delete runs or inject metric events,
+- **CORS is same-origin only** (no `Access-Control-Allow-Origin` is emitted unless you configure `MODEL_STORY_CORS_ORIGINS`),
+- the OpenAPI / Swagger UI is hidden unless `MODEL_STORY_EXPOSE_DOCS=1` is set or an auth token is configured.
+
+To expose the server beyond your own machine (a shared box, a container, the internet), turn on authentication and configure the allowed origins:
 
 ```bash
 # Require a token on every request, and only allow your own origin
@@ -118,8 +130,9 @@ model-story serve --host 0.0.0.0 --port 7860
 
 | Setting | Env var | Default | Effect |
 |---|---|---|---|
-| Auth token | `MODEL_STORY_AUTH_TOKEN` | _(empty — open)_ | Require a token on all routes |
-| CORS origins | `MODEL_STORY_CORS_ORIGINS` | `*` | Comma-separated allowlist |
+| Auth token | `MODEL_STORY_AUTH_TOKEN` | _(empty)_ | Require a token on all routes; write/delete also accept loopback callers when this is empty |
+| CORS origins | `MODEL_STORY_CORS_ORIGINS` | _(empty — same-origin only)_ | Comma-separated allowlist (use the explicit `*` to opt into open CORS) |
+| Expose API docs | `MODEL_STORY_EXPOSE_DOCS` | `false` | Show `/api/docs`, `/api/redoc`, `/api/openapi.json` (auto-on when an auth token is set) |
 
 How the token is checked:
 

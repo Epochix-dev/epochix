@@ -96,6 +96,9 @@ packages = ["src/model_story"]
 "src/model_story/story_engine/templates" = "model_story/story_engine/templates"
 # Claude artifact (JSX)
 "src/model_story/_artifacts" = "model_story/_artifacts"
+# Bundled demo logs — used by `model-story demo` so newcomers can see the
+# dashboard without bringing their own training log.
+"src/model_story/_demos" = "model_story/_demos"
 # Frontend bundle is vendored at release time via CI (build-frontend step).
 # In local editable installs the dist/ stub is used.
 "frontend/dist" = "model_story/_frontend/dist"
