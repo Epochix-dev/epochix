@@ -3,12 +3,17 @@
   "displayName": "Model Learning Story",
   "description": "Visual storytelling for deep learning training runs — live animated dashboard in your editor.",
   "publisher": "model-story",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "license": "Apache-2.0",
+  "icon": "icon.png",
   "repository": {
     "type": "git",
     "url": "https://github.com/model-story/model-story"
   },
+  "bugs": {
+    "url": "https://github.com/model-story/model-story/issues"
+  },
+  "homepage": "https://github.com/model-story/model-story#readme",
   "engines": { "vscode": "^1.92.0" },
   "categories": ["Visualization", "Data Science", "Machine Learning"],
   "keywords": ["machine learning", "deep learning", "training", "visualization", "dashboard"],

@@ -61,11 +61,21 @@ dmypy.json
 .ipynb_checkpoints
 *.ipynb
 
-# SQLite databases
+# SQLite databases (incl. WAL mode sidecar files)
 *.db
+*.db-shm
+*.db-wal
 *.sqlite
 *.sqlite3
 model_story.db
+
+# ML training output / cached weights (e.g. running `yolo train` in-repo)
+*.pt
+*.pth
+*.onnx
+*.engine
+runs/
+yolo_train*.log
 
 # Frontend
 node_modules/

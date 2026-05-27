@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "model-story"
-version = "0.1.0"
+version = "0.2.0"
 description = "Visual storytelling for deep learning training runs."
 authors = [{ name = "HexoraX", email = "hello@hexorax.com" }]
 license = "Apache-2.0"
@@ -18,7 +18,12 @@ classifiers = [
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
   "Topic :: Scientific/Engineering :: Artificial Intelligence",
+  "Topic :: Scientific/Engineering :: Visualization",
+  "Framework :: FastAPI",
+  "Typing :: Typed",
+  "Operating System :: OS Independent",
 ]
 dependencies = [
   "pydantic>=2.7",
@@ -86,21 +91,29 @@ universal         = "model_story.parsers.universal:UniversalParser"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/model_story"]
+# Stop hatch from re-collecting the same non-.py files that force-include
+# below already maps. Without these excludes hatch sees them twice and
+# emits "Duplicate name" warnings at build time.
+exclude = [
+  "src/model_story/story_engine/templates/**",
+  "src/model_story/_artifacts/**",
+  "src/model_story/_demos/**",
+  "src/model_story/_frontend/dist/**",
+]
 
 [tool.hatch.build.targets.wheel.shared-data]
 # non-Python assets that must ship inside the wheel
 "src/model_story/py.typed" = "model_story/py.typed"
 
 [tool.hatch.build.targets.wheel.force-include]
-# Narrative templates (text files alongside the story_engine package)
+# Narrative templates (text files alongside the story_engine package).
 "src/model_story/story_engine/templates" = "model_story/story_engine/templates"
-# Claude artifact (JSX)
+# Claude artifact (JSX).
 "src/model_story/_artifacts" = "model_story/_artifacts"
-# Bundled demo logs — used by `model-story demo` so newcomers can see the
-# dashboard without bringing their own training log.
+# Bundled demo logs — used by `model-story demo` so newcomers can see
+# the dashboard without bringing their own training log.
 "src/model_story/_demos" = "model_story/_demos"
-# Frontend bundle is vendored at release time via CI (build-frontend step).
-# In local editable installs the dist/ stub is used.
+# Frontend bundle vendored at release time via CI (build-frontend step).
 "frontend/dist" = "model_story/_frontend/dist"
 
 [tool.hatch.envs.default]

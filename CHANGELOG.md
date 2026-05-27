@@ -13,6 +13,140 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.2.0] — 2026-05-26
+
+A reliability + correctness release. Every section below covers a real bug
+caught by running the system against a real YOLOv8n training run on an RTX
+5080 (real GazeCapture eye-detection dataset, 30 epochs, mAP50 0.870).
+
+### Security — secure-by-default
+
+- **CORS lockdown** — default `MODEL_STORY_CORS_ORIGINS` is now empty
+  (same-origin only). Browser SOP protects the local dashboard from
+  drive-by reads/writes by other tabs the user has open. The wildcard `*`
+  is still available for explicit opt-in.
+- **Write/delete endpoints gated** by `require_destructive` — when no
+  `AUTH_TOKEN` is set, only loopback callers can DELETE runs, create runs,
+  or push metric events. Remote writes always require a `Bearer` token.
+- **API docs hidden by default** — `/api/docs` / `/api/redoc` /
+  `/api/openapi.json` are not exposed unless `auth_token` is configured
+  or `MODEL_STORY_EXPOSE_DOCS=1` is set.
+- **CLI warns** when binding `--host 0.0.0.0` without an auth token.
+- **Field length caps** on `EventPushRequest` / `RunCreateRequest`.
+
+### Scientific correctness
+
+- **Percentage metrics normalised to [0, 1] at ingest** — accuracy logged
+  as `87.6` is now stored as `0.876`. Grade thresholds / radar / cards
+  all relied on this implicitly but it was never enforced.
+- **Direction-aware phase detection** — `compute_phase()` takes a
+  `lower_better` flag and computes relative improvement against the
+  metric's real ideal. Loss-only runs no longer stall in Learning. When
+  `total_epochs` is unknown the engine advances on real improvement.
+- **Honest "Maturity"** — legacy `confidence = min(progress*2, 1)` was
+  just training progress doubled, rendered under a "Confidence" label.
+  Now carries an honest advancement scalar; UI relabelled to "Maturity".
+- **BrainCanvas overfit halo** uses the real train/val gap from
+  `skill_dimensions`, not the bogus progress proxy.
+- **Network State weight edges** clearly labelled as schematic /
+  illustrative, not measured weights.
+- **Convergence threshold** is now scale-relative (slope ÷ series scale).
+- **Skill radar caveat** — axes are correlated; shape is rhetorical.
+
+### Parser robustness
+
+- **ANSI escape codes stripped** before parsing. Ultralytics / Lightning /
+  rich / tqdm emit `\x1b[K` + colour codes when stdout is piped — these
+  landed at column 0 of training rows and broke the regex parsers.
+- **Sniff window 50 → 200** so verbose preambles (model summary + AMP
+  checks + dataset scan) don't bury the first training row.
+- **`parser_used` / `task_type` / `primary_metric` persisted** after
+  auto-detection (was only updated in memory, never written to the DB).
+- **Live architecture detection** — fires inside the ingestion loop as
+  soon as the header window fills, and broadcasts an `architecture` WS
+  message so the Network State populates *during* live training (was
+  only visible after the run finished).
+
+### New features
+
+- **`model-story demo` subcommand** — three bundled logs (`seq2seq`,
+  `yolov8`, `keras`) ship in the wheel. One-command first-run experience.
+- **`--ssh user@host:/path` ingester** — first-class SSH support. Spawns
+  `ssh -o BatchMode=yes -o ServerAliveInterval=30 host 'tail -F -n +0
+  <quoted-path>'` under the hood. Inherits `~/.ssh/config`, agent, keys;
+  never sees passwords. Flags: `--ssh`, `--ssh-port`, `--ssh-identity`,
+  `--ssh-opt`.
+- **Engineer panel**: LR-schedule chart (log-y, auto-hidden when absent),
+  multi-loss decomposition (box/cls/dfl overlaid for YOLO), best-epoch
+  ★ markers on val curves.
+- **Live Metrics** — TensorBoard-style scalar cards (value · ▲/▼ delta ·
+  gradient sparkline) replaced the old horizontal bars.
+- **Task-aware Skill Radar** — detection: mAP50, mAP50-95, Precision,
+  Recall, Localisation; biometric: 1−EER, TAR, TAR@FAR=1e-3; gaze +
+  regression: 1−MAE, 1−RMSE; NLP: 1−Perplexity, BLEU, ROUGE.
+- **Distributions panel** — value histograms alongside existing
+  parameter-share and metric box-summaries.
+- **Engineer panel detection fallbacks** — Loss chart synthesises
+  `train loss = box+cls+dfl`; Accuracy chart uses mAP50 + mAP50-95;
+  Overfitting Gap falls back to `precision − recall`.
+- **Network State**: architecture chip compacts adjacent duplicate
+  layer types (`Conv ×2 + C2f + …`); per-zone labels truncate with
+  shorter aliases (`Pattern finder → Patterns`).
+- **Multi-run comparison** at `/compare` with metric picker + EMA + legend.
+- **Educational panel** ("In Plain English") — grade journey + "X in 10
+  right" meter + practice-vs-test analogy. Direction inferred from data.
+- **Training Diagnostics** — health gauge + overfit / convergence /
+  stability / generalisation cards with status chips.
+- **Phase Journey ribbon** — per-phase grade chips + connectors.
+
+### VS Code extension
+
+- **Reproducible packaging** — `vite.webview.config.js` produces flat
+  `main.js` + `main.css` (Chart.js inlined for the strict CSP).
+  `vscode:prepublish` rebuilds the shared frontend so `vsce package`
+  is hermetic. `.vsix` is 124 KB clean.
+- **Loader reads the built `index.html`** so the full app markup ships
+  in the webview (was a bare `<div id=app>` before).
+- **Frontend postMessage bridge** — gated on `window.__MS_VSCODE__`;
+  Standalone mode receives `init`/`frame`/`milestone`/`warning`/
+  `complete`/`themeChange` from the StoryEngine.
+- Extension now carries a **128×128 icon**, **LICENSE**, **README**, and
+  **CHANGELOG** inside the `.vsix`. `.vscodeignore` excludes `**/*.map`.
+
+### UX
+
+- README quickstart now begins with `model-story demo` — newcomers see
+  a populated dashboard in one command.
+- Engineer accuracy fallback labels are honest (`mAP50` / `mAP50-95`,
+  not the misleading "val acc").
+- Network State weight legend moved out of the canvas into its own row
+  so 3D slab top faces can't overlap it.
+
+### Tests + tooling
+
+- **+58 new tests**: 11 end-to-end fresh-install pipeline tests covering
+  every model family (PL / Keras / HuggingFace / YOLOv8 / seq2seq /
+  fingerprint / gaze) + a synthesised 50-epoch trajectory + HTTP-API
+  smoke + `/api/compare` + `cmd_demo`; 16 SSH ingester tests (mocked
+  subprocess, no real SSH needed); 9 security tests (CORS posture, docs
+  visibility, loopback-vs-remote write gating); +2 phase tests + 3
+  normalizer percent tests.
+- **322 Python tests + 50 JS tests** passing on Python 3.13 / 3.14.
+- **ruff + mypy --strict clean**.
+- New classifiers: `Python :: 3.13`, `Topic :: Scientific/Engineering ::
+  Visualization`, `Framework :: FastAPI`, `Typing :: Typed`,
+  `Operating System :: OS Independent`.
+
+### Fixed
+
+- Stale `model-story batch training.log` in the README — there was no
+  `batch` subcommand. Corrected to the implicit-default shorthand.
+- `LearningMeter` docstring was stale.
+- VS Code `.vscodeignore` `*.map` pattern only matched the root; bumped
+  to `**/*.map`.
+
+---
+
 ## [0.1.0] — 2026-05-22
 
 First public release.
