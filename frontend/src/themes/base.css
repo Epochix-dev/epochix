@@ -224,7 +224,9 @@ body {
   min-height: 320px;
 }
 .brain-wlegend {
-  position: absolute; top: 6px; right: 12px; z-index: 2;
+  /* Sits in the reserved top strip on the LEFT — the architecture chip
+     owns the right side of the header above. */
+  position: absolute; top: 6px; left: 12px; z-index: 2;
   display: flex; gap: 12px; align-items: center;
   font-size: 9px; color: var(--text-muted); pointer-events: none;
 }
