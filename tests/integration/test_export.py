@@ -14,11 +14,11 @@ from datetime import datetime, timezone
 import pytest
 from fastapi.testclient import TestClient
 
-from model_story.config import Settings
-from model_story.enums import Grade, Phase, TaskType
-from model_story.models import MetricEvent, Run, StoryFrame
-from model_story.server.app import create_app
-from model_story.store.sqlite_store import RunStore
+from epochix.config import Settings
+from epochix.enums import Grade, Phase, TaskType
+from epochix.models import MetricEvent, Run, StoryFrame
+from epochix.server.app import create_app
+from epochix.store.sqlite_store import RunStore
 
 # ── Fixtures ──────────────────────────────────────────────────────────────────
 
@@ -164,7 +164,7 @@ class TestHtmlExport:
         """A malicious run name must not break out of the inlined <script>."""
         import pytest
 
-        from model_story.exporters.html_export import build_html
+        from epochix.exporters.html_export import build_html
 
         store = RunStore(":memory:")
         run = Run(

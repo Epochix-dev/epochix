@@ -12,7 +12,7 @@ repos:
       - id: mypy
         args: [--strict]
         additional_dependencies: [pydantic>=2.7, pydantic-settings>=2.4]
-        files: ^src/model_story/
+        files: ^src/epochix/
 
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.6.0

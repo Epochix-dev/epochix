@@ -5,8 +5,8 @@ from datetime import datetime, timezone
 
 import pytest
 
-from model_story.models import WSMessage
-from model_story.server.hub import _NEVER_DROP, Hub
+from epochix.models import WSMessage
+from epochix.server.hub import _NEVER_DROP, Hub
 
 
 def _msg(

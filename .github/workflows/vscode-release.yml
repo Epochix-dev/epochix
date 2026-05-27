@@ -26,7 +26,7 @@ on:
 
 env:
   NODE_VERSION: "20"
-  EXTENSION_DIR: model-story-vscode
+  EXTENSION_DIR: epochix-vscode
 
 jobs:
   # ── 1. Build the Vite frontend bundle ──────────────────────────────────────
@@ -121,7 +121,7 @@ jobs:
     if: ${{ !startsWith(github.ref_name, 'test/') }}
     environment:
       name: vscode-marketplace
-      url: https://marketplace.visualstudio.com/items?itemName=model-story.model-story
+      url: https://marketplace.visualstudio.com/items?itemName=epochix.epochix
     steps:
       - uses: actions/download-artifact@v4
         with:
@@ -148,7 +148,7 @@ jobs:
     if: ${{ !startsWith(github.ref_name, 'test/') }}
     environment:
       name: open-vsx
-      url: https://open-vsx.org/extension/model-story/model-story
+      url: https://open-vsx.org/extension/epochix/epochix
     steps:
       - uses: actions/download-artifact@v4
         with:

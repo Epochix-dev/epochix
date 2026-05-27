@@ -1,6 +1,6 @@
 # Plugins
 
-model-story supports external plugins via Python entry points (PEP 517/660).
+epochix supports external plugins via Python entry points (PEP 517/660).
 You can add custom parsers, metaphor packs, exporters, and task types without
 modifying the core package.
 
@@ -10,10 +10,10 @@ modifying the core package.
 
 | Group | Purpose |
 |--|--|
-| `model_story.parsers` | Register a custom log parser |
-| `model_story.metaphor_packs` | Add domain-specific metaphor cards |
-| `model_story.exporters` | Add a custom export format |
-| `model_story.tasks` | Register a custom task type with grade thresholds |
+| `epochix.parsers` | Register a custom log parser |
+| `epochix.metaphor_packs` | Add domain-specific metaphor cards |
+| `epochix.exporters` | Add a custom export format |
+| `epochix.tasks` | Register a custom task type with grade thresholds |
 
 ---
 
@@ -24,8 +24,8 @@ modifying the core package.
 ```python
 # my_package/my_parser.py
 import re
-from model_story.models import RawMetric
-from model_story.parsers.base import ParserContext
+from epochix.models import RawMetric
+from epochix.parsers.base import ParserContext
 
 _MY_PATTERN = re.compile(r"step=(\d+)\s+my_metric=([\d.]+)")
 
@@ -52,7 +52,7 @@ class MyFrameworkParser:
 ### 2. Register the entry point in `pyproject.toml`
 
 ```toml
-[project.entry-points."model_story.parsers"]
+[project.entry-points."epochix.parsers"]
 my_framework = "my_package.my_parser:MyFrameworkParser"
 ```
 
@@ -62,7 +62,7 @@ my_framework = "my_package.my_parser:MyFrameworkParser"
 pip install -e .
 ```
 
-model-story discovers the parser automatically on next run.
+epochix discovers the parser automatically on next run.
 
 ---
 
@@ -88,7 +88,7 @@ cards:
 Register as:
 
 ```toml
-[project.entry-points."model_story.metaphor_packs"]
+[project.entry-points."epochix.metaphor_packs"]
 my_biometric_pack = "my_pack:METAPHORS_YAML_PATH"
 ```
 
@@ -99,7 +99,7 @@ my_biometric_pack = "my_pack:METAPHORS_YAML_PATH"
 ```python
 # my_package/my_exporter.py
 from pathlib import Path
-from model_story.models import Run, StoryFrame, MetricEvent
+from epochix.models import Run, StoryFrame, MetricEvent
 from typing import Sequence
 
 def export_latex(
@@ -115,26 +115,26 @@ EXPORTER = export_latex
 ```
 
 ```toml
-[project.entry-points."model_story.exporters"]
+[project.entry-points."epochix.exporters"]
 latex = "my_package.my_exporter:EXPORTER"
 ```
 
 Then use via CLI:
 
 ```bash
-model-story export <run-id> --format latex --output report.tex
+epochix export <run-id> --format latex --output report.tex
 ```
 
 ---
 
-## Example: `model-story-fairseq`
+## Example: `epochix-fairseq`
 
 A complete example plugin package for Facebook's Fairseq framework:
 
 ```
-model-story-fairseq/
+epochix-fairseq/
 ├── pyproject.toml
-└── model_story_fairseq/
+└── epochix_fairseq/
     ├── __init__.py
     └── parser.py         # FairseqParser class
 ```
@@ -147,10 +147,10 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "model-story-fairseq"
+name = "epochix-fairseq"
 version = "0.1.0"
-dependencies = ["model-story>=0.1.0"]
+dependencies = ["epochix>=0.1.0"]
 
-[project.entry-points."model_story.parsers"]
-fairseq = "model_story_fairseq.parser:FairseqParser"
+[project.entry-points."epochix.parsers"]
+fairseq = "epochix_fairseq.parser:FairseqParser"
 ```

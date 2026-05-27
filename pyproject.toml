@@ -3,8 +3,8 @@ requires = ["hatchling>=1.25"]
 build-backend = "hatchling.build"
 
 [project]
-name = "model-story"
-version = "0.2.0"
+name = "epochix"
+version = "0.3.0"
 description = "Visual storytelling for deep learning training runs."
 authors = [{ name = "HexoraX", email = "hello@hexorax.com" }]
 license = "Apache-2.0"
@@ -45,7 +45,7 @@ hf        = ["transformers>=4.40"]
 llm       = ["httpx>=0.27"]
 postgres  = ["asyncpg>=0.30"]
 redis     = ["redis>=5.0"]
-all       = ["model-story[pdf,lightning,hf,llm]"]
+all       = ["epochix[pdf,lightning,hf,llm]"]
 dev       = [
   "pytest>=8",
   "pytest-asyncio>=0.24",
@@ -60,68 +60,69 @@ dev       = [
 ]
 
 [project.urls]
-Homepage      = "https://github.com/hexorax/model-story"
-Documentation = "https://docs.model-story.dev"
-Repository    = "https://github.com/hexorax/model-story"
-Issues        = "https://github.com/hexorax/model-story/issues"
+Homepage      = "https://github.com/epochix/epochix"
+Documentation = "https://docs.epochix.dev"
+Repository    = "https://github.com/epochix/epochix"
+Issues        = "https://github.com/epochix/epochix/issues"
+Changelog     = "https://github.com/epochix/epochix/blob/main/CHANGELOG.md"
 
 [project.scripts]
-model-story = "model_story.cli:main_entry"
+epochix = "epochix.cli:main_entry"
 
-[project.entry-points."model_story.parsers"]
-pytorch_lightning = "model_story.parsers.pytorch_lightning:PLParser"
-keras_tensorflow  = "model_story.parsers.keras_tensorflow:KerasParser"
-huggingface       = "model_story.parsers.huggingface:HFParser"
-ultralytics_yolo  = "model_story.parsers.ultralytics_yolo:YOLOParser"
-fastai            = "model_story.parsers.fastai:FastAIParser"
-accelerate        = "model_story.parsers.accelerate:AccelerateParser"
-universal         = "model_story.parsers.universal:UniversalParser"
+[project.entry-points."epochix.parsers"]
+pytorch_lightning = "epochix.parsers.pytorch_lightning:PLParser"
+keras_tensorflow  = "epochix.parsers.keras_tensorflow:KerasParser"
+huggingface       = "epochix.parsers.huggingface:HFParser"
+ultralytics_yolo  = "epochix.parsers.ultralytics_yolo:YOLOParser"
+fastai            = "epochix.parsers.fastai:FastAIParser"
+accelerate        = "epochix.parsers.accelerate:AccelerateParser"
+universal         = "epochix.parsers.universal:UniversalParser"
 
 # Metaphor packs: entry point value = path to a YAML file
-# [project.entry-points."model_story.metaphor_packs"]
+# [project.entry-points."epochix.metaphor_packs"]
 # my_pack = "my_package:METAPHORS_YAML"
 
 # Custom task types: entry point value = TaskDefinition instance or dict
-# [project.entry-points."model_story.tasks"]
+# [project.entry-points."epochix.tasks"]
 # audio = "my_package.task:TASK_DEFINITION"
 
 # Custom exporters: entry point value = callable(run, frames, events, output_path)
-# [project.entry-points."model_story.exporters"]
+# [project.entry-points."epochix.exporters"]
 # latex = "my_package.exporter:EXPORTER"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/model_story"]
+packages = ["src/epochix"]
 # Stop hatch from re-collecting the same non-.py files that force-include
 # below already maps. Without these excludes hatch sees them twice and
 # emits "Duplicate name" warnings at build time.
 exclude = [
-  "src/model_story/story_engine/templates/**",
-  "src/model_story/_artifacts/**",
-  "src/model_story/_demos/**",
-  "src/model_story/_frontend/dist/**",
+  "src/epochix/story_engine/templates/**",
+  "src/epochix/_artifacts/**",
+  "src/epochix/_demos/**",
+  "src/epochix/_frontend/dist/**",
 ]
 
 [tool.hatch.build.targets.wheel.shared-data]
 # non-Python assets that must ship inside the wheel
-"src/model_story/py.typed" = "model_story/py.typed"
+"src/epochix/py.typed" = "epochix/py.typed"
 
 [tool.hatch.build.targets.wheel.force-include]
 # Narrative templates (text files alongside the story_engine package).
-"src/model_story/story_engine/templates" = "model_story/story_engine/templates"
+"src/epochix/story_engine/templates" = "epochix/story_engine/templates"
 # Claude artifact (JSX).
-"src/model_story/_artifacts" = "model_story/_artifacts"
-# Bundled demo logs — used by `model-story demo` so newcomers can see
+"src/epochix/_artifacts" = "epochix/_artifacts"
+# Bundled demo logs — used by `epochix demo` so newcomers can see
 # the dashboard without bringing their own training log.
-"src/model_story/_demos" = "model_story/_demos"
+"src/epochix/_demos" = "epochix/_demos"
 # Frontend bundle vendored at release time via CI (build-frontend step).
-"frontend/dist" = "model_story/_frontend/dist"
+"frontend/dist" = "epochix/_frontend/dist"
 
 [tool.hatch.envs.default]
 features = ["dev"]
 
 [tool.hatch.envs.default.scripts]
 test      = "pytest {args}"
-typecheck = "mypy --strict src/model_story"
+typecheck = "mypy --strict src/epochix"
 lint      = "ruff check src tests && ruff format --check src tests"
 fmt       = "ruff format src tests && ruff check --fix src tests"
 bench     = "pytest tests/benchmarks --benchmark-only"
@@ -139,7 +140,7 @@ ignore = [
 
 [tool.ruff.lint.per-file-ignores]
 # Aligned layer-type → metadata mapping table reads better as wide columns.
-"src/model_story/parsers/architecture_parser.py" = ["E501"]
+"src/epochix/parsers/architecture_parser.py" = ["E501"]
 # Tests may use long inline SQL/fixtures and nested context managers.
 "tests/**" = ["E501", "SIM117"]
 
@@ -155,5 +156,5 @@ testpaths    = ["tests"]
 addopts      = "-q --tb=short"
 
 [tool.coverage.run]
-source = ["src/model_story"]
-omit   = ["src/model_story/_frontend/*"]
+source = ["src/epochix"]
+omit   = ["src/epochix/_frontend/*"]

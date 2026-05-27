@@ -12,9 +12,9 @@ RUN npm run build
 FROM python:3.12-slim AS runtime
 
 # Metadata
-LABEL org.opencontainers.image.title="model-story server"
+LABEL org.opencontainers.image.title="epochix server"
 LABEL org.opencontainers.image.description="Visual storytelling for deep learning training runs"
-LABEL org.opencontainers.image.source="https://github.com/model-story/model-story"
+LABEL org.opencontainers.image.source="https://github.com/epochix/epochix"
 LABEL org.opencontainers.image.licenses="Apache-2.0"
 
 # System deps for WeasyPrint (pdf export) — skip if not needed by your use-case
@@ -31,12 +31,12 @@ WORKDIR /home/app
 # Install the package from PyPI (or from a local wheel during CI)
 # Use ARG to allow overriding the version at build time:
 #   docker build --build-arg VERSION=0.1.0 .
-ARG VERSION=0.1.0
-RUN pip install --no-cache-dir "model-story==${VERSION}"
+ARG VERSION=0.3.0
+RUN pip install --no-cache-dir "epochix==${VERSION}"
 
 # Copy the pre-built frontend bundle into the expected location
 COPY --from=frontend-builder /build/frontend/dist/ \
-     /home/app/.local/lib/python3.12/site-packages/model_story/_frontend/dist/
+     /home/app/.local/lib/python3.12/site-packages/epochix/_frontend/dist/
 
 # Data directory (SQLite DB, exports)
 RUN mkdir -p /data && chown app:app /data
@@ -51,9 +51,9 @@ EXPOSE 7860
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
   CMD python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:7860/api/runs')"
 
-ENV MODEL_STORY_DB=/data/runs.db \
-    MODEL_STORY_HOST=0.0.0.0 \
-    MODEL_STORY_PORT=7860
+ENV EPOCHIX_DB=/data/runs.db \
+    EPOCHIX_HOST=0.0.0.0 \
+    EPOCHIX_PORT=7860
 
-ENTRYPOINT ["model-story"]
+ENTRYPOINT ["epochix"]
 CMD ["serve", "--host", "0.0.0.0", "--port", "7860"]

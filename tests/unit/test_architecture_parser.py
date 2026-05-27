@@ -1,7 +1,7 @@
 """Architecture-detection tests across all supported summary formats."""
 from __future__ import annotations
 
-from model_story.parsers.architecture_parser import (
+from epochix.parsers.architecture_parser import (
     _classify,
     parse_architecture,
 )

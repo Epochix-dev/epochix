@@ -12,9 +12,9 @@ from datetime import datetime, timezone
 
 import pytest
 
-from model_story.enums import TaskType
-from model_story.models import MetricEvent, Run
-from model_story.store.sqlite_store import RunStore
+from epochix.enums import TaskType
+from epochix.models import MetricEvent, Run
+from epochix.store.sqlite_store import RunStore
 
 
 def _make_store() -> RunStore:

@@ -1,7 +1,7 @@
 """CLI routing tests.
 
 Guards against the regression where a positional argument on the Typer group
-callback swallowed subcommand names (so `model-story serve` was parsed as a
+callback swallowed subcommand names (so `epochix serve` was parsed as a
 log-file path). The console entry point (`main_entry`) routes bare log-file
 invocations to the implicit `run` command while real subcommands dispatch.
 """
@@ -11,7 +11,7 @@ import sys
 
 from typer.testing import CliRunner
 
-import model_story.cli as cli
+import epochix.cli as cli
 
 runner = CliRunner()
 
@@ -59,28 +59,28 @@ def _capture_argv(monkeypatch) -> dict:
 
 def test_shim_routes_logfile_to_run(monkeypatch) -> None:
     seen = _capture_argv(monkeypatch)
-    monkeypatch.setattr(sys, "argv", ["model-story", "train.log"])
+    monkeypatch.setattr(sys, "argv", ["epochix", "train.log"])
     cli.main_entry()
     assert seen["argv"][1:] == ["run", "train.log"]
 
 
 def test_shim_routes_option_only_to_run(monkeypatch) -> None:
     seen = _capture_argv(monkeypatch)
-    monkeypatch.setattr(sys, "argv", ["model-story", "--live"])
+    monkeypatch.setattr(sys, "argv", ["epochix", "--live"])
     cli.main_entry()
     assert seen["argv"][1:] == ["run", "--live"]
 
 
 def test_shim_leaves_subcommands_untouched(monkeypatch) -> None:
     seen = _capture_argv(monkeypatch)
-    monkeypatch.setattr(sys, "argv", ["model-story", "serve", "--port", "9000"])
+    monkeypatch.setattr(sys, "argv", ["epochix", "serve", "--port", "9000"])
     cli.main_entry()
     assert seen["argv"][1:] == ["serve", "--port", "9000"]
 
 
 def test_shim_passes_through_top_level_help(monkeypatch) -> None:
     seen = _capture_argv(monkeypatch)
-    monkeypatch.setattr(sys, "argv", ["model-story", "--help"])
+    monkeypatch.setattr(sys, "argv", ["epochix", "--help"])
     cli.main_entry()
     # help is passed straight through (no 'run' injected)
     assert seen["argv"][1:] == ["--help"]

@@ -14,12 +14,12 @@ from datetime import datetime, timezone
 import pytest
 from fastapi.testclient import TestClient
 
-from model_story.config import Settings
-from model_story.enums import TaskType
-from model_story.models import Run
-from model_story.server.app import create_app
-from model_story.store.sqlite_store import RunStore
-from model_story.story_engine import StoryEngine
+from epochix.config import Settings
+from epochix.enums import TaskType
+from epochix.models import Run
+from epochix.server.app import create_app
+from epochix.store.sqlite_store import RunStore
+from epochix.story_engine import StoryEngine
 
 
 @pytest.fixture()
@@ -142,7 +142,7 @@ class TestPipeline:
         store.create_run(run)
 
         # Register a StoryEngine manually (as the SDK LiveReporter does)
-        from model_story.server.app import create_app as _ca  # noqa: F401
+        from epochix.server.app import create_app as _ca  # noqa: F401
 
         app_state = client.app.state  # type: ignore[attr-defined]
         engine = StoryEngine(run_id="pipe-run-02", task=TaskType.CLASSIFICATION)
@@ -246,7 +246,7 @@ class TestMultiMetric:
 
 class TestCompare:
     def test_compare_returns_multiple_runs(self, server: tuple[TestClient, RunStore]) -> None:
-        from model_story.models import MetricEvent
+        from epochix.models import MetricEvent
 
         client, store = server
         for rid in ("cmp-a", "cmp-b"):

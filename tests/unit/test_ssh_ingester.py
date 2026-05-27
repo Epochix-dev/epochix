@@ -11,8 +11,8 @@ import asyncio
 
 import pytest
 
-from model_story.ingester import make_ingester
-from model_story.ingester.ssh import SSHIngester, parse_ssh_target
+from epochix.ingester import make_ingester
+from epochix.ingester.ssh import SSHIngester, parse_ssh_target
 
 # ── parse_ssh_target ─────────────────────────────────────────────────────────
 

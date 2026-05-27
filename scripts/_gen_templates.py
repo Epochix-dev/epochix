@@ -1,7 +1,7 @@
-"""Generate all narrative template files under src/model_story/story_engine/templates/."""
+"""Generate all narrative template files under src/epochix/story_engine/templates/."""
 from pathlib import Path
 
-BASE = Path(__file__).parent.parent / "src" / "model_story" / "story_engine" / "templates"
+BASE = Path(__file__).parent.parent / "src" / "epochix" / "story_engine" / "templates"
 
 TEMPLATES: dict[str, dict[str, list[str]]] = {
     # ── CLASSIFICATION ────────────────────────────────────────────────────────

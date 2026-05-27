@@ -22,11 +22,11 @@ from datetime import datetime, timezone
 import pytest
 from fastapi.testclient import TestClient
 
-from model_story.config import Settings
-from model_story.models import WSMessage
-from model_story.server.app import create_app
-from model_story.server.hub import Hub
-from model_story.store.sqlite_store import RunStore
+from epochix.config import Settings
+from epochix.models import WSMessage
+from epochix.server.app import create_app
+from epochix.server.hub import Hub
+from epochix.store.sqlite_store import RunStore
 
 
 @pytest.fixture()
@@ -238,7 +238,7 @@ class TestHubDirect:
         assert seqs == [6, 7, 8, 9, 10]
 
 
-# ── Auth guard (token via query param when MODEL_STORY_AUTH_TOKEN is set) ───────
+# ── Auth guard (token via query param when EPOCHIX_AUTH_TOKEN is set) ───────
 
 class TestWSAuth:
     def test_rejects_without_token_when_auth_configured(self) -> None:

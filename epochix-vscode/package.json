@@ -1,0 +1,152 @@
+{
+  "name": "epochix",
+  "displayName": "Epochix",
+  "description": "Visual storytelling for deep learning training runs — live animated dashboard in your editor.",
+  "publisher": "epochix",
+  "version": "0.3.0",
+  "license": "Apache-2.0",
+  "icon": "icon.png",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/epochix/epochix"
+  },
+  "bugs": {
+    "url": "https://github.com/epochix/epochix/issues"
+  },
+  "homepage": "https://github.com/epochix/epochix#readme",
+  "engines": { "vscode": "^1.92.0" },
+  "categories": ["Visualization", "Data Science", "Machine Learning"],
+  "keywords": ["machine learning", "deep learning", "training", "visualization", "dashboard"],
+  "activationEvents": [
+    "onCommand:epochix.openDashboard",
+    "onCommand:epochix.watchTerminal",
+    "onLanguage:python",
+    "onView:epochixRuns",
+    "workspaceContains:**/*.log"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "epochix.openDashboard",
+        "title": "Epochix: Open Dashboard",
+        "icon": "$(graph)"
+      },
+      {
+        "command": "epochix.watchTerminal",
+        "title": "Epochix: Watch Active Terminal",
+        "icon": "$(terminal)"
+      },
+      {
+        "command": "epochix.openLogFile",
+        "title": "Epochix: Open Log File…",
+        "icon": "$(file-text)"
+      },
+      {
+        "command": "epochix.exportRun",
+        "title": "Epochix: Export Current Run",
+        "icon": "$(export)"
+      },
+      {
+        "command": "epochix.compareRuns",
+        "title": "Epochix: Compare Two Runs",
+        "icon": "$(diff)"
+      }
+    ],
+    "menus": {
+      "explorer/context": [
+        {
+          "command": "epochix.openLogFile",
+          "when": "resourceExtname == .log",
+          "group": "navigation"
+        }
+      ],
+      "editor/title": [
+        {
+          "command": "epochix.openLogFile",
+          "when": "resourceExtname == .log",
+          "group": "navigation"
+        }
+      ]
+    },
+    "views": {
+      "explorer": [
+        {
+          "id": "epochixRuns",
+          "name": "Epochix Runs"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "Epochix",
+      "properties": {
+        "epochix.autoWatchTerminal": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically open the dashboard when ML training is detected in an integrated terminal."
+        },
+        "epochix.taskHint": {
+          "type": "string",
+          "enum": ["auto", "classification", "detection", "regression", "biometric", "gaze", "nlp"],
+          "default": "auto",
+          "description": "Force a task type instead of auto-detecting from the log."
+        },
+        "epochix.useSidecar": {
+          "type": "string",
+          "enum": ["auto", "always", "never"],
+          "default": "auto",
+          "description": "Use the Python epochix package as a sidecar server if available."
+        },
+        "epochix.sidecarPath": {
+          "type": "string",
+          "default": "",
+          "description": "Override the path to the epochix executable."
+        },
+        "epochix.llmFallback": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable Ollama LLM fallback parsing for unknown log formats (requires Ollama running locally)."
+        },
+        "epochix.theme": {
+          "type": "string",
+          "enum": ["auto", "light", "dark"],
+          "default": "auto",
+          "description": "Dashboard theme. 'auto' follows VS Code's colour theme."
+        },
+        "epochix.locale": {
+          "type": "string",
+          "enum": ["en", "fa", "fr"],
+          "default": "en",
+          "description": "Dashboard language."
+        }
+      }
+    },
+    "keybindings": [
+      {
+        "command": "epochix.openDashboard",
+        "key": "ctrl+alt+m",
+        "mac": "cmd+alt+m"
+      }
+    ]
+  },
+  "scripts": {
+    "build:webview": "npm --prefix ../frontend run build:webview",
+    "compile": "node esbuild.config.mjs",
+    "compile:prod": "node esbuild.config.mjs --production",
+    "watch": "node esbuild.config.mjs --watch",
+    "vscode:prepublish": "npm run build:webview && npm run compile:prod",
+    "package": "vsce package",
+    "lint": "eslint src --ext ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/vscode": "^1.92.0",
+    "@typescript-eslint/eslint-plugin": "^7.0.0",
+    "@typescript-eslint/parser": "^7.0.0",
+    "@vscode/vsce": "^3.0.0",
+    "esbuild": "^0.23.0",
+    "eslint": "^8.0.0",
+    "typescript": "^5.5.0"
+  }
+}

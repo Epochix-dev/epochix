@@ -1,4 +1,4 @@
-"""Unit tests for model_story.models and model_story.enums."""
+"""Unit tests for epochix.models and epochix.enums."""
 from __future__ import annotations
 
 from datetime import datetime, timezone
@@ -6,8 +6,8 @@ from datetime import datetime, timezone
 import pytest
 from pydantic import ValidationError
 
-from model_story.enums import Grade, Phase, TaskType
-from model_story.models import (
+from epochix.enums import Grade, Phase, TaskType
+from epochix.models import (
     MetaphorCard,
     MetricEvent,
     Milestone,

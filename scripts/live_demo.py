@@ -126,7 +126,7 @@ def simulate(*, base: str, epochs: int, delay: float) -> None:
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="model-story live training demo")
+    parser = argparse.ArgumentParser(description="epochix live training demo")
     parser.add_argument("--port",   type=int,   default=7860)
     parser.add_argument("--epochs", type=int,   default=20)
     parser.add_argument("--delay",  type=float, default=1.5,

@@ -5,13 +5,13 @@ from pathlib import Path
 
 import pytest
 
-from model_story.parsers.base import ParserContext
-from model_story.parsers.huggingface import HFParser
-from model_story.parsers.keras_tensorflow import KerasParser
-from model_story.parsers.pytorch_lightning import PLParser
-from model_story.parsers.registry import detect_parser
-from model_story.parsers.ultralytics_yolo import YOLOParser
-from model_story.parsers.universal import UniversalParser
+from epochix.parsers.base import ParserContext
+from epochix.parsers.huggingface import HFParser
+from epochix.parsers.keras_tensorflow import KerasParser
+from epochix.parsers.pytorch_lightning import PLParser
+from epochix.parsers.registry import detect_parser
+from epochix.parsers.ultralytics_yolo import YOLOParser
+from epochix.parsers.universal import UniversalParser
 
 DEMO = Path(__file__).parents[2] / "demo"
 

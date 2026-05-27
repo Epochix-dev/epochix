@@ -3,12 +3,12 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 
-from model_story.enums import Grade, Phase, TaskType
-from model_story.models import MetricEvent
-from model_story.story_engine import StoryEngine
-from model_story.story_engine.grade import compute_grade
-from model_story.story_engine.phases import compute_phase
-from model_story.story_engine.task_classifier import classify_task
+from epochix.enums import Grade, Phase, TaskType
+from epochix.models import MetricEvent
+from epochix.story_engine import StoryEngine
+from epochix.story_engine.grade import compute_grade
+from epochix.story_engine.phases import compute_phase
+from epochix.story_engine.task_classifier import classify_task
 
 
 def _event(

@@ -11,10 +11,10 @@ from datetime import datetime, timezone
 
 from fastapi.testclient import TestClient
 
-from model_story.config import Settings
-from model_story.enums import TaskType
-from model_story.models import Run
-from model_story.server.app import create_app
+from epochix.config import Settings
+from epochix.enums import TaskType
+from epochix.models import Run
+from epochix.server.app import create_app
 
 
 def _make_run(store, run_id: str = "sec-run") -> None:

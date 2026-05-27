@@ -6,10 +6,10 @@ services:
     ports:
       - "7860:7860"
     environment:
-      MODEL_STORY_DB: /data/runs.db
-      MODEL_STORY_REDIS_URL: redis://redis:6379/0
+      EPOCHIX_DB: /data/runs.db
+      EPOCHIX_REDIS_URL: redis://redis:6379/0
     volumes:
-      - model_story_data:/data
+      - epochix_data:/data
     depends_on:
       - redis
 
@@ -24,9 +24,9 @@ services:
     image: postgres:16-alpine
     profiles: ["hosted"]
     environment:
-      POSTGRES_DB: model_story
-      POSTGRES_USER: model_story
-      POSTGRES_PASSWORD: model_story_dev
+      POSTGRES_DB: epochix
+      POSTGRES_USER: epochix
+      POSTGRES_PASSWORD: epochix_dev
     ports:
       - "5432:5432"
     volumes:
@@ -42,6 +42,6 @@ services:
       - ollama_data:/root/.ollama
 
 volumes:
-  model_story_data:
+  epochix_data:
   pg_data:
   ollama_data:

@@ -186,7 +186,7 @@ async function main() {
   // ── data loading ───────────────────────────────────────────────────────────
 
   // Case 0: VS Code standalone webview — data arrives via postMessage, not HTTP.
-  if (window.__MS_VSCODE__) {
+  if (window.__EPOCHIX_VSCODE__) {
     const { startVscodeBridge } = await import('./vscode-bridge.js');
     if (startVscodeBridge(applyTheme)) return;
   }
@@ -374,7 +374,7 @@ async function showRunList() {
       listEl.innerHTML = `
         <div class="run-list-empty">
           No training runs yet.<br>
-          Run <code>model-story &lt;log.txt&gt;</code> to get started.
+          Run <code>epochix &lt;log.txt&gt;</code> to get started.
         </div>`;
       return;
     }

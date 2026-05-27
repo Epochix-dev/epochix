@@ -1,9 +1,9 @@
 # Build outputs
 frontend/dist/
 frontend/node_modules/
-model-story-vscode/node_modules/
-model-story-vscode/dist/
-model-story-vscode/*.vsix
+epochix-vscode/node_modules/
+epochix-vscode/dist/
+epochix-vscode/*.vsix
 **/__pycache__/
 **/*.pyc
 **/*.pyo

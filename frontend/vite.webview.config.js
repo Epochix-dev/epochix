@@ -13,13 +13,13 @@ import { defineConfig } from 'vite';
  *
  * Output goes straight into the extension's `webview-dist/`. The built
  * `index.html` carries the full app markup, which the loader reads and adapts
- * (see model-story-vscode/src/webview/webview.html.ts).
+ * (see epochix-vscode/src/webview/webview.html.ts).
  */
 export default defineConfig({
   root: '.',
   base: './',
   build: {
-    outDir: '../model-story-vscode/webview-dist',
+    outDir: '../epochix-vscode/webview-dist',
     emptyOutDir: true,
     target: 'es2020',
     cssCodeSplit: false,

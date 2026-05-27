@@ -7,11 +7,11 @@ from datetime import datetime, timezone
 import pytest
 from fastapi.testclient import TestClient
 
-from model_story.config import Settings
-from model_story.enums import TaskType
-from model_story.models import Run
-from model_story.server.app import create_app
-from model_story.store.sqlite_store import RunStore
+from epochix.config import Settings
+from epochix.enums import TaskType
+from epochix.models import Run
+from epochix.server.app import create_app
+from epochix.store.sqlite_store import RunStore
 
 
 @pytest.fixture()
@@ -125,7 +125,7 @@ class TestExportEndpoints:
     ) -> None:
         # 501 when the Vite bundle hasn't been built yet. Force the missing-bundle
         # condition so the test is deterministic regardless of build state.
-        import model_story.server.routes_export as rex
+        import epochix.server.routes_export as rex
 
         def _no_bundle(**_kwargs: object) -> str:
             raise FileNotFoundError("frontend bundle not built")

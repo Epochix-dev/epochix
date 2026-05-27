@@ -5,9 +5,9 @@ from datetime import datetime, timezone
 
 import pytest
 
-from model_story.enums import Grade, TaskType
-from model_story.models import MetricEvent, Run
-from model_story.store.sqlite_store import RunStore
+from epochix.enums import Grade, TaskType
+from epochix.models import MetricEvent, Run
+from epochix.store.sqlite_store import RunStore
 
 
 @pytest.fixture

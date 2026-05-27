@@ -1,6 +1,6 @@
 # Supported Frameworks
 
-model-story auto-detects the framework from your log output.
+epochix auto-detects the framework from your log output.
 The detection uses a "sniff" score — the parser with the highest confidence
 above the threshold wins. The universal fallback always fires if nothing
 else matches.
@@ -110,12 +110,12 @@ can be enabled:
 
 ```bash
 # Ollama (local)
-export MODEL_STORY_LLM_URL=http://localhost:11434
-model-story train.log
+export EPOCHIX_LLM_URL=http://localhost:11434
+epochix train.log
 
 # OpenAI
-export MODEL_STORY_LLM_KEY=sk-...
-model-story train.log
+export EPOCHIX_LLM_KEY=sk-...
+epochix train.log
 ```
 
 The LLM fallback batches 20 lines per call and asks the model to extract

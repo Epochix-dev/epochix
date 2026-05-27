@@ -1,4 +1,4 @@
-# Model Learning Story — System Design & Architecture
+# Epochix — System Design & Architecture
 
 > **A visual storytelling platform for deep learning training runs.**
 > Turns terminal-output logs into an animated, plain-English narrative anyone can read.
@@ -6,7 +6,7 @@
 **Version:** 1.0 (Architecture Specification)
 **Status:** Pre-implementation
 **License (planned):** Apache-2.0
-**Package name (planned):** `model-story` (PyPI) / `@model-story/web` (npm, optional)
+**Package name (planned):** `epochix` (PyPI) / `@epochix/web` (npm, optional)
 
 ---
 
@@ -46,21 +46,21 @@
 
 ## 1. Executive Summary
 
-**Model Learning Story** ingests raw training output from any deep-learning framework and renders a live, animated, non-technical narrative of what the model is learning, how confident it is, and whether it's improving. It targets the gap between:
+**Epochix** ingests raw training output from any deep-learning framework and renders a live, animated, non-technical narrative of what the model is learning, how confident it is, and whether it's improving. It targets the gap between:
 
 - **Engineer-facing tools** (TensorBoard, W&B, MLflow, Aim, Comet, Neptune) which assume ML literacy, and
 - **Stakeholders** (managers, clients, regulators, researchers from other fields) who need to *understand* what's happening without a ML degree.
 
 The system is delivered as:
 
-- A **Python package** (`pip install model-story`) — parser + server + exporter
+- A **Python package** (`pip install epochix`) — parser + server + exporter
 - A **static web bundle** — frontend dashboard served by the package or exported as standalone HTML
-- A **CLI** (`model-story`) — one-command UX
+- A **CLI** (`epochix`) — one-command UX
 - An **optional hosted service** (Phase 5) — for sharing run permalinks
 
 ### Differentiators (vs. W&B / TensorBoard / MLflow / Aim / Comet / Neptune)
 
-| Capability                            | Existing tools | Model Learning Story |
+| Capability                            | Existing tools | Epochix |
 |---------------------------------------|----------------|----------------------|
 | Non-technical narrative + letter grade| ✗              | ✓                    |
 | Animated living visuals (not charts)  | ✗              | ✓                    |
@@ -70,7 +70,7 @@ The system is delivered as:
 | Epoch scrubber / replay               | partial        | ✓                    |
 | pip install, one command              | partial        | ✓                    |
 | Embeddable iframe widget              | partial        | ✓ *(added)*          |
-| Jupyter `%model_story` magic          | ✗              | ✓ *(added)*          |
+| Jupyter `%epochix` magic          | ✗              | ✓ *(added)*          |
 | CI/CD GitHub Action                   | ✗              | ✓ *(added)*          |
 | Local-first, no required account      | ✗              | ✓                    |
 
@@ -80,7 +80,7 @@ The system is delivered as:
 
 The architecture follows seven non-negotiable principles. Every component is checked against this list.
 
-1. **Zero-config, zero-account by default.** A user pipes `train.py` into `model-story --live` and the browser opens. No login. No cloud. No telemetry.
+1. **Zero-config, zero-account by default.** A user pipes `train.py` into `epochix --live` and the browser opens. No login. No cloud. No telemetry.
 2. **Local-first, optional cloud.** Everything runs offline. Hosted sharing is a strict opt-in.
 3. **Format-agnostic.** Parsers are pluggable; the universal regex fallback handles anything that prints `key=value`. LLM fallback is the last resort.
 4. **Stream-first.** Live mode is a first-class citizen, not an afterthought bolted on top of a file reader.
@@ -215,8 +215,8 @@ The architecture follows seven non-negotiable principles. Every component is che
 
 | Mode         | Trigger                                | Storage              | Network |
 |--------------|----------------------------------------|----------------------|---------|
-| **Batch**    | `model-story train.log`                | SQLite               | local   |
-| **Live**     | `python train.py 2>&1 \| model-story --live` | SQLite + RAM ring buffer | WS/SSE  |
+| **Batch**    | `epochix train.log`                | SQLite               | local   |
+| **Live**     | `python train.py 2>&1 \| epochix --live` | SQLite + RAM ring buffer | WS/SSE  |
 | **Embed**    | `<iframe src=".../v/<run_id>">`        | SQLite (read-only)   | HTTPS   |
 
 ---
@@ -243,8 +243,8 @@ The architecture follows seven non-negotiable principles. Every component is che
 | `frontend`            | JS (Vanilla + Vite) | UI shell, panels, themes                     |
 | `viz.*`               | JS (Canvas/SVG/D3) | Brain, Meter, Radar, Waterfall, Scrubber     |
 | `sdk` (Python)        | Python         | `LiveReporter`, `parse`, `visualize`              |
-| `sdk` (JS, opt.)      | TypeScript     | `@model-story/embed` for custom integrations      |
-| `jupyter_ext`         | Python         | `%model_story` cell magic                         |
+| `sdk` (JS, opt.)      | TypeScript     | `@epochix/embed` for custom integrations      |
+| `jupyter_ext`         | Python         | `%epochix` cell magic                         |
 | `gh_action`           | YAML + Node    | GitHub Action for CI                              |
 
 ### 5.2 Dependency Graph (Python)
@@ -360,7 +360,7 @@ The frontend renders the snapshot instantly (no spinner), then animates new fram
 ### 6.4 Export Flow
 
 ```
-model-story export run.log --format html
+epochix export run.log --format html
         │
         ▼
 ┌─────────────────────┐
@@ -577,8 +577,8 @@ CREATE TABLE raw_lines (
 
 ### 8.1 Primary Store — SQLite
 
-- Default path: `~/.model-story/runs.db`
-- Configurable via `MODEL_STORY_DB` env var or `--db` flag.
+- Default path: `~/.epochix/runs.db`
+- Configurable via `EPOCHIX_DB` env var or `--db` flag.
 - WAL mode, `synchronous=NORMAL`, `journal_size_limit=64MB`.
 - Single file. Easy to commit, email, or delete.
 
@@ -590,13 +590,13 @@ CREATE TABLE raw_lines (
 
 ### 8.3 Optional Redis (Phase 5, multi-worker)
 
-- Pub/sub channel: `model_story:run:<run_id>`.
+- Pub/sub channel: `epochix:run:<run_id>`.
 - Used only when running behind a load balancer with multiple Uvicorn workers.
 
 ### 8.4 Retention & Cleanup
 
-- `model-story prune --older-than 30d` — deletes runs.
-- `model-story compact` — runs `VACUUM` + rebuilds indices.
+- `epochix prune --older-than 30d` — deletes runs.
+- `epochix compact` — runs `VACUUM` + rebuilds indices.
 - No automatic deletion. The user owns the data.
 
 ---
@@ -648,13 +648,13 @@ On the first 50 lines (or 5 seconds in live mode), every registered parser runs 
 Borrowing from **LogBatcher** (FSE 2025, demonstration-free LLM log parsing): when no structured parser succeeds, batches of ~10 unknown lines are sent to a local LLM with a prompt template that asks for JSON-extracted key/value pairs. Output is validated against the `MetricEvent` schema; invalid extractions are dropped.
 
 - Default: `ollama run qwen2.5:7b` if Ollama is reachable on `127.0.0.1:11434`.
-- Opt-in: OpenAI / Anthropic via `MODEL_STORY_LLM_KEY` env var.
+- Opt-in: OpenAI / Anthropic via `EPOCHIX_LLM_KEY` env var.
 - Disabled by default in CI / headless mode.
 
 ### 9.5 Custom Parser Registration
 
 ```python
-from model_story.parsers import register_parser, BaseParser
+from epochix.parsers import register_parser, BaseParser
 
 @register_parser
 class MyTrainerParser(BaseParser):
@@ -664,7 +664,7 @@ class MyTrainerParser(BaseParser):
     def parse_line(self, line, ctx): ...
 ```
 
-Plugin parsers can also be installed as separate PyPI packages with the entry point group `model_story.parsers`.
+Plugin parsers can also be installed as separate PyPI packages with the entry point group `epochix.parsers`.
 
 ---
 
@@ -700,7 +700,7 @@ Fires *once per run* when ≥3 metric events have arrived. Decision table:
 | `fid` / `is_score`      | generative            |
 | (nothing matches)       | custom                |
 
-Override: `model-story --task biometric`, or `LiveReporter(task="biometric")`.
+Override: `epochix --task biometric`, or `LiveReporter(task="biometric")`.
 
 ### 10.3 Phase Detector
 
@@ -718,7 +718,7 @@ def phase(progress: float, primary: float, baseline: float) -> Phase:
 
 ### 10.4 Grader
 
-Task-specific thresholds, configurable via `.model-story.yaml`:
+Task-specific thresholds, configurable via `.epochix.yaml`:
 
 ```yaml
 grade_thresholds:
@@ -946,7 +946,7 @@ Brain canvas auto-throttles to 30 fps when the tab is backgrounded.
 ### 14.1 HTML Export
 
 ```
-model-story export run.log --format html --output report.html
+epochix export run.log --format html --output report.html
 ```
 
 - Vite builds a `single-file` bundle (all CSS/JS inlined as data URIs).
@@ -958,7 +958,7 @@ model-story export run.log --format html --output report.html
 ### 14.2 PDF Slide Deck
 
 ```
-model-story export run.log --format pdf --output report.pdf
+epochix export run.log --format pdf --output report.pdf
 ```
 
 - One slide per major milestone + final summary slide.
@@ -968,7 +968,7 @@ model-story export run.log --format pdf --output report.pdf
 ### 14.3 Standalone JSON Run
 
 ```
-model-story export run.log --format json --output run.json
+epochix export run.log --format json --output run.json
 ```
 
 The full canonical run, ready to be re-imported elsewhere.
@@ -976,7 +976,7 @@ The full canonical run, ready to be re-imported elsewhere.
 ### 14.4 Markdown Summary (added)
 
 ```
-model-story export run.log --format md --output report.md
+epochix export run.log --format md --output report.md
 ```
 
 Plain-English narrative + grade + key milestones. Useful for inclusion in PR descriptions, papers, status reports.
@@ -988,25 +988,25 @@ Plain-English narrative + grade + key milestones. Useful for inclusion in PR des
 ### 15.1 Command Line
 
 ```
-model-story <log_file>                  # batch view
-model-story --live                      # read stdin
-model-story --live --tail FILE          # tail mode
-model-story --port 7860                 # change port
-model-story --task biometric            # force task
-model-story --no-llm                    # disable LLM fallback
-model-story --headless --export html    # CI mode, no browser
-model-story compare run1.log run2.log   # side-by-side
-model-story prune --older-than 30d
-model-story compact
-model-story list                        # list saved runs
-model-story open <run_id>               # open a saved run
-model-story config show|set <k> <v>
+epochix <log_file>                  # batch view
+epochix --live                      # read stdin
+epochix --live --tail FILE          # tail mode
+epochix --port 7860                 # change port
+epochix --task biometric            # force task
+epochix --no-llm                    # disable LLM fallback
+epochix --headless --export html    # CI mode, no browser
+epochix compare run1.log run2.log   # side-by-side
+epochix prune --older-than 30d
+epochix compact
+epochix list                        # list saved runs
+epochix open <run_id>               # open a saved run
+epochix config show|set <k> <v>
 ```
 
 ### 15.2 Python SDK
 
 ```python
-from model_story import parse, visualize, LiveReporter
+from epochix import parse, visualize, LiveReporter
 
 # 1. Parse a file
 run = parse("train.log", task="biometric")
@@ -1026,7 +1026,7 @@ for ep in range(100):
 reporter.finish()
 
 # 3. Compare runs
-from model_story import compare
+from epochix import compare
 diff = compare("run_v1.json", "run_v2.json")
 diff.show()
 ```
@@ -1063,21 +1063,21 @@ diff.show()
 
 | Group                       | Purpose                            |
 |-----------------------------|-------------------------------------|
-| `model_story.parsers`       | Custom parser classes               |
-| `model_story.metaphor_packs`| Domain-specific narrative templates |
-| `model_story.exporters`     | Additional export formats           |
-| `model_story.tasks`         | Custom task types (define grading)  |
+| `epochix.parsers`       | Custom parser classes               |
+| `epochix.metaphor_packs`| Domain-specific narrative templates |
+| `epochix.exporters`     | Additional export formats           |
+| `epochix.tasks`         | Custom task types (define grading)  |
 
 ### 16.2 Example Plugin Package
 
 ```toml
 # pyproject.toml
-[project.entry-points."model_story.parsers"]
-fairseq = "model_story_fairseq:FairseqParser"
+[project.entry-points."epochix.parsers"]
+fairseq = "epochix_fairseq:FairseqParser"
 ```
 
 ```python
-from model_story.parsers import BaseParser, register_parser
+from epochix.parsers import BaseParser, register_parser
 
 @register_parser
 class FairseqParser(BaseParser):
@@ -1108,10 +1108,10 @@ phases:
 ### 17.1 Jupyter / Colab Cell Magic
 
 ```python
-%load_ext model_story
-%model_story train.log
+%load_ext epochix
+%epochix train.log
 # or live:
-%%model_story --live
+%%epochix --live
 !python train.py
 ```
 
@@ -1123,12 +1123,12 @@ Renders an iframe in the cell output (or an inline div). Works offline in Colab.
 # .github/workflows/training.yml
 - name: Train and report
   run: python train.py 2>&1 | tee train.log
-- uses: model-story/action@v1
+- uses: epochix/action@v1
   with:
     log: train.log
     upload-html: true
 - name: Comment on PR
-  uses: model-story/comment-action@v1
+  uses: epochix/comment-action@v1
   with:
     summary: report.md
 ```
@@ -1138,7 +1138,7 @@ The action generates `report.html` and `report.md` and posts the narrative as a 
 ### 17.3 PyTorch Lightning Callback
 
 ```python
-from model_story.integrations.lightning import StoryCallback
+from epochix.integrations.lightning import StoryCallback
 
 trainer = pl.Trainer(callbacks=[StoryCallback(task="classification")])
 ```
@@ -1146,7 +1146,7 @@ trainer = pl.Trainer(callbacks=[StoryCallback(task="classification")])
 ### 17.4 HuggingFace Trainer Callback
 
 ```python
-from model_story.integrations.hf import StoryCallback
+from epochix.integrations.hf import StoryCallback
 
 trainer = Trainer(callbacks=[StoryCallback(task="nlp")], ...)
 ```
@@ -1154,8 +1154,8 @@ trainer = Trainer(callbacks=[StoryCallback(task="nlp")], ...)
 ### 17.5 TensorBoard / W&B Bridge
 
 ```
-model-story import-tensorboard ./runs/
-model-story import-wandb <api_key> <run_id>
+epochix import-tensorboard ./runs/
+epochix import-wandb <api_key> <run_id>
 ```
 
 Lets you backfill existing runs.
@@ -1171,7 +1171,7 @@ The server emits OTLP traces for each WS connection, parse operation, and export
 ### 18.1 Local (default)
 
 - Single process, SQLite, no auth.
-- `model-story --live` binds to `127.0.0.1:7860`.
+- `epochix --live` binds to `127.0.0.1:7860`.
 
 ### 18.2 Team server (LAN)
 
@@ -1252,7 +1252,7 @@ A `docker-compose.yml` ships in the repo: server + Redis + Postgres + an optiona
 
 ### 20.2 Privacy
 
-- No telemetry by default. Opt-in via `model-story config set telemetry true`.
+- No telemetry by default. Opt-in via `epochix config set telemetry true`.
 - LLM fallback is **disabled** unless explicitly enabled. Local Ollama preferred.
 - Run data never leaves the machine in local mode.
 
@@ -1311,9 +1311,9 @@ model-learning-story/
 │   │   ├── ci.yml
 │   │   ├── release.yml
 │   │   └── benchmarks.yml
-│   └── actions/                       # the model-story/action repo
+│   └── actions/                       # the epochix/action repo
 │
-├── src/model_story/
+├── src/epochix/
 │   ├── __init__.py
 │   ├── cli.py                         # Typer-based
 │   ├── config.py                      # pydantic-settings
@@ -1536,23 +1536,23 @@ model-learning-story/
 | 5    | Scrubber / playback                    | Drag epoch range → all visuals stay in sync                   |
 | 5    | HTML export (single-file)              | < 2 MB, opens offline, animations intact                      |
 | 6    | Task-aware narrator (biometric, gaze)  | Domain-correct phrasing on team fixtures                      |
-| 6    | Jupyter magic                          | `%model_story` renders in Colab                               |
+| 6    | Jupyter magic                          | `%epochix` renders in Colab                               |
 | 7    | PDF export + Markdown export           | One deck per run, one summary per run                         |
-| 7    | Lightning + HF callbacks               | `pip install model-story[lightning]` works                    |
+| 7    | Lightning + HF callbacks               | `pip install epochix[lightning]` works                    |
 | 8    | Run comparison view                    | Side-by-side timelines, grade diff                            |
 | 8    | GitHub Action                          | Auto-comments PRs with run summary                            |
 | 9    | LLM fallback (Ollama)                  | Parses an unseen format with ≥ 70% recall                     |
-| 9    | Plugin system                          | An external `model-story-fairseq` parser installs cleanly     |
+| 9    | Plugin system                          | An external `epochix-fairseq` parser installs cleanly     |
 | 10   | Docs + screenshots + landing page      | Quickstart works for a new user in < 60 seconds               |
-| 10   | v0.1 release on PyPI                   | `pip install model-story` works on Linux/macOS/Windows        |
+| 10   | v0.1 release on PyPI                   | `pip install epochix` works on Linux/macOS/Windows        |
 | 12+  | Hosted version (opt-in)                | Sign in, push runs, get a permalink                           |
 
 ### 24.1 Definition of Done — v0.1
 
-- `pip install model-story` works on Python 3.10/3.11/3.12 on Linux/macOS/Windows.
-- `model-story <any of 6 demo logs>` opens a complete dashboard.
-- `python fake_train.py | model-story --live` works end-to-end.
-- `model-story export train.log --format html` produces an offline file < 2 MB.
+- `pip install epochix` works on Python 3.10/3.11/3.12 on Linux/macOS/Windows.
+- `epochix <any of 6 demo logs>` opens a complete dashboard.
+- `python fake_train.py | epochix --live` works end-to-end.
+- `epochix export train.log --format html` produces an offline file < 2 MB.
 - README has a 20-second video demo.
 - A non-ML person can describe the model's state after viewing the dashboard for 30 seconds.
 
@@ -1568,17 +1568,17 @@ model-learning-story/
 
 ### 25.2 Optional npm packages
 
-- `@model-story/embed` — tiny JS lib for embedding (`<script>` tag) in arbitrary pages.
-- `@model-story/sdk` — TypeScript SDK for non-Python trainers (JAX via JS bridges, Flux.jl wrappers, etc.).
+- `@epochix/embed` — tiny JS lib for embedding (`<script>` tag) in arbitrary pages.
+- `@epochix/sdk` — TypeScript SDK for non-Python trainers (JAX via JS bridges, Flux.jl wrappers, etc.).
 
 ### 25.3 Docker images
 
-- `ghcr.io/model-story/server:<version>` — server-only.
-- `ghcr.io/model-story/full:<version>` — server + Ollama + sample data.
+- `ghcr.io/epochix/server:<version>` — server-only.
+- `ghcr.io/epochix/full:<version>` — server + Ollama + sample data.
 
 ### 25.4 Documentation site
 
-- `docs.model-story.dev` — mkdocs-material.
+- `docs.epochix.dev` — mkdocs-material.
 - Deployed by CI on every tag.
 
 ### 25.5 Marketing & adoption
@@ -1618,17 +1618,17 @@ The same core engine is delivered through three distinct *surfaces* — each opt
 
 ### 27.1 VS Code Extension
 
-**Marketplace name:** `model-story.model-story` (publisher · extension)
+**Marketplace name:** `epochix.epochix` (publisher · extension)
 
 #### 27.1.1 Goals
 
 - A user opens VS Code, runs `python train.py` in the integrated terminal, and a panel **automatically** appears on the side with the live dashboard. No copy-paste, no second window, no separate server to launch.
 - The status bar shows the current grade and phase emoji at a glance.
-- Right-clicking a `.log` file in the explorer offers *"Open in Model Story"*.
+- Right-clicking a `.log` file in the explorer offers *"Open in Epochix"*.
 
 #### 27.1.2 Two Operating Modes
 
-The extension can run in **standalone mode** (pure TypeScript, no Python required) or **sidecar mode** (spawns the Python `model-story` server in the background for full feature parity).
+The extension can run in **standalone mode** (pure TypeScript, no Python required) or **sidecar mode** (spawns the Python `epochix` server in the background for full feature parity).
 
 | Capability                  | Standalone (TS only) | Sidecar (Python) |
 |-----------------------------|----------------------|------------------|
@@ -1640,12 +1640,12 @@ The extension can run in **standalone mode** (pure TypeScript, no Python require
 | Plugin ecosystem            | ✗                    | ✓                |
 | Install cost                | zero                 | requires Python ≥ 3.10 |
 
-The extension auto-detects whether `model-story` is on `PATH`; if so, sidecar mode is enabled. Otherwise it falls back to standalone with a one-click banner: *"Install `pip install model-story` for advanced features."*
+The extension auto-detects whether `epochix` is on `PATH`; if so, sidecar mode is enabled. Otherwise it falls back to standalone with a one-click banner: *"Install `pip install epochix` for advanced features."*
 
 #### 27.1.3 File Structure
 
 ```
-model-story-vscode/
+epochix-vscode/
 ├── package.json                       # manifest + contributes
 ├── README.md
 ├── CHANGELOG.md
@@ -1696,81 +1696,81 @@ model-story-vscode/
 
 ```json
 {
-  "name": "model-story",
-  "displayName": "Model Learning Story",
-  "publisher": "model-story",
+  "name": "epochix",
+  "displayName": "Epochix",
+  "publisher": "epochix",
   "version": "0.1.0",
   "engines": { "vscode": "^1.92.0" },
   "categories": ["Visualization", "Data Science", "Machine Learning"],
   "activationEvents": [
-    "onCommand:modelStory.openDashboard",
-    "onCommand:modelStory.watchTerminal",
+    "onCommand:epochix.openDashboard",
+    "onCommand:epochix.watchTerminal",
     "onLanguage:python",
-    "onView:modelStoryRuns",
+    "onView:epochixRuns",
     "workspaceContains:**/*.log"
   ],
   "main": "./dist/extension.js",
   "contributes": {
     "commands": [
-      { "command": "modelStory.openDashboard", "title": "Model Story: Open Dashboard" },
-      { "command": "modelStory.watchTerminal", "title": "Model Story: Watch Active Terminal" },
-      { "command": "modelStory.openLogFile",   "title": "Model Story: Open Log File…" },
-      { "command": "modelStory.exportRun",     "title": "Model Story: Export Current Run" },
-      { "command": "modelStory.compareRuns",   "title": "Model Story: Compare Two Runs" }
+      { "command": "epochix.openDashboard", "title": "Epochix: Open Dashboard" },
+      { "command": "epochix.watchTerminal", "title": "Epochix: Watch Active Terminal" },
+      { "command": "epochix.openLogFile",   "title": "Epochix: Open Log File…" },
+      { "command": "epochix.exportRun",     "title": "Epochix: Export Current Run" },
+      { "command": "epochix.compareRuns",   "title": "Epochix: Compare Two Runs" }
     ],
     "menus": {
       "explorer/context": [
-        { "command": "modelStory.openLogFile",
+        { "command": "epochix.openLogFile",
           "when": "resourceExtname == .log",
           "group": "navigation" }
       ],
       "editor/title": [
-        { "command": "modelStory.openLogFile",
+        { "command": "epochix.openLogFile",
           "when": "resourceExtname == .log",
           "group": "navigation" }
       ]
     },
     "views": {
       "explorer": [
-        { "id": "modelStoryRuns", "name": "Model Story Runs" }
+        { "id": "epochixRuns", "name": "Epochix Runs" }
       ]
     },
     "configuration": {
-      "title": "Model Learning Story",
+      "title": "Epochix",
       "properties": {
-        "modelStory.autoWatchTerminal": {
+        "epochix.autoWatchTerminal": {
           "type": "boolean", "default": true,
           "description": "Automatically open dashboard when training is detected in an integrated terminal."
         },
-        "modelStory.taskHint": {
+        "epochix.taskHint": {
           "type": "string",
           "enum": ["auto","classification","detection","regression","biometric","gaze","nlp"],
           "default": "auto"
         },
-        "modelStory.useSidecar": {
+        "epochix.useSidecar": {
           "type": "string",
           "enum": ["auto","always","never"],
           "default": "auto",
-          "description": "Use the Python `model-story` package if available."
+          "description": "Use the Python `epochix` package if available."
         },
-        "modelStory.sidecarPath": {
+        "epochix.sidecarPath": {
           "type": "string", "default": "",
-          "description": "Override path to the model-story executable."
+          "description": "Override path to the epochix executable."
         },
-        "modelStory.llmFallback": {
+        "epochix.llmFallback": {
           "type": "boolean", "default": false,
           "description": "Enable Ollama LLM fallback parsing (requires Ollama running locally)."
         },
-        "modelStory.theme": {
+        "epochix.theme": {
           "type": "string", "enum": ["auto","light","dark"], "default": "auto"
         },
-        "modelStory.locale": {
+        "epochix.locale": {
           "type": "string", "enum": ["en","fa","fr"], "default": "en"
         }
       }
     },
     "keybindings": [
-      { "command": "modelStory.openDashboard",
+      { "command": "epochix.openDashboard",
         "key": "ctrl+alt+m", "mac": "cmd+alt+m" }
     ]
   }
@@ -1789,7 +1789,7 @@ import { TerminalWatcher } from "./terminal/TerminalWatcher";
 import { ServerManager } from "./sidecar/ServerManager";
 
 export async function activate(ctx: vscode.ExtensionContext) {
-  const cfg = vscode.workspace.getConfiguration("modelStory");
+  const cfg = vscode.workspace.getConfiguration("epochix");
   const sidecar = await ServerManager.maybeStart(cfg);   // null if standalone
 
   const watcher = new TerminalWatcher(sidecar);
@@ -1800,11 +1800,11 @@ export async function activate(ctx: vscode.ExtensionContext) {
   }
 
   ctx.subscriptions.push(
-    vscode.commands.registerCommand("modelStory.openDashboard",
+    vscode.commands.registerCommand("epochix.openDashboard",
       () => DashboardPanel.createOrShow(ctx.extensionUri, sidecar)),
-    vscode.commands.registerCommand("modelStory.watchTerminal",
+    vscode.commands.registerCommand("epochix.watchTerminal",
       () => watcher.attachToActive()),
-    vscode.commands.registerCommand("modelStory.openLogFile",
+    vscode.commands.registerCommand("epochix.openLogFile",
       async (uri: vscode.Uri) => {
         const doc = uri ?? (await vscode.window.showOpenDialog({
           canSelectMany: false, filters: { Logs: ["log","txt","out"] }
@@ -1869,7 +1869,7 @@ export class DashboardPanel {
       return;
     }
     const panel = vscode.window.createWebviewPanel(
-      "modelStory.dashboard", "Model Learning Story",
+      "epochix.dashboard", "Epochix",
       vscode.ViewColumn.Beside,
       { enableScripts: true, retainContextWhenHidden: true,
         localResourceRoots: [vscode.Uri.joinPath(extUri, "webview-dist")] }
@@ -1884,10 +1884,10 @@ export class DashboardPanel {
 
 ```ts
 const item = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
-item.command = "modelStory.openDashboard";
+item.command = "epochix.openDashboard";
 // updates on each new frame
 item.text = `$(zap) ${frame.phaseEmoji} ${frame.grade}`;
-item.tooltip = `Model Story · ${frame.narrative}`;
+item.tooltip = `Epochix · ${frame.narrative}`;
 item.show();
 ```
 
@@ -1899,7 +1899,7 @@ export class ServerManager {
   static async maybeStart(cfg: vscode.WorkspaceConfiguration): Promise<ServerManager | null> {
     const mode = cfg.get<string>("useSidecar");
     if (mode === "never") return null;
-    const bin = cfg.get<string>("sidecarPath") || "model-story";
+    const bin = cfg.get<string>("sidecarPath") || "epochix";
     const found = await which(bin);
     if (!found && mode === "auto") return null;
     const port = await PortAllocator.findFree(7860);
@@ -1983,7 +1983,7 @@ These are hard limits of the artifact environment and shape the design:
 #### 27.2.4 Single-File React Skeleton
 
 ```jsx
-// model-story.artifact.jsx
+// epochix.artifact.jsx
 import { useState, useMemo, useRef, useEffect } from "react";
 import { Upload, Download, Brain, Zap } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
@@ -2075,7 +2075,7 @@ async function llmExtract(unknownLines) {
 // ============================================================
 //  4.  MAIN COMPONENT
 // ============================================================
-export default function ModelStoryArtifact() {
+export default function EpochixArtifact() {
   const [logText, setLogText] = useState("");
   const [frames, setFrames] = useState([]);
   const [currentSeq, setCurrentSeq] = useState(0);
@@ -2136,7 +2136,7 @@ function downloadHtml(html) {
   const blob = new Blob([html], { type: "text/html" });
   const url = URL.createObjectURL(blob);
   const a = Object.assign(document.createElement("a"),
-    { href: url, download: "model-story-report.html" });
+    { href: url, download: "epochix-report.html" });
   a.click();
   URL.revokeObjectURL(url);
 }
@@ -2161,7 +2161,7 @@ The exported HTML is a smaller version of the live artifact (no React, just inli
 
 #### 27.2.8 Use as Marketing Funnel
 
-The artifact is *also* the project's best onboarding tool. After a user pastes a log and sees the dashboard, the artifact shows a one-line banner: *"Like this? `pip install model-story` for live streaming, run history, and exports."*
+The artifact is *also* the project's best onboarding tool. After a user pastes a log and sees the dashboard, the artifact shows a one-line banner: *"Like this? `pip install epochix` for live streaming, run history, and exports."*
 
 ---
 
@@ -2171,10 +2171,10 @@ This subsection expands §15.2 with the full library design — public surface, 
 
 #### 27.3.1 Public API Surface
 
-Everything a user interacts with is re-exported from `model_story/__init__.py`. Anything not in this list is implementation detail and may change without notice.
+Everything a user interacts with is re-exported from `epochix/__init__.py`. Anything not in this list is implementation detail and may change without notice.
 
 ```python
-# model_story/__init__.py
+# epochix/__init__.py
 from .sdk.parse import parse, parse_string
 from .sdk.live_reporter import LiveReporter
 from .sdk.compare import compare
@@ -2204,7 +2204,7 @@ Each pattern fits a different user workflow. None require changes to the existin
 **Pattern 1 — Zero-code (parse a finished log):**
 
 ```python
-import model_story as ms
+import epochix as ms
 run = ms.parse("train.log")
 ms.visualize(run)                  # opens browser
 ```
@@ -2212,13 +2212,13 @@ ms.visualize(run)                  # opens browser
 **Pattern 2 — One-line live (pipe stdout):**
 
 ```bash
-python train.py 2>&1 | model-story --live
+python train.py 2>&1 | epochix --live
 ```
 
 **Pattern 3 — Explicit reporter (most control):**
 
 ```python
-from model_story import LiveReporter
+from epochix import LiveReporter
 
 reporter = LiveReporter(
     task="gaze",
@@ -2236,7 +2236,7 @@ with reporter:                                # auto-finish on exit/exception
 
 ```python
 import pytorch_lightning as pl
-from model_story import LightningCallback
+from epochix import LightningCallback
 
 trainer = pl.Trainer(
     max_epochs=100,
@@ -2248,7 +2248,7 @@ trainer.fit(model, dm)
 **Pattern 5 — Decorator (research scripts):**
 
 ```python
-from model_story import story
+from epochix import story
 
 @story(task="classification", primary_metric="val_acc")
 def train_epoch(model, loader, epoch):
@@ -2313,7 +2313,7 @@ requires = ["hatchling>=1.25"]
 build-backend = "hatchling.build"
 
 [project]
-name = "model-story"
+name = "epochix"
 version = "0.1.0"
 description = "Visual storytelling for deep learning training runs."
 authors = [{ name = "HexoraX", email = "hello@hexorax.com" }]
@@ -2349,39 +2349,39 @@ hf        = ["transformers>=4.40"]
 llm       = ["httpx>=0.27"]                   # for Ollama / OpenAI calls
 postgres  = ["asyncpg>=0.30"]
 redis     = ["redis>=5.0"]
-all       = ["model-story[pdf,lightning,hf,llm]"]
+all       = ["epochix[pdf,lightning,hf,llm]"]
 
 dev       = ["pytest>=8", "pytest-asyncio", "pytest-benchmark",
              "hypothesis>=6.108", "ruff", "mypy", "playwright",
              "schemathesis", "pre-commit"]
 
 [project.scripts]
-model-story = "model_story.cli:app"
+epochix = "epochix.cli:app"
 
-[project.entry-points."model_story.parsers"]
-pytorch_lightning   = "model_story.parsers.pytorch_lightning:PLParser"
-keras_tensorflow    = "model_story.parsers.keras_tensorflow:KerasParser"
-huggingface         = "model_story.parsers.huggingface:HFParser"
-ultralytics_yolo    = "model_story.parsers.ultralytics_yolo:YOLOParser"
-fastai              = "model_story.parsers.fastai:FastAIParser"
-universal           = "model_story.parsers.universal:UniversalParser"
+[project.entry-points."epochix.parsers"]
+pytorch_lightning   = "epochix.parsers.pytorch_lightning:PLParser"
+keras_tensorflow    = "epochix.parsers.keras_tensorflow:KerasParser"
+huggingface         = "epochix.parsers.huggingface:HFParser"
+ultralytics_yolo    = "epochix.parsers.ultralytics_yolo:YOLOParser"
+fastai              = "epochix.parsers.fastai:FastAIParser"
+universal           = "epochix.parsers.universal:UniversalParser"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/model_story"]
+packages = ["src/epochix"]
 [tool.hatch.build.targets.wheel.force-include]
-"frontend/dist" = "model_story/_frontend/dist"
+"frontend/dist" = "epochix/_frontend/dist"
 ```
 
 #### 27.3.6 Type Safety
 
 - All public functions and methods have **full type hints**.
 - `py.typed` marker file ships with the wheel (PEP 561) so downstream users get inline type-checking.
-- mypy is run in `--strict` mode in CI for `src/model_story/`. Examples and tests are not strict-checked but still type-annotated.
+- mypy is run in `--strict` mode in CI for `src/epochix/`. Examples and tests are not strict-checked but still type-annotated.
 
 #### 27.3.7 Versioning Policy
 
 - SemVer: **MAJOR.MINOR.PATCH**.
-- Public API is everything in `model_story/__init__.py`'s `__all__` plus the on-disk SQLite schema and the WS/SSE message envelopes.
+- Public API is everything in `epochix/__init__.py`'s `__all__` plus the on-disk SQLite schema and the WS/SSE message envelopes.
 - Breaking changes to the public API increment MAJOR.
 - New parsers, new task types, new visualizations are MINOR.
 - Bug fixes and docs are PATCH.
@@ -2401,7 +2401,7 @@ packages = ["src/model_story"]
 
 #### 27.3.9 Bundled Frontend
 
-The wheel includes a pre-built frontend bundle at `model_story/_frontend/dist/`. Users do **not** need Node or npm to install or use the package. The frontend is rebuilt and re-vendored once per release by CI.
+The wheel includes a pre-built frontend bundle at `epochix/_frontend/dist/`. Users do **not** need Node or npm to install or use the package. The frontend is rebuilt and re-vendored once per release by CI.
 
 #### 27.3.10 Documentation Conventions
 
@@ -2414,10 +2414,10 @@ The wheel includes a pre-built frontend bundle at `model_story/_frontend/dist/`.
 
 1. `pytest -q` green on Linux, macOS, Windows × Python 3.10/3.11/3.12.
 2. `ruff check` clean.
-3. `mypy --strict src/model_story` clean.
+3. `mypy --strict src/epochix` clean.
 4. `playwright test` green (E2E across the 6 fixture logs).
 5. Bundle size: wheel < 8 MB, exported HTML < 2 MB.
-6. `pip install` in a clean venv → `model-story demo/pytorch_lightning.log` opens the dashboard.
+6. `pip install` in a clean venv → `epochix demo/pytorch_lightning.log` opens the dashboard.
 7. `CHANGELOG.md` updated.
 
 ---
@@ -2447,7 +2447,7 @@ A schematic of code reuse across the three surfaces, so contributors know where 
 
 - **Single source of truth for parsers and story logic: Python.** TS ports are generated semi-automatically with a tool in `scripts/python-to-ts-parser.py` to reduce drift.
 - **Single source of truth for visuals: the `frontend/` directory.** Both the library and the VS Code extension vendor the same built bundle. The Claude artifact reimplements a subset because it can't load the bundle.
-- **Schema is shared via JSON Schema export.** `model-story dump-schema > schema.json` produces a file consumed by both the TS parser ports and the artifact's type definitions.
+- **Schema is shared via JSON Schema export.** `epochix dump-schema > schema.json` produces a file consumed by both the TS parser ports and the artifact's type definitions.
 
 ---
 

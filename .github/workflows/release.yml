@@ -121,8 +121,8 @@ jobs:
           build-args: |
             VERSION=${{ steps.meta.outputs.version }}
           tags: |
-            ghcr.io/model-story/server:${{ steps.meta.outputs.version }}
-            ghcr.io/model-story/server:latest
+            ghcr.io/epochix/server:${{ steps.meta.outputs.version }}
+            ghcr.io/epochix/server:latest
           labels: |
             org.opencontainers.image.version=${{ steps.meta.outputs.version }}
             org.opencontainers.image.revision=${{ github.sha }}
@@ -140,12 +140,12 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           name: frontend-dist
-          path: model-story-vscode/webview-dist/
+          path: epochix-vscode/webview-dist/
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
-      - run: cd model-story-vscode && npm ci && npx vsce package
+      - run: cd epochix-vscode && npm ci && npx vsce package
       - uses: actions/upload-artifact@v4
         with:
           name: vsix
-          path: model-story-vscode/*.vsix
+          path: epochix-vscode/*.vsix

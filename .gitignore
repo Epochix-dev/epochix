@@ -67,7 +67,7 @@ dmypy.json
 *.db-wal
 *.sqlite
 *.sqlite3
-model_story.db
+epochix.db
 
 # ML training output / cached weights (e.g. running `yolo train` in-repo)
 *.pt
@@ -80,11 +80,11 @@ yolo_train*.log
 # Frontend
 node_modules/
 frontend/node_modules/
-model-story-vscode/node_modules/
+epochix-vscode/node_modules/
 frontend/dist/
 frontend/coverage/
-model-story-vscode/dist/
-model-story-vscode/webview-dist/
+epochix-vscode/dist/
+epochix-vscode/webview-dist/
 *.vsix
 
 # VS Code
@@ -119,9 +119,9 @@ $RECYCLE.BIN/
 *.key
 secrets.json
 
-# model-story run data
-~/.model-story/
-.model-story.db
+# epochix run data
+~/.epochix/
+.epochix.db
 
 # Logs (keep demo/ but ignore generated ones)
 *.log
@@ -129,4 +129,4 @@ secrets.json
 !tests/fixtures/**/*.log
 
 # Build artefacts
-src/model_story/_frontend/dist/
+src/epochix/_frontend/dist/

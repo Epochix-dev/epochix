@@ -3,9 +3,9 @@
  *
  * When the extension has no Python sidecar it parses logs in-process
  * (StandaloneEngine) and pushes frames over `postMessage` instead of WebSocket.
- * The host injects `window.__MS_VSCODE__ = acquireVsCodeApi()` before this runs.
+ * The host injects `window.__EPOCHIX_VSCODE__ = acquireVsCodeApi()` before this runs.
  *
- * The host protocol is camelCase (see model-story-vscode/src/webview/messages.ts);
+ * The host protocol is camelCase (see epochix-vscode/src/webview/messages.ts);
  * the store speaks the server's snake_case frame shape — so we translate here.
  * Note: StandaloneEngine frames carry only the core story (no metric series or
  * detected architecture), so metric/architecture panels stay in their empty
@@ -34,7 +34,7 @@ function mapFrame(f) {
  * @param {(theme: string) => void} applyTheme
  */
 export function startVscodeBridge(applyTheme) {
-  const vscode = window.__MS_VSCODE__;
+  const vscode = window.__EPOCHIX_VSCODE__;
   if (!vscode) return false;
 
   window.addEventListener('message', (ev) => {

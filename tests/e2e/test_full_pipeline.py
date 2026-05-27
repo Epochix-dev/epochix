@@ -2,8 +2,8 @@
 
 These walk the exact path a brand-new user takes:
 
-    pip install model-story
-    model-story <log>               # or: model-story demo
+    pip install epochix
+    epochix <log>               # or: epochix demo
 
 For every model family the parsers understand (PyTorch Lightning, Keras,
 HuggingFace, YOLOv8, seq2seq+attention, biometric/EER, gaze/MAE) we feed the
@@ -22,7 +22,7 @@ that phase progression (Awakening → … → Polishing) can be observed against
 realistic loss/accuracy curve — covers the "epoch 1 → 50" expectation that
 short demos can't satisfy on their own.
 
-A fresh-install smoke test invokes the bundled `model-story demo` command
+A fresh-install smoke test invokes the bundled `epochix demo` command
 programmatically to verify the zero-input on-boarding path that ships in the
 wheel.
 """
@@ -34,13 +34,13 @@ from pathlib import Path
 import pytest
 from fastapi.testclient import TestClient
 
-from model_story import parse
-from model_story.config import Settings
-from model_story.enums import Grade, Phase, TaskType
-from model_story.models import MetricEvent, Run, StoryFrame
-from model_story.sdk.parse import parse_string
-from model_story.server.app import create_app
-from model_story.store.sqlite_store import RunStore
+from epochix import parse
+from epochix.config import Settings
+from epochix.enums import Grade, Phase, TaskType
+from epochix.models import MetricEvent, Run, StoryFrame
+from epochix.sdk.parse import parse_string
+from epochix.server.app import create_app
+from epochix.store.sqlite_store import RunStore
 
 DEMO_DIR = Path(__file__).resolve().parents[2] / "demo"
 
@@ -312,21 +312,21 @@ def test_compare_endpoint_returns_two_runs(tmp_path: Path) -> None:
             assert len(entry["metrics"]) > 0
 
 
-# ── 5. Fresh-install smoke test: the bundled `model-story demo` command ──────
+# ── 5. Fresh-install smoke test: the bundled `epochix demo` command ──────
 
 
 def test_bundled_demo_command_runs_without_error(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """A user with nothing but `pip install model-story` should be able to type
-    `model-story demo` and see real data. Programmatically exercise that path
+    """A user with nothing but `pip install epochix` should be able to type
+    `epochix demo` and see real data. Programmatically exercise that path
     against each of the three bundled demos so a regression in packaging,
     aliasing or the run plumbing is caught before release.
     """
-    from model_story.cli import cmd_demo
+    from epochix.cli import cmd_demo
 
     # Redirect the store to a temp DB so we don't write to the user's home.
-    monkeypatch.setenv("MODEL_STORY_DB", str(tmp_path / "demo.db"))
+    monkeypatch.setenv("EPOCHIX_DB", str(tmp_path / "demo.db"))
 
     for alias in ("seq2seq", "yolov8", "keras"):
         # `cmd_demo` reuses cmd_run under the hood; --headless prevents the

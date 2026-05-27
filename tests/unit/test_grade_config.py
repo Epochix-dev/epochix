@@ -1,4 +1,4 @@
-"""Tests for Phase 4.3 — .model-story.yaml grade-threshold config loader."""
+"""Tests for Phase 4.3 — .epochix.yaml grade-threshold config loader."""
 from __future__ import annotations
 
 import textwrap
@@ -6,13 +6,13 @@ from pathlib import Path
 
 import pytest
 
-from model_story.enums import Grade, TaskType
-from model_story.story_engine.config_loader import (
+from epochix.enums import Grade, TaskType
+from epochix.story_engine.config_loader import (
     GradeConfig,
     find_config_file,
     load_grade_config,
 )
-from model_story.story_engine.grade import compute_grade
+from epochix.story_engine.grade import compute_grade
 
 # ── GradeConfig dataclass ─────────────────────────────────────────────────────
 
@@ -45,13 +45,13 @@ class TestGradeConfig:
 
 class TestFindConfigFile:
     def test_finds_file_in_given_dir(self, tmp_path: Path) -> None:
-        config = tmp_path / ".model-story.yaml"
+        config = tmp_path / ".epochix.yaml"
         config.write_text("version: 1\n", encoding="utf-8")
         found = find_config_file(start=tmp_path)
         assert found == config
 
     def test_finds_file_in_parent(self, tmp_path: Path) -> None:
-        config = tmp_path / ".model-story.yaml"
+        config = tmp_path / ".epochix.yaml"
         config.write_text("version: 1\n", encoding="utf-8")
         sub = tmp_path / "sub" / "project"
         sub.mkdir(parents=True)
@@ -75,22 +75,22 @@ class TestLoadGradeConfig:
         assert result is None
 
     def test_returns_none_for_empty_file(self, tmp_path: Path) -> None:
-        p = tmp_path / ".model-story.yaml"
+        p = tmp_path / ".epochix.yaml"
         p.write_text("", encoding="utf-8")
         assert load_grade_config(path=p) is None
 
     def test_returns_none_for_invalid_yaml(self, tmp_path: Path) -> None:
-        p = tmp_path / ".model-story.yaml"
+        p = tmp_path / ".epochix.yaml"
         p.write_text("{ bad yaml: [unclosed", encoding="utf-8")
         assert load_grade_config(path=p) is None
 
     def test_returns_none_for_non_mapping_yaml(self, tmp_path: Path) -> None:
-        p = tmp_path / ".model-story.yaml"
+        p = tmp_path / ".epochix.yaml"
         p.write_text("- item1\n- item2\n", encoding="utf-8")
         assert load_grade_config(path=p) is None
 
     def test_parses_grade_thresholds(self, tmp_path: Path) -> None:
-        p = tmp_path / ".model-story.yaml"
+        p = tmp_path / ".epochix.yaml"
         p.write_text(
             textwrap.dedent("""\
                 version: 1
@@ -111,7 +111,7 @@ class TestLoadGradeConfig:
         assert t["A-"] == pytest.approx(0.88)
 
     def test_parses_lower_better_override(self, tmp_path: Path) -> None:
-        p = tmp_path / ".model-story.yaml"
+        p = tmp_path / ".epochix.yaml"
         p.write_text(
             textwrap.dedent("""\
                 version: 1
@@ -127,7 +127,7 @@ class TestLoadGradeConfig:
         assert cfg.get_lower_better(TaskType.NLP) is True
 
     def test_ignores_missing_sections(self, tmp_path: Path) -> None:
-        p = tmp_path / ".model-story.yaml"
+        p = tmp_path / ".epochix.yaml"
         p.write_text("version: 1\n", encoding="utf-8")
         cfg = load_grade_config(path=p)
         assert cfg is not None
@@ -135,13 +135,13 @@ class TestLoadGradeConfig:
         assert cfg.lower_better_override == {}
 
     def test_returns_none_when_no_file_in_tree(self, tmp_path: Path) -> None:
-        # Ensure no .model-story.yaml exists anywhere in tmp_path
+        # Ensure no .epochix.yaml exists anywhere in tmp_path
         result = load_grade_config(path=tmp_path / "missing.yaml")
         assert result is None
 
     def test_full_config_file(self, tmp_path: Path) -> None:
         """Round-trip parse of a complete config matching the default template."""
-        p = tmp_path / ".model-story.yaml"
+        p = tmp_path / ".epochix.yaml"
         p.write_text(
             textwrap.dedent("""\
                 version: 1
@@ -269,8 +269,8 @@ class TestStoryEngineWithConfig:
         """StoryEngine stores grade_config and uses it in process()."""
         from datetime import datetime, timezone
 
-        from model_story.models import MetricEvent
-        from model_story.story_engine import StoryEngine
+        from epochix.models import MetricEvent
+        from epochix.story_engine import StoryEngine
 
         cfg = GradeConfig(
             grade_thresholds={

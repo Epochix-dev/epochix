@@ -6,7 +6,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-TEMPLATES_DIR = Path(__file__).parents[1] / "src/model_story/story_engine/templates"
+TEMPLATES_DIR = Path(__file__).parents[1] / "src/epochix/story_engine/templates"
 
 # ---------------------------------------------------------------------------
 # Template content: task → phase → locale → [variant, ...]

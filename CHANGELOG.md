@@ -1,15 +1,40 @@
 # Changelog
 
-All notable changes to **model-story** are documented here.
+All notable changes to **epochix** are documented here.
 
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
-## [Unreleased]
+## [0.3.0] — 2026-05-27
 
-*(nothing yet)*
+### Renamed — `model-story` → `epochix`
+
+The PyPI name `model-story` was already taken, so the project ships under
+**`epochix`** from this release onward. This is a one-time, breaking rename
+done before any public PyPI / VS Code Marketplace listing — there is no
+deprecation alias because there are no v0.1 / v0.2 installs in the wild.
+
+**Migration (none expected in practice):**
+
+| Was                                       | Is                                    |
+|-------------------------------------------|---------------------------------------|
+| `pip install model-story`                 | `pip install epochix`                 |
+| `model-story <log>`                       | `epochix <log>`                       |
+| `from model_story.* import …`             | `from epochix.* import …`             |
+| `MODEL_STORY_*` env vars                  | `EPOCHIX_*`                           |
+| `~/.model-story/runs.db`                  | `~/.epochix/runs.db`                  |
+| `.model-story.yaml` (project config)      | `.epochix.yaml`                       |
+| `@model-story/web` (frontend pkg)         | `@epochix/web`                        |
+| VS Code: `model-story.*` commands         | `epochix.*`                           |
+| VS Code: `modelStory.*` settings          | `epochix.*`                           |
+
+### Brand
+
+- New mark and app icon shipping in `asset/` (`epochix_mark_*.png`,
+  `epochix_appicon_*.png`).
+- VS Code extension icon updated to the Epochix appicon.
 
 ---
 
@@ -21,7 +46,7 @@ caught by running the system against a real YOLOv8n training run on an RTX
 
 ### Security — secure-by-default
 
-- **CORS lockdown** — default `MODEL_STORY_CORS_ORIGINS` is now empty
+- **CORS lockdown** — default `EPOCHIX_CORS_ORIGINS` is now empty
   (same-origin only). Browser SOP protects the local dashboard from
   drive-by reads/writes by other tabs the user has open. The wildcard `*`
   is still available for explicit opt-in.
@@ -30,7 +55,7 @@ caught by running the system against a real YOLOv8n training run on an RTX
   or push metric events. Remote writes always require a `Bearer` token.
 - **API docs hidden by default** — `/api/docs` / `/api/redoc` /
   `/api/openapi.json` are not exposed unless `auth_token` is configured
-  or `MODEL_STORY_EXPOSE_DOCS=1` is set.
+  or `EPOCHIX_EXPOSE_DOCS=1` is set.
 - **CLI warns** when binding `--host 0.0.0.0` without an auth token.
 - **Field length caps** on `EventPushRequest` / `RunCreateRequest`.
 
@@ -69,7 +94,7 @@ caught by running the system against a real YOLOv8n training run on an RTX
 
 ### New features
 
-- **`model-story demo` subcommand** — three bundled logs (`seq2seq`,
+- **`epochix demo` subcommand** — three bundled logs (`seq2seq`,
   `yolov8`, `keras`) ship in the wheel. One-command first-run experience.
 - **`--ssh user@host:/path` ingester** — first-class SSH support. Spawns
   `ssh -o BatchMode=yes -o ServerAliveInterval=30 host 'tail -F -n +0
@@ -107,7 +132,7 @@ caught by running the system against a real YOLOv8n training run on an RTX
   is hermetic. `.vsix` is 124 KB clean.
 - **Loader reads the built `index.html`** so the full app markup ships
   in the webview (was a bare `<div id=app>` before).
-- **Frontend postMessage bridge** — gated on `window.__MS_VSCODE__`;
+- **Frontend postMessage bridge** — gated on `window.__EPOCHIX_VSCODE__`;
   Standalone mode receives `init`/`frame`/`milestone`/`warning`/
   `complete`/`themeChange` from the StoryEngine.
 - Extension now carries a **128×128 icon**, **LICENSE**, **README**, and
@@ -115,7 +140,7 @@ caught by running the system against a real YOLOv8n training run on an RTX
 
 ### UX
 
-- README quickstart now begins with `model-story demo` — newcomers see
+- README quickstart now begins with `epochix demo` — newcomers see
   a populated dashboard in one command.
 - Engineer accuracy fallback labels are honest (`mAP50` / `mAP50-95`,
   not the misleading "val acc").
@@ -139,7 +164,7 @@ caught by running the system against a real YOLOv8n training run on an RTX
 
 ### Fixed
 
-- Stale `model-story batch training.log` in the README — there was no
+- Stale `epochix batch training.log` in the README — there was no
   `batch` subcommand. Corrected to the implicit-default shorthand.
 - `LearningMeter` docstring was stale.
 - VS Code `.vscodeignore` `*.map` pattern only matched the root; bumped
@@ -160,13 +185,13 @@ First public release.
 - **Normalizer** — maps 80+ raw metric spellings to a canonical key set
   (`val_accuracy`, `train_loss`, `mAP50`, `EER`, `MAE`, `perplexity`, `fid`, …)
 - **LLM fallback parser** — optional Ollama/OpenAI/Anthropic integration for unknown formats
-- **Plugin system** — four entry-point groups: `model_story.parsers`, `model_story.metaphor_packs`,
-  `model_story.tasks`, `model_story.exporters`; third-party packages can extend any of them
+- **Plugin system** — four entry-point groups: `epochix.parsers`, `epochix.metaphor_packs`,
+  `epochix.tasks`, `epochix.exporters`; third-party packages can extend any of them
 
 #### Story engine
 - **5 training phases** — Awakening → Learning → Understanding → Mastering → Polishing
 - **11 letter grades** — A+ through F, with per-task thresholds for 7 task types
-- **`.model-story.yaml` config** — override grade thresholds and lower-is-better direction
+- **`.epochix.yaml` config** — override grade thresholds and lower-is-better direction
   per task type; file is discovered by walking up the directory tree
 - **Task auto-detection** — classifies task type after ≥ 3 events from the metric key set
 - **Narrative templates** — 50 English templates (7 tasks × 5 phases, 4 variants each);
@@ -183,7 +208,7 @@ First public release.
   (ring-buffer size 2048, replay any messages with seq > last_seq on reconnect)
 - **SSE** (`/sse/live/{id}`) — Server-Sent Events alternative for environments that block WS
 
-#### CLI (`model-story …`)
+#### CLI (`epochix …`)
 - `batch` — parse a log file and print the story
 - `live` — pipe stdin through the story engine in real time
 - `serve` — start the local server + dashboard
@@ -224,16 +249,16 @@ First public release.
 - **PDF** — WeasyPrint-based PDF (optional `pdf` extra)
 
 #### Integrations
-- **PyTorch Lightning** — `ModelStoryCallback`
-- **HuggingFace Transformers** — `ModelStoryCallback` for `Trainer`
-- **Jupyter** — `%load_ext model_story`, `%model_story`, `%%model_story` magics
+- **PyTorch Lightning** — `EpochixCallback`
+- **HuggingFace Transformers** — `EpochixCallback` for `Trainer`
+- **Jupyter** — `%load_ext epochix`, `%epochix`, `%%epochix` magics
 - **TensorBoard** — `import-tensorboard` CLI command
 - **Weights & Biases** — `import-wandb` CLI command
 
 #### VS Code extension
 - Standalone mode: parses the active terminal log live in the editor
-- Sidecar mode: connects to a running `model-story serve` instance
-- `Model Story Runs` tree view in the Explorer panel
+- Sidecar mode: connects to a running `epochix serve` instance
+- `Epochix Runs` tree view in the Explorer panel
 - `Ctrl+Alt+M` / `Cmd+Alt+M` — open dashboard panel
 - Configurable task hint, theme, locale
 
@@ -241,7 +266,7 @@ First public release.
 - **GitHub Actions CI** — lint, typecheck, pytest (3 OS × 3 Python versions), Vitest, E2E, Lighthouse
 - **GitHub Actions Release** — wheel (3 OS), PyPI OIDC publish, SBOM (CycloneDX), Docker GHCR
 - **GitHub Actions VS Code Release** — `.vsix` build, VS Code Marketplace publish, Open VSX publish
-- **Docker image** — `ghcr.io/model-story/server:<version>`, multi-stage Vite + Python 3.12-slim
+- **Docker image** — `ghcr.io/epochix/server:<version>`, multi-stage Vite + Python 3.12-slim
 - **Claude Artifact** — 1 198-line single-file React JSX usable directly in Claude
 
 #### Quality
@@ -250,5 +275,7 @@ First public release.
 - **mypy --strict** — 0 errors on 67 source files
 - **ruff** — 0 errors
 
-[Unreleased]: https://github.com/model-story/model-story/compare/v0.1.0...HEAD
-[0.1.0]: https://github.com/model-story/model-story/releases/tag/v0.1.0
+[Unreleased]: https://github.com/epochix/epochix/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/epochix/epochix/releases/tag/v0.3.0
+[0.2.0]: https://github.com/epochix/epochix/releases/tag/v0.2.0
+[0.1.0]: https://github.com/epochix/epochix/releases/tag/v0.1.0

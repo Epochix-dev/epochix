@@ -22,15 +22,15 @@ import pytest
 from hypothesis import HealthCheck, given, settings
 from hypothesis import strategies as st
 
-from model_story.models import RawMetric
-from model_story.parsers.accelerate import AccelerateParser
-from model_story.parsers.base import ParserContext
-from model_story.parsers.fastai import FastAIParser
-from model_story.parsers.huggingface import HFParser
-from model_story.parsers.keras_tensorflow import KerasParser
-from model_story.parsers.pytorch_lightning import PLParser
-from model_story.parsers.ultralytics_yolo import YOLOParser
-from model_story.parsers.universal import UniversalParser
+from epochix.models import RawMetric
+from epochix.parsers.accelerate import AccelerateParser
+from epochix.parsers.base import ParserContext
+from epochix.parsers.fastai import FastAIParser
+from epochix.parsers.huggingface import HFParser
+from epochix.parsers.keras_tensorflow import KerasParser
+from epochix.parsers.pytorch_lightning import PLParser
+from epochix.parsers.ultralytics_yolo import YOLOParser
+from epochix.parsers.universal import UniversalParser
 
 # ── Strategy helpers ──────────────────────────────────────────────────────────
 
@@ -141,7 +141,7 @@ class TestAllParsersSniffFuzz:
     @given(lines=st.lists(_text, max_size=60))
     @settings(max_examples=300, suppress_health_check=[HealthCheck.too_slow])
     def test_sniff_never_raises(self, parser: object, lines: list[str]) -> None:
-        from model_story.parsers.base import BaseParser
+        from epochix.parsers.base import BaseParser
         assert isinstance(parser, BaseParser)
         result = parser.sniff(lines)
         assert isinstance(result, float)
@@ -155,7 +155,7 @@ class TestAllParsersParseLineFuzz:
     @given(line=_text)
     @settings(max_examples=300, suppress_health_check=[HealthCheck.too_slow])
     def test_parse_line_never_raises(self, parser: object, line: str) -> None:
-        from model_story.parsers.base import BaseParser
+        from epochix.parsers.base import BaseParser
         assert isinstance(parser, BaseParser)
         result = parser.parse_line(line, _ctx())
         assert isinstance(result, list)

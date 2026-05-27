@@ -1,0 +1,128 @@
+# .epochix.yaml — epochix project configuration
+# Copy this file to your project root and edit as needed.
+# Reference: https://docs.epochix.dev/config
+
+version: 1
+
+# ── Grade thresholds ────────────────────────────────────────────────────────
+# Override the default letter-grade cutoffs for each task type.
+#
+# For "higher-is-better" metrics (classification, detection, generative):
+#   threshold = MINIMUM value required to achieve that grade.
+# For "lower-is-better" metrics (nlp, biometric, gaze, regression):
+#   threshold = MAXIMUM value allowed while still achieving that grade.
+#
+# Remove or comment-out any task section you don't want to override.
+# Unrecognised task keys are silently ignored.
+
+grade_thresholds:
+
+  classification:         # primary metric: val_accuracy (higher = better)
+    "A+": 0.95
+    A:    0.90
+    "A-": 0.87
+    "B+": 0.82
+    B:    0.75
+    "B-": 0.70
+    "C+": 0.65
+    C:    0.60
+    "C-": 0.55
+    D:    0.50
+    F:    0.0
+
+  detection:              # primary metric: mAP50 (higher = better)
+    "A+": 0.75
+    A:    0.65
+    "A-": 0.58
+    "B+": 0.50
+    B:    0.42
+    "B-": 0.35
+    "C+": 0.28
+    C:    0.20
+    "C-": 0.15
+    D:    0.08
+    F:    0.0
+
+  regression:             # primary metric: MAE (lower = better)
+    "A+": 0.01
+    A:    0.05
+    "A-": 0.10
+    "B+": 0.20
+    B:    0.35
+    "B-": 0.50
+    "C+": 0.70
+    C:    1.00
+    "C-": 1.50
+    D:    2.50
+    F:    .inf
+
+  biometric:              # primary metric: EER (lower = better)
+    "A+": 0.01
+    A:    0.03
+    "A-": 0.05
+    "B+": 0.08
+    B:    0.10
+    "B-": 0.15
+    "C+": 0.20
+    C:    0.25
+    "C-": 0.30
+    D:    0.40
+    F:    .inf
+
+  gaze:                   # primary metric: MAE in degrees (lower = better)
+    "A+": 0.5
+    A:    1.0
+    "A-": 1.5
+    "B+": 2.5
+    B:    4.0
+    "B-": 6.0
+    "C+": 9.0
+    C:    12.0
+    "C-": 16.0
+    D:    22.0
+    F:    .inf
+
+  nlp:                    # primary metric: perplexity (lower = better)
+    "A+": 10.0
+    A:    20.0
+    "A-": 30.0
+    "B+": 50.0
+    B:    80.0
+    "B-": 120.0
+    "C+": 180.0
+    C:    250.0
+    "C-": 350.0
+    D:    500.0
+    F:    .inf
+
+  generative:             # primary metric: FID (lower = better)
+    "A+": 5.0
+    A:    10.0
+    "A-": 15.0
+    "B+": 25.0
+    B:    40.0
+    "B-": 60.0
+    "C+": 90.0
+    C:    130.0
+    "C-": 200.0
+    D:    300.0
+    F:    .inf
+
+  # custom:               # uncomment and fill in for custom task types
+  #   "A+": 0.95
+  #   A:    0.85
+  #   ...
+
+# ── Lower-is-better direction ───────────────────────────────────────────────
+# Set to true for tasks where a *lower* metric value is better.
+# The defaults below match the built-in behaviour; override only if you have
+# a custom task or non-standard primary metric.
+
+lower_better:
+  classification: false
+  detection:      false
+  generative:     false   # FID — lower is actually better; set true to override
+  regression:     true
+  biometric:      true
+  gaze:           true
+  nlp:            true

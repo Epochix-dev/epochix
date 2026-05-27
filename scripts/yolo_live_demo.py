@@ -4,7 +4,7 @@ We can't run a real YOLOv8 training run on this machine (no dataset, no GPU
 guarantee, no 2-hour budget), but we can do the next best thing: synthesise a
 50-epoch Ultralytics YOLO log in the actual format the parser expects, with
 realistic loss decay and mAP improvement curves, and stream it through the
-SAME live pipeline `model-story --tail` uses — printing every story frame as
+SAME live pipeline `epochix --tail` uses — printing every story frame as
 the engine emits it.
 
 What this exercises:
@@ -29,11 +29,11 @@ import tempfile
 import time
 from pathlib import Path
 
-from model_story.enums import Grade, Phase, TaskType
-from model_story.ingester import make_ingester
-from model_story.pipeline import run_pipeline
-from model_story.server.hub import Hub
-from model_story.store.sqlite_store import RunStore
+from epochix.enums import Grade, Phase, TaskType
+from epochix.ingester import make_ingester
+from epochix.pipeline import run_pipeline
+from epochix.server.hub import Hub
+from epochix.store.sqlite_store import RunStore
 
 EPOCHS = 50
 
@@ -100,7 +100,7 @@ async def stream_and_print(log_path: Path, *, db: str) -> None:
     hub = Hub()
 
     # File-batch ingester reads the log to EOF; that's the same code path
-    # `model-story <log>` uses for a finished training run. For TRUE liveness
+    # `epochix <log>` uses for a finished training run. For TRUE liveness
     # we'd swap in file_tail, but for a demo the proof is identical: each line
     # passes through the same parser → normalizer → story engine.
     ingester = make_ingester(source="file", run_id="yolo-demo-001", path=str(log_path))
@@ -220,7 +220,7 @@ def main() -> int:
     # When --serve is requested, persist to the user's real DB and keep the
     # server running so they can browse the result in a real dashboard.
     if serve:
-        from model_story.config import get_settings
+        from epochix.config import get_settings
         db_path = get_settings().db
     else:
         db_path = ":memory:"
@@ -235,8 +235,8 @@ def main() -> int:
         print("🌐 Starting dashboard at  http://127.0.0.1:7860/v/yolo-demo-001")
         print("    (Ctrl+C to stop the server)")
         import uvicorn
-        from model_story.server.app import create_app
-        from model_story.config import Settings
+        from epochix.server.app import create_app
+        from epochix.config import Settings
         uvicorn.run(
             create_app(settings=Settings(db=db_path)),
             host="127.0.0.1", port=7860, log_level="warning",

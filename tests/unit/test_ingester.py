@@ -3,8 +3,8 @@ from __future__ import annotations
 
 import pytest
 
-from model_story.ingester import make_ingester
-from model_story.ingester.sdk_receiver import SDKReceiver
+from epochix.ingester import make_ingester
+from epochix.ingester.sdk_receiver import SDKReceiver
 
 
 class TestSDKReceiver:
@@ -59,7 +59,7 @@ class TestSDKReceiver:
 
 class TestMakeIngester:
     def test_stdin_ingester(self) -> None:
-        from model_story.ingester.stdin import StdinIngester
+        from epochix.ingester.stdin import StdinIngester
 
         ing = make_ingester(source="stdin", run_id="r1")
         assert isinstance(ing, StdinIngester)
@@ -74,14 +74,14 @@ class TestMakeIngester:
 
     def test_file_ingester_with_path(self, tmp_path: object) -> None:
         # "file" = batch mode: read the file once and stop.
-        from model_story.ingester.file_batch import FileBatchIngester
+        from epochix.ingester.file_batch import FileBatchIngester
 
         ing = make_ingester(source="file", run_id="r1", path="/tmp/test.log")
         assert isinstance(ing, FileBatchIngester)
 
     def test_file_tail_ingester_with_path(self) -> None:
         # "file_tail" = live mode: poll the file indefinitely.
-        from model_story.ingester.file_tail import FileTailIngester
+        from epochix.ingester.file_tail import FileTailIngester
 
         ing = make_ingester(source="file_tail", run_id="r1", path="/tmp/test.log")
         assert isinstance(ing, FileTailIngester)

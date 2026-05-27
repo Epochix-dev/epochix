@@ -22,7 +22,7 @@ Usage:
 After running, train with (once your torch DLL is unblocked):
 
     yolo train data=eye_yolo/data.yaml model=yolov8n.pt epochs=30 imgsz=320 \\
-        batch=16 device=0 2>&1 | model-story --live
+        batch=16 device=0 2>&1 | epochix --live
 """
 from __future__ import annotations
 
@@ -182,7 +182,7 @@ def main() -> int:
     print()
     print("Train (after unblocking torch DLL):")
     print(f"   yolo train data={args.dst}/data.yaml model=yolov8n.pt "
-          f"epochs=30 imgsz=320 batch=16 device=0 2>&1 | model-story --live")
+          f"epochs=30 imgsz=320 batch=16 device=0 2>&1 | epochix --live")
     return 0
 
 

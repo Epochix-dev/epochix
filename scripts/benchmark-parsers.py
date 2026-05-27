@@ -18,8 +18,8 @@ from pathlib import Path
 # Ensure src/ is on the path when run from the project root
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from model_story.parsers.registry import detect_parser
-from model_story.parsers.base import ParserContext
+from epochix.parsers.registry import detect_parser
+from epochix.parsers.base import ParserContext
 
 
 SAMPLE_LINES: dict[str, list[str]] = {
@@ -79,7 +79,7 @@ def benchmark_parser(parser_name: str, lines: list[str], n: int) -> dict[str, ob
 
 
 def main() -> None:
-    ap = argparse.ArgumentParser(description="Benchmark model-story parsers.")
+    ap = argparse.ArgumentParser(description="Benchmark epochix parsers.")
     ap.add_argument("--lines", type=int, default=50_000,
                     help="Total lines to process per parser (default 50000)")
     ap.add_argument("--parsers", default="all",

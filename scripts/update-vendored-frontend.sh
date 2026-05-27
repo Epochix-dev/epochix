@@ -2,8 +2,8 @@
 # update-vendored-frontend.sh
 #
 # Rebuild the Vite frontend bundle and vendor it into:
-#   1. src/model_story/_frontend/dist/   (Python package)
-#   2. model-story-vscode/webview-dist/  (VS Code extension)
+#   1. src/epochix/_frontend/dist/   (Python package)
+#   2. epochix-vscode/webview-dist/  (VS Code extension)
 #
 # Usage:
 #   bash scripts/update-vendored-frontend.sh
@@ -14,8 +14,8 @@ set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 FRONTEND_DIR="$REPO_ROOT/frontend"
-PYTHON_DIST="$REPO_ROOT/src/model_story/_frontend/dist"
-VSCODE_DIST="$REPO_ROOT/model-story-vscode/webview-dist"
+PYTHON_DIST="$REPO_ROOT/src/epochix/_frontend/dist"
+VSCODE_DIST="$REPO_ROOT/epochix-vscode/webview-dist"
 
 PYTHON_ONLY=false
 VSCODE_ONLY=false

@@ -1,9 +1,9 @@
-site_name: Model Learning Story
-site_url: https://docs.model-story.dev
+site_name: Epochix
+site_url: https://docs.epochix.dev
 site_description: Visual storytelling for deep learning training runs.
-site_author: model-story contributors
-repo_url: https://github.com/model-story/model-story
-repo_name: model-story/model-story
+site_author: epochix contributors
+repo_url: https://github.com/epochix/epochix
+repo_name: epochix/epochix
 edit_uri: edit/main/docs/
 
 theme:
@@ -62,8 +62,8 @@ markdown_extensions:
 extra:
   social:
     - icon: fontawesome/brands/github
-      link: https://github.com/model-story/model-story
+      link: https://github.com/epochix/epochix
     - icon: fontawesome/brands/python
-      link: https://pypi.org/project/model-story/
+      link: https://pypi.org/project/epochix/
 
-copyright: "Copyright &copy; 2024 model-story contributors — Apache-2.0 License"
+copyright: "Copyright &copy; 2024 epochix contributors — Apache-2.0 License"

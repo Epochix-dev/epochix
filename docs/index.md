@@ -1,21 +1,21 @@
-# Model Learning Story
+# Epochix
 
 **Visual storytelling for deep learning training runs.**
 
 Turn raw terminal output from any ML framework into an animated, plain-English narrative — with a letter grade, a live brain visualization, and an exportable HTML report. No code changes required.
 
 ```bash
-pip install model-story
-python train.py 2>&1 | model-story --live
+pip install epochix
+python train.py 2>&1 | epochix --live
 ```
 
 ---
 
-## Why model-story?
+## Why epochix?
 
-Existing tools (TensorBoard, W&B, MLflow) are designed for ML engineers. model-story is designed for *everyone*:
+Existing tools (TensorBoard, W&B, MLflow) are designed for ML engineers. epochix is designed for *everyone*:
 
-| | model-story | W&B / TensorBoard |
+| | epochix | W&B / TensorBoard |
 |--|--|--|
 | Non-technical narrative + letter grade | ✓ | ✗ |
 | Animated living visuals (not just charts) | ✓ | ✗ |
@@ -39,20 +39,20 @@ Existing tools (TensorBoard, W&B, MLflow) are designed for ML engineers. model-s
 
 === "pip"
     ```bash
-    pip install model-story
+    pip install epochix
     ```
 
 === "with Lightning"
     ```bash
-    pip install "model-story[lightning]"
+    pip install "epochix[lightning]"
     ```
 
 === "with HuggingFace"
     ```bash
-    pip install "model-story[hf]"
+    pip install "epochix[hf]"
     ```
 
 === "full"
     ```bash
-    pip install "model-story[full]"
+    pip install "epochix[full]"
     ```

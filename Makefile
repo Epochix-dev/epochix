@@ -5,7 +5,7 @@ install:
 
 dev:
 	docker-compose up -d
-	uvicorn model_story.server.app:create_app --factory --reload --port 7860
+	uvicorn epochix.server.app:create_app --factory --reload --port 7860
 
 test:
 	pytest -q
@@ -19,7 +19,7 @@ fmt:
 	ruff check --fix src tests
 
 typecheck:
-	mypy --strict src/model_story
+	mypy --strict src/epochix
 
 bench:
 	pytest tests/benchmarks --benchmark-only --benchmark-sort=mean
@@ -29,8 +29,8 @@ e2e:
 
 build-frontend:
 	cd frontend && npm ci && npm run build
-	rm -rf src/model_story/_frontend/dist
-	cp -r frontend/dist src/model_story/_frontend/dist
+	rm -rf src/epochix/_frontend/dist
+	cp -r frontend/dist src/epochix/_frontend/dist
 
 build:
 	make build-frontend
@@ -38,7 +38,7 @@ build:
 	python -m build
 
 build-vsix:
-	cd model-story-vscode && npm ci && npm run package
+	cd epochix-vscode && npm ci && npm run package
 
 clean:
 	rm -rf dist build .pytest_cache .mypy_cache __pycache__
@@ -46,7 +46,7 @@ clean:
 	find src -name "__pycache__" -type d -exec rm -rf {} + 2>/dev/null || true
 
 prune-db:
-	model-story prune --older-than 30d
+	epochix prune --older-than 30d
 
 smoke:
-	model-story demo/pytorch_lightning.log --headless
+	epochix demo/pytorch_lightning.log --headless

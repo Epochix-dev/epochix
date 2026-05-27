@@ -8,8 +8,8 @@ Reads a Python parser file and emits a TypeScript skeleton with:
 
 Usage::
 
-    python scripts/python-to-ts-parser.py src/model_story/parsers/pytorch_lightning.py
-    python scripts/python-to-ts-parser.py src/model_story/parsers/keras_tensorflow.py > out.ts
+    python scripts/python-to-ts-parser.py src/epochix/parsers/pytorch_lightning.py
+    python scripts/python-to-ts-parser.py src/epochix/parsers/keras_tensorflow.py > out.ts
 """
 from __future__ import annotations
 

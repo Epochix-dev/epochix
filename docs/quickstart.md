@@ -7,7 +7,7 @@ Get a live dashboard for your training run in under 60 seconds.
 ## 1. Install
 
 ```bash
-pip install model-story
+pip install epochix
 ```
 
 ---
@@ -15,7 +15,7 @@ pip install model-story
 ## 2. Pipe your training script
 
 ```bash
-python train.py 2>&1 | model-story --live
+python train.py 2>&1 | epochix --live
 ```
 
 Your browser opens automatically. The dashboard updates in real time.
@@ -25,7 +25,7 @@ Your browser opens automatically. The dashboard updates in real time.
 ## 3. Parse an existing log file
 
 ```bash
-model-story train.log
+epochix train.log
 ```
 
 ---
@@ -35,7 +35,7 @@ model-story train.log
 ### PyTorch Lightning
 
 ```python
-from model_story.integrations.lightning import StoryCallback
+from epochix.integrations.lightning import StoryCallback
 import lightning as pl
 
 trainer = pl.Trainer(callbacks=[StoryCallback()])
@@ -45,7 +45,7 @@ trainer.fit(model, datamodule=dm)
 ### HuggingFace Trainer
 
 ```python
-from model_story.integrations.hf import StoryCallback
+from epochix.integrations.hf import StoryCallback
 from transformers import Trainer, TrainingArguments
 
 trainer = Trainer(
@@ -59,20 +59,20 @@ trainer.train()
 ### Jupyter / Colab
 
 ```python
-%load_ext model_story
+%load_ext epochix
 
 # Parse a finished log:
-%model_story train.log
+%epochix train.log
 
-# Live mode — runs the next cell through model-story:
-%%model_story --live
+# Live mode — runs the next cell through epochix:
+%%epochix --live
 !python train.py
 ```
 
 ### Python SDK
 
 ```python
-from model_story.sdk import LiveReporter
+from epochix.sdk import LiveReporter
 
 with LiveReporter(task="classification") as reporter:
     for epoch in range(50):
@@ -85,18 +85,18 @@ with LiveReporter(task="classification") as reporter:
 ## CLI reference
 
 ```
-model-story --help
+epochix --help
 ```
 
 | Command | Description |
 |--|--|
-| `model-story <file>` | Parse a finished log file |
-| `model-story --live` | Pipe stdin in live mode |
-| `model-story serve` | Start the dashboard server only |
-| `model-story list` | List all saved runs |
-| `model-story export <id> --format html` | Export a run |
-| `model-story compare <id1> <id2>` | Side-by-side run comparison |
-| `model-story prune --older-than 30d` | Delete old runs |
+| `epochix <file>` | Parse a finished log file |
+| `epochix --live` | Pipe stdin in live mode |
+| `epochix serve` | Start the dashboard server only |
+| `epochix list` | List all saved runs |
+| `epochix export <id> --format html` | Export a run |
+| `epochix compare <id1> <id2>` | Side-by-side run comparison |
+| `epochix prune --older-than 30d` | Delete old runs |
 
 ---
 

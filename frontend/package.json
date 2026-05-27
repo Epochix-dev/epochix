@@ -1,6 +1,6 @@
 {
-  "name": "@model-story/web",
-  "version": "0.2.0",
+  "name": "@epochix/web",
+  "version": "0.3.0",
   "private": true,
   "type": "module",
   "scripts": {

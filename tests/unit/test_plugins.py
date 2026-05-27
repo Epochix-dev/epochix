@@ -1,4 +1,4 @@
-"""Tests for the model-story plugin system.
+"""Tests for the epochix plugin system.
 
 Covers:
 - metaphor pack YAML loading and rendering
@@ -11,19 +11,19 @@ from __future__ import annotations
 
 import pytest
 
-from model_story.plugins import reset_plugins
-from model_story.plugins.exporter_registry import (
+from epochix.plugins import reset_plugins
+from epochix.plugins.exporter_registry import (
     get_exporter,
     list_exporters,
     register_exporter,
     run_exporter,
 )
-from model_story.plugins.metaphor_loader import (
+from epochix.plugins.metaphor_loader import (
     get_metaphor_cards,
     list_packs,
     load_yaml_pack,
 )
-from model_story.plugins.task_registry import (
+from epochix.plugins.task_registry import (
     TaskDefinition,
     get_task,
     list_tasks,
@@ -105,7 +105,7 @@ cards:
     def test_missing_yaml_file_logs_warning(self, caplog: pytest.LogCaptureFixture) -> None:
         import logging
 
-        with caplog.at_level(logging.WARNING, logger="model_story.plugins.metaphor_loader"):
+        with caplog.at_level(logging.WARNING, logger="epochix.plugins.metaphor_loader"):
             load_yaml_pack("/nonexistent/path/to/pack.yaml")
 
         assert any("not found" in r.message for r in caplog.records)
@@ -164,7 +164,7 @@ class TestTaskRegistry:
         assert result.primary_metric == "word_error_rate"
 
     def test_register_task_dict(self) -> None:
-        from model_story.plugins.task_registry import _register_task_value
+        from epochix.plugins.task_registry import _register_task_value
 
         _register_task_value(
             {
@@ -193,9 +193,9 @@ class TestTaskRegistry:
     def test_register_invalid_dict_logs_warning(self, caplog: pytest.LogCaptureFixture) -> None:
         import logging
 
-        from model_story.plugins.task_registry import _register_task_value
+        from epochix.plugins.task_registry import _register_task_value
 
-        with caplog.at_level(logging.WARNING, logger="model_story.plugins.task_registry"):
+        with caplog.at_level(logging.WARNING, logger="epochix.plugins.task_registry"):
             _register_task_value({"bad_key": "no_key_field"}, source="test")
 
         assert get_task("") is None  # nothing registered

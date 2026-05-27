@@ -1,4 +1,4 @@
-# Gradus / model-story — Master Task List
+# Epochix / epochix — Master Task List
 
 > Senior-developer view of every task required to ship v0.1 + VS Code extension + Claude artifact.
 > Update status: `[ ]` = todo, `[~]` = in progress, `[x]` = done, `[!]` = blocked.
@@ -30,11 +30,11 @@
 ## Phase 1 — Core Models (Week 1)
 
 ### P1.1 Python Models
-- [x] `src/model_story/enums.py` — Phase, Grade, TaskType
-- [x] `src/model_story/models.py` — RawLogLine, RawMetric, MetricEvent, StoryFrame, Run, Milestone, Warning, MetaphorCard
-- [x] `src/model_story/config.py` — pydantic-settings; MODEL_STORY_DB, MODEL_STORY_LLM_KEY env vars
-- [x] `src/model_story/__init__.py` — public re-exports, __version__
-- [ ] `src/model_story/py.typed` — PEP 561 marker
+- [x] `src/epochix/enums.py` — Phase, Grade, TaskType
+- [x] `src/epochix/models.py` — RawLogLine, RawMetric, MetricEvent, StoryFrame, Run, Milestone, Warning, MetaphorCard
+- [x] `src/epochix/config.py` — pydantic-settings; EPOCHIX_DB, EPOCHIX_LLM_KEY env vars
+- [x] `src/epochix/__init__.py` — public re-exports, __version__
+- [ ] `src/epochix/py.typed` — PEP 561 marker
 - [ ] Unit tests: `tests/unit/test_models.py`
 
 ---
@@ -42,18 +42,18 @@
 ## Phase 2 — Parser Subsystem (Week 1)
 
 ### P2.1 Infrastructure
-- [x] `src/model_story/parsers/base.py` — BaseParser Protocol, ParserContext dataclass
-- [x] `src/model_story/parsers/registry.py` — register_parser decorator, format detector (sniff first 50 lines)
+- [x] `src/epochix/parsers/base.py` — BaseParser Protocol, ParserContext dataclass
+- [x] `src/epochix/parsers/registry.py` — register_parser decorator, format detector (sniff first 50 lines)
 
 ### P2.2 Framework Parsers
-- [ ] `src/model_story/parsers/pytorch_lightning.py` — regex: `Epoch \d+/\d+:.*loss=`
-- [ ] `src/model_story/parsers/keras_tensorflow.py` — regex: `Epoch \d+/\d+` + progress bar
-- [ ] `src/model_story/parsers/huggingface.py` — regex: JSON-like `{'loss': ..., 'epoch': ...}`
-- [ ] `src/model_story/parsers/ultralytics_yolo.py` — regex: columns `box cls dfl` + `mAP50`
-- [ ] `src/model_story/parsers/fastai.py` — regex: tabular `train_loss valid_loss metric time`
-- [ ] `src/model_story/parsers/accelerate.py` — regex: similar to HuggingFace
-- [ ] `src/model_story/parsers/universal.py` — three-pattern regex fallback (key=val, key: val, JSON)
-- [ ] `src/model_story/parsers/llm_fallback.py` — Ollama/OpenAI batch extraction (opt-in)
+- [ ] `src/epochix/parsers/pytorch_lightning.py` — regex: `Epoch \d+/\d+:.*loss=`
+- [ ] `src/epochix/parsers/keras_tensorflow.py` — regex: `Epoch \d+/\d+` + progress bar
+- [ ] `src/epochix/parsers/huggingface.py` — regex: JSON-like `{'loss': ..., 'epoch': ...}`
+- [ ] `src/epochix/parsers/ultralytics_yolo.py` — regex: columns `box cls dfl` + `mAP50`
+- [ ] `src/epochix/parsers/fastai.py` — regex: tabular `train_loss valid_loss metric time`
+- [ ] `src/epochix/parsers/accelerate.py` — regex: similar to HuggingFace
+- [ ] `src/epochix/parsers/universal.py` — three-pattern regex fallback (key=val, key: val, JSON)
+- [ ] `src/epochix/parsers/llm_fallback.py` — Ollama/OpenAI batch extraction (opt-in)
 
 ### P2.3 Demo Fixtures
 - [ ] `demo/pytorch_lightning.log` — realistic 30-epoch run
@@ -72,9 +72,9 @@
 
 ## Phase 3 — Normalizer (Week 1)
 
-- [ ] `src/model_story/normalizer/canonical_keys.py` — mapping table (val_acc→val_accuracy, etc.)
-- [ ] `src/model_story/normalizer/units.py` — unit normalization and inference
-- [ ] `src/model_story/normalizer/__init__.py` — normalize(RawMetric) → MetricEvent
+- [ ] `src/epochix/normalizer/canonical_keys.py` — mapping table (val_acc→val_accuracy, etc.)
+- [ ] `src/epochix/normalizer/units.py` — unit normalization and inference
+- [ ] `src/epochix/normalizer/__init__.py` — normalize(RawMetric) → MetricEvent
 - [ ] `tests/unit/test_normalizer.py`
 
 ---
@@ -82,13 +82,13 @@
 ## Phase 4 — Story Engine (Week 2)
 
 ### P4.1 Core Logic
-- [ ] `src/model_story/story_engine/task_classifier.py` — fires once on ≥3 events; decision table from §10.2
-- [ ] `src/model_story/story_engine/phases.py` — hybrid progress+metric phase detector (§10.3)
-- [ ] `src/model_story/story_engine/grade.py` — task-specific thresholds; reads .model-story.yaml
-- [ ] `src/model_story/story_engine/milestones.py` — 8 milestone kinds, fire-at-most-once (§10.6)
-- [ ] `src/model_story/story_engine/warnings.py` — overfit / plateau / divergence (§10.7)
-- [ ] `src/model_story/story_engine/narrator.py` — deterministic template engine (§10.5)
-- [ ] `src/model_story/story_engine/__init__.py` — StoryEngine class, process(MetricEvent) → StoryFrame
+- [ ] `src/epochix/story_engine/task_classifier.py` — fires once on ≥3 events; decision table from §10.2
+- [ ] `src/epochix/story_engine/phases.py` — hybrid progress+metric phase detector (§10.3)
+- [ ] `src/epochix/story_engine/grade.py` — task-specific thresholds; reads .epochix.yaml
+- [ ] `src/epochix/story_engine/milestones.py` — 8 milestone kinds, fire-at-most-once (§10.6)
+- [ ] `src/epochix/story_engine/warnings.py` — overfit / plateau / divergence (§10.7)
+- [ ] `src/epochix/story_engine/narrator.py` — deterministic template engine (§10.5)
+- [ ] `src/epochix/story_engine/__init__.py` — StoryEngine class, process(MetricEvent) → StoryFrame
 
 ### P4.2 Narrative Templates
 - [ ] `templates/classification/{awakening,learning,understanding,mastering,polishing}.txt` — 3-5 variants each
@@ -102,7 +102,7 @@
 - [ ] Same i18n coverage for all task types
 
 ### P4.3 Grade Thresholds Config
-- [ ] Default `.model-story.yaml` with all task thresholds from §10.4
+- [ ] Default `.epochix.yaml` with all task thresholds from §10.4
 - [ ] Config loader in grade.py
 
 ### P4.4 Tests
@@ -112,10 +112,10 @@
 
 ## Phase 5 — Storage Layer (Week 2)
 
-- [ ] `src/model_story/store/sqlite_store.py` — SQLAlchemy 2.0 Core; WAL mode; all 5 tables from §7.7
-- [ ] `src/model_story/store/migrations/` — Alembic env + initial migration
-- [ ] `src/model_story/store/ring_buffer.py` — deque(maxlen=2048) per run, thread-safe
-- [ ] `src/model_story/store/__init__.py` — RunStore façade
+- [ ] `src/epochix/store/sqlite_store.py` — SQLAlchemy 2.0 Core; WAL mode; all 5 tables from §7.7
+- [ ] `src/epochix/store/migrations/` — Alembic env + initial migration
+- [ ] `src/epochix/store/ring_buffer.py` — deque(maxlen=2048) per run, thread-safe
+- [ ] `src/epochix/store/__init__.py` — RunStore façade
 - [ ] Benchmark: SQLite write throughput ≥ 10k events/sec (`tests/benchmarks/`)
 - [ ] `tests/unit/test_store.py`
 
@@ -123,24 +123,24 @@
 
 ## Phase 6 — Ingestion Layer (Week 2)
 
-- [ ] `src/model_story/ingester/stdin.py` — asyncio StreamReader; Windows msvcrt fallback (§27.3.8)
-- [ ] `src/model_story/ingester/file_tail.py` — async tail with inotify/kqueue/polling fallback
-- [ ] `src/model_story/ingester/sdk_receiver.py` — receives push events from LiveReporter
-- [ ] `src/model_story/ingester/__init__.py` — Ingester ABC + factory
+- [ ] `src/epochix/ingester/stdin.py` — asyncio StreamReader; Windows msvcrt fallback (§27.3.8)
+- [ ] `src/epochix/ingester/file_tail.py` — async tail with inotify/kqueue/polling fallback
+- [ ] `src/epochix/ingester/sdk_receiver.py` — receives push events from LiveReporter
+- [ ] `src/epochix/ingester/__init__.py` — Ingester ABC + factory
 
 ---
 
 ## Phase 7 — FastAPI Server (Week 2)
 
 ### P7.1 Application
-- [ ] `src/model_story/server/app.py` — FastAPI factory, lifespan context, CORS, static files
-- [ ] `src/model_story/server/hub.py` — asyncio broadcast hub; per-run channels; bounded queues (256); milestone never dropped
-- [ ] `src/model_story/server/routes_runs.py` — GET /api/runs, GET /api/runs/{id}, DELETE /api/runs/{id}, POST /api/runs/{id}/event
-- [ ] `src/model_story/server/routes_snapshot.py` — GET /api/snapshot/{id}, GET /api/metrics/{id}, GET /api/raw/{id}
-- [ ] `src/model_story/server/routes_export.py` — GET /api/export/{id}/html, /pdf, /md, /json
-- [ ] `src/model_story/server/ws.py` — WS /ws/live/{run_id}?last_seq=N; message envelope v1; heartbeat 15s
-- [ ] `src/model_story/server/sse.py` — SSE /sse/live/{run_id}; same envelope
-- [ ] `src/model_story/server/auth.py` — basic auth + bearer token for team mode
+- [ ] `src/epochix/server/app.py` — FastAPI factory, lifespan context, CORS, static files
+- [ ] `src/epochix/server/hub.py` — asyncio broadcast hub; per-run channels; bounded queues (256); milestone never dropped
+- [ ] `src/epochix/server/routes_runs.py` — GET /api/runs, GET /api/runs/{id}, DELETE /api/runs/{id}, POST /api/runs/{id}/event
+- [ ] `src/epochix/server/routes_snapshot.py` — GET /api/snapshot/{id}, GET /api/metrics/{id}, GET /api/raw/{id}
+- [ ] `src/epochix/server/routes_export.py` — GET /api/export/{id}/html, /pdf, /md, /json
+- [ ] `src/epochix/server/ws.py` — WS /ws/live/{run_id}?last_seq=N; message envelope v1; heartbeat 15s
+- [ ] `src/epochix/server/sse.py` — SSE /sse/live/{run_id}; same envelope
+- [ ] `src/epochix/server/auth.py` — basic auth + bearer token for team mode
 - [ ] GET /api/health — liveness probe
 - [ ] GET /api/version — server version + build hash
 - [ ] OpenTelemetry tracing instrumentation (optional, from §17.6)
@@ -159,32 +159,32 @@
 
 ## Phase 8 — CLI (Week 2–3)
 
-- [ ] `src/model_story/cli.py` — Typer app; all commands from §15.1:
-  - `model-story <log_file>` (batch)
-  - `model-story --live` (stdin)
-  - `model-story --live --tail FILE`
-  - `model-story --port N`
-  - `model-story --task <type>`
-  - `model-story --no-llm`
-  - `model-story --headless --export html`
-  - `model-story compare run1 run2`
-  - `model-story prune --older-than 30d`
-  - `model-story compact`
-  - `model-story list`
-  - `model-story open <run_id>`
-  - `model-story config show|set <k> <v>`
-  - `model-story serve --port N --no-browser`
-  - `model-story dump-schema` (for TS port generation)
+- [ ] `src/epochix/cli.py` — Typer app; all commands from §15.1:
+  - `epochix <log_file>` (batch)
+  - `epochix --live` (stdin)
+  - `epochix --live --tail FILE`
+  - `epochix --port N`
+  - `epochix --task <type>`
+  - `epochix --no-llm`
+  - `epochix --headless --export html`
+  - `epochix compare run1 run2`
+  - `epochix prune --older-than 30d`
+  - `epochix compact`
+  - `epochix list`
+  - `epochix open <run_id>`
+  - `epochix config show|set <k> <v>`
+  - `epochix serve --port N --no-browser`
+  - `epochix dump-schema` (for TS port generation)
 
 ---
 
 ## Phase 9 — Python SDK (Week 3)
 
-- [ ] `src/model_story/sdk/live_reporter.py` — LiveReporter class; context manager; auto-finish on exception
-- [ ] `src/model_story/sdk/parse.py` — parse() and parse_string() public functions
-- [ ] `src/model_story/sdk/compare.py` — compare() for side-by-side run diff
-- [ ] `src/model_story/sdk/visualize.py` — visualize() opens browser; serve() returns URL
-- [ ] `src/model_story/sdk/export.py` — export() delegates to exporters/
+- [ ] `src/epochix/sdk/live_reporter.py` — LiveReporter class; context manager; auto-finish on exception
+- [ ] `src/epochix/sdk/parse.py` — parse() and parse_string() public functions
+- [ ] `src/epochix/sdk/compare.py` — compare() for side-by-side run diff
+- [ ] `src/epochix/sdk/visualize.py` — visualize() opens browser; serve() returns URL
+- [ ] `src/epochix/sdk/export.py` — export() delegates to exporters/
 - [ ] Add `@story` decorator pattern (§27.3.2 Pattern 5)
 - [ ] Integration tests for all 5 SDK patterns
 
@@ -238,23 +238,23 @@
 
 ## Phase 11 — Export Pipeline (Week 5)
 
-- [ ] `src/model_story/exporters/html_export.py` — Vite single-file; inline run JSON; base64 fonts; <2MB target
-- [ ] `src/model_story/exporters/pdf_export.py` — WeasyPrint; 1 slide/milestone + summary; SVG pre-render
-- [ ] `src/model_story/exporters/markdown_export.py` — plain narrative + grade + milestones
-- [ ] `src/model_story/exporters/json_export.py` — canonical run JSON; re-importable
+- [ ] `src/epochix/exporters/html_export.py` — Vite single-file; inline run JSON; base64 fonts; <2MB target
+- [ ] `src/epochix/exporters/pdf_export.py` — WeasyPrint; 1 slide/milestone + summary; SVG pre-render
+- [ ] `src/epochix/exporters/markdown_export.py` — plain narrative + grade + milestones
+- [ ] `src/epochix/exporters/json_export.py` — canonical run JSON; re-importable
 - [ ] Playwright visual diff tests for HTML export
 
 ---
 
 ## Phase 12 — Integrations (Week 6–7)
 
-- [ ] `src/model_story/integrations/lightning.py` — StoryCallback for PyTorch Lightning
-- [ ] `src/model_story/integrations/hf.py` — StoryCallback for HuggingFace Trainer
-- [ ] `src/model_story/integrations/jupyter.py` — %model_story cell magic; iframe in cell output; works offline in Colab
-- [ ] `src/model_story/integrations/tensorboard_import.py` — `model-story import-tensorboard ./runs/`
-- [ ] `src/model_story/integrations/wandb_import.py` — `model-story import-wandb <api_key> <run_id>`
+- [ ] `src/epochix/integrations/lightning.py` — StoryCallback for PyTorch Lightning
+- [ ] `src/epochix/integrations/hf.py` — StoryCallback for HuggingFace Trainer
+- [ ] `src/epochix/integrations/jupyter.py` — %epochix cell magic; iframe in cell output; works offline in Colab
+- [ ] `src/epochix/integrations/tensorboard_import.py` — `epochix import-tensorboard ./runs/`
+- [ ] `src/epochix/integrations/wandb_import.py` — `epochix import-wandb <api_key> <run_id>`
 - [ ] Test Jupyter magic in Colab
-- [ ] `pip install model-story[lightning]` integration test
+- [ ] `pip install epochix[lightning]` integration test
 
 ---
 
@@ -262,9 +262,9 @@
 
 - [ ] Finalize all 4 entry-point groups in pyproject.toml (parsers, metaphor_packs, exporters, tasks)
 - [ ] Document plugin protocol in docs/plugins.md
-- [ ] `src/model_story/parsers/registry.py` — load external plugins at startup via importlib.metadata
-- [ ] Metaphor pack YAML loader (model-story.yaml + custom domain packs)
-- [ ] Example plugin: `model-story-fairseq` package structure documented
+- [ ] `src/epochix/parsers/registry.py` — load external plugins at startup via importlib.metadata
+- [ ] Metaphor pack YAML loader (epochix.yaml + custom domain packs)
+- [ ] Example plugin: `epochix-fairseq` package structure documented
 - [ ] Test: external plugin installs and registers cleanly
 
 ---
@@ -272,9 +272,9 @@
 ## Phase 14 — VS Code Extension (Week 3–4, parallel)
 
 ### P14.1 Project Setup
-- [ ] `model-story-vscode/package.json` — manifest with all contributes from §27.1.4
-- [ ] `model-story-vscode/tsconfig.json`
-- [ ] `model-story-vscode/esbuild.config.mjs`
+- [ ] `epochix-vscode/package.json` — manifest with all contributes from §27.1.4
+- [ ] `epochix-vscode/tsconfig.json`
+- [ ] `epochix-vscode/esbuild.config.mjs`
 
 ### P14.2 Extension Core
 - [ ] `src/extension.ts` — activate()/deactivate(); ServerManager.maybeStart(); TerminalWatcher
@@ -317,7 +317,7 @@
 
 ### P14.9 Distribution
 - [ ] CI: `.vsix` build per tag with vendored frontend
-- [ ] Publish to VS Code Marketplace (publisher: model-story)
+- [ ] Publish to VS Code Marketplace (publisher: epochix)
 - [ ] Publish to Open VSX (Cursor/Windsurf support)
 - [ ] Bundle size check: <5 MB .vsix
 - [ ] Test on Cursor, Windsurf
@@ -326,7 +326,7 @@
 
 ## Phase 15 — Claude Artifact (Week 3–4, parallel)
 
-- [ ] `src/model_story/_artifacts/model-story.artifact.jsx` — single-file React
+- [ ] `src/epochix/_artifacts/epochix.artifact.jsx` — single-file React
 - [ ] Port all parsers to JS (detect + parse interface)
 - [ ] Port story engine: phaseFor, gradeFor, narratives, buildFrames
 - [ ] BrainCanvas using THREE.js (WebGL in artifact)
@@ -337,15 +337,15 @@
 - [ ] Engineer charts (recharts LineChart)
 - [ ] Blob-based HTML export (<500 KB target)
 - [ ] Claude API LLM fallback (fetch /v1/messages from artifact runtime)
-- [ ] Marketing banner: "pip install model-story" after dashboard renders
+- [ ] Marketing banner: "pip install epochix" after dashboard renders
 - [ ] `?panel=` embed query param
 
 ---
 
 ## Phase 16 — GitHub Action (Week 8)
 
-- [ ] `.github/actions/model-story/action.yml` — composite action; run model-story; upload HTML artifact
-- [ ] `model-story/comment-action@v1` — post report.md as PR comment
+- [ ] `.github/actions/epochix/action.yml` — composite action; run epochix; upload HTML artifact
+- [ ] `epochix/comment-action@v1` — post report.md as PR comment
 - [ ] Example workflow in README
 - [ ] Test on a public repo training workflow
 
@@ -360,7 +360,7 @@
 - [ ] `docs/plugins.md` — write a custom parser or metaphor pack
 - [ ] `docs/deployment.md` — local / team server / Docker / hosted
 - [ ] MkDocs-material setup with mkdocstrings
-- [ ] `docs.model-story.dev` — deploy via CI on every tag
+- [ ] `docs.epochix.dev` — deploy via CI on every tag
 - [ ] Record 90-second demo video (live training + dashboard side-by-side)
 - [ ] `demo/` — all 6 realistic fixture logs
 
@@ -382,15 +382,15 @@
 ### P19.1 Quality Gates
 - [ ] `pytest -q` green on Linux, macOS, Windows × Python 3.10/3.11/3.12
 - [ ] `ruff check` clean
-- [ ] `mypy --strict src/model_story` clean
+- [ ] `mypy --strict src/epochix` clean
 - [ ] `playwright test` green (6 fixture logs E2E)
 - [ ] Wheel < 8 MB; exported HTML < 2 MB
-- [ ] `pip install model-story` in clean venv → demo log opens dashboard
+- [ ] `pip install epochix` in clean venv → demo log opens dashboard
 
 ### P19.2 Packaging & Distribution
 - [ ] `release.yml` — build wheel per OS; publish to PyPI on `v*` tag
-- [ ] Docker: `ghcr.io/model-story/server:<version>`
-- [ ] Docker: `ghcr.io/model-story/full:<version>` (+ Ollama + sample data)
+- [ ] Docker: `ghcr.io/epochix/server:<version>`
+- [ ] Docker: `ghcr.io/epochix/full:<version>` (+ Ollama + sample data)
 - [ ] SBOM (CycloneDX) generation in release workflow
 - [ ] `CHANGELOG.md` — v0.1.0 entry
 - [ ] Git tag `v0.1.0`
@@ -413,7 +413,7 @@
 - [ ] Docker compose: server + redis + postgres + ollama + nginx
 - [ ] Per-run shareable permalinks
 - [ ] Opt-in telemetry implementation
-- [ ] `model-story config set telemetry true`
+- [ ] `epochix config set telemetry true`
 
 ---
 

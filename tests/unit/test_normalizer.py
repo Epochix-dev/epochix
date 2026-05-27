@@ -3,9 +3,9 @@ from __future__ import annotations
 
 import pytest
 
-from model_story.models import RawMetric
-from model_story.normalizer import normalize
-from model_story.normalizer.canonical_keys import canonicalize_key
+from epochix.models import RawMetric
+from epochix.normalizer import normalize
+from epochix.normalizer.canonical_keys import canonicalize_key
 
 
 class TestCanonicalKeys:
