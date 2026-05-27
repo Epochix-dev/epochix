@@ -719,17 +719,25 @@ export class BrainCanvas {
     }
 
     // ── Zone labels (technical + plain English, both at the bottom) ────────
+    // Truncate to fit each zone's width — when 14+ zones share a 600px panel
+    // the labels overrun each other otherwise. Hide the plain-English label
+    // for very narrow zones; just keep the tech label (also truncated).
     ctx.textAlign = 'center';
     for (const zone of this._zones) {
+      const budget = Math.max(20, zone.width * 0.95);  // px of horizontal room
+
       // Technical label (bold)
       ctx.font      = 'bold 10px DM Sans, sans-serif';
       ctx.fillStyle = hexAlpha(zone.color, 0.95);
-      ctx.fillText(zone.techLabel, zone.x, h - 20);
+      ctx.fillText(_fitText(ctx, zone.techLabel, budget), zone.x, h - 20);
 
-      // Plain-English label
-      ctx.font      = '8.5px DM Sans, sans-serif';
-      ctx.fillStyle = hexAlpha(zone.color, 0.55);
-      ctx.fillText(zone.plainLabel, zone.x, h - 8);
+      // Plain-English label — only when the zone is wide enough that even a
+      // truncated version is still legible (otherwise it's all "…").
+      if (zone.width >= 56) {
+        ctx.font      = '8.5px DM Sans, sans-serif';
+        ctx.fillStyle = hexAlpha(zone.color, 0.55);
+        ctx.fillText(_fitText(ctx, zone.plainLabel, budget), zone.x, h - 8);
+      }
     }
 
     // ── Flash labels (zone-crossing micro-captions) ───────────────────────
@@ -900,4 +908,22 @@ function _fmtParams(n) {
 function _escTip(s) {
   return String(s ?? '')
     .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+/**
+ * Trim *text* with an ellipsis until it fits the given pixel budget at the
+ * context's current font. Used so per-zone bottom labels never bleed into
+ * neighbouring zones when many layers share a narrow panel.
+ */
+function _fitText(ctx, text, budgetPx) {
+  if (!text) return '';
+  if (ctx.measureText(text).width <= budgetPx) return text;
+  let lo = 0, hi = text.length;
+  while (lo < hi) {
+    const mid = (lo + hi + 1) >> 1;
+    const candidate = text.slice(0, mid) + '…';
+    if (ctx.measureText(candidate).width <= budgetPx) lo = mid;
+    else hi = mid - 1;
+  }
+  return lo === 0 ? '…' : text.slice(0, lo) + '…';
 }
