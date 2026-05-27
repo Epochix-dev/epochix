@@ -224,11 +224,12 @@ body {
   min-height: 320px;
 }
 .brain-wlegend {
-  /* Sits in the reserved top strip on the LEFT — the architecture chip
-     owns the right side of the header above. */
-  position: absolute; top: 6px; left: 12px; z-index: 2;
+  /* Lives in its own row between the panel header and the canvas — out
+     of the canvas entirely so the 3D slab top faces can't overlap it. */
   display: flex; gap: 12px; align-items: center;
-  font-size: 9px; color: var(--text-muted); pointer-events: none;
+  font-size: 9px; color: var(--text-muted);
+  padding: 0 4px;
+  margin-top: -4px;
 }
 .brain-wlegend span { display: flex; align-items: center; gap: 4px; }
 .brain-wlegend i { width: 14px; height: 3px; border-radius: 2px; display: inline-block; }
