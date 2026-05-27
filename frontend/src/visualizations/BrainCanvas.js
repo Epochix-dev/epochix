@@ -719,25 +719,25 @@ export class BrainCanvas {
     }
 
     // ── Zone labels (technical + plain English, both at the bottom) ────────
-    // Truncate to fit each zone's width — when 14+ zones share a 600px panel
-    // the labels overrun each other otherwise. Hide the plain-English label
-    // for very narrow zones; just keep the tech label (also truncated).
+    // Both labels are always shown but truncated per-zone so adjacent labels
+    // don't bleed into each other. Plain labels get an alias map first
+    // (shortens "Pattern finder" → "Patterns" etc. when room is tight)
+    // then the binary-search ellipsis fitter takes whatever's left.
     ctx.textAlign = 'center';
     for (const zone of this._zones) {
       const budget = Math.max(20, zone.width * 0.95);  // px of horizontal room
 
-      // Technical label (bold)
+      // Technical label (bold) — truncated if needed.
       ctx.font      = 'bold 10px DM Sans, sans-serif';
       ctx.fillStyle = hexAlpha(zone.color, 0.95);
       ctx.fillText(_fitText(ctx, zone.techLabel, budget), zone.x, h - 20);
 
-      // Plain-English label — only when the zone is wide enough that even a
-      // truncated version is still legible (otherwise it's all "…").
-      if (zone.width >= 56) {
-        ctx.font      = '8.5px DM Sans, sans-serif';
-        ctx.fillStyle = hexAlpha(zone.color, 0.55);
-        ctx.fillText(_fitText(ctx, zone.plainLabel, budget), zone.x, h - 8);
-      }
+      // Plain-English label — pick a shorter alias when the zone is narrow
+      // so we don't waste the available pixels on a leading "Pat…" stub.
+      ctx.font      = '8.5px DM Sans, sans-serif';
+      ctx.fillStyle = hexAlpha(zone.color, 0.55);
+      const plain = _shortenPlainLabel(zone.plainLabel, budget, ctx);
+      ctx.fillText(plain, zone.x, h - 8);
     }
 
     // ── Flash labels (zone-crossing micro-captions) ───────────────────────
@@ -908,6 +908,43 @@ function _fmtParams(n) {
 function _escTip(s) {
   return String(s ?? '')
     .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+/**
+ * Pick the most informative plain-English label that fits the zone's
+ * pixel budget. Tries the original first, then a single-word shorthand,
+ * then the leading word, then finally a truncated-with-ellipsis fallback.
+ * Returns whichever VARIANT is the longest that still fits — so a wider
+ * zone keeps the friendly phrase, and a narrow zone keeps a meaningful
+ * word instead of a useless "Pat…" stub.
+ */
+function _shortenPlainLabel(label, budgetPx, ctx) {
+  if (!label) return '';
+  const candidates = [label];
+  // Compact phrase → single representative word for common plain labels.
+  const aliases = {
+    'Pattern finder':   'Patterns',
+    'Feature block':    'Features',
+    'Feature extractor':'Features',
+    'Pyramid pooling':  'Pooling',
+    'Upsampling':       'Upsamp',
+    'Symbol mapper':    'Embedding',
+    'Remembers context':'Memory',
+    'Reads full context':'Attention',
+    'Raw data':         'Input',
+    'Decision':         'Output',
+    'Stabilises':       'Norm',
+    'Hidden layer':     'Hidden',
+  };
+  if (aliases[label]) candidates.push(aliases[label]);
+  // Leading word fallback (often still meaningful: "Pattern", "Feature")
+  const firstWord = label.split(/\s+/, 1)[0];
+  if (firstWord && firstWord !== label) candidates.push(firstWord);
+  for (const c of candidates) {
+    if (ctx.measureText(c).width <= budgetPx) return c;
+  }
+  // None fits as-is — fall back to ellipsis-trim of the original phrase.
+  return _fitText(ctx, label, budgetPx);
 }
 
 /**
