@@ -54,8 +54,7 @@ def benchmark_parser(parser_name: str, lines: list[str], n: int) -> dict[str, ob
     if parser is None:
         return {"parser": parser_name, "error": "could not detect"}
 
-    ctx = ParserContext(seq=0, current_epoch=None, total_epochs=None,
-                        current_step=None, total_steps=None)
+    ctx = ParserContext(run_id="benchmark", seq=0)
     total_metrics = 0
     start = time.perf_counter()
     for _ in range(n):

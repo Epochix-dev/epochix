@@ -39,13 +39,7 @@ UNIVERSAL_LINE = (
 
 
 def _make_ctx() -> ParserContext:
-    return ParserContext(
-        seq=0,
-        current_epoch=None,
-        total_epochs=None,
-        current_step=None,
-        total_steps=None,
-    )
+    return ParserContext(run_id="benchmark", seq=0)
 
 
 # ── Benchmarks ────────────────────────────────────────────────────────────────

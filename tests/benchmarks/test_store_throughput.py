@@ -59,7 +59,7 @@ def test_metric_event_write_throughput(benchmark: pytest.FixtureType) -> None:
     def _write_one() -> None:
         nonlocal seq
         seq += 1
-        store.add_metric_event(_make_event(run_id, seq))
+        store.append_metric_event(_make_event(run_id, seq))
 
     result = benchmark(_write_one)
     wps = 1.0 / benchmark.stats["mean"]
