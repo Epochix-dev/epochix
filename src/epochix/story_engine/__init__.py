@@ -31,8 +31,8 @@ _PRIMARY_KEY_FOR_TASK: dict[TaskType, str] = {
 @dataclass
 class StoryEngine:
     run_id: str
-    task: TaskType | None = None        # None = auto-detect
-    primary_metric: str | None = None   # None = inferred from task
+    task: TaskType | None = None  # None = auto-detect
+    primary_metric: str | None = None  # None = inferred from task
     total_epochs: int | None = None
     locale: str = "en"
     grade_config: GradeConfig | None = None  # loaded from .epochix.yaml
@@ -112,7 +112,9 @@ class StoryEngine:
         # for both the progress bar and the maturity signal (NOT a statistical
         # prediction confidence).
         rel = relative_improvement(
-            primary_value, self._baseline, lower_better=lower_better,
+            primary_value,
+            self._baseline,
+            lower_better=lower_better,
         )
         advancement = progress if progress is not None else (rel if rel is not None else 0.0)
 

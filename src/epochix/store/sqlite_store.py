@@ -30,7 +30,8 @@ logger = logging.getLogger(__name__)
 metadata = MetaData()
 
 runs_table = Table(
-    "runs", metadata,
+    "runs",
+    metadata,
     Column("id", String, primary_key=True),
     Column("name", String),
     Column("task_type", String, nullable=False),
@@ -46,7 +47,8 @@ runs_table = Table(
 )
 
 metric_events_table = Table(
-    "metric_events", metadata,
+    "metric_events",
+    metadata,
     Column("run_id", String, ForeignKey("runs.id"), nullable=False, primary_key=True),
     Column("seq", Integer, nullable=False, primary_key=True),
     # A single log line often carries several metrics (e.g. loss, acc, val_loss,
@@ -62,7 +64,8 @@ metric_events_table = Table(
 )
 
 story_frames_table = Table(
-    "story_frames", metadata,
+    "story_frames",
+    metadata,
     Column("run_id", String, ForeignKey("runs.id"), nullable=False, primary_key=True),
     Column("seq", Integer, nullable=False, primary_key=True),
     Column("epoch", Float),
@@ -78,7 +81,8 @@ story_frames_table = Table(
 )
 
 milestones_table = Table(
-    "milestones", metadata,
+    "milestones",
+    metadata,
     Column("run_id", String, ForeignKey("runs.id"), nullable=False, primary_key=True),
     Column("seq", Integer, nullable=False, primary_key=True),
     Column("kind", String, nullable=False, primary_key=True),
@@ -88,7 +92,8 @@ milestones_table = Table(
 )
 
 raw_lines_table = Table(
-    "raw_lines", metadata,
+    "raw_lines",
+    metadata,
     Column("run_id", String, ForeignKey("runs.id"), nullable=False, primary_key=True),
     Column("seq", Integer, nullable=False, primary_key=True),
     Column("ts", DateTime, nullable=False),
@@ -183,20 +188,23 @@ class RunStore:
 
     def create_run(self, run: Run) -> None:
         with self._engine.begin() as conn:
-            conn.execute(runs_table.insert(), {
-                "id": run.id,
-                "name": run.name,
-                "task_type": run.task_type.value,
-                "started_at": run.started_at,
-                "finished_at": run.finished_at,
-                "primary_metric": run.primary_metric,
-                "framework": run.framework_detected,
-                "parser_used": run.parser_used,
-                "total_epochs": run.total_epochs_est,
-                "final_grade": run.final_grade.value if run.final_grade else None,
-                "story_summary": run.story_summary,
-                "config_json": json.dumps(run.config),
-            })
+            conn.execute(
+                runs_table.insert(),
+                {
+                    "id": run.id,
+                    "name": run.name,
+                    "task_type": run.task_type.value,
+                    "started_at": run.started_at,
+                    "finished_at": run.finished_at,
+                    "primary_metric": run.primary_metric,
+                    "framework": run.framework_detected,
+                    "parser_used": run.parser_used,
+                    "total_epochs": run.total_epochs_est,
+                    "final_grade": run.final_grade.value if run.final_grade else None,
+                    "story_summary": run.story_summary,
+                    "config_json": json.dumps(run.config),
+                },
+            )
 
     def finish_run(
         self,
@@ -228,15 +236,11 @@ class RunStore:
         if primary_metric is not None:
             values["primary_metric"] = primary_metric
         with self._engine.begin() as conn:
-            conn.execute(
-                runs_table.update().where(runs_table.c.id == run_id).values(**values)
-            )
+            conn.execute(runs_table.update().where(runs_table.c.id == run_id).values(**values))
 
     def get_run(self, run_id: str) -> Run | None:
         with self._engine.connect() as conn:
-            row = conn.execute(
-                runs_table.select().where(runs_table.c.id == run_id)
-            ).fetchone()
+            row = conn.execute(runs_table.select().where(runs_table.c.id == run_id)).fetchone()
         if row is None:
             return None
         return self._row_to_run(row)
@@ -267,18 +271,22 @@ class RunStore:
 
     def append_metric_event(self, event: MetricEvent) -> None:
         from sqlalchemy.dialects.sqlite import insert as sqlite_insert
+
         with self._engine.begin() as conn:
-            conn.execute(sqlite_insert(metric_events_table).on_conflict_do_nothing(), {
-                "run_id": event.run_id,
-                "seq": event.seq,
-                "ts": event.timestamp,
-                "epoch": event.epoch,
-                "step": event.step,
-                "canonical_key": event.canonical_key,
-                "raw_key": event.raw_key,
-                "value": event.value,
-                "unit": event.unit,
-            })
+            conn.execute(
+                sqlite_insert(metric_events_table).on_conflict_do_nothing(),
+                {
+                    "run_id": event.run_id,
+                    "seq": event.seq,
+                    "ts": event.timestamp,
+                    "epoch": event.epoch,
+                    "step": event.step,
+                    "canonical_key": event.canonical_key,
+                    "raw_key": event.raw_key,
+                    "value": event.value,
+                    "unit": event.unit,
+                },
+            )
 
     def get_metric_events(self, run_id: str) -> list[MetricEvent]:
         with self._engine.connect() as conn:
@@ -289,39 +297,58 @@ class RunStore:
             ).fetchall()
         result = []
         for r in rows:
-            result.append(MetricEvent(
-                run_id=r.run_id, seq=r.seq,
-                timestamp=r.ts if isinstance(r.ts, datetime) else datetime.fromisoformat(str(r.ts)),
-                epoch=r.epoch, step=r.step,
-                canonical_key=r.canonical_key, raw_key=r.raw_key,
-                value=r.value, unit=r.unit,
-            ))
+            result.append(
+                MetricEvent(
+                    run_id=r.run_id,
+                    seq=r.seq,
+                    timestamp=r.ts
+                    if isinstance(r.ts, datetime)
+                    else datetime.fromisoformat(str(r.ts)),
+                    epoch=r.epoch,
+                    step=r.step,
+                    canonical_key=r.canonical_key,
+                    raw_key=r.raw_key,
+                    value=r.value,
+                    unit=r.unit,
+                )
+            )
         return result
 
     # ---------------------------------------------------------- story frames
 
     def append_story_frame(self, frame: StoryFrame) -> None:
         from sqlalchemy.dialects.sqlite import insert as sqlite_insert
+
         with self._engine.begin() as conn:
-            conn.execute(sqlite_insert(story_frames_table).on_conflict_do_nothing(), {
-                "run_id": frame.run_id,
-                "seq": frame.seq,
-                "epoch": frame.epoch,
-                "progress": frame.progress,
-                "phase": frame.phase.value,
-                "grade": frame.grade.value,
-                "primary_value": frame.primary_metric_value,
-                "confidence": frame.confidence,
-                "narrative": frame.narrative,
-                "metaphor_json": json.dumps([m.model_dump() for m in frame.metaphor_cards]),
-                "skill_json": json.dumps(frame.skill_dimensions),
-                "warnings_json": json.dumps([w.model_dump() for w in frame.warnings]),
-            })
+            conn.execute(
+                sqlite_insert(story_frames_table).on_conflict_do_nothing(),
+                {
+                    "run_id": frame.run_id,
+                    "seq": frame.seq,
+                    "epoch": frame.epoch,
+                    "progress": frame.progress,
+                    "phase": frame.phase.value,
+                    "grade": frame.grade.value,
+                    "primary_value": frame.primary_metric_value,
+                    "confidence": frame.confidence,
+                    "narrative": frame.narrative,
+                    "metaphor_json": json.dumps([m.model_dump() for m in frame.metaphor_cards]),
+                    "skill_json": json.dumps(frame.skill_dimensions),
+                    "warnings_json": json.dumps([w.model_dump() for w in frame.warnings]),
+                },
+            )
             for ms in frame.milestones:
-                conn.execute(sqlite_insert(milestones_table).on_conflict_do_nothing(), {
-                    "run_id": ms.run_id, "seq": ms.seq, "kind": ms.kind,
-                    "epoch": ms.epoch, "value": ms.value, "message": ms.message,
-                })
+                conn.execute(
+                    sqlite_insert(milestones_table).on_conflict_do_nothing(),
+                    {
+                        "run_id": ms.run_id,
+                        "seq": ms.seq,
+                        "kind": ms.kind,
+                        "epoch": ms.epoch,
+                        "value": ms.value,
+                        "message": ms.message,
+                    },
+                )
 
     def get_story_frames(self, run_id: str) -> list[StoryFrame]:
         with self._engine.connect() as conn:
@@ -332,35 +359,44 @@ class RunStore:
             ).fetchall()
         from epochix.enums import Grade, Phase
         from epochix.models import MetaphorCard, Warning
+
         result = []
         for r in rows:
-            result.append(StoryFrame(
-                run_id=r.run_id, seq=r.seq, epoch=r.epoch,
-                progress=r.progress or 0.0,
-                phase=Phase(r.phase),
-                grade=Grade(r.grade),
-                primary_metric_value=r.primary_value,
-                confidence=r.confidence or 0.0,
-                narrative=r.narrative or "",
-                metaphor_cards=[MetaphorCard(**m) for m in json.loads(r.metaphor_json or "[]")],
-                skill_dimensions=json.loads(r.skill_json or "{}"),
-                warnings=[Warning(**w) for w in json.loads(r.warnings_json or "[]")],
-                milestones=[],
-                task_type=TaskType.CUSTOM,  # re-joined when needed
-            ))
+            result.append(
+                StoryFrame(
+                    run_id=r.run_id,
+                    seq=r.seq,
+                    epoch=r.epoch,
+                    progress=r.progress or 0.0,
+                    phase=Phase(r.phase),
+                    grade=Grade(r.grade),
+                    primary_metric_value=r.primary_value,
+                    confidence=r.confidence or 0.0,
+                    narrative=r.narrative or "",
+                    metaphor_cards=[MetaphorCard(**m) for m in json.loads(r.metaphor_json or "[]")],
+                    skill_dimensions=json.loads(r.skill_json or "{}"),
+                    warnings=[Warning(**w) for w in json.loads(r.warnings_json or "[]")],
+                    milestones=[],
+                    task_type=TaskType.CUSTOM,  # re-joined when needed
+                )
+            )
         return result
 
     # --------------------------------------------------------------- raw lines
 
     def append_raw_line(self, run_id: str, seq: int, ts: datetime, text: str) -> None:
         from sqlalchemy.dialects.sqlite import insert as sqlite_insert
+
         with self._engine.begin() as conn:
-            conn.execute(sqlite_insert(raw_lines_table).on_conflict_do_nothing(), {
-                "run_id": run_id,
-                "seq": seq,
-                "ts": ts,
-                "text": text,
-            })
+            conn.execute(
+                sqlite_insert(raw_lines_table).on_conflict_do_nothing(),
+                {
+                    "run_id": run_id,
+                    "seq": seq,
+                    "ts": ts,
+                    "text": text,
+                },
+            )
 
     def get_raw_lines(self, run_id: str) -> list[str]:
         with self._engine.connect() as conn:
@@ -379,8 +415,9 @@ class RunStore:
             id=row.id,
             name=row.name,
             task_type=TaskType(row.task_type),
-            started_at=row.started_at if isinstance(row.started_at, datetime)
-                        else datetime.fromisoformat(str(row.started_at)),
+            started_at=row.started_at
+            if isinstance(row.started_at, datetime)
+            else datetime.fromisoformat(str(row.started_at)),
             finished_at=row.finished_at,
             primary_metric=row.primary_metric,
             framework_detected=row.framework,

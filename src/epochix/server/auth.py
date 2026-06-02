@@ -13,9 +13,7 @@ _bearer = HTTPBearer(auto_error=False)
 # Hosts that count as the same machine. "testclient" is Starlette's TestClient
 # transport (in-process, never network-reachable) — admitting it keeps tests
 # working without weakening the policy for real requests.
-_LOOPBACK_HOSTS: frozenset[str] = frozenset(
-    {"127.0.0.1", "::1", "localhost", "testclient"}
-)
+_LOOPBACK_HOSTS: frozenset[str] = frozenset({"127.0.0.1", "::1", "localhost", "testclient"})
 
 
 def token_ok(settings: Settings, token: str | None) -> bool:
@@ -29,6 +27,7 @@ def token_ok(settings: Settings, token: str | None) -> bool:
     if not settings.auth_token:
         return True
     return token is not None and secrets.compare_digest(token, settings.auth_token)
+
 
 _BearerDep = Annotated[HTTPAuthorizationCredentials | None, Security(_bearer)]
 

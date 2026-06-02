@@ -93,19 +93,30 @@ _DEFAULT_THRESHOLDS: dict[TaskType, list[tuple[Grade, float]]] = {
 }
 
 # Tasks where lower = better (built-in defaults; can be overridden via GradeConfig)
-_LOWER_BETTER: frozenset[TaskType] = frozenset({
-    TaskType.NLP, TaskType.BIOMETRIC, TaskType.GAZE, TaskType.REGRESSION,
-})
+_LOWER_BETTER: frozenset[TaskType] = frozenset(
+    {
+        TaskType.NLP,
+        TaskType.BIOMETRIC,
+        TaskType.GAZE,
+        TaskType.REGRESSION,
+    }
+)
 
 # Map of normalised string variants → canonical Grade label for YAML keys.
 # Allows both "A+" (direct) and "A_PLUS" / "APLUS" (code-friendly) forms.
 _LABEL_ALIASES: dict[str, str] = {
-    "A_PLUS": "A+",  "APLUS": "A+",
-    "A_MINUS": "A-", "AMINUS": "A-",
-    "B_PLUS": "B+",  "BPLUS": "B+",
-    "B_MINUS": "B-", "BMINUS": "B-",
-    "C_PLUS": "C+",  "CPLUS": "C+",
-    "C_MINUS": "C-", "CMINUS": "C-",
+    "A_PLUS": "A+",
+    "APLUS": "A+",
+    "A_MINUS": "A-",
+    "AMINUS": "A-",
+    "B_PLUS": "B+",
+    "BPLUS": "B+",
+    "B_MINUS": "B-",
+    "BMINUS": "B-",
+    "C_PLUS": "C+",
+    "CPLUS": "C+",
+    "C_MINUS": "C-",
+    "CMINUS": "C-",
 }
 
 

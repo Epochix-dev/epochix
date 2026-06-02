@@ -1,4 +1,5 @@
 """JSON export — Phase 11 placeholder."""
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING

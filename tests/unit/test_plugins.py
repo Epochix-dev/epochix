@@ -7,6 +7,7 @@ Covers:
 - reset / idempotency of plugin loading
 - error-resilience (bad YAML, missing fields, non-callable exporter)
 """
+
 from __future__ import annotations
 
 import pytest
@@ -40,6 +41,7 @@ def _clean_plugins() -> None:  # type: ignore[return]
 
 
 # ── Metaphor pack YAML loader ─────────────────────────────────────────────────
+
 
 class TestMetaphorLoader:
     def test_load_valid_yaml(self, tmp_path: pytest.TempPathFactory) -> None:  # type: ignore[type-arg]
@@ -93,7 +95,8 @@ cards:
         assert cards == []
 
     def test_get_cards_missing_phase_returns_empty(
-        self, tmp_path: pytest.TempPathFactory  # type: ignore[type-arg]
+        self,
+        tmp_path: pytest.TempPathFactory,  # type: ignore[type-arg]
     ) -> None:
         yaml_file = tmp_path / "pack.yaml"  # type: ignore[operator]
         yaml_file.write_text("task: nlp\ncards:\n  awakening:\n    - title: T\n      body: B\n")  # type: ignore[union-attr]
@@ -145,6 +148,7 @@ cards:
 
 
 # ── Task registry ─────────────────────────────────────────────────────────────
+
 
 class TestTaskRegistry:
     def test_register_task_definition(self) -> None:
@@ -202,6 +206,7 @@ class TestTaskRegistry:
 
 
 # ── Exporter registry ─────────────────────────────────────────────────────────
+
 
 class TestExporterRegistry:
     def test_register_and_call(self) -> None:

@@ -5,6 +5,7 @@ without explicit opt-in, write endpoints require either a same-machine
 caller or a Bearer token, and CORS is same-origin only unless the operator
 configures origins.
 """
+
 from __future__ import annotations
 
 from datetime import datetime, timezone
@@ -62,13 +63,9 @@ def test_no_cors_middleware_by_default() -> None:
 
 
 def test_cors_enabled_when_origins_configured() -> None:
-    app = create_app(
-        settings=Settings(db=":memory:", cors_origins="https://app.example.com")
-    )
+    app = create_app(settings=Settings(db=":memory:", cors_origins="https://app.example.com"))
     with TestClient(app) as client:
-        r = client.get(
-            "/api/health", headers={"Origin": "https://app.example.com"}
-        )
+        r = client.get("/api/health", headers={"Origin": "https://app.example.com"})
         assert r.headers.get("access-control-allow-origin") == "https://app.example.com"
 
 
@@ -86,7 +83,10 @@ def test_destructive_rejected_from_non_loopback_without_token() -> None:
         r_event = client.post(
             "/api/runs/victim/event",
             json={
-                "seq": 1, "canonical_key": "val_loss", "raw_key": "val_loss", "value": 0.5,
+                "seq": 1,
+                "canonical_key": "val_loss",
+                "raw_key": "val_loss",
+                "value": 0.5,
             },
         )
         assert r_event.status_code == 401

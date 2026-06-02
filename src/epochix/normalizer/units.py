@@ -15,7 +15,7 @@ UNIT_MAP: dict[str, str | None] = {
     "bleu": "%",
     "rouge": "%",
     "EER": "%",
-    "MAE": None,      # unit depends on task (degrees or cm)
+    "MAE": None,  # unit depends on task (degrees or cm)
     "RMSE": None,
     "MSE": None,
     "lr": None,

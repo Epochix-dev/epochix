@@ -22,6 +22,7 @@ Or as a context manager::
         for epoch in range(30):
             reporter.log(epoch=epoch, val_accuracy=acc, val_loss=loss)
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -58,9 +59,7 @@ class LiveReporter:
         locale: str = "en",
         run_id: str | None = None,
     ) -> None:
-        self._task: TaskType | None = (
-            TaskType(task) if isinstance(task, str) else task
-        )
+        self._task: TaskType | None = TaskType(task) if isinstance(task, str) else task
         self._primary_metric = primary_metric
         self._name = name
         self._total_epochs = total_epochs
@@ -162,14 +161,18 @@ class LiveReporter:
             import uvicorn
 
             config = uvicorn.Config(
-                _app, host="127.0.0.1", port=port,
-                log_level="warning", lifespan="off",
+                _app,
+                host="127.0.0.1",
+                port=port,
+                log_level="warning",
+                lifespan="off",
             )
             server = uvicorn.Server(config)
             server_task = asyncio.create_task(server.serve())
             await asyncio.sleep(0.5)
             if open_browser:
                 import webbrowser
+
                 webbrowser.open(f"http://127.0.0.1:{port}/v/{run_id}")
             try:
                 await run_pipeline(

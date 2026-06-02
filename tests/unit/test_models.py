@@ -1,4 +1,5 @@
 """Unit tests for epochix.models and epochix.enums."""
+
 from __future__ import annotations
 
 from datetime import datetime, timezone
@@ -20,6 +21,7 @@ from epochix.models import (
 )
 
 # ── Enums ─────────────────────────────────────────────────────────────────────
+
 
 class TestEnums:
     def test_phase_values(self) -> None:
@@ -48,6 +50,7 @@ class TestEnums:
 
 # ── RawLogLine ────────────────────────────────────────────────────────────────
 
+
 class TestRawLogLine:
     def test_valid(self) -> None:
         now = datetime.now(timezone.utc)
@@ -58,13 +61,15 @@ class TestRawLogLine:
     def test_invalid_source(self) -> None:
         with pytest.raises(ValidationError):
             RawLogLine(
-                seq=1, timestamp=datetime.now(timezone.utc),
+                seq=1,
+                timestamp=datetime.now(timezone.utc),
                 source="invalid",  # type: ignore[arg-type]
                 text="x",
             )
 
 
 # ── RawMetric ─────────────────────────────────────────────────────────────────
+
 
 class TestRawMetric:
     def test_valid_float(self) -> None:
@@ -86,11 +91,16 @@ class TestRawMetric:
 
 # ── MetricEvent ───────────────────────────────────────────────────────────────
 
+
 class TestMetricEvent:
     def test_valid(self) -> None:
         e = MetricEvent(
-            run_id="r1", seq=1, timestamp=datetime.now(timezone.utc),
-            canonical_key="val_accuracy", raw_key="acc", value=0.85,
+            run_id="r1",
+            seq=1,
+            timestamp=datetime.now(timezone.utc),
+            canonical_key="val_accuracy",
+            raw_key="acc",
+            value=0.85,
         )
         assert e.value == 0.85
         assert e.unit is None
@@ -98,8 +108,12 @@ class TestMetricEvent:
 
     def test_with_task_hint(self) -> None:
         e = MetricEvent(
-            run_id="r1", seq=1, timestamp=datetime.now(timezone.utc),
-            canonical_key="mAP50", raw_key="map50", value=0.72,
+            run_id="r1",
+            seq=1,
+            timestamp=datetime.now(timezone.utc),
+            canonical_key="mAP50",
+            raw_key="map50",
+            value=0.72,
             task_hint=TaskType.DETECTION,
         )
         assert e.task_hint == TaskType.DETECTION
@@ -107,13 +121,20 @@ class TestMetricEvent:
 
 # ── StoryFrame ────────────────────────────────────────────────────────────────
 
+
 class TestStoryFrame:
     def _frame(self, **overrides: object) -> StoryFrame:
         defaults: dict[str, object] = {
-            "run_id": "r1", "seq": 1, "epoch": 5.0,
-            "progress": 0.5, "phase": Phase.LEARNING, "grade": Grade.B,
-            "primary_metric_value": 0.75, "confidence": 0.8,
-            "narrative": "Learning.", "task_type": TaskType.CLASSIFICATION,
+            "run_id": "r1",
+            "seq": 1,
+            "epoch": 5.0,
+            "progress": 0.5,
+            "phase": Phase.LEARNING,
+            "grade": Grade.B,
+            "primary_metric_value": 0.75,
+            "confidence": 0.8,
+            "narrative": "Learning.",
+            "task_type": TaskType.CLASSIFICATION,
         }
         defaults.update(overrides)
         return StoryFrame(**defaults)  # type: ignore[arg-type]
@@ -142,8 +163,9 @@ class TestStoryFrame:
         assert f.metaphor_cards[0].title == "Awakening"
 
     def test_with_milestone(self) -> None:
-        ms = Milestone(run_id="r1", seq=5, kind="best_val_accuracy",
-                       epoch=5.0, value=0.9, message="New best!")
+        ms = Milestone(
+            run_id="r1", seq=5, kind="best_val_accuracy", epoch=5.0, value=0.9, message="New best!"
+        )
         f = self._frame(milestones=[ms])
         assert f.milestones[0].kind == "best_val_accuracy"
 
@@ -155,12 +177,15 @@ class TestStoryFrame:
 
 # ── Run ───────────────────────────────────────────────────────────────────────
 
+
 class TestRun:
     def _run(self, **overrides: object) -> Run:
         defaults: dict[str, object] = {
-            "id": "01JABCDEF", "task_type": TaskType.CLASSIFICATION,
+            "id": "01JABCDEF",
+            "task_type": TaskType.CLASSIFICATION,
             "started_at": datetime.now(timezone.utc),
-            "primary_metric": "val_accuracy", "parser_used": "pytorch_lightning",
+            "primary_metric": "val_accuracy",
+            "parser_used": "pytorch_lightning",
         }
         defaults.update(overrides)
         return Run(**defaults)  # type: ignore[arg-type]
@@ -186,10 +211,13 @@ class TestRun:
 
 # ── WSMessage ─────────────────────────────────────────────────────────────────
 
+
 class TestWSMessage:
     def test_story_frame(self) -> None:
         msg = WSMessage(
-            type="story_frame", run_id="r1", seq=1,
+            type="story_frame",
+            run_id="r1",
+            seq=1,
             ts=datetime.now(timezone.utc),
         )
         assert msg.v == 1
@@ -200,12 +228,16 @@ class TestWSMessage:
         with pytest.raises(ValidationError):
             WSMessage(
                 type="unknown_type",  # type: ignore[arg-type]
-                run_id="r1", seq=1, ts=datetime.now(timezone.utc),
+                run_id="r1",
+                seq=1,
+                ts=datetime.now(timezone.utc),
             )
 
     def test_milestone_with_payload(self) -> None:
         msg = WSMessage(
-            type="milestone", run_id="r1", seq=5,
+            type="milestone",
+            run_id="r1",
+            seq=5,
             ts=datetime.now(timezone.utc),
             payload={"kind": "best_val_accuracy", "message": "New best!"},
         )
@@ -213,6 +245,7 @@ class TestWSMessage:
 
 
 # ── Warning validation ────────────────────────────────────────────────────────
+
 
 class TestWarning:
     def test_valid_kinds(self) -> None:
@@ -227,6 +260,7 @@ class TestWarning:
 
 # ── Milestone ─────────────────────────────────────────────────────────────────
 
+
 class TestMilestone:
     def test_minimal(self) -> None:
         ms = Milestone(run_id="r1", seq=1, kind="first_metric", message="First!")
@@ -234,6 +268,12 @@ class TestMilestone:
         assert ms.value is None
 
     def test_full(self) -> None:
-        ms = Milestone(run_id="r1", seq=10, kind="best_val_accuracy",
-                       epoch=10.0, value=0.92, message="New best accuracy!")
+        ms = Milestone(
+            run_id="r1",
+            seq=10,
+            kind="best_val_accuracy",
+            epoch=10.0,
+            value=0.92,
+            message="New best accuracy!",
+        )
         assert ms.value == 0.92

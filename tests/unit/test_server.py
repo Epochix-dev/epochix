@@ -1,4 +1,5 @@
 """Server integration tests — REST API using FastAPI TestClient."""
+
 from __future__ import annotations
 
 from collections.abc import Iterator
@@ -136,9 +137,7 @@ class TestExportEndpoints:
         r = client.get("/api/export/exp-run/html")
         assert r.status_code == 501
 
-    def test_json_export_returns_valid_json(
-        self, server: tuple[TestClient, RunStore]
-    ) -> None:
+    def test_json_export_returns_valid_json(self, server: tuple[TestClient, RunStore]) -> None:
         client, store = server
         store.create_run(_make_run("json-run"))
         r = client.get("/api/export/json-run/json")

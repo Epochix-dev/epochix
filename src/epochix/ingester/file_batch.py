@@ -31,9 +31,7 @@ class FileBatchIngester(BaseIngester):
 
     async def lines(self) -> AsyncIterator[RawLogLine]:
         seq = 0
-        async with aiofiles.open(
-            self._path, encoding=self._encoding, errors="replace"
-        ) as fh:
+        async with aiofiles.open(self._path, encoding=self._encoding, errors="replace") as fh:
             async for raw_line in fh:
                 text = raw_line.rstrip("\n")
                 yield RawLogLine(

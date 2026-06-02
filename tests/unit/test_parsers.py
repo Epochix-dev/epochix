@@ -1,4 +1,5 @@
 """Parser unit tests — one per framework fixture."""
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -21,6 +22,7 @@ def _load_lines(name: str) -> list[str]:
 
 
 # ------------------------------------------------------------------ sniff
+
 
 class TestPLParserSniff:
     def test_detects_pl_log(self) -> None:
@@ -59,6 +61,7 @@ class TestYOLOParserSniff:
 
 
 # ------------------------------------------------------------------ parse
+
 
 class TestPLParserParse:
     def test_extracts_loss_and_acc(self) -> None:
@@ -153,6 +156,7 @@ class TestUniversalParser:
 
 
 # ------------------------------------------------------------------ registry
+
 
 class TestDetectParser:
     def test_pl_wins_on_pl_log(self) -> None:

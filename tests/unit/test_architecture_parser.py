@@ -1,4 +1,5 @@
 """Architecture-detection tests across all supported summary formats."""
+
 from __future__ import annotations
 
 from epochix.parsers.architecture_parser import (
@@ -8,19 +9,33 @@ from epochix.parsers.architecture_parser import (
 
 # ── layer-type → visual classification ─────────────────────────────────────────
 
+
 class TestClassify:
     def test_recurrent_family(self) -> None:
         for t in ("LSTM", "GRU", "RNN", "BiLSTM", "bilstm", "LSTMCell"):
             assert _classify(t)["visual_type"] == "recurrent"
 
     def test_attention_family(self) -> None:
-        for t in ("MultiheadAttention", "TransformerEncoderLayer", "BertLayer",
-                  "GPT2Block", "SelfAttention", "LlamaDecoderLayer"):
+        for t in (
+            "MultiheadAttention",
+            "TransformerEncoderLayer",
+            "BertLayer",
+            "GPT2Block",
+            "SelfAttention",
+            "LlamaDecoderLayer",
+        ):
             assert _classify(t)["visual_type"] == "attention"
 
     def test_conv_family(self) -> None:
-        for t in ("Conv2d", "ResNet50", "EfficientNet", "MobileNetV3",
-                  "ConvTranspose2d", "C2f", "Bottleneck"):
+        for t in (
+            "Conv2d",
+            "ResNet50",
+            "EfficientNet",
+            "MobileNetV3",
+            "ConvTranspose2d",
+            "C2f",
+            "Bottleneck",
+        ):
             assert _classify(t)["visual_type"] == "conv"
 
     def test_dense_family(self) -> None:
@@ -41,6 +56,7 @@ class TestClassify:
 
 
 # ── format detection ───────────────────────────────────────────────────────────
+
 
 class TestPyTorchLightning:
     def test_parses_pl_table(self) -> None:

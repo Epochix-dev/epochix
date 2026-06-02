@@ -5,6 +5,7 @@ callback swallowed subcommand names (so `epochix serve` was parsed as a
 log-file path). The console entry point (`main_entry`) routes bare log-file
 invocations to the implicit `run` command while real subcommands dispatch.
 """
+
 from __future__ import annotations
 
 import sys
@@ -17,6 +18,7 @@ runner = CliRunner()
 
 
 # ── subcommands dispatch correctly (not swallowed as a log file) ───────────────
+
 
 def test_serve_help_shows_serve_options() -> None:
     result = runner.invoke(cli.app, ["serve", "--help"])
@@ -50,6 +52,7 @@ def test_run_command_reports_missing_file() -> None:
 
 
 # ── entry-point shim: bare log file → `run`, subcommands left intact ───────────
+
 
 def _capture_argv(monkeypatch) -> dict:
     seen: dict = {}

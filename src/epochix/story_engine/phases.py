@@ -47,7 +47,10 @@ def compute_phase(
         ideal:         Optional override for the metric's ideal value.
     """
     rel = relative_improvement(
-        primary_value, baseline, lower_better=lower_better, ideal=ideal,
+        primary_value,
+        baseline,
+        lower_better=lower_better,
+        ideal=ideal,
     )
     # When the metric span is degenerate, lean on the clock (or 0 if unknown).
     relative = rel if rel is not None else (progress if progress is not None else 0.0)

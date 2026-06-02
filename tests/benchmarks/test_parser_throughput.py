@@ -6,6 +6,7 @@ Run with::
 
     pytest tests/benchmarks/ -v --benchmark-min-rounds=5
 """
+
 from __future__ import annotations
 
 import pytest
@@ -33,15 +34,17 @@ HF_EVAL = "{'eval_loss': 0.3421, 'eval_accuracy': 0.8765, 'epoch': 1.0}"
 YOLO_TRAIN = "      5/50     1.23G   0.456   0.234   0.123   128"
 YOLO_VAL = "                 all       5000       5000   0.712   0.654   0.678   0.432"
 UNIVERSAL_LINE = (
-    "[Epoch 5/50] train_loss=0.432 train_acc=0.867 "
-    "val_loss=0.401 val_accuracy=0.874 lr=0.001"
+    "[Epoch 5/50] train_loss=0.432 train_acc=0.867 val_loss=0.401 val_accuracy=0.874 lr=0.001"
 )
 
 
 def _make_ctx() -> ParserContext:
     return ParserContext(
-        seq=0, current_epoch=None, total_epochs=None,
-        current_step=None, total_steps=None,
+        seq=0,
+        current_epoch=None,
+        total_epochs=None,
+        current_step=None,
+        total_steps=None,
     )
 
 

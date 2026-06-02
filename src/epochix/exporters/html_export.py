@@ -8,6 +8,7 @@ with the live app — no DOM drift.
 
 Target size: < 2 MB. No network requests are required at view time.
 """
+
 from __future__ import annotations
 
 import json
@@ -56,7 +57,7 @@ def build_html(run_id: str, store: RunStore) -> str:
 
     run_data = _json_for_script(
         {
-            "run":    run.model_dump(mode="json"),
+            "run": run.model_dump(mode="json"),
             "frames": [f.model_dump(mode="json") for f in frames],
             "events": [e.model_dump(mode="json") for e in events],
         }
@@ -98,11 +99,11 @@ def build_html(run_id: str, store: RunStore) -> str:
 
 # ── helpers ───────────────────────────────────────────────────────────────────
 
+
 def _require_bundle() -> None:
     if not (_DIST / "index.html").is_file():
         raise FileNotFoundError(
-            f"Frontend bundle not found at {_DIST}. "
-            "Run `make build-frontend` to build it first."
+            f"Frontend bundle not found at {_DIST}. Run `make build-frontend` to build it first."
         )
 
 
@@ -123,9 +124,4 @@ def _json_for_script(obj: object) -> str:
 
 
 def _esc(s: str) -> str:
-    return (
-        s.replace("&", "&amp;")
-         .replace("<", "&lt;")
-         .replace(">", "&gt;")
-         .replace('"', "&quot;")
-    )
+    return s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace('"', "&quot;")

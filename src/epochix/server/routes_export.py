@@ -37,9 +37,7 @@ async def export_html(
     try:
         html = build_html(run_id=run_id, store=store)
     except (NotImplementedError, FileNotFoundError) as exc:
-        raise HTTPException(
-            status_code=status.HTTP_501_NOT_IMPLEMENTED, detail=_NOT_IMPL
-        ) from exc
+        raise HTTPException(status_code=status.HTTP_501_NOT_IMPLEMENTED, detail=_NOT_IMPL) from exc
     return HTMLResponse(content=html)
 
 
@@ -53,9 +51,7 @@ async def export_pdf(
     try:
         pdf_bytes = build_pdf(run_id=run_id, store=store)
     except NotImplementedError as exc:
-        raise HTTPException(
-            status_code=status.HTTP_501_NOT_IMPLEMENTED, detail=_NOT_IMPL
-        ) from exc
+        raise HTTPException(status_code=status.HTTP_501_NOT_IMPLEMENTED, detail=_NOT_IMPL) from exc
     return Response(
         content=pdf_bytes,
         media_type="application/pdf",
@@ -73,9 +69,7 @@ async def export_markdown(
     try:
         md = build_markdown(run_id=run_id, store=store)
     except NotImplementedError as exc:
-        raise HTTPException(
-            status_code=status.HTTP_501_NOT_IMPLEMENTED, detail=_NOT_IMPL
-        ) from exc
+        raise HTTPException(status_code=status.HTTP_501_NOT_IMPLEMENTED, detail=_NOT_IMPL) from exc
     return Response(
         content=md,
         media_type="text/markdown; charset=utf-8",

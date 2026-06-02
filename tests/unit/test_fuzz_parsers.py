@@ -14,6 +14,7 @@ Strategy:
 The universal parser is the primary target (it handles the widest input
 surface) but including all parsers gives us broad regression coverage.
 """
+
 from __future__ import annotations
 
 import math
@@ -37,12 +38,14 @@ from epochix.parsers.universal import UniversalParser
 # Arbitrary Unicode text (includes emoji, RTL, null bytes, surrogates excluded)
 _text = st.text()
 
+
 # Fresh ParserContext for every fuzz call
 def _ctx() -> ParserContext:
     return ParserContext(run_id="fuzz", seq=1)
 
 
 # ── Universal parser — primary fuzz target ────────────────────────────────────
+
 
 class TestUniversalParserFuzz:
     """Property: UniversalParser never crashes on any single line."""
@@ -142,6 +145,7 @@ class TestAllParsersSniffFuzz:
     @settings(max_examples=300, suppress_health_check=[HealthCheck.too_slow])
     def test_sniff_never_raises(self, parser: object, lines: list[str]) -> None:
         from epochix.parsers.base import BaseParser
+
         assert isinstance(parser, BaseParser)
         result = parser.sniff(lines)
         assert isinstance(result, float)
@@ -156,6 +160,7 @@ class TestAllParsersParseLineFuzz:
     @settings(max_examples=300, suppress_health_check=[HealthCheck.too_slow])
     def test_parse_line_never_raises(self, parser: object, line: str) -> None:
         from epochix.parsers.base import BaseParser
+
         assert isinstance(parser, BaseParser)
         result = parser.parse_line(line, _ctx())
         assert isinstance(result, list)
@@ -167,40 +172,44 @@ class TestAllParsersParseLineFuzz:
 
 # ── Edge cases ────────────────────────────────────────────────────────────────
 
+
 class TestUniversalParserEdgeCases:
     """Hand-crafted edge cases that historically trip up regex-based parsers."""
 
     _p = UniversalParser()
 
-    @pytest.mark.parametrize("line", [
-        "",                                   # empty string
-        " ",                                  # whitespace only
-        "\n\r\t",                             # control characters
-        "=",                                  # bare equals
-        ":",                                  # bare colon
-        "{",                                  # unclosed brace
-        "{}",                                 # empty dict
-        "{'key': None}",                      # None value
-        '{"key": "string_value"}',            # string value in JSON
-        '{"key": 1e308}',                     # extreme float
-        '{"key": -1e308}',                    # extreme negative float
-        '{"key": 0}',                         # zero
-        "loss=nan",                           # nan value string
-        "loss=inf",                           # inf value string
-        "loss=-inf",                          # -inf value string
-        "a=1 b=2 c=3 d=4 e=5 f=6 g=7",       # many kv pairs
-        "epoch=0",                            # epoch zero
-        "epoch=-1",                           # negative epoch
-        "step=999999",                        # large step
-        "key" * 200,                          # very long key
-        "=" * 200,                            # many equals
-        "{" + "a:1," * 50 + "}",              # large dict-ish
-        "\x00\x01\x02\x03",                   # null and control chars
-        "🚀 loss=0.5 🎯 accuracy=0.9 🏆",     # emoji
-        "val_accuracy: 0.950",                # colon pattern
-        "loss: 0.3, val_loss: 0.5",           # two colon patterns
-        "step 100/1000 loss 0.456",           # no separator
-    ])
+    @pytest.mark.parametrize(
+        "line",
+        [
+            "",  # empty string
+            " ",  # whitespace only
+            "\n\r\t",  # control characters
+            "=",  # bare equals
+            ":",  # bare colon
+            "{",  # unclosed brace
+            "{}",  # empty dict
+            "{'key': None}",  # None value
+            '{"key": "string_value"}',  # string value in JSON
+            '{"key": 1e308}',  # extreme float
+            '{"key": -1e308}',  # extreme negative float
+            '{"key": 0}',  # zero
+            "loss=nan",  # nan value string
+            "loss=inf",  # inf value string
+            "loss=-inf",  # -inf value string
+            "a=1 b=2 c=3 d=4 e=5 f=6 g=7",  # many kv pairs
+            "epoch=0",  # epoch zero
+            "epoch=-1",  # negative epoch
+            "step=999999",  # large step
+            "key" * 200,  # very long key
+            "=" * 200,  # many equals
+            "{" + "a:1," * 50 + "}",  # large dict-ish
+            "\x00\x01\x02\x03",  # null and control chars
+            "🚀 loss=0.5 🎯 accuracy=0.9 🏆",  # emoji
+            "val_accuracy: 0.950",  # colon pattern
+            "loss: 0.3, val_loss: 0.5",  # two colon patterns
+            "step 100/1000 loss 0.456",  # no separator
+        ],
+    )
     def test_known_edge_case_does_not_raise(self, line: str) -> None:
         result = self._p.parse_line(line, _ctx())
         assert isinstance(result, list)

@@ -1,4 +1,5 @@
 """Story engine unit tests."""
+
 from __future__ import annotations
 
 from datetime import datetime, timezone
@@ -111,6 +112,7 @@ class TestStoryEngine:
 
     def test_narrative_is_deterministic(self) -> None:
         """Same run_id + same inputs → same narrative."""
+
         def run(run_id: str) -> str:
             engine = StoryEngine(run_id=run_id, task=TaskType.CLASSIFICATION)
             frame = None

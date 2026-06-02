@@ -12,6 +12,7 @@ Architecture (§6.2)::
         → store.append_*(…)               # durable write
         → hub.publish(run_id, msg)         # fan-out to WS/SSE clients
 """
+
 from __future__ import annotations
 
 import logging
@@ -41,6 +42,7 @@ def _clean_line(text: str) -> str:
     if "\r" in cleaned:
         cleaned = cleaned.rsplit("\r", 1)[-1]
     return cleaned
+
 
 if TYPE_CHECKING:
     from epochix.ingester import BaseIngester
@@ -227,7 +229,8 @@ async def run_pipeline(
             )
             hub.publish(run_id, arch_msg)
         logger.debug(
-            "Architecture detected: %d layers", len(arch_layers),
+            "Architecture detected: %d layers",
+            len(arch_layers),
         )
         return True
 
@@ -304,9 +307,7 @@ async def run_pipeline(
     if parser is None and sample_lines:
         parser = detect_parser(sample_lines)
         run = Run(**{**run.model_dump(), "parser_used": parser.name})
-        logger.debug(
-            "Detected parser (late, %d lines): %s", len(sample_lines), parser.name
-        )
+        logger.debug("Detected parser (late, %d lines): %s", len(sample_lines), parser.name)
         for buf_seq, buf_ts, buf_text in sniff_buffer:
             ctx.seq = buf_seq
             epoch = _emit_line(

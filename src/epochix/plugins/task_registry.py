@@ -34,6 +34,7 @@ conforming to the same structure::
     # [project.entry-points."epochix.tasks"]
     # audio = "my_pack.task:TASK_DEFINITION"
 """
+
 from __future__ import annotations
 
 import importlib.metadata
@@ -102,7 +103,8 @@ def _register_task_value(value: object, *, source: str) -> None:
     else:
         logger.warning(
             "Task plugin %r: expected TaskDefinition or dict, got %s",
-            source, type(value).__name__,
+            source,
+            type(value).__name__,
         )
         return
 

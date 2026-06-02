@@ -1,4 +1,5 @@
 """Hub unit tests — backpressure, replay, coalesce."""
+
 from __future__ import annotations
 
 from datetime import datetime, timezone

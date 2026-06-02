@@ -5,6 +5,7 @@ keeps a malicious remote path from being interpreted by the remote shell, and
 the subprocess lifecycle. The subprocess itself is mocked so no real SSH
 binary or remote host is required — these tests run anywhere CI does.
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -19,19 +20,22 @@ from epochix.ingester.ssh import SSHIngester, parse_ssh_target
 
 def test_parse_ssh_target_with_user() -> None:
     assert parse_ssh_target("kv@trainbox:/workspace/train.log") == (
-        "kv@trainbox", "/workspace/train.log",
+        "kv@trainbox",
+        "/workspace/train.log",
     )
 
 
 def test_parse_ssh_target_without_user() -> None:
     assert parse_ssh_target("trainbox:/workspace/train.log") == (
-        "trainbox", "/workspace/train.log",
+        "trainbox",
+        "/workspace/train.log",
     )
 
 
 def test_parse_ssh_target_with_relative_path() -> None:
     assert parse_ssh_target("kv@trainbox:runs/train.log") == (
-        "kv@trainbox", "runs/train.log",
+        "kv@trainbox",
+        "runs/train.log",
     )
 
 
@@ -164,13 +168,15 @@ class _FakeProc:
 
 
 def _install_fake_subprocess(
-    monkeypatch: pytest.MonkeyPatch, proc: _FakeProc,
+    monkeypatch: pytest.MonkeyPatch,
+    proc: _FakeProc,
 ) -> None:
     async def _fake_exec(*_args, **_kwargs) -> _FakeProc:  # noqa: ANN002, ANN003
         return proc
 
     monkeypatch.setattr(
-        "asyncio.create_subprocess_exec", _fake_exec,
+        "asyncio.create_subprocess_exec",
+        _fake_exec,
     )
 
 
@@ -209,7 +215,9 @@ def test_ingester_raises_on_nonzero_ssh_exit(monkeypatch: pytest.MonkeyPatch) ->
     _install_fake_subprocess(monkeypatch, proc)
 
     ing = SSHIngester(
-        run_id="r", target="trainbox", remote_path="/runs/train.log",
+        run_id="r",
+        target="trainbox",
+        remote_path="/runs/train.log",
     )
 
     async def _drain() -> None:

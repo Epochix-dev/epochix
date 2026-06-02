@@ -1,4 +1,5 @@
 """Batch parse API — ``from epochix import parse``."""
+
 from __future__ import annotations
 
 import asyncio
@@ -59,14 +60,13 @@ def parse(
     if not log_path.exists():
         raise FileNotFoundError(f"Log file not found: {log_path}")
 
-    effective_task: TaskType | None = (
-        TaskType(task) if isinstance(task, str) else task
-    )
+    effective_task: TaskType | None = TaskType(task) if isinstance(task, str) else task
 
     try:
         _id = run_id or _gen_id()
     except Exception:  # noqa: BLE001
         import uuid
+
         _id = str(uuid.uuid4())
 
     return asyncio.run(
@@ -129,9 +129,7 @@ def parse_string(
     """
     import tempfile
 
-    with tempfile.NamedTemporaryFile(
-        mode="w", suffix=".log", delete=False, encoding="utf-8"
-    ) as fh:
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".log", delete=False, encoding="utf-8") as fh:
         fh.write(log_text)
         tmp = fh.name
 

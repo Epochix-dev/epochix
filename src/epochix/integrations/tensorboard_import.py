@@ -16,6 +16,7 @@ Usage::
 ``tensorboard`` (or ``tensorflow``) is an optional dependency — the module
 imports it lazily.
 """
+
 from __future__ import annotations
 
 import logging
@@ -75,6 +76,7 @@ def import_tensorboard(
 
 # ── Internal ──────────────────────────────────────────────────────────────────
 
+
 def _find_event_dirs(root: Path) -> list[Path]:
     """Find all directories that contain TensorBoard event files."""
     dirs: list[Path] = []
@@ -113,8 +115,7 @@ def _read_scalar_events(event_dir: Path) -> Iterator[tuple[int, str, float]]:
         )
     except ImportError:
         raise ImportError(
-            "tensorboard is required for TensorBoard import. "
-            "Install with: pip install tensorboard"
+            "tensorboard is required for TensorBoard import. Install with: pip install tensorboard"
         ) from None
 
     ea = EventAccumulator(str(event_dir))
@@ -127,4 +128,5 @@ def _read_scalar_events(event_dir: Path) -> Iterator[tuple[int, str, float]]:
 
 def _open_dashboard(port: int, run_id: str) -> None:
     import webbrowser
+
     webbrowser.open(f"http://127.0.0.1:{port}/v/{run_id}")

@@ -6,6 +6,7 @@ that appear in the snapshot endpoint.
 
 These tests complement tests/unit/test_server.py (which covers basic CRUD).
 """
+
 from __future__ import annotations
 
 from collections.abc import Iterator
@@ -44,6 +45,7 @@ def _make_run(run_id: str = "run-001") -> Run:
 
 # ── Event push ────────────────────────────────────────────────────────────────
 
+
 class TestEventPush:
     def test_push_event_accepted(self, server: tuple[TestClient, RunStore]) -> None:
         client, store = server
@@ -63,9 +65,7 @@ class TestEventPush:
         assert body["accepted"] is True
         assert body["seq"] == 1
 
-    def test_push_event_increments_seq(
-        self, server: tuple[TestClient, RunStore]
-    ) -> None:
+    def test_push_event_increments_seq(self, server: tuple[TestClient, RunStore]) -> None:
         """Each push uses a unique seq and is stored."""
         client, store = server
         store.create_run(_make_run("seq-run"))
@@ -82,9 +82,7 @@ class TestEventPush:
             )
             assert r.status_code == 202
 
-    def test_push_validates_required_fields(
-        self, server: tuple[TestClient, RunStore]
-    ) -> None:
+    def test_push_validates_required_fields(self, server: tuple[TestClient, RunStore]) -> None:
         client, _ = server
         # Missing seq
         r = client.post(
@@ -93,9 +91,7 @@ class TestEventPush:
         )
         assert r.status_code == 422
 
-    def test_push_validates_numeric_value(
-        self, server: tuple[TestClient, RunStore]
-    ) -> None:
+    def test_push_validates_numeric_value(self, server: tuple[TestClient, RunStore]) -> None:
         client, _ = server
         r = client.post(
             "/api/runs/v-run/event",
@@ -106,10 +102,9 @@ class TestEventPush:
 
 # ── Story engine pipeline ─────────────────────────────────────────────────────
 
+
 class TestPipeline:
-    def test_push_events_and_get_metrics(
-        self, server: tuple[TestClient, RunStore]
-    ) -> None:
+    def test_push_events_and_get_metrics(self, server: tuple[TestClient, RunStore]) -> None:
         """Events pushed via HTTP appear in GET /api/metrics/{id}."""
         client, store = server
         store.create_run(_make_run("pipe-run-01"))
@@ -170,9 +165,7 @@ class TestPipeline:
         assert frames[0]["grade"] is not None
         assert frames[0]["phase"] is not None
 
-    def test_snapshot_reflects_latest_frame(
-        self, server: tuple[TestClient, RunStore]
-    ) -> None:
+    def test_snapshot_reflects_latest_frame(self, server: tuple[TestClient, RunStore]) -> None:
         """Snapshot current_frame is the most recent story frame."""
         client, store = server
 
@@ -207,10 +200,9 @@ class TestPipeline:
 
 # ── Multi-metric run ──────────────────────────────────────────────────────────
 
+
 class TestMultiMetric:
-    def test_push_multiple_metrics_all_stored(
-        self, server: tuple[TestClient, RunStore]
-    ) -> None:
+    def test_push_multiple_metrics_all_stored(self, server: tuple[TestClient, RunStore]) -> None:
         client, store = server
         store.create_run(_make_run("multi-run"))
 
@@ -244,6 +236,7 @@ class TestMultiMetric:
 
 # ── Multi-run comparison ────────────────────────────────────────────────────────
 
+
 class TestCompare:
     def test_compare_returns_multiple_runs(self, server: tuple[TestClient, RunStore]) -> None:
         from epochix.models import MetricEvent
@@ -252,11 +245,17 @@ class TestCompare:
         for rid in ("cmp-a", "cmp-b"):
             store.create_run(_make_run(rid))
             for i in range(3):
-                store.append_metric_event(MetricEvent(
-                    run_id=rid, seq=i + 1, timestamp=datetime.now(tz=timezone.utc),
-                    epoch=float(i + 1), canonical_key="val_accuracy",
-                    raw_key="acc", value=0.5 + i * 0.1,
-                ))
+                store.append_metric_event(
+                    MetricEvent(
+                        run_id=rid,
+                        seq=i + 1,
+                        timestamp=datetime.now(tz=timezone.utc),
+                        epoch=float(i + 1),
+                        canonical_key="val_accuracy",
+                        raw_key="acc",
+                        value=0.5 + i * 0.1,
+                    )
+                )
         r = client.get("/api/compare?run_ids=cmp-a,cmp-b")
         assert r.status_code == 200
         data = r.json()

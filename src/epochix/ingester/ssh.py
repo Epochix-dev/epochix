@@ -21,6 +21,7 @@ Design notes
   file from the start so the dashboard renders the full trajectory, not just
   whatever arrives after we connect.
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -66,10 +67,14 @@ class SSHIngester(BaseIngester):
         """
         argv: list[str] = [
             "ssh",
-            "-o", "BatchMode=yes",
-            "-o", "ServerAliveInterval=30",
-            "-o", "ServerAliveCountMax=4",
-            "-o", "StrictHostKeyChecking=accept-new",
+            "-o",
+            "BatchMode=yes",
+            "-o",
+            "ServerAliveInterval=30",
+            "-o",
+            "ServerAliveCountMax=4",
+            "-o",
+            "StrictHostKeyChecking=accept-new",
         ]
         if self._port is not None:
             argv += ["-p", str(self._port)]
@@ -100,12 +105,8 @@ class SSHIngester(BaseIngester):
                     # failure case so the user knows why.
                     code = await self._proc.wait()
                     if code != 0 and self._proc.stderr is not None:
-                        err = (await self._proc.stderr.read()).decode(
-                            "utf-8", errors="replace"
-                        )
-                        raise ConnectionError(
-                            f"ssh to {self._target} exited {code}: {err.strip()}"
-                        )
+                        err = (await self._proc.stderr.read()).decode("utf-8", errors="replace")
+                        raise ConnectionError(f"ssh to {self._target} exited {code}: {err.strip()}")
                     return
                 yield RawLogLine(
                     seq=seq,
@@ -142,12 +143,8 @@ def parse_ssh_target(value: str) -> tuple[str, str]:
     we always need an explicit remote path — there's no useful default.
     """
     if ":" not in value:
-        raise ValueError(
-            "Expected '[user@]host:/path/to/log' — missing ':<path>' suffix"
-        )
+        raise ValueError("Expected '[user@]host:/path/to/log' — missing ':<path>' suffix")
     target, path = value.split(":", 1)
     if not target or not path:
-        raise ValueError(
-            "Expected '[user@]host:/path/to/log' — empty host or path"
-        )
+        raise ValueError("Expected '[user@]host:/path/to/log' — empty host or path")
     return target, path

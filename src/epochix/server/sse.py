@@ -58,9 +58,7 @@ async def sse_live(
 
                 timeout = max(0.0, deadline - asyncio.get_event_loop().time())
                 try:
-                    msg: WSMessage | None = await asyncio.wait_for(
-                        queue.get(), timeout=timeout
-                    )
+                    msg: WSMessage | None = await asyncio.wait_for(queue.get(), timeout=timeout)
                 except asyncio.TimeoutError:
                     yield ": heartbeat\n\n"
                     deadline = asyncio.get_event_loop().time() + _HEARTBEAT_INTERVAL

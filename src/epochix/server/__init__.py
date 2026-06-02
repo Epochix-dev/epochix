@@ -9,6 +9,7 @@ or via the CLI::
 
     epochix serve --port 7860
 """
+
 from __future__ import annotations
 
 from epochix.server.app import create_app

@@ -18,6 +18,7 @@ Usage::
     from epochix.parsers.registry import register_parser
     register_parser(LLMFallbackParser)
 """
+
 from __future__ import annotations
 
 import json
@@ -135,12 +136,14 @@ class LLMFallbackParser:
 
     def _call_ollama(self, prompt: str) -> list[dict[str, Any]]:
         url = self._llm_url.rstrip("/") + "/api/generate"
-        payload = json.dumps({
-            "model": self._model,
-            "prompt": prompt,
-            "stream": False,
-            "format": "json",
-        }).encode()
+        payload = json.dumps(
+            {
+                "model": self._model,
+                "prompt": prompt,
+                "stream": False,
+                "format": "json",
+            }
+        ).encode()
 
         req = urllib.request.Request(
             url,
@@ -155,12 +158,14 @@ class LLMFallbackParser:
 
     def _call_openai(self, prompt: str) -> list[dict[str, Any]]:
         url = "https://api.openai.com/v1/chat/completions"
-        payload = json.dumps({
-            "model": os.environ.get("EPOCHIX_LLM_MODEL", "gpt-4o-mini"),
-            "messages": [{"role": "user", "content": prompt}],
-            "temperature": 0,
-            "response_format": {"type": "json_object"},
-        }).encode()
+        payload = json.dumps(
+            {
+                "model": os.environ.get("EPOCHIX_LLM_MODEL", "gpt-4o-mini"),
+                "messages": [{"role": "user", "content": prompt}],
+                "temperature": 0,
+                "response_format": {"type": "json_object"},
+            }
+        ).encode()
 
         req = urllib.request.Request(
             url,

@@ -2,6 +2,7 @@
 
 Used with: alembic upgrade head
 """
+
 from __future__ import annotations
 
 from logging.config import fileConfig

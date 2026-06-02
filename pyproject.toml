@@ -43,7 +43,8 @@ pdf       = ["weasyprint>=62"]
 lightning = ["pytorch-lightning>=2.3"]
 hf        = ["transformers>=4.40"]
 llm       = ["httpx>=0.27"]
-postgres  = ["asyncpg>=0.30"]
+# Postgres-backed hosted mode also ships the Alembic migration runner.
+postgres  = ["asyncpg>=0.30", "alembic>=1.13"]
 redis     = ["redis>=5.0"]
 all       = ["epochix[pdf,lightning,hf,llm]"]
 dev       = [
@@ -51,8 +52,14 @@ dev       = [
   "pytest-asyncio>=0.24",
   "pytest-benchmark>=4.0",
   "hypothesis>=6.108",
-  "ruff>=0.5",
+  # Pinned exactly so `ruff format --check` is a reproducible CI gate — a new
+  # ruff style release must not turn the format check red without a deliberate
+  # bump here + a reformat commit.
+  "ruff==0.15.15",
   "mypy>=1.11",
+  # Alembic is imported by store/migrations/*; needed for a hermetic
+  # `mypy --strict` run in CI even though SQLite mode doesn't use it.
+  "alembic>=1.13",
   "playwright>=1.45",
   "schemathesis>=3.34",
   "pre-commit>=3.8",

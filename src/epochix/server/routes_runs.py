@@ -87,8 +87,12 @@ class CompareResponse(BaseModel):
 # ------------------------------------------------------------------
 
 
-@router.post("/runs", response_model=Run, status_code=status.HTTP_201_CREATED,
-             dependencies=[Depends(require_destructive)])
+@router.post(
+    "/runs",
+    response_model=Run,
+    status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(require_destructive)],
+)
 async def create_run(
     body: RunCreateRequest,
     request: Request,
@@ -103,9 +107,11 @@ async def create_run(
 
     try:
         from ulid import ULID
+
         run_id = body.run_id or str(ULID())
     except Exception:
         import uuid
+
         run_id = body.run_id or str(uuid.uuid4())
 
     task: TaskType | None = None
@@ -161,11 +167,13 @@ async def compare_runs(
         run = store.get_run(rid)
         if run is None:
             continue
-        out.append(CompareRun(
-            run=run,
-            frames=store.get_story_frames(rid),
-            metrics=store.get_metric_events(rid),
-        ))
+        out.append(
+            CompareRun(
+                run=run,
+                frames=store.get_story_frames(rid),
+                metrics=store.get_metric_events(rid),
+            )
+        )
     return CompareResponse(runs=out, total=len(out))
 
 

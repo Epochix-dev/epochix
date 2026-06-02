@@ -14,6 +14,7 @@ Usage::
 
 ``wandb`` is an optional dependency — imported lazily.
 """
+
 from __future__ import annotations
 
 import logging
@@ -101,6 +102,7 @@ def import_wandb(
 
     if open_browser:
         import webbrowser
+
         webbrowser.open(f"http://127.0.0.1:{port}/v/{run_ms_id}")
 
     return run_ms_id

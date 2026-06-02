@@ -40,9 +40,7 @@ class FileTailIngester(BaseIngester):
     async def lines(self) -> AsyncIterator[RawLogLine]:
         seq = 0
         partial = ""
-        async with aiofiles.open(
-            self._path, encoding=self._encoding, errors="replace"
-        ) as fh:
+        async with aiofiles.open(self._path, encoding=self._encoding, errors="replace") as fh:
             while True:
                 chunk: str = await fh.read(65536)
                 if chunk:

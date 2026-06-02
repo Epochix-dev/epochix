@@ -1,4 +1,5 @@
 """Compare two runs side-by-side."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field

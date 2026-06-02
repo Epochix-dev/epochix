@@ -26,6 +26,7 @@ A fresh-install smoke test invokes the bundled `epochix demo` command
 programmatically to verify the zero-input on-boarding path that ships in the
 wheel.
 """
+
 from __future__ import annotations
 
 import math
@@ -52,17 +53,17 @@ DEMO_DIR = Path(__file__).resolve().parents[2] / "demo"
 # - `min_frames` is conservative — yolov8.log only logs 2 epochs.
 # - `architecture_expected` is True for logs that include a model summary.
 MODEL_MATRIX = [
-    ("pytorch_lightning.log",   TaskType.CLASSIFICATION, {"val_loss", "accuracy"}, 4, True),
-    ("keras_image_classifier.log", TaskType.CLASSIFICATION, {"val_accuracy"},      3, True),
-    ("huggingface_bert.log",    None,                    {"val_loss"},             3, False),
-    ("yolov8_detection.log",    TaskType.DETECTION,      {"mAP50"},                1, True),
-    ("seq2seq_attention.log",   None,                    {"val_loss"},             3, True),
+    ("pytorch_lightning.log", TaskType.CLASSIFICATION, {"val_loss", "accuracy"}, 4, True),
+    ("keras_image_classifier.log", TaskType.CLASSIFICATION, {"val_accuracy"}, 3, True),
+    ("huggingface_bert.log", None, {"val_loss"}, 3, False),
+    ("yolov8_detection.log", TaskType.DETECTION, {"mAP50"}, 1, True),
+    ("seq2seq_attention.log", None, {"val_loss"}, 3, True),
     # fingerprint log uses "Epoch N\n  key=val" (metrics on the next line);
     # the universal parser pulls the EER values out, but the line-by-line
     # epoch association is conservative, so only the final epoch reliably
     # emits a frame. The test still verifies the EER series is captured.
-    ("fingerprint_matching.log", TaskType.BIOMETRIC,     {"EER"},                  1, False),
-    ("gaze_estimation.log",     TaskType.GAZE,           {"MAE"},                  3, False),
+    ("fingerprint_matching.log", TaskType.BIOMETRIC, {"EER"}, 1, False),
+    ("gaze_estimation.log", TaskType.GAZE, {"MAE"}, 3, False),
 ]
 
 
@@ -70,7 +71,8 @@ MODEL_MATRIX = [
 
 
 def _read_back(
-    db_path: str, run_id: str,
+    db_path: str,
+    run_id: str,
 ) -> tuple[RunStore, Run | None, list[StoryFrame], list[MetricEvent]]:
     """Open the persisted DB and pull the data the frontend would receive."""
     store = RunStore(db_path=db_path)
@@ -154,9 +156,7 @@ def test_demo_log_produces_real_dashboard_data(
     # --- Persisted frames + metrics (what the dashboard fetches) ------------
     _, persisted_run, frames, metrics = _read_back(db_path, run.id)
     assert persisted_run is not None
-    assert len(frames) >= min_frames, (
-        f"{filename}: only {len(frames)} frames (< {min_frames})"
-    )
+    assert len(frames) >= min_frames, f"{filename}: only {len(frames)} frames (< {min_frames})"
     assert len(metrics) > 0, f"{filename}: pipeline stored zero metric events"
 
     seen_keys = {m.canonical_key for m in metrics}
@@ -177,13 +177,10 @@ def test_demo_log_produces_real_dashboard_data(
         assert f.phase in Phase
         assert f.grade in Grade
         assert isinstance(f.narrative, str) and f.narrative.strip(), (
-            "every frame must produce a non-empty narrative — the dashboard "
-            "renders it verbatim"
+            "every frame must produce a non-empty narrative — the dashboard renders it verbatim"
         )
         assert f.primary_metric_value is not None
-        assert math.isfinite(f.primary_metric_value), (
-            "NaN/inf must never reach the store"
-        )
+        assert math.isfinite(f.primary_metric_value), "NaN/inf must never reach the store"
         # `confidence` is now the (honest) training-advancement scalar — must
         # stay clamped to [0,1] regardless of upstream metric scale.
         assert 0.0 <= f.confidence <= 1.0
@@ -297,7 +294,7 @@ def test_compare_endpoint_returns_two_runs(tmp_path: Path) -> None:
     """The /compare view loads N runs at once; verify multi-run aggregation."""
     db_path = str(tmp_path / "cmp.db")
     a = parse(DEMO_DIR / "keras_image_classifier.log", db=db_path, run_name="A")
-    b = parse(DEMO_DIR / "pytorch_lightning.log",      db=db_path, run_name="B")
+    b = parse(DEMO_DIR / "pytorch_lightning.log", db=db_path, run_name="B")
 
     app = create_app(settings=Settings(db=db_path))
     with TestClient(app) as client:

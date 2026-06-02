@@ -26,7 +26,7 @@ StoreDep = Annotated[RunStore, Depends(_store)]
 
 class SnapshotResponse(BaseModel):
     run_id: str
-    run: Run | None = None          # full Run object including config (architecture etc.)
+    run: Run | None = None  # full Run object including config (architecture etc.)
     frames: list[StoryFrame]
     total_frames: int
 

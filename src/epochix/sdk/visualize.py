@@ -1,4 +1,5 @@
 """Visualize API — open a finished run in the browser."""
+
 from __future__ import annotations
 
 import webbrowser

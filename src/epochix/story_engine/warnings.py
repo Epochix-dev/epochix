@@ -9,8 +9,8 @@ from epochix.models import Warning
 
 WarningKind = Literal["overfit", "plateau", "divergence", "lr_drop"]
 
-_OVERFIT_WINDOW = 3     # val_loss must rise for N consecutive epochs
-_PLATEAU_WINDOW = 5     # <1% improvement over N epochs
+_OVERFIT_WINDOW = 3  # val_loss must rise for N consecutive epochs
+_PLATEAU_WINDOW = 5  # <1% improvement over N epochs
 _PLATEAU_DELTA = 0.01
 
 
@@ -44,17 +44,23 @@ class WarningDetector:
         # Divergence: loss is NaN or spiked 10×
         if train_loss is not None:
             if math.isnan(train_loss) or math.isinf(train_loss):
-                warnings.append(Warning(
-                    kind="divergence", epoch=epoch,
-                    message="Something went wrong — the loss became undefined. "
-                            "The teacher may need to lower the learning rate.",
-                ))
+                warnings.append(
+                    Warning(
+                        kind="divergence",
+                        epoch=epoch,
+                        message="Something went wrong — the loss became undefined. "
+                        "The teacher may need to lower the learning rate.",
+                    )
+                )
             elif len(self._train_losses) >= 2 and train_loss > self._train_losses[-2] * 10:
-                warnings.append(Warning(
-                    kind="divergence", epoch=epoch,
-                    message="The loss has spiked unexpectedly. "
-                            "The model may have stepped too far in one direction.",
-                ))
+                warnings.append(
+                    Warning(
+                        kind="divergence",
+                        epoch=epoch,
+                        message="The loss has spiked unexpectedly. "
+                        "The model may have stepped too far in one direction.",
+                    )
+                )
 
         # Overfitting: val_loss rising while train_loss falling for N epochs
         if (
@@ -63,8 +69,7 @@ class WarningDetector:
             and "overfit" not in self._fired
         ):
             val_rising = all(
-                self._val_losses[i] < self._val_losses[i + 1]
-                for i in range(-_OVERFIT_WINDOW, -1)
+                self._val_losses[i] < self._val_losses[i + 1] for i in range(-_OVERFIT_WINDOW, -1)
             )
             train_falling = all(
                 self._train_losses[i] > self._train_losses[i + 1]
@@ -72,11 +77,14 @@ class WarningDetector:
             )
             if val_rising and train_falling:
                 self._fired.add("overfit")
-                warnings.append(Warning(
-                    kind="overfit", epoch=epoch,
-                    message="The model may be memorising the study material "
-                            "instead of understanding it.",
-                ))
+                warnings.append(
+                    Warning(
+                        kind="overfit",
+                        epoch=epoch,
+                        message="The model may be memorising the study material "
+                        "instead of understanding it.",
+                    )
+                )
 
         # Plateau: <1% improvement in primary metric over N epochs
         if len(self._primary) >= _PLATEAU_WINDOW and "plateau" not in self._fired:
@@ -85,18 +93,24 @@ class WarningDetector:
             ref = abs(window[0]) + 1e-9
             if span / ref < _PLATEAU_DELTA:
                 self._fired.add("plateau")
-                warnings.append(Warning(
-                    kind="plateau", epoch=epoch,
-                    message="Learning has slowed. The model has stopped finding new patterns.",
-                ))
+                warnings.append(
+                    Warning(
+                        kind="plateau",
+                        epoch=epoch,
+                        message="Learning has slowed. The model has stopped finding new patterns.",
+                    )
+                )
 
         # LR drop
         if lr is not None:
             if self._lr_prev is not None and lr < self._lr_prev * 0.6:
-                warnings.append(Warning(
-                    kind="lr_drop", epoch=epoch,
-                    message=f"Learning rate decreased from {self._lr_prev:.2e} to {lr:.2e}.",
-                ))
+                warnings.append(
+                    Warning(
+                        kind="lr_drop",
+                        epoch=epoch,
+                        message=f"Learning rate decreased from {self._lr_prev:.2e} to {lr:.2e}.",
+                    )
+                )
             self._lr_prev = lr
 
         return warnings

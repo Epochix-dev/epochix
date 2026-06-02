@@ -6,6 +6,7 @@ exercises all four export endpoints (json, md, html, pdf) and verifies:
   - Content types
   - Presence of key data in the response body
 """
+
 from __future__ import annotations
 
 from collections.abc import Iterator
@@ -21,6 +22,7 @@ from epochix.server.app import create_app
 from epochix.store.sqlite_store import RunStore
 
 # ── Fixtures ──────────────────────────────────────────────────────────────────
+
 
 @pytest.fixture()
 def server() -> Iterator[tuple[TestClient, RunStore]]:
@@ -48,41 +50,47 @@ def _seed(store: RunStore, run_id: str = "export-run") -> None:
 
     now = datetime.now(tz=timezone.utc)
     for i in range(10):
-        store.append_metric_event(MetricEvent(
-            run_id=run_id, seq=i + 1, timestamp=now,
-            epoch=float(i + 1), canonical_key="val_accuracy",
-            raw_key="acc", value=0.5 + i * 0.04,
-        ))
+        store.append_metric_event(
+            MetricEvent(
+                run_id=run_id,
+                seq=i + 1,
+                timestamp=now,
+                epoch=float(i + 1),
+                canonical_key="val_accuracy",
+                raw_key="acc",
+                value=0.5 + i * 0.04,
+            )
+        )
 
     for i in range(5):
-        store.append_story_frame(StoryFrame(
-            run_id=run_id, seq=i + 1,
-            epoch=float(i * 2 + 1),
-            progress=(i + 1) / 5,
-            phase=Phase.LEARNING,
-            grade=Grade.B,
-            primary_metric_value=0.5 + i * 0.07,
-            confidence=0.6 + i * 0.08,
-            narrative=f"The model learns at epoch {i * 2 + 1}.",
-            task_type=TaskType.CLASSIFICATION,
-        ))
+        store.append_story_frame(
+            StoryFrame(
+                run_id=run_id,
+                seq=i + 1,
+                epoch=float(i * 2 + 1),
+                progress=(i + 1) / 5,
+                phase=Phase.LEARNING,
+                grade=Grade.B,
+                primary_metric_value=0.5 + i * 0.07,
+                confidence=0.6 + i * 0.08,
+                narrative=f"The model learns at epoch {i * 2 + 1}.",
+                task_type=TaskType.CLASSIFICATION,
+            )
+        )
 
 
 # ── JSON export ───────────────────────────────────────────────────────────────
 
+
 class TestJsonExport:
-    def test_json_status_and_content_type(
-        self, server: tuple[TestClient, RunStore]
-    ) -> None:
+    def test_json_status_and_content_type(self, server: tuple[TestClient, RunStore]) -> None:
         client, store = server
         _seed(store)
         r = client.get("/api/export/export-run/json")
         assert r.status_code == 200
         assert "application/json" in r.headers["content-type"]
 
-    def test_json_has_run_fields(
-        self, server: tuple[TestClient, RunStore]
-    ) -> None:
+    def test_json_has_run_fields(self, server: tuple[TestClient, RunStore]) -> None:
         client, store = server
         _seed(store)
         data = client.get("/api/export/export-run/json").json()
@@ -90,18 +98,14 @@ class TestJsonExport:
         assert data["run"]["task_type"] == "classification"
         assert data["run"]["final_grade"] == "B"
 
-    def test_json_has_events_and_frames(
-        self, server: tuple[TestClient, RunStore]
-    ) -> None:
+    def test_json_has_events_and_frames(self, server: tuple[TestClient, RunStore]) -> None:
         client, store = server
         _seed(store)
         data = client.get("/api/export/export-run/json").json()
         assert len(data["events"]) == 10
         assert len(data["frames"]) == 5
 
-    def test_json_events_have_canonical_key(
-        self, server: tuple[TestClient, RunStore]
-    ) -> None:
+    def test_json_events_have_canonical_key(self, server: tuple[TestClient, RunStore]) -> None:
         client, store = server
         _seed(store)
         events = client.get("/api/export/export-run/json").json()["events"]
@@ -113,6 +117,7 @@ class TestJsonExport:
 
 
 # ── Markdown export ───────────────────────────────────────────────────────────
+
 
 class TestMarkdownExport:
     def test_md_status(self, server: tuple[TestClient, RunStore]) -> None:
@@ -127,9 +132,7 @@ class TestMarkdownExport:
         text = client.get("/api/export/export-run/md").text
         assert "B" in text  # grade
 
-    def test_md_contains_run_identifier(
-        self, server: tuple[TestClient, RunStore]
-    ) -> None:
+    def test_md_contains_run_identifier(self, server: tuple[TestClient, RunStore]) -> None:
         client, store = server
         _seed(store)
         text = client.get("/api/export/export-run/md").text
@@ -143,10 +146,9 @@ class TestMarkdownExport:
 
 # ── HTML export ───────────────────────────────────────────────────────────────
 
+
 class TestHtmlExport:
-    def test_html_not_available_without_build(
-        self, server: tuple[TestClient, RunStore]
-    ) -> None:
+    def test_html_not_available_without_build(self, server: tuple[TestClient, RunStore]) -> None:
         """HTML export requires the Vite bundle; returns 501 when not built."""
         client, store = server
         _seed(store)
@@ -154,9 +156,7 @@ class TestHtmlExport:
         # 200 if bundle is built, 501 if not
         assert r.status_code in (200, 501)
 
-    def test_html_404_for_missing_run(
-        self, server: tuple[TestClient, RunStore]
-    ) -> None:
+    def test_html_404_for_missing_run(self, server: tuple[TestClient, RunStore]) -> None:
         client, _ = server
         assert client.get("/api/export/ghost/html").status_code == 404
 
@@ -192,10 +192,9 @@ class TestHtmlExport:
 
 # ── Re-import from JSON ───────────────────────────────────────────────────────
 
+
 class TestJsonReimport:
-    def test_json_export_is_reimportable(
-        self, server: tuple[TestClient, RunStore]
-    ) -> None:
+    def test_json_export_is_reimportable(self, server: tuple[TestClient, RunStore]) -> None:
         """The JSON export can be parsed back into model types."""
         client, store = server
         _seed(store)

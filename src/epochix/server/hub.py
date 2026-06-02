@@ -117,7 +117,12 @@ class Hub:
     def make_message(
         *,
         msg_type: Literal[
-            "story_frame", "milestone", "warning", "complete", "ping", "architecture",
+            "story_frame",
+            "milestone",
+            "warning",
+            "complete",
+            "ping",
+            "architecture",
         ],
         run_id: str,
         seq: int,
@@ -160,11 +165,7 @@ def _coalesce(
             item = queue.get_nowait()
         except asyncio.QueueEmpty:
             break
-        if (
-            not dropped
-            and item is not None
-            and item.type not in _NEVER_DROP
-        ):
+        if not dropped and item is not None and item.type not in _NEVER_DROP:
             dropped = True  # drop this (oldest droppable)
             continue
         items.append(item)

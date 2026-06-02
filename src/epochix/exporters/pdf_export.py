@@ -9,6 +9,7 @@ Page layout:
   - Final grade page: grade + final narrative
   - Engineer appendix: key metrics table
 """
+
 from __future__ import annotations
 
 from collections.abc import Sequence
@@ -19,18 +20,26 @@ if TYPE_CHECKING:
     from epochix.store.sqlite_store import RunStore
 
 _GRADE_COLOR: dict[str, str] = {
-    "A+": "#52e88a", "A": "#3cd06a", "A-": "#7ee84a",
-    "B+": "#60a5fa", "B": "#4a8cf7", "B-": "#7bb4f8",
-    "C+": "#fb923c", "C": "#fbbf24", "C-": "#fcd34d",
-    "D":  "#f97316", "F": "#ef4444", "I":  "#6b7280",
+    "A+": "#52e88a",
+    "A": "#3cd06a",
+    "A-": "#7ee84a",
+    "B+": "#60a5fa",
+    "B": "#4a8cf7",
+    "B-": "#7bb4f8",
+    "C+": "#fb923c",
+    "C": "#fbbf24",
+    "C-": "#fcd34d",
+    "D": "#f97316",
+    "F": "#ef4444",
+    "I": "#6b7280",
 }
 
 _PHASE_EMOJI: dict[str, str] = {
-    "awakening":     "🌱",
-    "learning":      "📚",
+    "awakening": "🌱",
+    "learning": "📚",
     "understanding": "💡",
-    "mastering":     "⚡",
-    "polishing":     "✨",
+    "mastering": "⚡",
+    "polishing": "✨",
 }
 
 
@@ -54,8 +63,7 @@ def build_pdf(run_id: str, store: RunStore) -> bytes:
         from weasyprint import HTML  # type: ignore[import-not-found]
     except ImportError as exc:
         raise ImportError(
-            "WeasyPrint is required for PDF export. "
-            'Install it with: pip install "epochix[pdf]"'
+            'WeasyPrint is required for PDF export. Install it with: pip install "epochix[pdf]"'
         ) from exc
 
     run = store.get_run(run_id)
@@ -71,17 +79,18 @@ def build_pdf(run_id: str, store: RunStore) -> bytes:
 
 # ── HTML builder ─────────────────────────────────────────────────────────────
 
+
 def _build_html(
     run: Run,
     frames: Sequence[StoryFrame],
     events: Sequence[MetricEvent],
 ) -> str:
-    run_name  = run.name or run.id
+    run_name = run.name or run.id
     grade_str = run.final_grade.value if run.final_grade else "—"
     grade_col = _GRADE_COLOR.get(grade_str, "#888")
-    task_str  = run.task_type.value if run.task_type else "custom"
-    summary   = run.story_summary or ""
-    fin_str   = run.finished_at.strftime("%Y-%m-%d") if run.finished_at else ""
+    task_str = run.task_type.value if run.task_type else "custom"
+    summary = run.story_summary or ""
+    fin_str = run.finished_at.strftime("%Y-%m-%d") if run.finished_at else ""
 
     slides: list[str] = []
 
@@ -117,10 +126,11 @@ def _build_html(
               {f'<span class="phase-epoch">{_esc(epoch_str)}</span>' if epoch_str else ""}
             </div>
             {f'<p class="phase-narrative">{_esc(narrative)}</p>' if narrative else ""}
-            {(
-                f'<div class="phase-value">Primary metric: '
-                f'<strong>{_esc(primary_str)}</strong></div>'
-            ) if primary_str else ""}
+            {
+            (f'<div class="phase-value">Primary metric: <strong>{_esc(primary_str)}</strong></div>')
+            if primary_str
+            else ""
+        }
           </div>
         """)
 
@@ -129,13 +139,12 @@ def _build_html(
     for frame in frames:
         for m in frame.milestones:
             msg = m.message or m.kind.replace("_", " ").title()
-            ep  = f" — Epoch {frame.epoch}" if frame.epoch is not None else ""
+            ep = f" — Epoch {frame.epoch}" if frame.epoch is not None else ""
             milestone_items.append((m.kind, f"{msg}{ep}"))
 
     if milestone_items:
         items_html = "\n".join(
-            f'<li class="ms-item">{_esc(msg)}</li>'
-            for _, msg in milestone_items
+            f'<li class="ms-item">{_esc(msg)}</li>' for _, msg in milestone_items
         )
         slides.append(f"""
           <div class="slide slide-milestones">

@@ -17,6 +17,7 @@ and maps HuggingFace ``TrainerCallback`` hooks to ``reporter.log()``.
 
 ``transformers`` is an optional dependency — this module imports it lazily.
 """
+
 from __future__ import annotations
 
 import contextlib
@@ -56,13 +57,13 @@ class StoryCallback:
         open_browser: bool = True,
         locale: str = "en",
     ) -> None:
-        self._task           = task
+        self._task = task
         self._primary_metric = primary_metric or "eval_loss"
-        self._name           = name
-        self._port           = port
-        self._open_browser   = open_browser
-        self._locale         = locale
-        self._reporter: Any  = None  # noqa: ANN401
+        self._name = name
+        self._port = port
+        self._open_browser = open_browser
+        self._locale = locale
+        self._reporter: Any = None  # noqa: ANN401
 
     # ------------------------------------------------------------------
     # HuggingFace TrainerCallback interface
@@ -70,10 +71,10 @@ class StoryCallback:
 
     def on_train_begin(  # noqa: ANN401
         self,
-        args: Any,       # noqa: ANN401
-        state: Any,      # noqa: ANN401
-        control: Any,    # noqa: ANN401
-        **kwargs: Any,   # noqa: ANN401
+        args: Any,  # noqa: ANN401
+        state: Any,  # noqa: ANN401
+        control: Any,  # noqa: ANN401
+        **kwargs: Any,  # noqa: ANN401
     ) -> None:
         """Start the reporter when training begins."""
         from epochix.sdk.live_reporter import LiveReporter
@@ -96,11 +97,11 @@ class StoryCallback:
 
     def on_log(  # noqa: ANN401
         self,
-        args: Any,       # noqa: ANN401
-        state: Any,      # noqa: ANN401
-        control: Any,    # noqa: ANN401
+        args: Any,  # noqa: ANN401
+        state: Any,  # noqa: ANN401
+        control: Any,  # noqa: ANN401
         logs: dict[str, Any] | None = None,  # noqa: ANN401
-        **kwargs: Any,   # noqa: ANN401
+        **kwargs: Any,  # noqa: ANN401
     ) -> None:
         """Push metrics on each ``trainer.log()`` call."""
         if self._reporter is None or not logs:
@@ -115,10 +116,10 @@ class StoryCallback:
 
     def on_train_end(  # noqa: ANN401
         self,
-        args: Any,       # noqa: ANN401
-        state: Any,      # noqa: ANN401
-        control: Any,    # noqa: ANN401
-        **kwargs: Any,   # noqa: ANN401
+        args: Any,  # noqa: ANN401
+        state: Any,  # noqa: ANN401
+        control: Any,  # noqa: ANN401
+        **kwargs: Any,  # noqa: ANN401
     ) -> None:
         """Flush the reporter when training finishes."""
         if self._reporter is not None:
@@ -130,6 +131,7 @@ class StoryCallback:
 
 
 # ── helpers ───────────────────────────────────────────────────────────────────
+
 
 def _get_run_name(args: Any) -> str:  # noqa: ANN401
     return str(getattr(args, "run_name", None) or getattr(args, "output_dir", "hf-run"))

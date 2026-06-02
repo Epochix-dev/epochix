@@ -1,4 +1,5 @@
 """Ingester unit tests — SDKReceiver, factory."""
+
 from __future__ import annotations
 
 import pytest

@@ -53,8 +53,7 @@ def narrate(
     delta_str = f"{delta:+.4f}" if delta != 0 else "0"
 
     return (
-        template
-        .replace("{epoch}", epoch_str)
+        template.replace("{epoch}", epoch_str)
         .replace("{value}", f"{primary_value:.4f}")
         .replace("{delta}", delta_str)
         .replace("{value_pct}", f"{primary_value * 100:.1f}%")

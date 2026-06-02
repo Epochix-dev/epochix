@@ -1,4 +1,5 @@
 """Markdown export — plain-English summary of a training run."""
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
@@ -7,31 +8,39 @@ if TYPE_CHECKING:
     from epochix.store.sqlite_store import RunStore
 
 _GRADE_EMOJI: dict[str, str] = {
-    "A+": "🏆", "A": "🥇", "A-": "🥈",
-    "B+": "🥉", "B": "✅", "B-": "👍",
-    "C+": "🙂", "C": "😐", "C-": "😕",
-    "D": "⚠️", "F": "❌", "I": "⏳",
+    "A+": "🏆",
+    "A": "🥇",
+    "A-": "🥈",
+    "B+": "🥉",
+    "B": "✅",
+    "B-": "👍",
+    "C+": "🙂",
+    "C": "😐",
+    "C-": "😕",
+    "D": "⚠️",
+    "F": "❌",
+    "I": "⏳",
 }
 
 _PHASE_LABEL: dict[str, str] = {
-    "awakening":     "🌱 Awakening",
-    "learning":      "📚 Learning",
+    "awakening": "🌱 Awakening",
+    "learning": "📚 Learning",
     "understanding": "💡 Understanding",
-    "mastering":     "⚡ Mastering",
-    "polishing":     "✨ Polishing",
+    "mastering": "⚡ Mastering",
+    "polishing": "✨ Polishing",
 }
 
 _MILESTONE_EMOJI: dict[str, str] = {
-    "first_above_25":    "🎯",
-    "first_above_50":    "🌟",
-    "first_above_75":    "🚀",
-    "first_above_90":    "🏆",
-    "best_so_far":       "✅",
-    "biggest_jump":      "⚡",
-    "overfit_warning":   "⚠️",
-    "plateau":           "😴",
-    "lr_drop":           "📉",
-    "divergence":        "💥",
+    "first_above_25": "🎯",
+    "first_above_50": "🌟",
+    "first_above_75": "🚀",
+    "first_above_90": "🏆",
+    "best_so_far": "✅",
+    "biggest_jump": "⚡",
+    "overfit_warning": "⚠️",
+    "plateau": "😴",
+    "lr_drop": "📉",
+    "divergence": "💥",
     "training_complete": "🎓",
 }
 
@@ -60,7 +69,7 @@ def build_markdown(run_id: str, store: RunStore) -> str:
 
     grade_str = run.final_grade.value if run.final_grade else "—"
     grade_emoji = _GRADE_EMOJI.get(grade_str, "")
-    task_str  = run.task_type.value if run.task_type else "custom"
+    task_str = run.task_type.value if run.task_type else "custom"
     phase_str = ""
     if frames:
         last_phase = frames[-1].phase

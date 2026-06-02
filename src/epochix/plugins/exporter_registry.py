@@ -35,6 +35,7 @@ Example::
     # [project.entry-points."epochix.exporters"]
     # latex = "my_package.my_exporter:EXPORTER"
 """
+
 from __future__ import annotations
 
 import importlib.metadata
@@ -66,7 +67,8 @@ def _load_exporter_plugins() -> None:
             if not callable(exporter):
                 logger.warning(
                     "Exporter plugin %r: expected callable, got %s",
-                    ep.name, type(exporter).__name__,
+                    ep.name,
+                    type(exporter).__name__,
                 )
                 continue
             _exporter_registry[ep.name] = exporter
@@ -104,9 +106,7 @@ def run_exporter(
     fn = _exporter_registry.get(name)
     if fn is None:
         available = ", ".join(sorted(_exporter_registry)) or "(none)"
-        raise KeyError(
-            f"No exporter registered for format {name!r}. Available: {available}"
-        )
+        raise KeyError(f"No exporter registered for format {name!r}. Available: {available}")
     fn(run, frames, events, output_path)
 
 

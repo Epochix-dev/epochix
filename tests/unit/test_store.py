@@ -1,4 +1,5 @@
 """SQLite store unit tests."""
+
 from __future__ import annotations
 
 from datetime import datetime, timezone
@@ -85,16 +86,28 @@ class TestRunStore:
 
 # ── Multiple metrics per log-line seq + legacy DB auto-migration ───────────────
 
+
 def test_multiple_metrics_same_seq_all_stored(store: RunStore) -> None:
     """Several canonical keys sharing one seq (one log line) must all persist."""
     store.create_run(_make_run("multi"))
     now = datetime.now(tz=timezone.utc)
-    for key, raw, val in [("train_loss", "loss", 0.4), ("accuracy", "acc", 0.8),
-                          ("val_loss", "val_loss", 0.5), ("val_accuracy", "val_acc", 0.78)]:
-        store.append_metric_event(MetricEvent(
-            run_id="multi", seq=7, timestamp=now, epoch=7.0,
-            canonical_key=key, raw_key=raw, value=val,
-        ))
+    for key, raw, val in [
+        ("train_loss", "loss", 0.4),
+        ("accuracy", "acc", 0.8),
+        ("val_loss", "val_loss", 0.5),
+        ("val_accuracy", "val_acc", 0.78),
+    ]:
+        store.append_metric_event(
+            MetricEvent(
+                run_id="multi",
+                seq=7,
+                timestamp=now,
+                epoch=7.0,
+                canonical_key=key,
+                raw_key=raw,
+                value=val,
+            )
+        )
     keys = sorted({e.canonical_key for e in store.get_metric_events("multi")})
     assert keys == ["accuracy", "train_loss", "val_accuracy", "val_loss"]
 
@@ -126,7 +139,17 @@ def test_legacy_db_metric_events_pk_is_migrated(tmp_path) -> None:
     )
     conn.execute(
         "INSERT INTO metric_events VALUES (?,?,?,?,?,?,?,?,?)",
-        ("r1", 1, datetime.now(tz=timezone.utc).isoformat(), 1.0, None, "train_loss", "loss", 0.9, None),
+        (
+            "r1",
+            1,
+            datetime.now(tz=timezone.utc).isoformat(),
+            1.0,
+            None,
+            "train_loss",
+            "loss",
+            0.9,
+            None,
+        ),
     )
     conn.commit()
     conn.close()
@@ -142,8 +165,15 @@ def test_legacy_db_metric_events_pk_is_migrated(tmp_path) -> None:
     # and the multi-metric bug is now fixed for the upgraded DB
     now = datetime.now(tz=timezone.utc)
     for key, raw in [("train_loss", "loss"), ("accuracy", "acc")]:
-        store.append_metric_event(MetricEvent(
-            run_id="r1", seq=2, timestamp=now, epoch=2.0,
-            canonical_key=key, raw_key=raw, value=0.5,
-        ))
+        store.append_metric_event(
+            MetricEvent(
+                run_id="r1",
+                seq=2,
+                timestamp=now,
+                epoch=2.0,
+                canonical_key=key,
+                raw_key=raw,
+                value=0.5,
+            )
+        )
     assert len({e.canonical_key for e in store.get_metric_events("r1") if e.seq == 2}) == 2

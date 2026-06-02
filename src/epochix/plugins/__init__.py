@@ -24,6 +24,7 @@ Example ``pyproject.toml`` for a plugin package::
     [project.entry-points."epochix.tasks"]
     audio = "epochix_audio.task:TASK_DEFINITION"
 """
+
 from __future__ import annotations
 
 import logging

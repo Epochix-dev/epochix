@@ -1,4 +1,5 @@
 """Tests for Phase 4.3 — .epochix.yaml grade-threshold config loader."""
+
 from __future__ import annotations
 
 import textwrap
@@ -15,6 +16,7 @@ from epochix.story_engine.config_loader import (
 from epochix.story_engine.grade import compute_grade
 
 # ── GradeConfig dataclass ─────────────────────────────────────────────────────
+
 
 class TestGradeConfig:
     def test_get_thresholds_present(self) -> None:
@@ -43,6 +45,7 @@ class TestGradeConfig:
 
 # ── find_config_file ──────────────────────────────────────────────────────────
 
+
 class TestFindConfigFile:
     def test_finds_file_in_given_dir(self, tmp_path: Path) -> None:
         config = tmp_path / ".epochix.yaml"
@@ -68,6 +71,7 @@ class TestFindConfigFile:
 
 
 # ── load_grade_config ─────────────────────────────────────────────────────────
+
 
 class TestLoadGradeConfig:
     def test_returns_none_for_missing_file(self, tmp_path: Path) -> None:
@@ -179,6 +183,7 @@ class TestLoadGradeConfig:
         assert nlp_t is not None
         assert nlp_t["A+"] == pytest.approx(10.0)
         import math
+
         assert math.isinf(nlp_t["F"])
 
         assert cfg.get_lower_better(TaskType.NLP) is True
@@ -187,16 +192,24 @@ class TestLoadGradeConfig:
 
 # ── compute_grade with config ─────────────────────────────────────────────────
 
+
 class TestComputeGradeWithConfig:
     def test_config_overrides_default_threshold(self) -> None:
         """Custom A+ threshold of 0.99 means 0.95 is no longer A+."""
         cfg = GradeConfig(
             grade_thresholds={
                 "classification": {
-                    "A+": 0.99, "A": 0.93, "A-": 0.88,
-                    "B+": 0.83, "B": 0.76, "B-": 0.70,
-                    "C+": 0.65, "C": 0.60, "C-": 0.55,
-                    "D": 0.50, "F": 0.0,
+                    "A+": 0.99,
+                    "A": 0.93,
+                    "A-": 0.88,
+                    "B+": 0.83,
+                    "B": 0.76,
+                    "B-": 0.70,
+                    "C+": 0.65,
+                    "C": 0.60,
+                    "C-": 0.55,
+                    "D": 0.50,
+                    "F": 0.0,
                 }
             }
         )
@@ -217,10 +230,17 @@ class TestComputeGradeWithConfig:
         cfg = GradeConfig(
             grade_thresholds={
                 "classification": {
-                    "A+": 0.05, "A": 0.10, "A-": 0.20,
-                    "B+": 0.35, "B": 0.50, "B-": 0.65,
-                    "C+": 0.80, "C": 1.00, "C-": 1.50,
-                    "D": 2.50, "F": 100.0,
+                    "A+": 0.05,
+                    "A": 0.10,
+                    "A-": 0.20,
+                    "B+": 0.35,
+                    "B": 0.50,
+                    "B-": 0.65,
+                    "C+": 0.80,
+                    "C": 1.00,
+                    "C-": 1.50,
+                    "D": 2.50,
+                    "F": 100.0,
                 }
             },
             lower_better_override={"classification": True},
@@ -231,22 +251,16 @@ class TestComputeGradeWithConfig:
 
     def test_explicit_custom_thresholds_beat_config(self) -> None:
         """Explicit custom_thresholds take priority over config."""
-        cfg = GradeConfig(
-            grade_thresholds={"classification": {"A+": 0.99, "F": 0.0}}
-        )
+        cfg = GradeConfig(grade_thresholds={"classification": {"A+": 0.99, "F": 0.0}})
         # custom_thresholds says A+ at 0.50 — config wants 0.99
         custom = {"A+": 0.50, "F": 0.0}
-        grade = compute_grade(
-            TaskType.CLASSIFICATION, 0.55, custom_thresholds=custom, config=cfg
-        )
+        grade = compute_grade(TaskType.CLASSIFICATION, 0.55, custom_thresholds=custom, config=cfg)
         assert grade == Grade.A_PLUS
 
     def test_alias_labels_accepted(self) -> None:
         """YAML keys like 'A_PLUS' and 'BPLUS' are normalised to A+ / B+."""
         cfg = GradeConfig(
-            grade_thresholds={
-                "classification": {"A_PLUS": 0.95, "A": 0.90, "F": 0.0}
-            }
+            grade_thresholds={"classification": {"A_PLUS": 0.95, "A": 0.90, "F": 0.0}}
         )
         grade = compute_grade(TaskType.CLASSIFICATION, 0.96, config=cfg)
         assert grade == Grade.A_PLUS
@@ -264,6 +278,7 @@ class TestComputeGradeWithConfig:
 
 # ── StoryEngine integration ───────────────────────────────────────────────────
 
+
 class TestStoryEngineWithConfig:
     def test_story_engine_accepts_grade_config(self) -> None:
         """StoryEngine stores grade_config and uses it in process()."""
@@ -275,10 +290,17 @@ class TestStoryEngineWithConfig:
         cfg = GradeConfig(
             grade_thresholds={
                 "classification": {
-                    "A+": 0.99, "A": 0.95, "A-": 0.90,
-                    "B+": 0.85, "B": 0.80, "B-": 0.75,
-                    "C+": 0.70, "C": 0.65, "C-": 0.60,
-                    "D": 0.55, "F": 0.0,
+                    "A+": 0.99,
+                    "A": 0.95,
+                    "A-": 0.90,
+                    "B+": 0.85,
+                    "B": 0.80,
+                    "B-": 0.75,
+                    "C+": 0.70,
+                    "C": 0.65,
+                    "C-": 0.60,
+                    "D": 0.55,
+                    "F": 0.0,
                 }
             }
         )

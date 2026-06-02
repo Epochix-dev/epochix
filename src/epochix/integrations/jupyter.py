@@ -19,6 +19,7 @@ If the server is not running, it starts one in a background thread.
 ``IPython`` is required; this module is a no-op when imported outside
 a notebook environment.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -38,6 +39,7 @@ def unload_ipython_extension(ipython: Any) -> None:  # noqa: ANN401
 
 
 # ── magic implementations ─────────────────────────────────────────────────────
+
 
 def _line_magic(line: str) -> None:
     """``%epochix [OPTIONS] [LOG_FILE]``
@@ -59,7 +61,7 @@ def _line_magic(line: str) -> None:
     args, rest = _parse_magic_args(line.split())
     log_path = Path(rest[0]) if rest else None
 
-    port   = args.port
+    port = args.port
     height = args.height
 
     _ensure_server(port=port)
@@ -89,8 +91,8 @@ def _cell_magic(line: str, cell: str) -> None:
         return
 
     args, _ = _parse_magic_args(line.split())
-    port    = args.port
-    height  = args.height
+    port = args.port
+    height = args.height
 
     _ensure_server(port=port)
 
@@ -98,9 +100,7 @@ def _cell_magic(line: str, cell: str) -> None:
     import os
     import tempfile
 
-    with tempfile.NamedTemporaryFile(
-        mode="w", suffix=".py", delete=False, encoding="utf-8"
-    ) as f:
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False, encoding="utf-8") as f:
         f.write(cell)
         tmp = f.name
 
@@ -140,6 +140,7 @@ def _cell_magic(line: str, cell: str) -> None:
                 IFrame,
                 display,
             )
+
             display(IFrame(src=url, width="100%", height=height))
         except ImportError:
             print(f"[epochix] Dashboard: {url}")
@@ -150,7 +151,7 @@ def _cell_magic(line: str, cell: str) -> None:
 
 # ── server management ─────────────────────────────────────────────────────────
 
-_server_lock    = threading.Lock()
+_server_lock = threading.Lock()
 _server_running: set[int] = set()
 
 
@@ -168,7 +169,7 @@ def _ensure_server(*, port: int = 7860) -> None:
         from epochix.server.app import create_app
 
         settings = get_settings()
-        _app     = create_app(settings=settings)
+        _app = create_app(settings=settings)
 
         uvicorn.run(
             _app,
@@ -201,6 +202,7 @@ def _parse_and_register(log_path: Path, *, task: str | None, port: int) -> Any: 
 
 # ── argument parsing ──────────────────────────────────────────────────────────
 
+
 def _parse_magic_args(argv: list[str]) -> tuple[Any, list[str]]:  # noqa: ANN401
     p = _make_parser()
     return p.parse_known_args(argv)
@@ -208,8 +210,8 @@ def _parse_magic_args(argv: list[str]) -> tuple[Any, list[str]]:  # noqa: ANN401
 
 def _make_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(prog="%epochix", add_help=False)
-    p.add_argument("--task",       default=None,  help="Force task type")
-    p.add_argument("--port",       default=7860,  type=int, help="Dashboard port")
-    p.add_argument("--height",     default=600,   type=int, help="iframe height px")
+    p.add_argument("--task", default=None, help="Force task type")
+    p.add_argument("--port", default=7860, type=int, help="Dashboard port")
+    p.add_argument("--height", default=600, type=int, help="iframe height px")
     p.add_argument("--no-browser", action="store_true")
     return p

@@ -15,6 +15,7 @@ and maps Lightning trainer hooks to ``reporter.log()`` / ``reporter.finish()``.
 module imports it lazily so that importing ``epochix.integrations.lightning``
 does not raise ``ImportError`` when Lightning is not installed.
 """
+
 from __future__ import annotations
 
 import contextlib
@@ -54,13 +55,13 @@ class StoryCallback:
         open_browser: bool = True,
         locale: str = "en",
     ) -> None:
-        self._task           = task
+        self._task = task
         self._primary_metric = primary_metric
-        self._name           = name
-        self._port           = port
-        self._open_browser   = open_browser
-        self._locale         = locale
-        self._reporter: Any  = None
+        self._name = name
+        self._port = port
+        self._open_browser = open_browser
+        self._locale = locale
+        self._reporter: Any = None
 
     # ------------------------------------------------------------------
     # Lightning hooks
@@ -116,6 +117,7 @@ class StoryCallback:
 
 
 # ── helpers ───────────────────────────────────────────────────────────────────
+
 
 def _get_model_name(pl_module: Any) -> str:  # noqa: ANN401
     return type(pl_module).__name__

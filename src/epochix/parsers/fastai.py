@@ -10,11 +10,11 @@ from epochix.parsers.registry import register_parser
 # FastAI tabular output (variable columns, time at end):
 #   0  0.423456  0.312567  0.876543  00:12
 _DATA_ROW = re.compile(
-    r"^\s*(\d+)\s+"                           # epoch
-    r"([\d.eE+-]+)\s+"                        # train_loss
-    r"([\d.eE+-]+)\s+"                        # valid_loss
-    r"((?:[\d.eE+-]+\s+)*)?"                  # optional extra metrics
-    r"(\d{2}:\d{2})\s*$"                      # time
+    r"^\s*(\d+)\s+"  # epoch
+    r"([\d.eE+-]+)\s+"  # train_loss
+    r"([\d.eE+-]+)\s+"  # valid_loss
+    r"((?:[\d.eE+-]+\s+)*)?"  # optional extra metrics
+    r"(\d{2}:\d{2})\s*$"  # time
 )
 # Header detection
 _HEADER_LINE = re.compile(r"\btrain_loss\b.*\bvalid_loss\b")

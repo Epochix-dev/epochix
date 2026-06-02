@@ -24,6 +24,7 @@ Supported placeholder tokens (same as narrative templates):
     {value_pct} — primary metric as percentage
     {delta}     — delta from previous epoch (signed)
 """
+
 from __future__ import annotations
 
 import importlib.metadata
@@ -68,8 +69,7 @@ def _load_yaml_pack(path: Path, *, source: str) -> None:
         import yaml  # type: ignore[import-untyped]
     except ImportError:
         raise ImportError(
-            "PyYAML is required for metaphor packs. "
-            "Install with: pip install pyyaml"
+            "PyYAML is required for metaphor packs. Install with: pip install pyyaml"
         ) from None
 
     if not path.exists():
@@ -85,7 +85,9 @@ def _load_yaml_pack(path: Path, *, source: str) -> None:
         if not isinstance(card_list, list):
             logger.warning(
                 "Metaphor pack %r phase %r: expected list, got %s",
-                source, phase_key, type(card_list).__name__,
+                source,
+                phase_key,
+                type(card_list).__name__,
             )
             continue
         cards = [
@@ -104,7 +106,9 @@ def _load_yaml_pack(path: Path, *, source: str) -> None:
 
     logger.info(
         "Loaded metaphor pack %r: task=%s, %d phases",
-        source, task_key, registered_phases,
+        source,
+        task_key,
+        registered_phases,
     )
 
 
@@ -133,18 +137,19 @@ def get_metaphor_cards(
     rendered: list[MetaphorCard] = []
     for card in raw_cards:
         body = (
-            card.body
-            .replace("{epoch}", epoch_str)
+            card.body.replace("{epoch}", epoch_str)
             .replace("{value}", f"{value:.4f}")
             .replace("{value_pct}", f"{value * 100:.1f}%")
             .replace("{delta}", delta_str)
         )
-        rendered.append(MetaphorCard(
-            title=card.title,
-            body=body,
-            icon=card.icon,
-            color=card.color,
-        ))
+        rendered.append(
+            MetaphorCard(
+                title=card.title,
+                body=body,
+                icon=card.icon,
+                color=card.color,
+            )
+        )
     return rendered
 
 

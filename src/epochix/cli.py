@@ -18,6 +18,7 @@ Usage
     epochix config show
     epochix config set <key> <value>
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -78,8 +79,7 @@ def _task_from_str(task_str: str | None) -> TaskType | None:
         return TaskType(task_str)
     except ValueError as exc:
         raise typer.BadParameter(
-            f"Unknown task type: {task_str!r}. "
-            f"Valid values: {[t.value for t in TaskType]}"
+            f"Unknown task type: {task_str!r}. Valid values: {[t.value for t in TaskType]}"
         ) from exc
 
 
@@ -100,20 +100,26 @@ def cmd_run(  # noqa: C901
         None, "--tail", help="Tail a file in live mode.", show_default=False
     ),
     ssh: str | None = typer.Option(
-        None, "--ssh",
+        None,
+        "--ssh",
         help="Tail a remote log over SSH: '[user@]host:/path/to/log'.",
         show_default=False,
     ),
     ssh_port: int | None = typer.Option(
-        None, "--ssh-port", help="SSH port (default uses ~/.ssh/config).",
+        None,
+        "--ssh-port",
+        help="SSH port (default uses ~/.ssh/config).",
         show_default=False,
     ),
     ssh_identity: str | None = typer.Option(
-        None, "--ssh-identity", help="Path to SSH private key.",
+        None,
+        "--ssh-identity",
+        help="Path to SSH private key.",
         show_default=False,
     ),
     ssh_opt: list[str] = typer.Option(
-        [], "--ssh-opt",
+        [],
+        "--ssh-opt",
         help="Extra ssh -o option(s); repeatable, e.g. --ssh-opt ProxyJump=bastion.",
         show_default=False,
     ),
@@ -124,7 +130,9 @@ def cmd_run(  # noqa: C901
     no_llm: bool = typer.Option(False, "--no-llm", help="Disable LLM fallback parser."),
     headless: bool = typer.Option(False, "--headless", help="Do not open the browser."),
     export_format: str | None = typer.Option(
-        None, "--export", help="Export format (html|pdf|md|json) in headless mode.",
+        None,
+        "--export",
+        help="Export format (html|pdf|md|json) in headless mode.",
         show_default=False,
     ),
     name: str | None = typer.Option(None, "--name", "-n", help="Run name.", show_default=False),
@@ -155,13 +163,13 @@ def cmd_run(  # noqa: C901
         source_path = ssh_remote_path
         live = True
     elif log_file is not None:
-        source = "file"          # batch: read once and stop
+        source = "file"  # batch: read once and stop
         source_path = str(log_file)
         if not log_file.exists():
             typer.echo(f"Error: file not found: {log_file}", err=True)
             raise typer.Exit(1)
     elif tail is not None:
-        source = "file_tail"     # live: poll indefinitely
+        source = "file_tail"  # live: poll indefinitely
         source_path = str(tail)
         live = True
     elif live or not sys.stdin.isatty():
@@ -169,8 +177,8 @@ def cmd_run(  # noqa: C901
         source_path = None
     else:
         typer.echo(
-            "Provide a log file, --live, --tail, --ssh, or pipe stdin. "
-            "Use --help for usage.", err=True
+            "Provide a log file, --live, --tail, --ssh, or pipe stdin. Use --help for usage.",
+            err=True,
         )
         raise typer.Exit(1)
 
@@ -336,9 +344,7 @@ def _cli_export(run_id: str, fmt: str, store: RunStore, outfile: Path | None = N
             )
             raise typer.Exit(1) from None
     else:
-        typer.echo(
-            f"  Unknown export format: {fmt!r}. Use html, pdf, md, or json.", err=True
-        )
+        typer.echo(f"  Unknown export format: {fmt!r}. Use html, pdf, md, or json.", err=True)
         raise typer.Exit(1)
 
 
@@ -369,7 +375,8 @@ def cmd_serve(
             f"⚠  Binding {host}:{port} without EPOCHIX_AUTH_TOKEN — the "
             "server is exposed on the network with no authentication. "
             "Set EPOCHIX_AUTH_TOKEN before publishing this endpoint.",
-            fg=typer.colors.YELLOW, err=True,
+            fg=typer.colors.YELLOW,
+            err=True,
         )
 
     typer.echo(f"Starting epochix server on http://{host}:{port}")
@@ -497,10 +504,10 @@ def cmd_demo(
     _configure_logging(log_level)
 
     aliases = {
-        "seq2seq":  "seq2seq_attention.log",
-        "yolov8":   "yolov8_detection.log",
-        "yolo":     "yolov8_detection.log",
-        "keras":    "keras_image_classifier.log",
+        "seq2seq": "seq2seq_attention.log",
+        "yolov8": "yolov8_detection.log",
+        "yolo": "yolov8_detection.log",
+        "keras": "keras_image_classifier.log",
     }
     fname = aliases.get(name.lower(), name)
     demo_root = files("epochix").joinpath("_demos")
@@ -509,12 +516,14 @@ def cmd_demo(
         available = ", ".join(sorted(aliases))
         typer.secho(
             f"Demo {name!r} not found. Available: {available}",
-            fg=typer.colors.RED, err=True,
+            fg=typer.colors.RED,
+            err=True,
         )
         raise typer.Exit(1)
 
     typer.secho(
-        f"▶ Running bundled demo: {fname}", fg=typer.colors.CYAN,
+        f"▶ Running bundled demo: {fname}",
+        fg=typer.colors.CYAN,
     )
     # Reuse the regular `run` path so behaviour matches what users see with
     # their own logs (parsing, story engine, browser open).
@@ -595,9 +604,7 @@ def _open_store(settings: Settings) -> RunStore:
 #   epochix train.log          (shorthand → `run train.log`)
 #   epochix --live             (shorthand → `run --live`)
 #   epochix serve --port 8000  (dispatches the serve subcommand)
-_SUBCOMMANDS = frozenset(
-    {"run", "serve", "list", "open", "export", "prune", "config", "demo"}
-)
+_SUBCOMMANDS = frozenset({"run", "serve", "list", "open", "export", "prune", "config", "demo"})
 
 
 def main_entry() -> None:

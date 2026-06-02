@@ -6,6 +6,7 @@ Run with::
 
     pytest tests/benchmarks/ -v --benchmark-min-rounds=5
 """
+
 from __future__ import annotations
 
 from datetime import datetime, timezone
@@ -62,9 +63,7 @@ def test_metric_event_write_throughput(benchmark: pytest.FixtureType) -> None:
 
     result = benchmark(_write_one)
     wps = 1.0 / benchmark.stats["mean"]
-    assert wps >= TARGET_WPS, (
-        f"RunStore only {wps:.0f} writes/sec (target {TARGET_WPS})"
-    )
+    assert wps >= TARGET_WPS, f"RunStore only {wps:.0f} writes/sec (target {TARGET_WPS})"
     _ = result
 
 

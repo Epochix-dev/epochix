@@ -13,6 +13,7 @@ Covers:
   - Clean disconnect (no exception raised)
   - Multiple subscriber queues receive the same message
 """
+
 from __future__ import annotations
 
 import json
@@ -52,18 +53,15 @@ def _make_frame_msg(run_id: str, seq: int, grade: str = "B") -> WSMessage:
 
 # ── Connection ────────────────────────────────────────────────────────────────
 
+
 class TestWSConnection:
-    def test_connects_without_error(
-        self, server: tuple[TestClient, RunStore, Hub]
-    ) -> None:
+    def test_connects_without_error(self, server: tuple[TestClient, RunStore, Hub]) -> None:
         """WS endpoint accepts any run_id without raising."""
         client, _, _ = server
         with client.websocket_connect("/ws/live/any-run"):
             pass  # entering the context = accepted
 
-    def test_disconnect_is_clean(
-        self, server: tuple[TestClient, RunStore, Hub]
-    ) -> None:
+    def test_disconnect_is_clean(self, server: tuple[TestClient, RunStore, Hub]) -> None:
         """Exiting the WS context manager disconnects without exception."""
         client, _, _ = server
         with client.websocket_connect("/ws/live/clean-disconnect"):
@@ -71,6 +69,7 @@ class TestWSConnection:
 
 
 # ── Ring-buffer replay ────────────────────────────────────────────────────────
+
 
 class TestReplay:
     def test_replay_delivers_buffered_message(
@@ -108,9 +107,7 @@ class TestReplay:
 
         assert received_seqs == [1, 2, 3], f"Got {received_seqs}"
 
-    def test_replay_respects_last_seq(
-        self, server: tuple[TestClient, RunStore, Hub]
-    ) -> None:
+    def test_replay_respects_last_seq(self, server: tuple[TestClient, RunStore, Hub]) -> None:
         """Only messages with seq > last_seq are replayed."""
         client, _, hub = server
 
@@ -137,7 +134,10 @@ class TestReplay:
         hub.publish("no-replay-run", _make_frame_msg("no-replay-run", seq=1))
 
         milestone_msg = WSMessage(
-            v=1, type="milestone", run_id="no-replay-run", seq=2,
+            v=1,
+            type="milestone",
+            run_id="no-replay-run",
+            seq=2,
             ts=datetime.now(tz=timezone.utc),
             payload={"kind": "first_metric", "message": "Training began"},
         )
@@ -154,10 +154,9 @@ class TestReplay:
 
 # ── Message envelope schema ───────────────────────────────────────────────────
 
+
 class TestMessageSchema:
-    def test_envelope_has_required_fields(
-        self, server: tuple[TestClient, RunStore, Hub]
-    ) -> None:
+    def test_envelope_has_required_fields(self, server: tuple[TestClient, RunStore, Hub]) -> None:
         """Every replayed message has the v1 WSMessage envelope fields."""
         client, _, hub = server
 
@@ -174,9 +173,7 @@ class TestMessageSchema:
         assert "ts" in msg
         assert "payload" in msg
 
-    def test_story_frame_payload(
-        self, server: tuple[TestClient, RunStore, Hub]
-    ) -> None:
+    def test_story_frame_payload(self, server: tuple[TestClient, RunStore, Hub]) -> None:
         """story_frame payload contains grade and phase."""
         client, _, hub = server
 
@@ -188,14 +185,15 @@ class TestMessageSchema:
         assert msg["payload"]["grade"] == "A"
         assert msg["payload"]["phase"] == "learning"
 
-    def test_milestone_message_type(
-        self, server: tuple[TestClient, RunStore, Hub]
-    ) -> None:
+    def test_milestone_message_type(self, server: tuple[TestClient, RunStore, Hub]) -> None:
         """Milestone messages use type='milestone'."""
         client, _, hub = server
 
         ms_msg = WSMessage(
-            v=1, type="milestone", run_id="ms-run", seq=5,
+            v=1,
+            type="milestone",
+            run_id="ms-run",
+            seq=5,
             ts=datetime.now(tz=timezone.utc),
             payload={"kind": "best_val_accuracy", "message": "New best!"},
         )
@@ -210,10 +208,9 @@ class TestMessageSchema:
 
 # ── Hub publish → subscriber receives ────────────────────────────────────────
 
+
 class TestHubDirect:
-    def test_hub_ring_buffer_grows(
-        self, server: tuple[TestClient, RunStore, Hub]
-    ) -> None:
+    def test_hub_ring_buffer_grows(self, server: tuple[TestClient, RunStore, Hub]) -> None:
         """Publishing N messages stores exactly N in the ring buffer."""
         _, _, hub = server
 
@@ -239,6 +236,7 @@ class TestHubDirect:
 
 
 # ── Auth guard (token via query param when EPOCHIX_AUTH_TOKEN is set) ───────
+
 
 class TestWSAuth:
     def test_rejects_without_token_when_auth_configured(self) -> None:
