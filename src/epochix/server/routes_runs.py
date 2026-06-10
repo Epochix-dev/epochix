@@ -4,7 +4,7 @@ import contextlib
 from datetime import datetime, timezone
 from typing import Annotated, Any
 
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from pydantic import BaseModel, Field
 
 from epochix.models import MetricEvent, Run, StoryFrame
@@ -56,7 +56,10 @@ class EventPushRequest(BaseModel):
 class RunCreateRequest(BaseModel):
     """Create a new run and register a live StoryEngine for it."""
 
-    run_id: str | None = Field(default=None, max_length=64)
+    # Charset-constrained because run ids are echoed into Content-Disposition
+    # filenames by the export routes and used as pub/sub + DB keys. ULIDs and
+    # UUIDs (the server-generated forms) always match.
+    run_id: str | None = Field(default=None, max_length=64, pattern=r"^[A-Za-z0-9_.\-]+$")
     name: str | None = Field(default=None, max_length=256)
     task: str | None = Field(default=None, max_length=32)
     primary_metric: str | None = Field(default=None, max_length=64)
@@ -144,7 +147,7 @@ async def create_run(
 @router.get("/runs", response_model=RunListResponse, dependencies=[Depends(require_auth)])
 async def list_runs(
     store: StoreDep,
-    limit: int = 100,
+    limit: Annotated[int, Query(ge=1, le=1000)] = 100,
 ) -> RunListResponse:
     """Return the most recent *limit* runs (newest first)."""
     runs = store.list_runs(limit=limit)

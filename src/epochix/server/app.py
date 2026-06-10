@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 import logging
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Any
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
@@ -59,10 +59,12 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     # opted in) or EPOCHIX_EXPOSE_DOCS is set explicitly.
     _docs_visible = settings.expose_docs or bool(settings.auth_token)
 
+    from epochix import __version__
+
     app = FastAPI(
         title="epochix",
         description="Visual storytelling for deep learning training runs.",
-        version="0.1.0",
+        version=__version__,
         lifespan=_lifespan,
         docs_url="/api/docs" if _docs_visible else None,
         redoc_url="/api/redoc" if _docs_visible else None,
@@ -71,6 +73,22 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     # Store settings so lifespan can read them
     app.state.settings = settings
+
+    # --- Security headers -------------------------------------------------
+    # nosniff stops MIME-type confusion on exported files; no-referrer keeps
+    # run ids / local paths out of outbound Referer headers (the dashboard
+    # loads webfonts from a third party). Deliberately NO X-Frame-Options /
+    # frame-ancestors: the VS Code extension's sidecar mode embeds this
+    # server in a webview <iframe>, which framing restrictions would break.
+    @app.middleware("http")
+    async def _security_headers(
+        request: Request,
+        call_next: Callable[[Request], Awaitable[Response]],
+    ) -> Response:
+        response = await call_next(request)
+        response.headers.setdefault("X-Content-Type-Options", "nosniff")
+        response.headers.setdefault("Referrer-Policy", "no-referrer")
+        return response
 
     # --- CORS -----------------------------------------------------------
     # Default is *no* CORS middleware → same-origin only (the browser's SOP

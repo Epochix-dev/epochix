@@ -36,6 +36,29 @@ deprecation alias because there are no v0.1 / v0.2 installs in the wild.
   `epochix_appicon_*.png`).
 - VS Code extension icon updated to the Epochix appicon.
 
+### Security hardening (pre-publication audit)
+
+- **Security headers** on every server response: `X-Content-Type-Options:
+  nosniff` and `Referrer-Policy: no-referrer`. Deliberately *no*
+  `X-Frame-Options` / `frame-ancestors` — the VS Code sidecar embeds the
+  dashboard in a webview `<iframe>`, which framing restrictions would break.
+- **`run_id` charset constrained** (`[A-Za-z0-9_.-]`, ≤64) on
+  `POST /api/runs` — client-supplied ids are echoed into
+  `Content-Disposition` filenames by the export routes.
+- **`GET /api/runs?limit=` capped** at 1000 (was unbounded).
+- **`/api/version` and the OpenAPI version** now report the real installed
+  version (was hard-coded `0.1.0`).
+- Dependency audits clean: `pip-audit` finds no vulnerabilities in runtime
+  deps; `npm audit` clean for the frontend and extension prod trees.
+
+### UI
+
+- **Favicon** — the Epochix mark ships as an inline data-URI icon (1 KB),
+  so it works identically in live serve, the standalone HTML export and
+  the VS Code webview; `/favicon.png` is also emitted for static hosts.
+- `<meta name="description">` and `<meta name="theme-color">` added to the
+  dashboard document head.
+
 ---
 
 ## [0.2.0] — 2026-05-26

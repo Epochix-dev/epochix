@@ -129,3 +129,44 @@ def test_event_push_rejects_oversized_strings() -> None:
             },
         )
         assert r.status_code == 422  # pydantic validation failure
+
+
+def test_security_headers_present() -> None:
+    """Every response carries nosniff + no-referrer headers."""
+    app = create_app(settings=Settings(db=":memory:"))
+    with TestClient(app) as client:
+        r = client.get("/api/runs")
+        assert r.headers["X-Content-Type-Options"] == "nosniff"
+        assert r.headers["Referrer-Policy"] == "no-referrer"
+
+
+def test_security_headers_do_not_block_framing() -> None:
+    """No frame-blocking headers: the VS Code sidecar embeds the dashboard
+    in a webview <iframe>; X-Frame-Options / frame-ancestors would break it."""
+    app = create_app(settings=Settings(db=":memory:"))
+    with TestClient(app) as client:
+        r = client.get("/api/runs")
+        assert "X-Frame-Options" not in r.headers
+        assert "Content-Security-Policy" not in r.headers
+
+
+def test_run_create_rejects_hostile_run_id() -> None:
+    """run_id is echoed into Content-Disposition filenames by the export
+    routes — quotes / separators / control chars must be rejected upfront."""
+    app = create_app(settings=Settings(db=":memory:"))
+    with TestClient(app) as client:
+        for bad in ('run"id', "run id", "run/id", "run\nid", "run;id"):
+            r = client.post("/api/runs", json={"run_id": bad})
+            assert r.status_code == 422, f"accepted hostile run_id: {bad!r}"
+        # The server-generated forms (ULID / UUID charset) stay accepted.
+        r = client.post("/api/runs", json={"run_id": "01JX-abc_123.ok"})
+        assert r.status_code == 201
+
+
+def test_list_runs_limit_is_capped() -> None:
+    """Unbounded ?limit= would let one request dump the entire table."""
+    app = create_app(settings=Settings(db=":memory:"))
+    with TestClient(app) as client:
+        assert client.get("/api/runs?limit=1000000").status_code == 422
+        assert client.get("/api/runs?limit=0").status_code == 422
+        assert client.get("/api/runs?limit=50").status_code == 200
