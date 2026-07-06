@@ -1,7 +1,7 @@
 site_name: Epochix
 site_url: https://docs.epochix.dev
 site_description: Visual storytelling for deep learning training runs.
-site_author: epochix contributors
+site_author: Epochix Team
 repo_url: https://github.com/epochix/epochix
 repo_name: epochix/epochix
 edit_uri: edit/main/docs/
@@ -67,4 +67,4 @@ extra:
     - icon: fontawesome/brands/python
       link: https://pypi.org/project/epochix/
 
-copyright: "Copyright &copy; 2026 HexoraX — Apache-2.0 License"
+copyright: "Copyright &copy; 2026 Epochix Team — Apache-2.0 License"

@@ -2316,7 +2316,7 @@ build-backend = "hatchling.build"
 name = "epochix"
 version = "0.1.0"
 description = "Visual storytelling for deep learning training runs."
-authors = [{ name = "HexoraX", email = "hello@hexorax.com" }]
+authors = [{ name = "Epochix Team" }]
 license = "Apache-2.0"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -2560,4 +2560,4 @@ Excerpt from the default English templates. Each task × phase combination has 3
 
 **End of Architecture Specification — v1.0**
 
-*Maintainers: HexoraX team. Pull requests welcome.*
+*Maintainers: Epochix Team. Pull requests welcome.*

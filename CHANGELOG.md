@@ -84,8 +84,8 @@ deprecation alias because there are no v0.1 / v0.2 installs in the wild.
   `NotImplementedError` stub).
 - Internal phase jargon ("Phase 11", "Phase 5") scrubbed from API error
   messages and OpenAPI docstrings.
-- Copyright lines unified to "2026 HexoraX" (root + extension LICENSE and
-  the docs footer previously said "2024 epochix contributors").
+- Copyright lines unified to "2026 Epochix Team" (LICENSE appendices, docs
+  footer, README and package metadata disagreed with each other).
 
 ---
 
