@@ -28,15 +28,19 @@ LABEL org.opencontainers.image.licenses="Apache-2.0"
 RUN useradd --create-home --shell /bin/bash app
 WORKDIR /home/app
 
-# Install the package from PyPI (or from a local wheel during CI)
-# Use ARG to allow overriding the version at build time:
-#   docker build --build-arg VERSION=0.1.0 .
-ARG VERSION=0.3.0
-RUN pip install --no-cache-dir "epochix==${VERSION}"
-
-# Copy the pre-built frontend bundle into the expected location
-COPY --from=frontend-builder /build/frontend/dist/ \
-     /home/app/.local/lib/python3.12/site-packages/epochix/_frontend/dist/
+# Install from the local source tree (hermetic — no PyPI-propagation race with
+# the release workflow, and `docker build` works from any commit, not just
+# published versions). The stage-1 frontend build is placed at frontend/dist
+# BEFORE `pip install .` so hatchling's force-include vendors it into the
+# package exactly like the release wheel — no hand-rolled site-packages copy.
+# (.dockerignore excludes the host's own frontend/dist, so the bundle used
+# here always comes from the in-image build.)
+COPY pyproject.toml README.md LICENSE ./
+COPY src/ ./src/
+COPY --from=frontend-builder /build/frontend/dist/ ./frontend/dist/
+RUN pip install --no-cache-dir . \
+ && python -c "import epochix, pathlib; d = pathlib.Path(epochix.__file__).parent / '_frontend/dist/index.html'; assert d.is_file(), f'frontend bundle missing: {d}'" \
+ && rm -rf src frontend pyproject.toml README.md LICENSE
 
 # Data directory (SQLite DB, exports)
 RUN mkdir -p /data && chown app:app /data
@@ -47,9 +51,10 @@ USER app
 # Server listens on 7860 by default
 EXPOSE 7860
 
-# Health-check: hit the API root
+# Health-check: /api/health is auth-exempt, so the container stays "healthy"
+# even when EPOCHIX_AUTH_TOKEN is configured (unlike authenticated routes).
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-  CMD python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:7860/api/runs')"
+  CMD python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:7860/api/health')"
 
 ENV EPOCHIX_DB=/data/runs.db \
     EPOCHIX_HOST=0.0.0.0 \

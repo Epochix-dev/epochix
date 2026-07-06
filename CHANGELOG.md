@@ -59,6 +59,34 @@ deprecation alias because there are no v0.1 / v0.2 installs in the wild.
 - `<meta name="description">` and `<meta name="theme-color">` added to the
   dashboard document head.
 
+### Release engineering
+
+- **`package-lock.json` files resynced** (frontend + extension) — both
+  locks were still at v0.1.0, so `npm ci` failed on any clean checkout,
+  which would have broken every CI/release workflow on first push.
+  Surfaced by the hermetic Docker build below.
+- **Docker image now builds from source** instead of `pip install
+  epochix==$VERSION` from PyPI. The old form raced PyPI index propagation
+  on release day (the docker job ran in parallel with the publish job) and
+  could never work for `test/` dry-run tags. The site-packages path is
+  computed from the interpreter rather than hard-coded, and the container
+  `HEALTHCHECK` now hits the auth-exempt `/api/health` (previously
+  `/api/runs`, which reports 401 — "unhealthy" — the moment you secure the
+  container with `EPOCHIX_AUTH_TOKEN`).
+- **Docs pipeline**: new `docs` extra (`mkdocs-material` + `mkdocstrings`,
+  `mkdocs` pinned `<2`) and a `docs.yml` workflow that builds with
+  `--strict` on PRs and deploys to GitHub Pages from `main`. Fixed a
+  broken `api.md` link in the docs and added the missing **Python SDK
+  reference** page (mkdocstrings-rendered).
+- **JSON export deduplicated** — the canonical run payload was built
+  inline in three places (HTTP route, SDK, HTML export embed); all now
+  share `exporters/json_export.build_json[_payload]` (previously a dead
+  `NotImplementedError` stub).
+- Internal phase jargon ("Phase 11", "Phase 5") scrubbed from API error
+  messages and OpenAPI docstrings.
+- Copyright lines unified to "2026 HexoraX" (root + extension LICENSE and
+  the docs footer previously said "2024 epochix contributors").
+
 ---
 
 ## [0.2.0] — 2026-05-26

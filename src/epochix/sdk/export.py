@@ -36,8 +36,6 @@ def export(
     Path
         Absolute path to the written file.
     """
-    import json
-
     from epochix.config import get_settings
     from epochix.store.sqlite_store import RunStore
 
@@ -47,14 +45,9 @@ def export(
     out = Path(output) if output else Path(f"{run.id}.{fmt}")
 
     if fmt == "json":
-        frames = store.get_story_frames(run.id)
-        events = store.get_metric_events(run.id)
-        payload = {
-            "run": run.model_dump(mode="json"),
-            "frames": [f.model_dump(mode="json") for f in frames],
-            "events": [e.model_dump(mode="json") for e in events],
-        }
-        out.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+        from epochix.exporters.json_export import build_json
+
+        out.write_text(build_json(run_id=run.id, store=store), encoding="utf-8")
 
     elif fmt == "md":
         from epochix.exporters.markdown_export import build_markdown

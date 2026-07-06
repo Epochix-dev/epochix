@@ -20,7 +20,11 @@ def _store(request: Request) -> RunStore:
 
 StoreDep = Annotated[RunStore, Depends(_store)]
 
-_NOT_IMPL = "Not yet available — build the frontend bundle first (Phase 11)"
+_NOT_IMPL = (
+    "This export format needs the bundled dashboard. "
+    "Install the published wheel (which vendors it) or build the frontend: "
+    "npm --prefix frontend run build."
+)
 
 
 @router.get(
@@ -32,7 +36,7 @@ async def export_html(
     run_id: str,
     store: StoreDep,
 ) -> HTMLResponse:
-    """Generate a standalone HTML report for the run (Phase 11)."""
+    """Generate a standalone, offline-viewable HTML report for the run."""
     _require_run(run_id, store)
     try:
         html = build_html(run_id=run_id, store=store)
@@ -46,7 +50,7 @@ async def export_pdf(
     run_id: str,
     store: StoreDep,
 ) -> Response:
-    """Generate a PDF slide deck for the run (Phase 11)."""
+    """Generate a PDF report for the run (requires the `pdf` extra)."""
     _require_run(run_id, store)
     try:
         pdf_bytes = build_pdf(run_id=run_id, store=store)
@@ -64,7 +68,7 @@ async def export_markdown(
     run_id: str,
     store: StoreDep,
 ) -> Response:
-    """Generate a Markdown summary for the run (Phase 11)."""
+    """Generate a Markdown summary for the run."""
     _require_run(run_id, store)
     try:
         md = build_markdown(run_id=run_id, store=store)
@@ -83,21 +87,11 @@ async def export_json(
     store: StoreDep,
 ) -> Response:
     """Export the canonical run JSON (re-importable)."""
-    import json
+    from epochix.exporters.json_export import build_json
 
     _require_run(run_id, store)
-    frames = store.get_story_frames(run_id)
-    events = store.get_metric_events(run_id)
-    run = store.get_run(run_id)
-    assert run is not None  # guaranteed by _require_run
-
-    payload = {
-        "run": run.model_dump(mode="json"),
-        "frames": [f.model_dump(mode="json") for f in frames],
-        "events": [e.model_dump(mode="json") for e in events],
-    }
     return Response(
-        content=json.dumps(payload, indent=2),
+        content=build_json(run_id=run_id, store=store),
         media_type="application/json",
         headers={"Content-Disposition": f'attachment; filename="{run_id}.json"'},
     )

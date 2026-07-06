@@ -45,6 +45,7 @@ nav:
   - Quickstart: quickstart.md
   - Parsers: parsers.md
   - Plugins: plugins.md
+  - Python SDK: api.md
   - Deployment: deployment.md
 
 markdown_extensions:
@@ -66,4 +67,4 @@ extra:
     - icon: fontawesome/brands/python
       link: https://pypi.org/project/epochix/
 
-copyright: "Copyright &copy; 2024 epochix contributors — Apache-2.0 License"
+copyright: "Copyright &copy; 2026 HexoraX — Apache-2.0 License"

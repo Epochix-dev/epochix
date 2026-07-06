@@ -46,22 +46,12 @@ def build_html(run_id: str, store: RunStore) -> str:
     ValueError
         If the run is not found in the store.
     """
-    run = store.get_run(run_id)
-    if run is None:
-        raise ValueError(f"Run not found: {run_id!r}")
+    from epochix.exporters.json_export import build_json_payload
 
+    payload = build_json_payload(run_id, store)  # raises ValueError if missing
     _require_bundle()
 
-    frames = store.get_story_frames(run_id)
-    events = store.get_metric_events(run_id)
-
-    run_data = _json_for_script(
-        {
-            "run": run.model_dump(mode="json"),
-            "frames": [f.model_dump(mode="json") for f in frames],
-            "events": [e.model_dump(mode="json") for e in events],
-        }
-    )
+    run_data = _json_for_script(payload)
 
     html = (_DIST / "index.html").read_text(encoding="utf-8")
 
@@ -89,9 +79,10 @@ def build_html(run_id: str, store: RunStore) -> str:
     )
 
     # 4. Friendly document title.
-    grade = run.final_grade.value if run.final_grade else ""
+    run_info = payload["run"]
+    grade = run_info.get("final_grade") or ""
     sep = " · " if grade else ""
-    title = _esc(f"{run.name or run_id}{sep}{grade} — Epochix")
+    title = _esc(f"{run_info.get('name') or run_id}{sep}{grade} — Epochix")
     html = re.sub(r"<title>.*?</title>", f"<title>{title}</title>", html, count=1, flags=re.S)
 
     return html

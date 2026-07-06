@@ -81,20 +81,17 @@ jobs:
           fail_on_unmatched_files: true
 
   # ── Docker — build and push to GHCR ───────────────────────────────────────
+  # Fully hermetic: the Dockerfile builds the frontend in its own stage and
+  # installs epochix from the checked-out source. No dependency on the PyPI
+  # publish job — installing "epochix==$VERSION" from PyPI here would race
+  # index propagation on release day (and always fail for test/ tags).
   docker:
-    needs: build-frontend
     runs-on: ubuntu-latest
     permissions:
       contents: read
       packages: write
     steps:
       - uses: actions/checkout@v4
-
-      - name: Download frontend bundle
-        uses: actions/download-artifact@v4
-        with:
-          name: frontend-dist
-          path: frontend/dist/
 
       - name: Extract version from tag
         id: meta
@@ -118,8 +115,6 @@ jobs:
         with:
           context: .
           push: true
-          build-args: |
-            VERSION=${{ steps.meta.outputs.version }}
           tags: |
             ghcr.io/epochix/server:${{ steps.meta.outputs.version }}
             ghcr.io/epochix/server:latest

@@ -1,2 +1,2 @@
-# Export pipeline — to be implemented (Phase 11)
+# Export pipeline
 # Submodules: html_export, pdf_export, markdown_export, json_export

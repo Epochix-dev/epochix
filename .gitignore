@@ -130,3 +130,6 @@ secrets.json
 
 # Build artefacts
 src/epochix/_frontend/dist/
+
+# MkDocs build output
+site/

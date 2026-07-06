@@ -30,7 +30,7 @@ class Settings(BaseSettings):
     llm_key: str = ""
     ollama_url: str = "http://127.0.0.1:11434"
 
-    # Phase 5 (hosted)
+    # Hosted mode (optional Redis pub/sub + Postgres store)
     redis_url: str = ""
     postgres_dsn: str = ""
 
