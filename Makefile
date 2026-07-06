@@ -4,7 +4,6 @@ install:
 	pip install -e ".[dev]"
 
 dev:
-	docker-compose up -d
 	uvicorn epochix.server.app:create_app --factory --reload --port 7860
 
 test:

@@ -64,15 +64,12 @@ deprecation alias because there are no v0.1 / v0.2 installs in the wild.
 - **`package-lock.json` files resynced** (frontend + extension) — both
   locks were still at v0.1.0, so `npm ci` failed on any clean checkout,
   which would have broken every CI/release workflow on first push.
-  Surfaced by the hermetic Docker build below.
-- **Docker image now builds from source** instead of `pip install
-  epochix==$VERSION` from PyPI. The old form raced PyPI index propagation
-  on release day (the docker job ran in parallel with the publish job) and
-  could never work for `test/` dry-run tags. The site-packages path is
-  computed from the interpreter rather than hard-coded, and the container
-  `HEALTHCHECK` now hits the auth-exempt `/api/health` (previously
-  `/api/runs`, which reports 401 — "unhealthy" — the moment you secure the
-  container with `EPOCHIX_AUTH_TOKEN`).
+- **Docker distribution removed.** Epochix ships as exactly two things: a
+  Python library (PyPI) and a VS Code extension (Marketplace / Open VSX).
+  The Dockerfile, `docker-compose.yml` (which referenced a never-built
+  Redis/Postgres "hosted mode") and the GHCR publish job were scaffold-era
+  scope; `pip install epochix && epochix serve` covers the shared-server
+  use-case, and the SSH ingester covers remote training boxes.
 - **Docs pipeline**: new `docs` extra (`mkdocs-material` + `mkdocstrings`,
   `mkdocs` pinned `<2`) and a `docs.yml` workflow that builds with
   `--strict` on PRs and deploys to GitHub Pages from `main`. Fixed a

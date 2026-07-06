@@ -118,12 +118,6 @@ from epochix.integrations.lightning import EpochixCallback
 trainer = pl.Trainer(callbacks=[EpochixCallback()])
 ```
 
-### Docker
-
-```bash
-docker run -p 7860:7860 ghcr.io/epochix/server:latest
-```
-
 ---
 
 ## Features

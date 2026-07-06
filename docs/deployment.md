@@ -38,34 +38,6 @@ EPOCHIX_AUTH_USER=admin EPOCHIX_AUTH_PASS=secret epochix serve
 
 ---
 
-## Docker
-
-```bash
-docker run -p 7860:7860 \
-  -v ~/.epochix:/data \
-  ghcr.io/epochix/server:latest
-```
-
-With docker-compose:
-
-```yaml
-version: "3.9"
-services:
-  epochix:
-    image: ghcr.io/epochix/server:latest
-    ports:
-      - "7860:7860"
-    volumes:
-      - epochix-data:/data
-    environment:
-      EPOCHIX_DB: /data/epochix.db
-
-volumes:
-  epochix-data:
-```
-
----
-
 ## Reverse proxy (Nginx / Caddy)
 
 ### Nginx
@@ -107,8 +79,3 @@ epochix.example.com {
 | `EPOCHIX_LLM_KEY` | _(none)_ | OpenAI API key for LLM fallback |
 
 ---
-
-## Hosted version (v0.2+)
-
-A hosted version with shareable permalinks and team workspaces is planned
-for v0.2. See the [roadmap](https://github.com/epochix/epochix/blob/main/ARCHITECTURE.md#24-roadmap--milestones).

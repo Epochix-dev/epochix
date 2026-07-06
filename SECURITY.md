@@ -43,6 +43,7 @@ You will be credited in the release notes unless you ask to stay anonymous.
   credentials).
 - Put the server behind a reverse proxy that terminates TLS and handles
   authentication for browser sessions.
-- Mount the run database on a private volume; it isn't encrypted at rest.
+- Keep the run database (`~/.epochix/runs.db` by default) on a
+  private, access-controlled filesystem; it isn't encrypted at rest.
 
 See the README's *Security & deployment* section for the full reference.
