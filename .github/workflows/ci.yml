@@ -51,13 +51,14 @@ jobs:
       - run: cd frontend && npm test
 
   e2e:
+    # Full-pipeline tests (7 demo logs → parser → story engine → store → API).
+    # No browser involved — they drive the pipeline and TestClient directly.
     runs-on: ubuntu-latest
     needs: test
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v3
       - run: uv python install 3.12
-      - run: uv run --extra dev pip install playwright && playwright install --with-deps chromium
       - run: uv run --extra dev pytest tests/e2e -q
 
   # ── Lighthouse CI ──────────────────────────────────────────────────────────
