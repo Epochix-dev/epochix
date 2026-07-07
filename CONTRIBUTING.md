@@ -6,7 +6,7 @@ honest metrics, and reproducible builds — your patches should match.
 ## Quick start
 
 ```bash
-git clone https://github.com/epochix/epochix
+git clone https://github.com/epochix-dev/epochix
 cd epochix
 pip install -e ".[dev]"
 pre-commit install
@@ -50,7 +50,7 @@ A patch is mergeable when every check passes locally and in CI.
 
 ## Reporting issues
 
-Please open an issue at <https://github.com/epochix/epochix/issues>. For
+Please open an issue at <https://github.com/epochix-dev/epochix/issues>. For
 security-relevant problems, follow [SECURITY.md](SECURITY.md) instead — don't
 open a public issue.
 

@@ -9,7 +9,7 @@
 
 [![PyPI version](https://img.shields.io/pypi/v/epochix.svg?color=blue)](https://pypi.org/project/epochix/)
 [![Python](https://img.shields.io/pypi/pyversions/epochix.svg)](https://pypi.org/project/epochix/)
-[![CI](https://github.com/epochix/epochix/actions/workflows/ci.yml/badge.svg)](https://github.com/epochix/epochix/actions/workflows/ci.yml)
+[![CI](https://github.com/epochix-dev/epochix/actions/workflows/ci.yml/badge.svg)](https://github.com/epochix-dev/epochix/actions/workflows/ci.yml)
 [![VS Code Marketplace](https://img.shields.io/visual-studio-marketplace/v/epochix.epochix?label=VS%20Code)](https://marketplace.visualstudio.com/items?itemName=epochix.epochix)
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-green.svg)](LICENSE)
 
@@ -235,7 +235,7 @@ Full docs at **[docs.epochix.dev](https://docs.epochix.dev)**
 ## Contributing
 
 ```bash
-git clone https://github.com/epochix/epochix
+git clone https://github.com/epochix-dev/epochix
 cd epochix
 pip install -e ".[dev]"
 pytest tests/unit tests/integration

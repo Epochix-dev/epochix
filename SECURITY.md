@@ -16,7 +16,7 @@ Please report security issues **privately** so we can land a fix before the
 details are public.
 
 1. Use GitHub's private vulnerability reporting: open
-   <https://github.com/epochix/epochix/security/advisories/new>
+   <https://github.com/epochix-dev/epochix/security/advisories/new>
    (nothing you type there is public).
 2. Include a minimal reproduction (a log fragment, a curl, or a Python
    snippet) and the affected version. If you can't share a repro publicly,

@@ -8,12 +8,12 @@
   "icon": "icon.png",
   "repository": {
     "type": "git",
-    "url": "https://github.com/epochix/epochix"
+    "url": "https://github.com/epochix-dev/epochix"
   },
   "bugs": {
-    "url": "https://github.com/epochix/epochix/issues"
+    "url": "https://github.com/epochix-dev/epochix/issues"
   },
-  "homepage": "https://github.com/epochix/epochix#readme",
+  "homepage": "https://github.com/epochix-dev/epochix#readme",
   "engines": { "vscode": "^1.92.0" },
   "categories": ["Visualization", "Data Science", "Machine Learning"],
   "keywords": ["machine learning", "deep learning", "training", "visualization", "dashboard"],

@@ -102,8 +102,8 @@ for classification, etc.) and grades against task-appropriate thresholds.
 
 ## Repository · Issues · Docs
 
-- GitHub: <https://github.com/epochix/epochix>
-- Issues: <https://github.com/epochix/epochix/issues>
+- GitHub: <https://github.com/epochix-dev/epochix>
+- Issues: <https://github.com/epochix-dev/epochix/issues>
 - Docs: <https://docs.epochix.dev>
 
 Apache-2.0 licensed.

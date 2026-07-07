@@ -323,7 +323,7 @@ First public release.
 - **mypy --strict** — 0 errors on 67 source files
 - **ruff** — 0 errors
 
-[Unreleased]: https://github.com/epochix/epochix/compare/v0.3.0...HEAD
-[0.3.0]: https://github.com/epochix/epochix/releases/tag/v0.3.0
-[0.2.0]: https://github.com/epochix/epochix/releases/tag/v0.2.0
-[0.1.0]: https://github.com/epochix/epochix/releases/tag/v0.1.0
+[Unreleased]: https://github.com/epochix-dev/epochix/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/epochix-dev/epochix/releases/tag/v0.3.0
+[0.2.0]: https://github.com/epochix-dev/epochix/releases/tag/v0.2.0
+[0.1.0]: https://github.com/epochix-dev/epochix/releases/tag/v0.1.0

@@ -30,7 +30,7 @@ PyPI, the extension to the VS Code Marketplace + Open VSX, attaches the
 ## Step 1 — GitHub organisation + repository (~10 min)
 
 Everything in the repo (badges, `pyproject.toml` URLs, workflow
-environments) points at `github.com/epochix/epochix`, so it must be created
+environments) points at `github.com/epochix-dev/epochix`, so it must be created
 with exactly those names.
 
 ### 1a. Create the organisation
@@ -38,19 +38,18 @@ with exactly those names.
 1. Log in to GitHub → click the **+** icon (top-right) → **New organization**.
 2. Choose the **Free** plan.
 3. Fill the form:
-   - **Organization name:** `epochix`
-     — GitHub validates instantly. **If it says the name is taken, STOP.**
-     Don't improvise a different name: the repo, badges and PyPI publisher
-     config all assume `epochix`. Come back to Claude first, decide a new
-     home together, and let Claude rewrite every URL before anything is
-     pushed.
+   - **Organization name:** `epochix-dev`
+     (`epochix` itself is taken on GitHub — the product/PyPI name is
+     unaffected and stays `epochix`. All repo URLs already point at
+     `epochix-dev`. If `epochix-dev` is ALSO taken by the time you do
+     this, stop and tell Claude — the URLs must be rewritten again.)
    - **Contact email:** yours.
    - **Belongs to:** *My personal account*.
 4. Skip the "invite members" screen (*Skip this step*).
 
 ### 1b. Create the repository
 
-1. Inside the new org (github.com/epochix) → **Repositories** tab →
+1. Inside the new org (github.com/epochix-dev) → **Repositories** tab →
    **New repository**.
 2. Fill the form:
    - **Owner:** `epochix` (pick from the dropdown — not your personal account)
@@ -68,7 +67,7 @@ In a terminal on this machine:
 
 ```powershell
 cd C:\Work\Personal\Mix\Gradus
-git remote add origin https://github.com/epochix/epochix.git
+git remote add origin https://github.com/epochix-dev/epochix.git
 git push -u origin main
 ```
 
@@ -80,7 +79,7 @@ git push -u origin main
 
 ### 1d. Watch the first CI run
 
-1. Open `https://github.com/epochix/epochix/actions`.
+1. Open `https://github.com/epochix-dev/epochix/actions`.
 2. A **CI** run appears within seconds. It contains: `lint`, `typecheck`,
    `test` (a 12-job matrix: Ubuntu/macOS/Windows × Python 3.10–3.13),
    `test-frontend`, `e2e`, `lighthouse`. A **Docs** run also starts (it
@@ -92,7 +91,7 @@ git push -u origin main
 
 ### 1e. Repository settings
 
-All under `https://github.com/epochix/epochix/settings`:
+All under `https://github.com/epochix-dev/epochix/settings`:
 
 | # | Path | Action |
 |---|---|---|
@@ -102,7 +101,7 @@ All under `https://github.com/epochix/epochix/settings`:
 
 After enabling Pages, re-run the **Docs** workflow (Actions → Docs → *Re-run
 all jobs*) so the site actually deploys. It lands at
-`https://epochix.github.io/epochix/`.
+`https://epochix-dev.github.io/epochix/`.
 
 **Step 1 done when:** CI is green, docs URL loads, repo shows the README
 with the logo.
@@ -134,7 +133,7 @@ now also **reserves the `epochix` name** before the project exists.
    | Field | Value | Note |
    |---|---|---|
    | PyPI Project Name | `epochix` | if "already in use" → STOP, tell Claude — the PyPI name is taken and we rename again |
-   | Owner | `epochix` | the GitHub org |
+   | Owner | `epochix-dev` | the GitHub org (NOT the package name) |
    | Repository name | `epochix` | |
    | Workflow name | `release.yml` | just the filename, no path |
    | Environment name | `pypi` | matches `environment: pypi` in the workflow — don't leave blank |
@@ -192,7 +191,7 @@ the Microsoft detour.
 
 ### 3d. Store the token as a GitHub secret
 
-1. `https://github.com/epochix/epochix/settings/secrets/actions` →
+1. `https://github.com/epochix-dev/epochix/settings/secrets/actions` →
    **New repository secret**.
 2. **Name:** `VSCE_PAT` (exact, case-sensitive) · **Secret:** the PAT from 3b
    → **Add secret**.
@@ -240,13 +239,13 @@ skip if you want (see the note at the end of this step).
 1. Buy `epochix.dev` at any registrar (Cloudflare / Porkbun / Namecheap;
    `.dev` costs ~$12/yr and is HTTPS-only by design — that's fine).
 2. In the registrar's DNS panel add:
-   `CNAME` · host/name `docs` · target `epochix.github.io` · TTL auto.
+   `CNAME` · host/name `docs` · target `epochix-dev.github.io` · TTL auto.
 3. Repo → Settings → **Pages** → *Custom domain* → `docs.epochix.dev` →
    **Save**. Wait for the DNS check (minutes to ~1 h), then tick
    **Enforce HTTPS** once the certificate is issued.
 
 **Option B — defer.** Docs already deploy to
-`https://epochix.github.io/epochix/` with zero setup. If you stay on that
+`https://epochix-dev.github.io/epochix/` with zero setup. If you stay on that
 URL, tell Claude to replace the `docs.epochix.dev` references so the links
 in the README/PyPI page aren't dead.
 

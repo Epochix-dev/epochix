@@ -70,11 +70,11 @@ dev       = [
 ]
 
 [project.urls]
-Homepage      = "https://github.com/epochix/epochix"
+Homepage      = "https://github.com/epochix-dev/epochix"
 Documentation = "https://docs.epochix.dev"
-Repository    = "https://github.com/epochix/epochix"
-Issues        = "https://github.com/epochix/epochix/issues"
-Changelog     = "https://github.com/epochix/epochix/blob/main/CHANGELOG.md"
+Repository    = "https://github.com/epochix-dev/epochix"
+Issues        = "https://github.com/epochix-dev/epochix/issues"
+Changelog     = "https://github.com/epochix-dev/epochix/blob/main/CHANGELOG.md"
 
 [project.scripts]
 epochix = "epochix.cli:main_entry"

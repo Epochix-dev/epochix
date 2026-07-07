@@ -12,7 +12,7 @@ epochix serve
 # Dashboard at http://127.0.0.1:7860
 ```
 
-The SQLite database is stored at `~/.epochix/epochix.db`.
+The SQLite database is stored at `~/.epochix/runs.db`.
 
 ---
 
@@ -69,7 +69,7 @@ epochix.example.com {
 
 | Variable | Default | Description |
 |--|--|--|
-| `EPOCHIX_DB` | `~/.epochix/epochix.db` | SQLite database path |
+| `EPOCHIX_DB` | `~/.epochix/runs.db` | SQLite database path |
 | `EPOCHIX_HOST` | `127.0.0.1` | Bind host |
 | `EPOCHIX_PORT` | `7860` | Bind port |
 | `EPOCHIX_AUTH_USER` | _(none)_ | Basic auth username |

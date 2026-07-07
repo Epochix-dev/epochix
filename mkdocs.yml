@@ -2,8 +2,8 @@ site_name: Epochix
 site_url: https://docs.epochix.dev
 site_description: Visual storytelling for deep learning training runs.
 site_author: Epochix Team
-repo_url: https://github.com/epochix/epochix
-repo_name: epochix/epochix
+repo_url: https://github.com/epochix-dev/epochix
+repo_name: epochix-dev/epochix
 edit_uri: edit/main/docs/
 
 theme:
@@ -63,7 +63,7 @@ markdown_extensions:
 extra:
   social:
     - icon: fontawesome/brands/github
-      link: https://github.com/epochix/epochix
+      link: https://github.com/epochix-dev/epochix
     - icon: fontawesome/brands/python
       link: https://pypi.org/project/epochix/
 
