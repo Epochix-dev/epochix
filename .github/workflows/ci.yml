@@ -9,19 +9,21 @@ on:
 jobs:
   lint:
     runs-on: ubuntu-latest
+    env:
+      UV_PYTHON: "3.12" # uv run ignores `uv python install` unless pinned
     steps:
-      - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v3
-      - run: uv python install 3.12
-      - run: uv run ruff check src tests
-      - run: uv run ruff format --check src tests
+      - uses: actions/checkout@v5
+      - uses: astral-sh/setup-uv@v5
+      - run: uv run --extra dev ruff check src tests
+      - run: uv run --extra dev ruff format --check src tests
 
   typecheck:
     runs-on: ubuntu-latest
+    env:
+      UV_PYTHON: "3.12"
     steps:
-      - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v3
-      - run: uv python install 3.12
+      - uses: actions/checkout@v5
+      - uses: astral-sh/setup-uv@v5
       - run: uv run --extra dev mypy --strict src/epochix
 
   test:
@@ -30,9 +32,13 @@ jobs:
         os: [ubuntu-latest, macos-latest, windows-latest]
         python: ["3.10", "3.11", "3.12", "3.13"]
     runs-on: ${{ matrix.os }}
+    env:
+      # Without this, uv run resolves its own interpreter and the matrix
+      # version is silently ignored.
+      UV_PYTHON: ${{ matrix.python }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v3
+      - uses: actions/checkout@v5
+      - uses: astral-sh/setup-uv@v5
       - run: uv python install ${{ matrix.python }}
       - run: uv run --extra dev pytest -q tests/unit tests/integration
         env:
@@ -41,8 +47,8 @@ jobs:
   test-frontend:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
           node-version: "20"
           cache: npm
@@ -55,20 +61,25 @@ jobs:
     # No browser involved — they drive the pipeline and TestClient directly.
     runs-on: ubuntu-latest
     needs: test
+    env:
+      UV_PYTHON: "3.12"
     steps:
-      - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v3
-      - run: uv python install 3.12
+      - uses: actions/checkout@v5
+      - uses: astral-sh/setup-uv@v5
       - run: uv run --extra dev pytest tests/e2e -q
 
   # ── Lighthouse CI ──────────────────────────────────────────────────────────
   lighthouse:
+    # Advisory quality gate: scores are worth reading, but a threshold miss
+    # should not block merges. Flip to blocking once budgets are tuned
+    # against a few real runs.
     runs-on: ubuntu-latest
     needs: test-frontend
+    continue-on-error: true
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: "20"
           cache: npm

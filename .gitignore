@@ -81,7 +81,8 @@ yolo_train*.log
 node_modules/
 frontend/node_modules/
 epochix-vscode/node_modules/
-frontend/dist/
+frontend/dist/**
+!frontend/dist/.gitkeep
 frontend/coverage/
 epochix-vscode/dist/
 epochix-vscode/webview-dist/
