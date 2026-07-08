@@ -52,7 +52,8 @@ with exactly those names.
 1. Inside the new org (github.com/epochix-dev) → **Repositories** tab →
    **New repository**.
 2. Fill the form:
-   - **Owner:** `epochix` (pick from the dropdown — not your personal account)
+   - **Owner:** `epochix-dev` (pick the org from the dropdown — not your
+     personal account)
    - **Repository name:** `epochix`
    - Visibility: **Public**
    - **Do NOT tick** "Add a README", "Add .gitignore" or "Choose a license"
@@ -152,6 +153,13 @@ must be **exactly** `epochix`. The Marketplace runs on Azure DevOps, hence
 the Microsoft detour.
 
 ### 3a. Azure DevOps organisation
+
+> ⚠️ **Two different sites are both called "Azure".** Personal Access Tokens
+> for the Marketplace live in **Azure DevOps → `dev.azure.com`**, NOT in the
+> Azure Portal (`portal.azure.com`, the cloud-resources site with
+> subscriptions/directories). If you're looking at "Portal settings",
+> "Directories + subscriptions", or "Subscriptions", you're on the wrong
+> site — there are no PATs there. Go to `dev.azure.com`.
 
 1. Go to <https://dev.azure.com> → **Start free** / *Sign in* with a
    Microsoft account (create one at <https://signup.live.com> if needed).
