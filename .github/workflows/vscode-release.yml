@@ -97,8 +97,13 @@ jobs:
           cache: npm
           cache-dependency-path: ${{ env.EXTENSION_DIR }}/package-lock.json
 
-      - name: Install extension dependencies
-        run: cd ${{ env.EXTENSION_DIR }} && npm ci
+      # vsce package runs the `vscode:prepublish` hook, which rebuilds the
+      # webview via vite in ../frontend — so the frontend's deps must be
+      # installed too, not just the extension's.
+      - name: Install dependencies (extension + frontend)
+        run: |
+          npm --prefix frontend ci
+          npm --prefix ${{ env.EXTENSION_DIR }} ci
 
       # Strip the leading "v" (and optional "test/") from the tag to get the
       # semver string, e.g. refs/tags/v0.1.0 → 0.1.0

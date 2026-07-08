@@ -95,7 +95,9 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: "20"
-      - run: cd epochix-vscode && npm ci && npx vsce package
+      # vsce package's prepublish hook rebuilds the webview via vite in
+      # ../frontend, so install the frontend's deps too.
+      - run: npm --prefix frontend ci && npm --prefix epochix-vscode ci && cd epochix-vscode && npx vsce package --no-dependencies
       - uses: actions/upload-artifact@v4
         with:
           name: vsix
