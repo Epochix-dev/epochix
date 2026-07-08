@@ -8,6 +8,8 @@ edit_uri: edit/main/docs/
 
 theme:
   name: material
+  logo: _assets/epochix_mark.png
+  favicon: _assets/epochix_appicon.png
   palette:
     - scheme: default
       primary: deep purple
