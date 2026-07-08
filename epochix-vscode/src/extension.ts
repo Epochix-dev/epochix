@@ -65,7 +65,7 @@ export async function activate(ctx: vscode.ExtensionContext): Promise<void> {
         if (choice === action) {
           void vscode.env.openExternal(
             vscode.Uri.parse(
-              "https://github.com/epochix/epochix#installation",
+              "https://github.com/epochix-dev/epochix#install",
             ),
           );
         }

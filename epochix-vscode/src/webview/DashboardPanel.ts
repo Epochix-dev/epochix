@@ -166,7 +166,7 @@ export class DashboardPanel {
       case "installSidecar":
         void vscode.env.openExternal(
           vscode.Uri.parse(
-            "https://github.com/epochix/epochix#installation",
+            "https://github.com/epochix-dev/epochix#install",
           ),
         );
         break;
