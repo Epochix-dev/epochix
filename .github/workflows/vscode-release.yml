@@ -193,8 +193,15 @@ jobs:
       - name: Install ovsx
         run: npm install -g ovsx
 
+      # ovsx publish requires the namespace to already exist — it is NOT
+      # auto-created. create-namespace is idempotent-friendly here: if it
+      # already exists we ignore the error and go straight to publish.
+      # (Both calls require the Eclipse publisher agreement to be signed for
+      # this account, else Open VSX returns 403.)
       - name: Publish to Open VSX
-        run: ovsx publish ./vsix/*.vsix --pat "$OVSX_PAT"
+        run: |
+          ovsx create-namespace epochix --pat "$OVSX_PAT" || echo "namespace already exists (or creation skipped)"
+          ovsx publish ./vsix/*.vsix --pat "$OVSX_PAT"
         env:
           OVSX_PAT: ${{ secrets.OVSX_PAT }}
 
