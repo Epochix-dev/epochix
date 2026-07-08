@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.3.1] — 2026-07-08
+
+First patch after the initial public release.
+
+### Fixed
+
+- **Broken logo on the PyPI and VS Code Marketplace pages** — both render the
+  README on their own site, where relative image paths don't resolve. The
+  header logo now uses an absolute `raw.githubusercontent.com` URL (main
+  README and the extension README).
+- **Open VSX publish** — the release workflow now runs `ovsx create-namespace`
+  before `ovsx publish` (the namespace is not auto-created), so the extension
+  reaches Open VSX alongside the VS Code Marketplace.
+- **`vsce package` in CI** — install the frontend's dependencies in the
+  packaging job; the `vscode:prepublish` hook rebuilds the webview with vite.
+- **`npm version` in the release workflow** — pass `--allow-same-version`
+  (the committed manifest already sits at the tag's version).
+
+---
+
 ## [0.3.0] — 2026-05-27
 
 ### Renamed — `model-story` → `epochix`

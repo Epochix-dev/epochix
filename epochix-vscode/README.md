@@ -1,5 +1,5 @@
 <h1 align="center">
-  <img src="icon.png" alt="Epochix" width="96"><br/>
+  <img src="https://raw.githubusercontent.com/epochix-dev/epochix/main/epochix-vscode/icon.png" alt="Epochix" width="96"><br/>
   Epochix for VS Code
 </h1>
 

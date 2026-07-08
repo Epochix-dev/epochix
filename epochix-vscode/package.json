@@ -1,9 +1,9 @@
 {
   "name": "epochix",
   "displayName": "Epochix",
-  "description": "Visual storytelling for deep learning training runs — live animated dashboard in your editor.",
+  "description": "Visual storytelling for deep learning training runs \u2014 live animated dashboard in your editor.",
   "publisher": "epochix",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "license": "Apache-2.0",
   "icon": "icon.png",
   "repository": {
@@ -14,9 +14,21 @@
     "url": "https://github.com/epochix-dev/epochix/issues"
   },
   "homepage": "https://github.com/epochix-dev/epochix#readme",
-  "engines": { "vscode": "^1.92.0" },
-  "categories": ["Visualization", "Data Science", "Machine Learning"],
-  "keywords": ["machine learning", "deep learning", "training", "visualization", "dashboard"],
+  "engines": {
+    "vscode": "^1.92.0"
+  },
+  "categories": [
+    "Visualization",
+    "Data Science",
+    "Machine Learning"
+  ],
+  "keywords": [
+    "machine learning",
+    "deep learning",
+    "training",
+    "visualization",
+    "dashboard"
+  ],
   "activationEvents": [
     "onCommand:epochix.openDashboard",
     "onCommand:epochix.watchTerminal",
@@ -39,7 +51,7 @@
       },
       {
         "command": "epochix.openLogFile",
-        "title": "Epochix: Open Log File…",
+        "title": "Epochix: Open Log File\u2026",
         "icon": "$(file-text)"
       },
       {
@@ -87,13 +99,25 @@
         },
         "epochix.taskHint": {
           "type": "string",
-          "enum": ["auto", "classification", "detection", "regression", "biometric", "gaze", "nlp"],
+          "enum": [
+            "auto",
+            "classification",
+            "detection",
+            "regression",
+            "biometric",
+            "gaze",
+            "nlp"
+          ],
           "default": "auto",
           "description": "Force a task type instead of auto-detecting from the log."
         },
         "epochix.useSidecar": {
           "type": "string",
-          "enum": ["auto", "always", "never"],
+          "enum": [
+            "auto",
+            "always",
+            "never"
+          ],
           "default": "auto",
           "description": "Use the Python epochix package as a sidecar server if available."
         },
@@ -109,13 +133,21 @@
         },
         "epochix.theme": {
           "type": "string",
-          "enum": ["auto", "light", "dark"],
+          "enum": [
+            "auto",
+            "light",
+            "dark"
+          ],
           "default": "auto",
           "description": "Dashboard theme. 'auto' follows VS Code's colour theme."
         },
         "epochix.locale": {
           "type": "string",
-          "enum": ["en", "fa", "fr"],
+          "enum": [
+            "en",
+            "fa",
+            "fr"
+          ],
           "default": "en",
           "description": "Dashboard language."
         }

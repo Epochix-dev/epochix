@@ -1,5 +1,5 @@
 <h1 align="center">
-  <img src="asset/epochix_mark_512.png" alt="Epochix" width="120"><br/>
+  <img src="https://raw.githubusercontent.com/epochix-dev/epochix/main/asset/epochix_mark_512.png" alt="Epochix" width="120"><br/>
   Epochix
 </h1>
 
