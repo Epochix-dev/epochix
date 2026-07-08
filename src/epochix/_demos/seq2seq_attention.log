@@ -1,0 +1,27 @@
+GPU available: True (cuda), used: True
+LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0]
+
+  | Name      | Type               | Params
+----------------------------------------------
+0 | embedding | Embedding          | 5.1 M
+1 | lstm      | LSTM               | 8.4 M
+2 | attention | MultiheadAttention | 2.1 M
+3 | head      | Linear             | 12.8 K
+----------------------------------------------
+15.6 M    Trainable params
+0         Non-trainable params
+15.6 M    Total params
+
+Epoch 1/12: 100%|██████████| 400/400 [00:20<00:00, loss=2.401, acc=0.281]
+Epoch 2/12: 100%|██████████| 400/400 [00:19<00:00, loss=1.876, acc=0.402]
+Epoch 3/12: 100%|██████████| 400/400 [00:19<00:00, loss=1.521, acc=0.498]
+Epoch 4/12: 100%|██████████| 400/400 [00:19<00:00, loss=1.287, acc=0.564, val_loss=1.342, val_acc=0.551]
+Epoch 5/12: 100%|██████████| 400/400 [00:19<00:00, loss=1.102, acc=0.617]
+Epoch 6/12: 100%|██████████| 400/400 [00:19<00:00, loss=0.964, acc=0.658, val_loss=1.043, val_acc=0.641]
+Epoch 7/12: 100%|██████████| 400/400 [00:19<00:00, loss=0.853, acc=0.692]
+Epoch 8/12: 100%|██████████| 400/400 [00:19<00:00, loss=0.769, acc=0.719, val_loss=0.871, val_acc=0.703]
+Epoch 9/12: 100%|██████████| 400/400 [00:19<00:00, loss=0.701, acc=0.741]
+Epoch 10/12: 100%|██████████| 400/400 [00:19<00:00, loss=0.648, acc=0.758, val_loss=0.762, val_acc=0.744]
+Epoch 11/12: 100%|██████████| 400/400 [00:19<00:00, loss=0.605, acc=0.772]
+Epoch 12/12: 100%|██████████| 400/400 [00:19<00:00, loss=0.571, acc=0.784, val_loss=0.689, val_acc=0.771]
+`Trainer.fit` stopped: `max_epochs=12` reached.
