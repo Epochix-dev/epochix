@@ -114,7 +114,10 @@ jobs:
       - name: Bump package.json version
         run: |
           cd ${{ env.EXTENSION_DIR }}
-          npm version "${{ steps.version.outputs.version }}" --no-git-tag-version
+          # --allow-same-version: the manifest may already be at the tag's
+          # version (it's committed at release version), and plain `npm version`
+          # errors out when the number is unchanged.
+          npm version "${{ steps.version.outputs.version }}" --allow-same-version --no-git-tag-version
 
       - name: Run TypeScript type-check
         run: cd ${{ env.EXTENSION_DIR }} && npx tsc --noEmit
