@@ -17,18 +17,41 @@ name: VS Code Extension Release
 # To test without publishing, create a tag prefixed with "test/":
 #   git tag test/v0.1.0 && git push origin test/v0.1.0
 # The publish steps are skipped for test/ tags.
+#
+# Secrets are optional. When VSCE_PAT / OVSX_PAT are absent the matching
+# publish job is SKIPPED (not failed), so a tag can ship the .vsix as a GitHub
+# Release asset before the Marketplace accounts exist. Once you add the
+# secrets, re-run this workflow run (Actions → this run → Re-run all jobs) to
+# publish the already-packaged version — no re-tag needed.
 
 on:
   push:
     tags:
       - "v*"
       - "test/v*"
+  workflow_dispatch:
 
 env:
   NODE_VERSION: "20"
   EXTENSION_DIR: epochix-vscode
 
 jobs:
+  # ── 0. Detect which publish secrets are configured ─────────────────────────
+  gate:
+    name: Check publish secrets
+    runs-on: ubuntu-latest
+    outputs:
+      has_vsce: ${{ steps.check.outputs.has_vsce }}
+      has_ovsx: ${{ steps.check.outputs.has_ovsx }}
+    steps:
+      - id: check
+        env:
+          VSCE_PAT: ${{ secrets.VSCE_PAT }}
+          OVSX_PAT: ${{ secrets.OVSX_PAT }}
+        run: |
+          echo "has_vsce=$([ -n "$VSCE_PAT" ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
+          echo "has_ovsx=$([ -n "$OVSX_PAT" ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
+
   # ── 1. Build the Vite frontend bundle ──────────────────────────────────────
   build-frontend:
     name: Build frontend bundle
@@ -115,10 +138,10 @@ jobs:
   # ── 3. Publish to VS Code Marketplace ─────────────────────────────────────
   publish-marketplace:
     name: Publish → VS Code Marketplace
-    needs: package-vsix
+    needs: [package-vsix, gate]
     runs-on: ubuntu-latest
-    # Only publish for real release tags (not test/ prefixed ones)
-    if: ${{ !startsWith(github.ref_name, 'test/') }}
+    # Real release tags only, and only when the VSCE_PAT secret exists.
+    if: ${{ !startsWith(github.ref_name, 'test/') && needs.gate.outputs.has_vsce == 'true' }}
     environment:
       name: vscode-marketplace
       url: https://marketplace.visualstudio.com/items?itemName=epochix.epochix
@@ -143,9 +166,9 @@ jobs:
   # ── 4. Publish to Open VSX Registry ───────────────────────────────────────
   publish-openvsx:
     name: Publish → Open VSX
-    needs: package-vsix
+    needs: [package-vsix, gate]
     runs-on: ubuntu-latest
-    if: ${{ !startsWith(github.ref_name, 'test/') }}
+    if: ${{ !startsWith(github.ref_name, 'test/') && needs.gate.outputs.has_ovsx == 'true' }}
     environment:
       name: open-vsx
       url: https://open-vsx.org/extension/epochix/epochix
@@ -168,11 +191,13 @@ jobs:
           OVSX_PAT: ${{ secrets.OVSX_PAT }}
 
   # ── 5. Attach .vsix to the GitHub Release ─────────────────────────────────
+  # Depends only on the packaged .vsix — the Marketplace/Open VSX publish jobs
+  # may be skipped (no secrets) but the release asset should still be attached.
   attach-release-asset:
     name: Attach .vsix to GitHub Release
-    needs: [package-vsix, publish-marketplace, publish-openvsx]
+    needs: package-vsix
     runs-on: ubuntu-latest
-    if: ${{ !startsWith(github.ref_name, 'test/') }}
+    if: ${{ !startsWith(github.ref_name, 'test/') && github.event_name == 'push' }}
     permissions:
       contents: write
     steps:
