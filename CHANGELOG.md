@@ -13,6 +13,8 @@ First patch after the initial public release.
 
 ### Fixed
 
+- **Extension "install sidecar" link 404'd** — pointed at the wrong GitHub
+  org with a non-existent anchor; now `github.com/epochix-dev/epochix#install`.
 - **Broken logo on the PyPI and VS Code Marketplace pages** — both render the
   README on their own site, where relative image paths don't resolve. The
   header logo now uses an absolute `raw.githubusercontent.com` URL (main
