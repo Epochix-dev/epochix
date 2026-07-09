@@ -7,6 +7,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.3.2] — 2026-07-08
+
+Fixes the VS Code extension's sidecar detection and a repeated install prompt.
+
+### Fixed
+
+- **"Install epochix" prompt reappeared on every launch**, even with the
+  package installed. It now shows at most once (dismissal is remembered), and
+  never once the sidecar is detected. Adds a "Use standalone" action that sets
+  `epochix.useSidecar: never`.
+- **Sidecar never started even when epochix *was* installed** — two bugs:
+  1. Detection relied solely on the `epochix` executable being on `PATH`,
+     which pip often doesn't do (notably Windows `…\Scripts`). It now falls
+     back to `python -m epochix` when the script isn't on `PATH` but Python is.
+  2. The extension spawned `serve --no-browser --locale <x>`, but `serve`
+     accepts neither flag, so the process exited immediately. Removed them
+     (`serve` never opens a browser; the webview sets its own locale).
+- **`python -m epochix`** now works — added `epochix/__main__.py` (the
+  extension's fallback relies on it).
+
+### Notes
+
+- Already-installed users on Windows can also point `epochix.sidecarPath` at
+  `…\Scripts\epochix.exe`, or add that folder to `PATH`.
+
+---
+
 ## [0.3.1] — 2026-07-08
 
 First patch after the initial public release.

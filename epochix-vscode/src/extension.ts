@@ -51,24 +51,38 @@ export async function activate(ctx: vscode.ExtensionContext): Promise<void> {
     }),
   );
 
-  // Show install-sidecar notification to new users who don't have it
-  if (!_sidecar && cfg.useSidecar !== "never") {
-    const action = "Install epochix";
+  // Show the install-sidecar hint at most ONCE (until the user acts), never
+  // on every launch. It's suppressed after any interaction — and it never
+  // shows again once the sidecar is detected, so users who fix their PATH or
+  // set `epochix.sidecarPath` stop seeing it automatically.
+  const NAG_KEY = "epochix.installHintDismissed";
+  if (
+    !_sidecar &&
+    cfg.useSidecar !== "never" &&
+    !ctx.globalState.get<boolean>(NAG_KEY)
+  ) {
+    const guide = "Install guide";
+    const standalone = "Use standalone";
     void vscode.window
       .showInformationMessage(
-        "Epochix: Install `pip install epochix` for full features " +
-          "(history, HTML export, LLM fallback).",
-        action,
-        "Dismiss",
+        "Epochix: install the `epochix` Python package for full features " +
+          "(run history, HTML/PDF export, LLM fallback). Already installed? " +
+          "Set `epochix.sidecarPath` to your epochix executable.",
+        guide,
+        standalone,
       )
-      .then((choice) => {
-        if (choice === action) {
+      .then(async (choice) => {
+        if (choice === guide) {
           void vscode.env.openExternal(
-            vscode.Uri.parse(
-              "https://github.com/epochix-dev/epochix#install",
-            ),
+            vscode.Uri.parse("https://github.com/epochix-dev/epochix#install"),
           );
+        } else if (choice === standalone) {
+          await vscode.workspace
+            .getConfiguration("epochix")
+            .update("useSidecar", "never", vscode.ConfigurationTarget.Global);
         }
+        // Any response (button or dismiss) silences the hint for good.
+        await ctx.globalState.update(NAG_KEY, true);
       });
   }
 }

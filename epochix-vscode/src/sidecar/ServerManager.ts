@@ -7,7 +7,7 @@
  */
 import * as vscode from "vscode";
 import { ChildProcess, spawn } from "child_process";
-import { which } from "./which";
+import { resolveEpochix } from "./which";
 import { findFreePort } from "./PortAllocator";
 import { waitReady } from "./HealthCheck";
 import * as http from "http";
@@ -34,26 +34,30 @@ export class ServerManager implements vscode.Disposable {
     if (mode === "never") return null;
 
     const binOverride = cfg.get<string>("sidecarPath", "");
-    const bin = binOverride || "epochix";
 
-    const found = await which(bin);
-    if (!found) {
+    const resolved = await resolveEpochix(binOverride);
+    if (!resolved) {
       if (mode === "always") {
         void vscode.window.showErrorMessage(
-          `Epochix: Cannot find '${bin}'. ` +
-            `Install with: pip install epochix`,
+          "Epochix: Cannot find the `epochix` package. Install it with " +
+            "`pip install epochix`, or set `epochix.sidecarPath` to the " +
+            "executable (e.g. …/Scripts/epochix.exe on Windows).",
         );
       }
       return null; // standalone mode
     }
+    const [cmd, prefix] = resolved;
 
     try {
       const port = await findFreePort(7860);
-      const locale = cfg.get<string>("locale", "en");
 
+      // Only flags `epochix serve` actually accepts: --port / --host /
+      // --log-level. (It never opens a browser, and the webview sets its own
+      // locale, so the old --no-browser / --locale flags were bogus and made
+      // the spawn fail.)
       const proc = spawn(
-        found,
-        ["serve", "--port", String(port), "--no-browser", "--locale", locale],
+        cmd,
+        [...prefix, "serve", "--port", String(port)],
         {
           detached: false,
           stdio: ["ignore", "pipe", "pipe"],
