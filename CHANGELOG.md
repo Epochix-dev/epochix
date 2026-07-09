@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.3.3] — 2026-07-09
+
+### Fixed — CRITICAL
+
+- **The published wheel shipped with no dashboard UI.** `pip install epochix`
+  then `epochix serve` served an API only; opening the dashboard returned
+  `{"detail":"Not Found"}`. Cause: CI ran `uv build`, which builds the wheel
+  from an intermediate **sdist** that omits the force-included frontend bundle
+  (those files are untracked), so only a `.gitkeep` placeholder shipped.
+  Now builds the wheel **directly from source** (`uv build --wheel`), and a CI
+  guard fails the release if `epochix/_frontend/dist/index.html` is ever
+  missing from the wheel. Affected 0.3.0–0.3.2; fixed here.
+
+### Changed
+
+- Release build is single-OS (pure-Python `py3-none-any`) and the PyPI
+  publish auto-retries once after a short wait (PyPI's upload backend
+  intermittently 5xx's on the first attempt).
+
+---
+
 ## [0.3.2] — 2026-07-08
 
 Fixes the VS Code extension's sidecar detection and a repeated install prompt.

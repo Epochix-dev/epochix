@@ -20,9 +20,12 @@ jobs:
           name: frontend-dist
           path: frontend/dist/
 
-  # Single build: epochix is pure-Python (py3-none-any wheel + sdist), so one
-  # runner is correct — a 3-OS matrix just produced three identically-named
-  # sdists that had to be merged, adding noise for no coverage.
+  # Single build: epochix is pure-Python (py3-none-any), so one runner is
+  # correct. `uv build --wheel` builds the wheel DIRECTLY from source — NOT
+  # `uv build`, which builds the wheel from an intermediate sdist that omits
+  # the force-included frontend bundle (those files are untracked), shipping a
+  # UI-less wheel. The guard below fails loudly if the dashboard ever goes
+  # missing again.
   build-wheel:
     needs: build-frontend
     runs-on: ubuntu-latest
@@ -33,7 +36,18 @@ jobs:
           name: frontend-dist
           path: frontend/dist/
       - uses: astral-sh/setup-uv@v5
-      - run: uv build
+      - run: uv build --wheel
+      - name: Verify the frontend bundle is inside the wheel
+        run: |
+          python - <<'PY'
+          import glob, zipfile, sys
+          whl = glob.glob("dist/*.whl")[0]
+          names = zipfile.ZipFile(whl).namelist()
+          if not any(n.endswith("epochix/_frontend/dist/index.html") for n in names):
+              sys.exit(f"FATAL: {whl} has no dashboard (epochix/_frontend/dist/index.html). "
+                       "The wheel would serve an API with no UI.")
+          print(f"OK: dashboard bundled in {whl}")
+          PY
       - uses: actions/upload-artifact@v4
         with:
           name: dist
