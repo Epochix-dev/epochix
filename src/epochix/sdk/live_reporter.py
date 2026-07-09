@@ -59,6 +59,33 @@ class LiveReporter:
         locale: str = "en",
         run_id: str | None = None,
     ) -> None:
+        """
+        Parameters
+        ----------
+        task:
+            Task type (``"gaze"``, ``"detection"``, ``"classification"``, …).
+            Leave ``None`` to auto-detect from the metrics you log.
+        primary_metric:
+            Which logged metric drives the grade / phase / narrative. Pass the
+            **same name you use in** :meth:`log` — any spelling works, it is
+            normalised internally (``"val_mae_cm"``, ``"mae"`` and
+            ``"MAE"`` all resolve to the same metric). Optional: when omitted,
+            the task's standard metric is used (gaze/regression → MAE,
+            classification → val_accuracy, detection → mAP50, …), which is the
+            recommended default — only set this to override.
+        name:
+            Human-readable run name shown in the dashboard.
+        total_epochs:
+            Total planned epochs, used for the progress bar. Optional.
+        port:
+            Local dashboard port. Use a free port if you run several at once.
+        open_browser:
+            Open the dashboard in a browser tab on start (default True).
+        locale:
+            Dashboard language (``"en"`` / ``"fa"`` / ``"fr"``).
+        run_id:
+            Explicit run id; auto-generated when omitted.
+        """
         self._task: TaskType | None = TaskType(task) if isinstance(task, str) else task
         self._primary_metric = primary_metric
         self._name = name
