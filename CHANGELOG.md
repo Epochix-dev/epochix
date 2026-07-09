@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.3.5] — 2026-07-09
+
+### Fixed
+
+- **SDK runs with an explicit raw `primary_metric` produced no story frames**
+  (dashboard showed only the architecture). Metric events are stored under
+  canonical keys (`MAE`), but a caller-supplied `primary_metric="val_mae_cm"`
+  was compared against them verbatim, so no event ever matched the primary key
+  and zero frames emitted. The primary metric is now canonicalised the same
+  way events are (`val_mae_cm` → `MAE`), so
+  `LiveReporter(task="gaze", primary_metric="val_mae_cm")` renders the full
+  dashboard. Workaround on older versions: drop the `primary_metric` argument
+  (the task already implies it) or pass the canonical name (`"mae"`).
+
+---
+
 ## [0.3.4] — 2026-07-09
 
 ### Fixed

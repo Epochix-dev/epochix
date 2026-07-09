@@ -168,3 +168,21 @@ class TestDelayedTaskSignal:
 
         assert eng.task == TaskType.GAZE  # MAE < 10 → gaze (not stuck on CUSTOM)
         assert eng._effective_primary_key() == "MAE"
+
+
+class TestRawPrimaryMetricName:
+    """Regression: a caller passing a *raw* primary_metric name (e.g. the SDK
+    LiveReporter(primary_metric='val_mae_cm')) must still emit frames — events
+    are stored canonically (MAE), so the primary key has to be canonicalised
+    or `event.canonical_key != primary_key` is always true → zero frames."""
+
+    def test_raw_primary_metric_still_emits_frames(self) -> None:
+        eng = StoryEngine(run_id="r", task=TaskType.GAZE, primary_metric="val_mae_cm")
+        assert eng._effective_primary_key() == "MAE"
+        frames = []
+        for seq, mae in enumerate([9.8, 9.2, 8.9, 8.6, 8.4, 7.9], start=1):
+            # events arrive already canonicalised (as the normalizer produces them)
+            f = eng.process(_event("MAE", mae, epoch=float(seq), seq=seq))
+            if f:
+                frames.append(f)
+        assert len(frames) > 0  # was 0 before the canonicalisation fix

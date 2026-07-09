@@ -4,6 +4,7 @@ from dataclasses import dataclass, field
 
 from epochix.enums import Grade, Phase, TaskType
 from epochix.models import MetaphorCard, MetricEvent, Milestone, StoryFrame
+from epochix.normalizer.canonical_keys import canonicalize_key
 from epochix.story_engine.config_loader import GradeConfig
 from epochix.story_engine.grade import compute_grade, is_lower_better
 from epochix.story_engine.milestones import MilestoneTracker
@@ -51,8 +52,12 @@ class StoryEngine:
         return self.task or TaskType.CUSTOM
 
     def _effective_primary_key(self) -> str:
+        # Canonicalise a caller-supplied primary_metric: metric events are
+        # stored under canonical keys (e.g. MAE), so a raw name like
+        # "val_mae_cm" must be mapped through the same normalizer or it would
+        # never match an event and no story frames would ever emit.
         if self.primary_metric:
-            return self.primary_metric
+            return canonicalize_key(self.primary_metric)
         return _PRIMARY_KEY_FOR_TASK.get(self._effective_task(), "val_loss")
 
     def process(self, event: MetricEvent) -> StoryFrame | None:
