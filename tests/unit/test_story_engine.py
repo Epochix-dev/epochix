@@ -142,3 +142,29 @@ class TestStoryEngine:
                 frame = f
         assert frame is not None
         assert engine.task == TaskType.BIOMETRIC
+
+
+class TestDelayedTaskSignal:
+    """Regression: a signal metric (MAE) arriving after noise keys filled the
+    first 3 events must still classify the task (was locked to CUSTOM at
+    exactly event 3, so gaze/regression runs showed no task-aware panels)."""
+
+    def test_mae_after_noise_still_detects_gaze(self) -> None:
+        eng = StoryEngine(run_id="r")
+        seq = 0
+        # Epoch 1: a 'custom' param count, then losses, THEN mae (event 4).
+        for key, val in [
+            ("custom", 1234567.0),
+            ("train_loss", 15.2),
+            ("val_loss", 52.1),
+            ("MAE", 9.83),
+        ]:
+            seq += 1
+            eng.process(_event(key, val, epoch=1.0, seq=seq))
+        # Feed a couple more epochs of MAE so it settles.
+        for ep, mae in ((2.0, 8.4), (3.0, 7.9)):
+            seq += 1
+            eng.process(_event("MAE", mae, epoch=ep, seq=seq))
+
+        assert eng.task == TaskType.GAZE  # MAE < 10 → gaze (not stuck on CUSTOM)
+        assert eng._effective_primary_key() == "MAE"

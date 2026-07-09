@@ -64,15 +64,21 @@ class StoryEngine:
         hist = self._metric_history.setdefault(event.canonical_key, [])
         hist.append(event.value)
 
-        # Auto-detect task after 3 events
+        # Auto-detect task once ≥3 events are in. Keep re-classifying while the
+        # result is still CUSTOM instead of locking at exactly event 3 — a
+        # signal metric (e.g. MAE) can arrive after noise keys (param counts
+        # parsed as `custom`, or metric ordering) have already filled the first
+        # three events. We lock only once a *definite* (non-custom) task emerges.
         if not self._task_locked and self.task is None and self._events_count >= 3:
             detected = classify_task(self._seen_keys)
-            # Refine: MAE < 10 → gaze
-            if detected == TaskType.REGRESSION and event.canonical_key == "MAE":
-                detected = refine_gaze(detected, event.value)
-            self.task = detected
-            self._task_locked = True
-            self._milestones = MilestoneTracker(run_id=self.run_id, task=self.task)
+            if detected != TaskType.CUSTOM:
+                if detected == TaskType.REGRESSION:
+                    mae_hist = self._metric_history.get("MAE")
+                    if mae_hist:
+                        detected = refine_gaze(detected, mae_hist[-1])
+                self.task = detected
+                self._task_locked = True
+                self._milestones = MilestoneTracker(run_id=self.run_id, task=self.task)
 
         if self._events_count < 3:
             return None

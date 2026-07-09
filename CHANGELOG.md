@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.3.4] — 2026-07-09
+
+### Fixed
+
+- **Regression/gaze runs showed only the architecture — no metrics, grade,
+  or narrative.** Two bugs:
+  1. The normalizer only matched exact metric spellings, so `val_mae_cm`
+     (and `val_mae`, `mae_cm`, `val_rmse_deg`, …) fell through to `custom`.
+     It now strips `val_`/`train_` prefixes and unit suffixes
+     (`_cm`, `_deg`, `_mm`, …) to recover the base metric.
+  2. Task type was locked at exactly the 3rd metric event, so a signal
+     metric (MAE) arriving after noise keys (param counts logged as
+     `custom`) or after the losses was never seen — the run stuck on
+     `custom`. Detection now keeps classifying until a definite task
+     emerges. A `train_loss=… val_loss=… val_mae_cm=…` gaze log now
+     correctly resolves to task **gaze**, primary metric **MAE**, and a
+     realistic grade instead of a bogus A+.
+
+---
+
 ## [0.3.3] — 2026-07-09
 
 ### Fixed — CRITICAL

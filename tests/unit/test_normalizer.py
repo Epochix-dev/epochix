@@ -61,3 +61,28 @@ class TestNormalize:
         raw = RawMetric(seq=1, key="status", value="running", parser_name="test", confidence=0.5)
         with pytest.raises(ValueError):
             normalize(raw, run_id="run-1")
+
+
+# ── Regression: prefixed / unit-suffixed metric keys (gh: gaze log showed no
+# metrics because val_mae_cm fell through to 'custom') ─────────────────────────
+
+
+def test_canonicalize_strips_val_prefix_and_unit_suffix() -> None:
+    from epochix.normalizer.canonical_keys import canonicalize_key
+
+    assert canonicalize_key("val_mae_cm") == "MAE"
+    assert canonicalize_key("val_mae") == "MAE"
+    assert canonicalize_key("mae_cm") == "MAE"
+    assert canonicalize_key("train_mae") == "MAE"
+    assert canonicalize_key("val_rmse_deg") == "RMSE"
+
+
+def test_canonicalize_does_not_regress_split_metrics() -> None:
+    from epochix.normalizer.canonical_keys import canonicalize_key
+
+    # val_loss must stay val_loss (not be stripped to train_loss)
+    assert canonicalize_key("val_loss") == "val_loss"
+    assert canonicalize_key("loss") == "train_loss"
+    assert canonicalize_key("val_acc") == "val_accuracy"
+    assert canonicalize_key("accuracy") == "accuracy"
+    assert canonicalize_key("totally_unknown") == "custom"
