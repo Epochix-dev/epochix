@@ -101,6 +101,7 @@ class WSMessage(BaseModel):
         "complete",
         "ping",
         "architecture",
+        "activations",
     ]
     run_id: str
     seq: int

@@ -121,6 +121,12 @@ function _handleMessage(msg) {
       }
       break;
 
+    case 'activations':
+      // Real per-layer activation magnitudes captured from the model. Not
+      // sequenced with story frames (independent cadence) — always take latest.
+      if (msg.payload?.layers) store.set({ activations: msg.payload.layers });
+      break;
+
     case 'complete':
       store.set({ live: false, connected: false });
       disconnect();

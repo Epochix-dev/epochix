@@ -43,6 +43,7 @@ export function createStore(initial) {
  * @property {string[]}     warnings      - Active warning messages
  * @property {object[]}     milestones    - All milestones received
  * @property {object[]|null} architecture - Parsed model layers [{name,layer_type,params,tech_label,plain_label,visual_type}]
+ * @property {Object<string,{mag:number,dead:number,grad?:number}>|null} activations - Real per-layer activation magnitudes captured from the model (null = none / schematic)
  */
 
 /** @type {ReturnType<typeof createStore<AppState>>} */
@@ -59,6 +60,7 @@ export const store = createStore({
   warnings: [],
   milestones: [],
   architecture: null,
+  activations: null,
 });
 
 /**

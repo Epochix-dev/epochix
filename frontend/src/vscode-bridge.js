@@ -50,6 +50,7 @@ export function startVscodeBridge(applyTheme) {
           connected: true,
           metrics: [],
           architecture: null,
+          activations: null,
         });
         for (const f of msg.snapshot ?? []) pushFrame(mapFrame(f));
         for (const m of msg.milestones ?? []) pushMilestone(m);

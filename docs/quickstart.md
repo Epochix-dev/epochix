@@ -80,6 +80,25 @@ with LiveReporter(task="classification") as reporter:
         reporter.log(train_loss=loss.item(), val_accuracy=acc)
 ```
 
+Pass `model=` to draw the **real** architecture in the Network State panel, and
+add `capture_activations=True` to drive the panel's node brightness and dead
+nodes from **real** per-layer activation magnitudes captured live during
+training (mean `|activation|`, zero-unit fraction, and — via backward hooks —
+gradient magnitude). It's opt-in and wall-clock throttled (`activation_hz`,
+2 Hz default), so overhead is negligible:
+
+```python
+with LiveReporter(
+    task="gaze",
+    model=model,                  # real layer names / types / params
+    capture_activations=True,     # real node activity (default off)
+    activation_hz=2.0,            # sampling cap; .item() forces a GPU sync
+) as reporter:
+    for epoch in range(50):
+        # ... train (model.train()) ...
+        reporter.log(train_loss=tr_loss, val_loss=va_loss, val_mae_cm=mae)
+```
+
 ---
 
 ## CLI reference

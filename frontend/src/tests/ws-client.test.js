@@ -267,6 +267,27 @@ describe('message handling', () => {
     expect(storeModule.store.get().warnings).toContain('Overfitting detected');
   });
 
+  it('activations: layer map routed into store.activations', () => {
+    const layers = { 'fc1': { mag: 0.42, dead: 0.13 }, 'fc2': { mag: 0.9, dead: 0 } };
+    MockWebSocket.latest.simulateMessage({ type: 'activations', seq: -1, payload: { layers } });
+    expect(storeModule.store.get().activations).toEqual(layers);
+  });
+
+  it('activations: latest snapshot wins (not seq-gated)', () => {
+    MockWebSocket.latest.simulateMessage({
+      type: 'activations', seq: -1, payload: { layers: { fc1: { mag: 0.1, dead: 0 } } },
+    });
+    MockWebSocket.latest.simulateMessage({
+      type: 'activations', seq: -1, payload: { layers: { fc1: { mag: 0.8, dead: 0 } } },
+    });
+    expect(storeModule.store.get().activations.fc1.mag).toBe(0.8);
+  });
+
+  it('activations: no layers payload → no change', () => {
+    MockWebSocket.latest.simulateMessage({ type: 'activations', seq: -1, payload: {} });
+    expect(storeModule.store.get().activations).toBe(null);
+  });
+
   it('complete: sets live=false and disconnects', () => {
     MockWebSocket.latest.simulateMessage({ type: 'complete', seq: 99 });
     expect(storeModule.store.get().live).toBe(false);

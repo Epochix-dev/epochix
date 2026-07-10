@@ -218,9 +218,12 @@ async function main() {
     const { frames, run, metrics } = await fetchSnapshot(runId);
     const lastSeq = frames.length > 0 ? (frames.at(-1).seq ?? frames.length - 1) : -1;
 
-    // Architecture is stored in run.config.architecture by the pipeline
+    // Architecture and the latest activation snapshot are stored in run.config
+    // by the pipeline / LiveReporter, so a run opened mid/after training still
+    // shows real values before any live WS message arrives.
     const architecture = run?.config?.architecture ?? null;
-    store.set({ run, metrics, architecture });
+    const activations = run?.config?.activations ?? null;
+    store.set({ run, metrics, architecture, activations });
     for (const f of frames) pushFrame(f);
 
     // If run is not finished, open live stream

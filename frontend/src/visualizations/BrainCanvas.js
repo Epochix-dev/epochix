@@ -31,16 +31,18 @@
  *
  * Honesty note
  * ────────────
- * This is an ILLUSTRATIVE schematic, not a readout of the model's actual
- * parameters. Individual neuron positions and the per-edge signed weights are
- * generated for the diagram (like TF-Playground's generic network) — only the
- * AGGREGATE dynamics below are tied to real training metrics:
- *  Overall node brightness → scaled by val_accuracy (the learned signal)
+ * The layout (layer count, types, param counts, order) is REAL — built from the
+ * model's architecture. Individual neuron positions and the per-edge signed
+ * weights are generated for the diagram (like TF-Playground's generic network).
+ * These dynamics are tied to real training data:
+ *  Node brightness / dead nodes → REAL captured per-layer activation magnitude
+ *     and zero-unit fraction, when LiveReporter(capture_activations=True) is on
+ *     (store.activations); otherwise scaled by val_accuracy as a schematic.
  *  Particle speed/spawn     → training advancement
  *  Gradient-bar heights     → per-layer |Δmetric| proxy (vanishing-gradient story)
  *  Overfitting halo         → real train/val gap (val_loss − train_loss)
- * Edge colour/thickness are schematic (illustrative +/− connections), not the
- * model's measured weights.
+ * Edge colour/thickness stay schematic (illustrative +/− connections) — weights
+ * aren't cheaply forward-pass observable — and the legend says so.
  */
 
 // ── zone colour palette ───────────────────────────────────────────────────────
@@ -136,6 +138,13 @@ export class BrainCanvas {
     // Architecture (from store)
     this._architecture = null;
     this._noArch = false;
+
+    // Real per-layer activations (from store; null = schematic fallback).
+    // _actMax tracks a per-layer running max for [0,1] normalisation so
+    // brightness is comparable across layers of very different scales.
+    this._activations = null;
+    this._actMax = {};
+    this._hadRealActivations = false;
 
     // Render toggles (interactive via overlay buttons)
     this._depth3d   = true;
@@ -248,6 +257,22 @@ export class BrainCanvas {
       this._architecture = newArch;
       this._phase        = newPhase;
       this._buildNetwork();
+    }
+
+    // Real per-layer activations (LiveReporter capture_activations=True). When
+    // absent the node animation stays schematic and the legend says so.
+    this._activations = s.activations ?? null;
+    const hasReal = !!(this._activations && Object.keys(this._activations).length);
+    if (hasReal !== this._hadRealActivations) {
+      this._hadRealActivations = hasReal;
+      const hint = document.getElementById('brain-wlegend-hint');
+      if (hint) {
+        // Nodes become real when captured; edges (weights) are never forward-pass
+        // observable cheaply, so they stay schematic and the legend keeps saying so.
+        hint.textContent = hasReal
+          ? 'nodes: live activations · edges: schematic'
+          : 'schematic · illustrative, not measured weights';
+      }
     }
 
     if (!f) return;
@@ -364,6 +389,9 @@ export class BrainCanvas {
         activation: Math.random() * 0.4 + 0.3,
         dead:       false,
         phase:      Math.random() * Math.PI * 2,
+        // Stable rank in [0,1): a real dead-fraction d marks the lowest-ranked
+        // ~d of nodes as dead, so the count of dark nodes reads as the fraction.
+        deadRank:   (ni + 0.5) / count,
       }));
     }
 
@@ -418,13 +446,33 @@ export class BrainCanvas {
       this._zones[zi].gradMag = this._gradIntensity * decay;
     }
 
-    // Update node activations
+    // Update node activations. When real captured magnitudes are available for
+    // a layer, the node level is the measured value (normalised per-layer to
+    // [0,1]); we animate a gentle wobble around it so the panel still breathes
+    // without inventing the level. Dead nodes reflect the real zero-unit
+    // fraction. Layers with no capture (and the synthetic INPUT/OUTPUT zones)
+    // keep the schematic animation.
+    const acts = this._activations;
     for (const zone of this._zones) {
+      const real = acts ? acts[zone.name] : null;
+      let level = null, deadFrac = 0;
+      if (real && Number.isFinite(real.mag)) {
+        const mx = Math.max(this._actMax[zone.name] ?? 0, real.mag, 1e-9);
+        this._actMax[zone.name] = mx;
+        level    = Math.max(0.05, Math.min(1, real.mag / mx));
+        deadFrac = Number.isFinite(real.dead) ? real.dead : 0;
+      }
       for (const node of zone.nodes) {
-        const t   = this._t * (0.8 + node.phase * 0.3);
-        const base = this._valAcc * (0.5 + 0.5 * Math.sin(t + node.phase));
-        node.dead       = this._targetTrainLoss < 0.15 && Math.random() < 0.001;
-        node.activation = node.dead ? 0.05 : Math.max(0.05, Math.min(1, base));
+        const t = this._t * (0.8 + node.phase * 0.3);
+        if (level !== null) {
+          node.dead       = node.deadRank < deadFrac;
+          const wobble    = 0.06 * Math.sin(t + node.phase);
+          node.activation = node.dead ? 0.05 : Math.max(0.05, Math.min(1, level + wobble));
+        } else {
+          const base      = this._valAcc * (0.5 + 0.5 * Math.sin(t + node.phase));
+          node.dead       = this._targetTrainLoss < 0.15 && Math.random() < 0.001;
+          node.activation = node.dead ? 0.05 : Math.max(0.05, Math.min(1, base));
+        }
       }
     }
 

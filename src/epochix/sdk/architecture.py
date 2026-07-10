@@ -34,29 +34,45 @@ def _layer(idx: int, name: str, layer_type: str, params: int) -> dict[str, objec
     ).to_dict()
 
 
-def _from_torch(model: object) -> list[dict[str, object]] | None:
-    """Every parameter-bearing sub-module, in definition order (real values)."""
+def torch_param_modules(model: object) -> list[tuple[str, object]]:
+    """The parameter-bearing sub-modules that make up the drawn architecture.
+
+    Returns ``(name, module)`` pairs in definition order — a module that owns
+    parameters *directly* (Conv2d, Linear, LayerNorm, MultiheadAttention, …).
+    Pure containers (Sequential) own none — their children are captured instead
+    — and activations/dropout own none. The name matches what
+    :func:`architecture_from_model` labels the layer, so activation hooks
+    registered on these modules line up 1:1 with the drawn layers. Capped at
+    ``_MAX_LAYERS`` and never raises (introspection must not crash training).
+    """
     named_modules = getattr(model, "named_modules", None)
     if named_modules is None:
-        return None
-    layers: list[dict[str, object]] = []
-    idx = 0
+        return []
+    out: list[tuple[str, object]] = []
     for name, mod in named_modules():
         if mod is model:
             continue  # skip the root container
-        # A module that owns parameters directly (Conv2d, Linear, LayerNorm,
-        # MultiheadAttention, …). Pure containers (Sequential) own none — their
-        # children are captured instead — and activations/dropout own none.
         try:
             direct = sum(p.numel() for p in mod.parameters(recurse=False))
         except Exception:  # noqa: BLE001 — never let introspection crash training
             continue
         if direct <= 0:
             continue
-        layers.append(_layer(idx, name or type(mod).__name__, type(mod).__name__, int(direct)))
-        idx += 1
-        if idx >= _MAX_LAYERS:
+        out.append((name or type(mod).__name__, mod))
+        if len(out) >= _MAX_LAYERS:
             break
+    return out
+
+
+def _from_torch(model: object) -> list[dict[str, object]] | None:
+    """Every parameter-bearing sub-module, in definition order (real values)."""
+    mods = torch_param_modules(model)
+    if not mods:
+        return None
+    layers: list[dict[str, object]] = []
+    for idx, (name, mod) in enumerate(mods):
+        direct = sum(p.numel() for p in mod.parameters(recurse=False))  # type: ignore[attr-defined]
+        layers.append(_layer(idx, name, type(mod).__name__, int(direct)))
     return layers or None
 
 

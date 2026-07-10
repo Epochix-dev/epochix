@@ -7,6 +7,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.5.0] — 2026-07-10
+
+### Added — real activations, no `Math.random()`
+
+- **`LiveReporter(model=…, capture_activations=True)`** captures **real**
+  per-layer activation magnitudes (mean `|activation|`), dead/zero-unit
+  fractions, and — via backward hooks — mean `|gradient|`, live from the model
+  during training. The Network State panel's node brightness and dead nodes are
+  now driven by these measured values instead of a random number. Hooks attach
+  to exactly the parameter-bearing modules the architecture draws, so the
+  captured values line up 1:1 with the layers on screen. Verified end-to-end on
+  a real GazeCapture GPU run: seven layers captured, magnitudes and the
+  vanishing-gradient signature (deep→shallow gradient decay) match the trained
+  model, with negligible training overhead.
+- **Opt-in and zero-overhead by default.** Capture is off unless you ask for it.
+  When on, sampling is **wall-clock throttled** (`activation_hz`, 2 Hz default)
+  because `.item()` forces a GPU→CPU sync — this keeps the impact rounding to
+  zero. Hooks are fail-open (an exception disables the hook, never breaks the
+  forward/backward pass), capture only in `model.training` mode, self-remove on
+  `finish()`, and support both PyTorch and Keras.
+- New `activations` WebSocket message + persistence of the latest snapshot in
+  `run.config["activations"]`, so a dashboard opened mid- or post-run shows the
+  real values too, not just live subscribers.
+
+### Changed — honesty
+
+- The Network State legend is now conditional: **"nodes: live activations ·
+  edges: schematic"** when real activations are being captured, vs the previous
+  *"schematic · illustrative, not measured weights"* otherwise. Edges (weights)
+  stay schematic either way — they aren't cheaply forward-pass observable — and
+  the legend keeps saying so, so the panel never claims "live" when it isn't.
+
+---
+
 ## [0.4.0] — 2026-07-09
 
 ### Added — real architecture, no placeholder
