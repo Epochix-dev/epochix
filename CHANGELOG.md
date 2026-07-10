@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.3.6] — 2026-07-09
+
+### Fixed
+
+- **Live dashboard stayed on "Waiting for training data" for the whole run.**
+  The pipeline buffered up to `SNIFF_SAMPLE_LINES` (200) lines before selecting
+  a parser and emitting anything — meant to skip YOLO's verbose preamble in
+  batch mode, but it also meant any live run shorter than 200 log lines (i.e.
+  almost all of them) produced no frames until `finish()`. Live mode now
+  detects an **idle gap** between epochs (the producer pausing to train) and
+  sniffs on what it has, so frames stream in as each epoch completes. Batch
+  file reads never pause, so their full-window detection is unchanged. Verified
+  both: a slow-epoch gaze run shows frames live; the YOLO demo still detects as
+  detection.
+
+---
+
 ## [0.3.5] — 2026-07-09
 
 ### Fixed

@@ -15,6 +15,7 @@ Architecture (§6.2)::
 
 from __future__ import annotations
 
+import asyncio
 import logging
 import re
 from datetime import datetime, timezone
@@ -51,6 +52,12 @@ if TYPE_CHECKING:
     from epochix.store.sqlite_store import RunStore
 
 logger = logging.getLogger(__name__)
+
+# Live mode: if the stream is still buffering for the sniff window when the
+# producer pauses (between epochs) for this many seconds, sniff on what we have
+# and start emitting — so a run shorter than SNIFF_SAMPLE_LINES doesn't sit
+# blank until it finishes. Batch file reads never pause, so they are unaffected.
+IDLE_SNIFF_SECS = 1.5
 
 
 def _emit_line(
@@ -234,83 +241,19 @@ async def run_pipeline(
         )
         return True
 
-    async for raw_line in ingester.lines():
-        ctx.seq = raw_line.seq
-        last_seq = raw_line.seq
-
-        # Strip ANSI escapes + carriage-return progress-bar updates so the
-        # downstream parsers see clean text. Modern tools (ultralytics, rich,
-        # tqdm) emit these heavily when their stdout is redirected.
-        clean_text = _clean_line(raw_line.text)
-
-        # Collect lines for architecture parsing (first 200 only). As soon as
-        # the scan buffer fills, try architecture detection — for tail/live
-        # mode this is the only way layers ever land in the dashboard while
-        # training is still running.
-        if len(arch_scan_lines) < _ARCH_SCAN_LIMIT:
-            arch_scan_lines.append(clean_text)
-            if len(arch_scan_lines) >= _ARCH_SCAN_LIMIT and not arch_detected:
-                arch_detected = _try_detect_architecture(broadcast=True)
-
-        if effective_keep:
-            store.append_raw_line(
-                run_id=run_id,
-                seq=raw_line.seq,
-                ts=raw_line.timestamp,
-                text=clean_text,
-            )
-
-        if parser is None:
-            # Still collecting the sniff window.
-            sample_lines.append(clean_text)
-            sniff_buffer.append((raw_line.seq, raw_line.timestamp, clean_text))
-
-            if len(sample_lines) >= SNIFF_SAMPLE_LINES:
-                # Sniff window full — detect and replay.
-                parser = detect_parser(sample_lines)
-                run = Run(**{**run.model_dump(), "parser_used": parser.name})
-                logger.debug("Detected parser: %s", parser.name)
-                for buf_seq, buf_ts, buf_text in sniff_buffer:
-                    ctx.seq = buf_seq
-                    epoch = _emit_line(
-                        text=buf_text,
-                        timestamp=buf_ts,
-                        parser=parser,
-                        ctx=ctx,
-                        run_id=run_id,
-                        engine=engine,
-                        store=store,
-                        hub=hub,
-                    )
-                    if epoch is not None:
-                        last_epoch = epoch
-                sniff_buffer = []
-            # Line handled (buffered or replayed) — move to next.
-            continue
-
-        # Normal path: parser already known.
-        epoch = _emit_line(
-            text=clean_text,
-            timestamp=raw_line.timestamp,
-            parser=parser,
-            ctx=ctx,
-            run_id=run_id,
-            engine=engine,
-            store=store,
-            hub=hub,
-        )
-        if epoch is not None:
-            last_epoch = epoch
-
-    # If the source ended before the sniff window filled (e.g. short batch
-    # files), detect the parser now and replay the buffered lines.
-    if parser is None and sample_lines:
+    # Sniff on the buffered sample and replay it (idempotent once a parser is
+    # set). Called when the sniff window fills, when the live stream goes idle
+    # between epochs, or at end-of-stream.
+    def _flush_sniff() -> None:
+        nonlocal parser, run, sniff_buffer, last_epoch
+        if parser is not None or not sample_lines:
+            return
         parser = detect_parser(sample_lines)
         run = Run(**{**run.model_dump(), "parser_used": parser.name})
-        logger.debug("Detected parser (late, %d lines): %s", len(sample_lines), parser.name)
+        logger.debug("Detected parser (%d lines): %s", len(sample_lines), parser.name)
         for buf_seq, buf_ts, buf_text in sniff_buffer:
             ctx.seq = buf_seq
-            epoch = _emit_line(
+            ep = _emit_line(
                 text=buf_text,
                 timestamp=buf_ts,
                 parser=parser,
@@ -320,8 +263,80 @@ async def run_pipeline(
                 store=store,
                 hub=hub,
             )
-            if epoch is not None:
-                last_epoch = epoch
+            if ep is not None:
+                last_epoch = ep
+        sniff_buffer = []
+
+    def _process_line(raw_line: object) -> None:
+        nonlocal last_seq, arch_detected, last_epoch
+        ctx.seq = raw_line.seq  # type: ignore[attr-defined]
+        last_seq = raw_line.seq  # type: ignore[attr-defined]
+
+        # Strip ANSI escapes + carriage-return progress-bar updates so the
+        # downstream parsers see clean text.
+        clean_text = _clean_line(raw_line.text)  # type: ignore[attr-defined]
+
+        if len(arch_scan_lines) < _ARCH_SCAN_LIMIT:
+            arch_scan_lines.append(clean_text)
+            if len(arch_scan_lines) >= _ARCH_SCAN_LIMIT and not arch_detected:
+                arch_detected = _try_detect_architecture(broadcast=True)
+
+        if effective_keep:
+            store.append_raw_line(
+                run_id=run_id,
+                seq=raw_line.seq,  # type: ignore[attr-defined]
+                ts=raw_line.timestamp,  # type: ignore[attr-defined]
+                text=clean_text,
+            )
+
+        if parser is None:
+            sample_lines.append(clean_text)
+            sniff_buffer.append(
+                (raw_line.seq, raw_line.timestamp, clean_text)  # type: ignore[attr-defined]
+            )
+            if len(sample_lines) >= SNIFF_SAMPLE_LINES:
+                _flush_sniff()
+            return
+
+        ep = _emit_line(
+            text=clean_text,
+            timestamp=raw_line.timestamp,  # type: ignore[attr-defined]
+            parser=parser,
+            ctx=ctx,
+            run_id=run_id,
+            engine=engine,
+            store=store,
+            hub=hub,
+        )
+        if ep is not None:
+            last_epoch = ep
+
+    # Consume the ingester with an idle timeout (see IDLE_SNIFF_SECS).
+    _line_iter = ingester.lines().__aiter__()
+    _done = object()
+
+    async def _next_or_done() -> object:
+        try:
+            return await _line_iter.__anext__()
+        except StopAsyncIteration:
+            return _done
+
+    _pending: asyncio.Future[object] | None = None
+    while True:
+        if _pending is None:
+            _pending = asyncio.ensure_future(_next_or_done())
+        try:
+            item = await asyncio.wait_for(asyncio.shield(_pending), IDLE_SNIFF_SECS)
+        except asyncio.TimeoutError:
+            _flush_sniff()  # live stream idle → emit what we have
+            continue
+        _pending = None
+        if item is _done:
+            break
+        _process_line(item)
+
+    # Source ended before the sniff window filled — detect + replay now.
+    _flush_sniff()
 
     # --- Architecture detection (end-of-stream fallback) ----------------
     # If the scan limit was never reached (short logs) we get one more shot
