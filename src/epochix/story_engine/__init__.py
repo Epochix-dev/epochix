@@ -17,15 +17,24 @@ from epochix.story_engine.phases import (
 from epochix.story_engine.task_classifier import classify_task, refine_gaze
 from epochix.story_engine.warnings import WarningDetector
 
+# Ordered candidate primary metrics per task (best first). The engine drives
+# the story off the highest-priority one that is actually logged, so a run that
+# reports a valid alternative for its task — RMSE instead of MAE, mAP instead of
+# mAP50, bleu instead of perplexity — still produces frames instead of matching
+# nothing. The first entry doubles as the default when none has been seen yet.
+_PREFERRED_KEYS_FOR_TASK: dict[TaskType, tuple[str, ...]] = {
+    TaskType.CLASSIFICATION: ("val_accuracy", "accuracy"),
+    TaskType.DETECTION: ("mAP50", "mAP"),
+    TaskType.NLP: ("perplexity", "bleu", "rouge"),
+    TaskType.BIOMETRIC: ("EER", "TAR"),
+    TaskType.GAZE: ("MAE", "RMSE"),
+    TaskType.REGRESSION: ("MAE", "RMSE", "MSE"),
+    TaskType.GENERATIVE: ("fid", "is_score"),
+    TaskType.CUSTOM: ("val_loss", "train_loss"),
+}
+
 _PRIMARY_KEY_FOR_TASK: dict[TaskType, str] = {
-    TaskType.CLASSIFICATION: "val_accuracy",
-    TaskType.DETECTION: "mAP50",
-    TaskType.NLP: "perplexity",
-    TaskType.BIOMETRIC: "EER",
-    TaskType.GAZE: "MAE",
-    TaskType.REGRESSION: "MAE",
-    TaskType.GENERATIVE: "fid",
-    TaskType.CUSTOM: "val_loss",
+    task: keys[0] for task, keys in _PREFERRED_KEYS_FOR_TASK.items()
 }
 
 
@@ -58,7 +67,15 @@ class StoryEngine:
         # never match an event and no story frames would ever emit.
         if self.primary_metric:
             return canonicalize_key(self.primary_metric)
-        return _PRIMARY_KEY_FOR_TASK.get(self._effective_task(), "val_loss")
+        task = self._effective_task()
+        # Prefer the highest-priority candidate that has actually been logged,
+        # so an alternative-but-valid metric (RMSE vs MAE, mAP vs mAP50) drives
+        # the story instead of matching nothing. Fall back to the default when
+        # none has appeared yet.
+        for key in _PREFERRED_KEYS_FOR_TASK.get(task, ()):
+            if key in self._metric_history:
+                return key
+        return _PRIMARY_KEY_FOR_TASK.get(task, "val_loss")
 
     def process(self, event: MetricEvent) -> StoryFrame | None:
         """Process one MetricEvent and return a StoryFrame (or None if not enough data yet)."""

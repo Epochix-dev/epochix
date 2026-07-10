@@ -8,7 +8,10 @@ _TASK_SIGNALS: list[tuple[frozenset[str], TaskType]] = [
     (frozenset({"mAP", "mAP50", "box_loss", "cls_loss"}), TaskType.DETECTION),
     (frozenset({"perplexity", "bleu", "rouge"}), TaskType.NLP),
     (frozenset({"fid", "is_score"}), TaskType.GENERATIVE),
-    (frozenset({"MAE", "RMSE"}), TaskType.REGRESSION),  # MAE alone → regression / gaze
+    (
+        frozenset({"MAE", "RMSE", "MSE"}),
+        TaskType.REGRESSION,
+    ),  # any error metric → regression / gaze
     (frozenset({"accuracy", "val_accuracy"}), TaskType.CLASSIFICATION),
 ]
 

@@ -186,3 +186,35 @@ class TestRawPrimaryMetricName:
             if f:
                 frames.append(f)
         assert len(frames) > 0  # was 0 before the canonicalisation fix
+
+
+class TestPrimaryMetricFallback:
+    """A task's default primary may not be the metric a given run logs (RMSE
+    instead of MAE, mAP instead of mAP50). The engine must drive off a logged
+    alternative instead of matching nothing."""
+
+    def test_regression_falls_back_to_rmse_when_no_mae(self) -> None:
+        eng = StoryEngine(run_id="r", task=TaskType.REGRESSION)
+        frames = []
+        for seq, rmse in enumerate([15.0, 12.0, 10.0, 9.0, 8.0], start=1):
+            f = eng.process(_event("RMSE", rmse, epoch=float(seq), seq=seq))
+            if f:
+                frames.append(f)
+        assert eng._effective_primary_key() == "RMSE"
+        assert len(frames) > 0
+
+    def test_detection_falls_back_to_map_when_no_map50(self) -> None:
+        eng = StoryEngine(run_id="r", task=TaskType.DETECTION)
+        frames = []
+        for seq, m in enumerate([0.30, 0.42, 0.55, 0.60], start=1):
+            f = eng.process(_event("mAP", m, epoch=float(seq), seq=seq))
+            if f:
+                frames.append(f)
+        assert eng._effective_primary_key() == "mAP"
+        assert len(frames) > 0
+
+
+def test_mse_alone_signals_regression() -> None:
+    assert classify_task({"MSE"}) == TaskType.REGRESSION
+    assert classify_task({"RMSE"}) == TaskType.REGRESSION
+    assert classify_task({"MAE"}) == TaskType.REGRESSION

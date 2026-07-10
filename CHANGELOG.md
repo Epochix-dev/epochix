@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.3.7] — 2026-07-09
+
+### Fixed
+
+Hardening across all task types (found by probing each through the pipeline —
+same bug classes as the gaze fixes, other tasks):
+
+- **Runs that log a valid *alternative* metric for their task showed few/no
+  frames and a bogus grade.** Each task had a single hard-coded primary metric
+  (regression → MAE, detection → mAP50, nlp → perplexity), so a run logging
+  RMSE-not-MAE, mAP-not-mAP50, or bleu-not-perplexity matched nothing. The
+  engine now drives off the highest-priority task metric that is actually
+  logged, falling back through a per-task candidate list.
+- **`MSE`-only regression runs were classified as `custom`** — the regression
+  task signal was `{MAE, RMSE}`; `MSE` is now included.
+- Confirmed all seven task types + `val_`/`eval_`/`test_`-prefixed signal
+  metrics (`val_map50`, `eval_accuracy`, `val_eer`, `test_perplexity`, …)
+  resolve to the right task and produce frames.
+
+---
+
 ## [0.3.6] — 2026-07-09
 
 ### Fixed
