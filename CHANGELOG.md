@@ -7,6 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.3.8] — 2026-07-09
+
+### Fixed
+
+- **Skill-radar "Fitting" and "Generalisation" axes were pinned to 0 on any
+  run whose loss exceeded 1.0** (i.e. most real runs — MSE regression, gaze,
+  detection). They inverted the raw loss against a fixed `scale=1.0`, so a
+  loss of 16 gave `1 − 16 = 0`, leaving two of the radar's axes flat at zero.
+  They are now **scale-relative**: Fitting = fraction of training loss reduced
+  from the first epoch; Generalisation = how closely val loss tracks train
+  loss (1.0 = no gap). Verified with real MLP / ResNet-CNN / ViT-Transformer
+  gaze runs — the radar now distinguishes architectures (e.g. an overfitting
+  MLP scores lower Generalisation than a ViT).
+
+### Verified
+
+- Real GPU training across architectures (MLP, ResNet-CNN, ViT-Transformer)
+  and task types (gaze regression, 4-class + binary classification): task
+  detection, primary metric, learning-curve values, loss charts, overfit gap
+  and grades all match the logged metrics exactly.
+
+---
+
 ## [0.3.7] — 2026-07-09
 
 ### Fixed

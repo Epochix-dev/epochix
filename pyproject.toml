@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "epochix"
-version = "0.3.7"
+version = "0.3.8"
 description = "Visual storytelling for deep learning training runs."
 authors = [{ name = "Epochix Team" }]
 license = "Apache-2.0"

@@ -218,3 +218,20 @@ def test_mse_alone_signals_regression() -> None:
     assert classify_task({"MSE"}) == TaskType.REGRESSION
     assert classify_task({"RMSE"}) == TaskType.REGRESSION
     assert classify_task({"MAE"}) == TaskType.REGRESSION
+
+
+class TestSkillRadarScaleRelative:
+    """The Fitting/Generalisation radar axes must stay meaningful for losses
+    outside [0,1] (MSE in the tens). A fixed scale pinned them both to 0 for
+    any real run with loss > 1.0 — two flat radar axes."""
+
+    def test_large_losses_do_not_zero_the_radar(self) -> None:
+        eng = StoryEngine(run_id="r", task=TaskType.GAZE)
+        eng._metric_history["train_loss"] = [36.0, 20.0, 16.0]
+        eng._metric_history["val_loss"] = [54.0, 48.0, 50.0]
+        eng._metric_history["MAE"] = [9.0, 8.0, 7.5]
+        sk = eng._build_skill_dimensions()
+        # Fitting = 1 - last/first = 1 - 16/36 ≈ 0.556 (was 0.0)
+        assert abs(sk["Fitting"] - (1.0 - 16.0 / 36.0)) < 0.01
+        # Generalisation = train/val = 16/50 = 0.32 (was 0.0)
+        assert abs(sk["Generalisation"] - (16.0 / 50.0)) < 0.01

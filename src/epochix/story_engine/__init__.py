@@ -262,8 +262,20 @@ class StoryEngine:
         # that happens to log these gets them on the radar regardless of task.
         _add("Accuracy", _last("accuracy"))
         _add("Val Accuracy", _last("val_accuracy"))
-        _add("Fitting", _inv(_last("train_loss")))
-        _add("Generalisation", _inv(_last("val_loss")))
+
+        # "Fitting" and "Generalisation" derived from the loss history, made
+        # SCALE-RELATIVE so they stay meaningful whatever the loss magnitude
+        # (MSE in the tens, cross-entropy near 1, …). A fixed scale=1.0 pinned
+        # both axes to 0 for any run whose loss exceeded 1.0 — i.e. most real
+        # runs. Fitting = fraction of training loss reduced from the first
+        # epoch; Generalisation = how closely val loss tracks train loss
+        # (1.0 = no gap, lower = more overfitting).
+        tl_hist = h.get("train_loss")
+        vl_hist = h.get("val_loss")
+        if tl_hist and tl_hist[0] > 0:
+            _add("Fitting", max(0.0, min(1.0, 1.0 - tl_hist[-1] / tl_hist[0])))
+        if tl_hist and vl_hist and vl_hist[-1] > 0:
+            _add("Generalisation", max(0.0, min(1.0, tl_hist[-1] / vl_hist[-1])))
 
         return dims
 
