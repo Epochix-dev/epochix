@@ -9,8 +9,8 @@
  * Feature list
  * ────────────
  * ① Architecture-aware layout  — if run.config.architecture is present the
- *     canvas builds columns from the actual layers; otherwise falls back to
- *     the phase-based generic topology.
+ *     canvas builds columns from the actual layers; otherwise it renders an
+ *     honest "no architecture" message rather than inventing a topology.
  * ② Dual zone labels            — technical (ENCODER) above + plain English
  *     ("Feature extractor") below each column.
  * ③ Param-proportional widths   — column width ∝ log10(params).
@@ -289,7 +289,8 @@ export class BrainCanvas {
   }
 
   /**
-   * Build zone+node layout from architecture data or phase-based fallback.
+   * Build zone+node layout from real architecture data, or mark _noArch when
+   * none is available (the draw pass then shows an honest empty state).
    */
   _buildNetwork() {
     const w = this._cw;
@@ -930,7 +931,6 @@ function _shortenPlainLabel(label, budgetPx, ctx) {
     'Raw data':         'Input',
     'Decision':         'Output',
     'Stabilises':       'Norm',
-    'Hidden layer':     'Hidden',
   };
   if (aliases[label]) candidates.push(aliases[label]);
   // Leading word fallback (often still meaningful: "Pattern", "Feature")
