@@ -58,6 +58,7 @@ class LiveReporter:
         open_browser: bool = True,
         locale: str = "en",
         run_id: str | None = None,
+        model: object | None = None,
     ) -> None:
         """
         Parameters
@@ -85,7 +86,15 @@ class LiveReporter:
             Dashboard language (``"en"`` / ``"fa"`` / ``"fr"``).
         run_id:
             Explicit run id; auto-generated when omitted.
+        model:
+            The model being trained (PyTorch ``nn.Module`` or Keras ``Model``).
+            When given, its **real** architecture — actual layer names, types
+            and parameter counts — is shown in the dashboard's Network State
+            panel. Omitted → the panel honestly reports no architecture rather
+            than showing a placeholder.
         """
+        from epochix.sdk.architecture import architecture_from_model
+
         self._task: TaskType | None = TaskType(task) if isinstance(task, str) else task
         self._primary_metric = primary_metric
         self._name = name
@@ -94,6 +103,7 @@ class LiveReporter:
         self._open_browser = open_browser
         self._locale = locale
         self._run_id = run_id or self._generate_run_id()
+        self._architecture = architecture_from_model(model)
         self._seq = 0
 
         self._receiver: object | None = None  # SDKReceiver, lazy
@@ -183,6 +193,7 @@ class LiveReporter:
         total_epochs = self._total_epochs
         locale = self._locale
         open_browser = self._open_browser
+        architecture = self._architecture
 
         async def _pipeline() -> None:
             import uvicorn
@@ -212,6 +223,7 @@ class LiveReporter:
                     primary_metric=primary_metric,
                     total_epochs=total_epochs,
                     locale=locale,
+                    architecture=architecture,
                 )
             finally:
                 server.should_exit = True

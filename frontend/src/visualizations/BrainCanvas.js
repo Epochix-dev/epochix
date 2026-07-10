@@ -55,15 +55,6 @@ const ZONE_COLORS = {
   generic:    '#60a5fa',  // blue     – unknown
 };
 
-// Phase-based fallback when no architecture is detected
-const PHASE_HIDDEN_LAYERS = {
-  awakening:      1,
-  learning:       2,
-  understanding:  3,
-  mastering:      4,
-  polishing:      5,
-};
-
 // Particle zone-crossing micro-labels per visual_type
 const ZONE_FLASH_LABELS = {
   input:     'input data',
@@ -144,6 +135,7 @@ export class BrainCanvas {
 
     // Architecture (from store)
     this._architecture = null;
+    this._noArch = false;
 
     // Render toggles (interactive via overlay buttons)
     this._depth3d   = true;
@@ -309,6 +301,7 @@ export class BrainCanvas {
     const PAD_TOP = 46, PAD_BOT = 62, PAD_H = 30;
 
     if (arch && arch.length > 0) {
+      this._noArch = false;
       // ── Architecture-aware layout ────────────────────────────────────────
       // Zones: [INPUT] + arch layers + [OUTPUT]
       const zoneDefs = [
@@ -347,27 +340,16 @@ export class BrainCanvas {
       });
 
     } else {
-      // ── Phase-based fallback ─────────────────────────────────────────────
-      const numHidden = PHASE_HIDDEN_LAYERS[this._phase] ?? 2;
-      const zoneDefs = [
-        { id: 'input',  techLabel: 'INPUT',  plainLabel: 'Raw data',         visualType: 'input',  params: 0, name: 'input' },
-        ...Array.from({ length: numHidden }, (_, i) => ({
-          id: `h${i}`, techLabel: `H${i + 1}`, plainLabel: 'Hidden layer',
-          visualType: 'generic', params: 0, name: `h${i + 1}`,
-        })),
-        { id: 'output', techLabel: 'OUTPUT', plainLabel: 'Decision',         visualType: 'output', params: 0, name: 'output' },
-      ];
-
-      const totalW = w - PAD_H * 2 - DEPTH_DX;
-      const zw     = totalW / zoneDefs.length;
-      this._zones  = zoneDefs.map((z, i) => ({
-        ...z,
-        x: PAD_H + zw * i + zw / 2,
-        width: zw,
-        nodes: [],
-        gradMag: 0,
-        color: ZONE_COLORS[z.visualType] ?? ZONE_COLORS.generic,
-      }));
+      // ── No architecture available ────────────────────────────────────────
+      // We do NOT invent one. The panel renders an honest "no architecture"
+      // message (see _draw); the SDK caller can pass model=… to show the real
+      // network, or the training log can include a model summary.
+      this._noArch = true;
+      this._zones = [];
+      this._edges = [];
+      this._particles = [];
+      this._gradParticles = [];
+      return;
     }
 
     // Build nodes per zone
@@ -524,7 +506,21 @@ export class BrainCanvas {
     const h   = this._ch;
     ctx.clearRect(0, 0, w, h);
 
-    if (this._zones.length === 0) return;
+    if (this._zones.length === 0) {
+      // Honest empty state — we never draw a made-up network.
+      ctx.textAlign = 'center';
+      ctx.fillStyle = 'rgba(255,255,255,0.42)';
+      ctx.font = '12px DM Sans, sans-serif';
+      ctx.fillText('No architecture to display', w / 2, h / 2 - 8);
+      ctx.fillStyle = 'rgba(255,255,255,0.28)';
+      ctx.font = '10px DM Sans, sans-serif';
+      ctx.fillText(
+        'Pass model=… to LiveReporter, or include a model summary in the log',
+        w / 2,
+        h / 2 + 12,
+      );
+      return;
+    }
 
     // ── Zone slabs (pseudo-3D) or flat bands ──────────────────────────────
     const slabTop = TOP_STRIP;

@@ -1,2 +1,0 @@
-# Placeholder so hatchling force-include ("frontend/dist" -> wheel) resolves
-# in fresh checkouts. The real bundle is built by CI / `npm run build`.

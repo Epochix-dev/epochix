@@ -129,6 +129,7 @@ async def run_pipeline(
     total_epochs: int | None = None,
     locale: str = "en",
     keep_raw_lines: bool = False,
+    architecture: list[dict[str, object]] | None = None,
 ) -> Run:
     """Drive the full ingestion pipeline for one run.
 
@@ -190,6 +191,23 @@ async def run_pipeline(
         parser_used="unknown",
     )
     store.create_run(run)
+
+    # Caller-supplied *real* architecture (e.g. LiveReporter(model=…)) — store
+    # it and broadcast so the Network State panel shows the actual model
+    # immediately, without needing a model summary in the log stream.
+    if architecture:
+        existing = store.get_run(run_id)
+        cfg = existing.config if existing else {}
+        store.update_run_config(run_id, {**cfg, "architecture": architecture})
+        hub.publish(
+            run_id,
+            hub.make_message(
+                msg_type="architecture",
+                run_id=run_id,
+                seq=-1,
+                payload={"architecture": architecture},
+            ),
+        )
 
     last_seq = 0
     last_epoch: float | None = None

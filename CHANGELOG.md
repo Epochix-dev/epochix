@@ -7,6 +7,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.4.0] — 2026-07-09
+
+### Added — real architecture, no placeholder
+
+- **`LiveReporter(model=…)`** captures the **real** architecture of the model
+  you're training (PyTorch `nn.Module` or Keras `Model`) — actual layer names,
+  types and parameter counts — and shows it in the dashboard's Network State
+  panel. Verified the extracted parameter counts sum exactly to the model
+  total across MLP / ResNet / ViT. Introspection never raises: if a model
+  can't be read, the panel shows the honest empty state below rather than
+  guessing.
+
+### Changed — honesty
+
+- **The Network State panel no longer fabricates an architecture.** Previously,
+  when no model summary was available (e.g. any SDK run), it drew a made-up
+  `INPUT → H1 → H2 → OUTPUT` diagram whose depth was invented from the training
+  phase. It now renders an honest *"No architecture to display — pass model=…
+  to LiveReporter, or include a model summary in the log"* message. Real
+  architecture (from `model=` or a detected log summary) is drawn as before.
+  (The animated activation/edge flow remains labelled *schematic — illustrative,
+  not measured weights*, since live per-neuron values aren't captured.)
+
+---
+
 ## [0.3.8] — 2026-07-09
 
 ### Fixed
