@@ -60,6 +60,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     _docs_visible = settings.expose_docs or bool(settings.auth_token)
 
     from epochix import __version__
+    from epochix.server.jsonsafe import SafeJSONResponse
 
     app = FastAPI(
         title="epochix",
@@ -69,6 +70,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         docs_url="/api/docs" if _docs_visible else None,
         redoc_url="/api/redoc" if _docs_visible else None,
         openapi_url="/api/openapi.json" if _docs_visible else None,
+        # Never 500 on a non-finite metric (diverged run) — emit JSON null.
+        default_response_class=SafeJSONResponse,
     )
 
     # Store settings so lifespan can read them

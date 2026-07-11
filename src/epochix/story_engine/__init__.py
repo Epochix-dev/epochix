@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass, field
 
 from epochix.enums import Grade, Phase, TaskType
@@ -188,6 +189,12 @@ class StoryEngine:
             lower_better=lower_better,
         )
         advancement = progress if progress is not None else (rel if rel is not None else 0.0)
+        # A non-finite primary (diverged run) can make relative-improvement NaN;
+        # clamp so the progress/confidence Field(ge=0, le=1) validators never
+        # reject the frame. The raw metric value itself still serialises to null.
+        if not math.isfinite(advancement):
+            advancement = 0.0
+        advancement = max(0.0, min(1.0, advancement))
 
         grade = compute_grade(
             task=self._effective_task(),
@@ -274,7 +281,9 @@ class StoryEngine:
         task = self._effective_task()
 
         def _add(key: str, value: float | None) -> None:
-            if value is not None:
+            # Skip non-finite (a diverged NaN/Inf metric) — a radar axis needs a
+            # real number, and it must not leak into the JSON payload.
+            if value is not None and math.isfinite(value):
                 dims[key] = value
 
         if task == TaskType.DETECTION:

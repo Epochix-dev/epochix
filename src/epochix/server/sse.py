@@ -11,6 +11,7 @@ from fastapi.responses import StreamingResponse
 from epochix.models import WSMessage
 from epochix.server.auth import token_ok
 from epochix.server.hub import Hub
+from epochix.server.jsonsafe import ws_json
 
 logger = logging.getLogger(__name__)
 
@@ -73,7 +74,7 @@ async def sse_live(
                     yield f"data: {complete_payload}\n\n"
                     break
 
-                yield f"data: {msg.model_dump_json()}\n\n"
+                yield f"data: {ws_json(msg)}\n\n"
 
                 if msg.type == "complete":
                     break

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import math
 from datetime import datetime, timezone
 
 from epochix.models import MetricEvent, RawMetric
@@ -12,8 +13,15 @@ def normalize(raw: RawMetric, run_id: str, timestamp: datetime | None = None) ->
     if not isinstance(raw.value, (int, float)):
         raise ValueError(f"Cannot normalize non-numeric value: {raw.value!r}")
 
-    canonical = canonicalize_key(raw.key)
     value = float(raw.value)
+    # Drop non-finite values (a diverged run's NaN / ±Inf). They can't be stored
+    # (SQLite coerces NaN to NULL, violating the NOT NULL column), aren't
+    # plottable, and would otherwise break JSON serialisation. The pipeline
+    # skips the event; divergence is still surfaced by the loss-spike detector.
+    if not math.isfinite(value):
+        raise ValueError(f"Cannot normalize non-finite value: {raw.value!r}")
+
+    canonical = canonicalize_key(raw.key)
     unit = infer_unit(canonical, value)
 
     # Scale-normalise ratio metrics to [0, 1]. Frameworks log accuracy/mAP/EER

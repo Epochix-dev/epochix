@@ -7,6 +7,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.5.4] — 2026-07-11
+
+### Fixed — a diverged (NaN/Inf) run no longer breaks the dashboard
+
+- **Non-finite metric values (NaN / ±Inf — a diverged or exploding training run)
+  crashed the pipeline and the dashboard.** They can't be stored (SQLite coerces
+  NaN to NULL, violating the metric column), and they aren't valid JSON:
+  Starlette's `JSONResponse` raised a 500, and the WebSocket/SSE stream emitted
+  the literal `NaN`/`Infinity` tokens that a browser's `JSON.parse` rejects — so
+  a single bad epoch could take down the whole live view.
+- Non-finite values are now **dropped at the normalizer** (the pipeline skips the
+  event; loss-spike divergence detection still fires on the finite explosion that
+  precedes it). As defence in depth, the WS/SSE serialiser and a new
+  `SafeJSONResponse` **null out** any non-finite value, the story frame's raw
+  metric value and skill-radar axes serialise non-finite to JSON `null`, and the
+  progress/maturity signal is clamped finite.
+
+### Audited — no changes needed
+
+Stress-tested the rest and confirmed it holds: all 27 edge-case fixture logs
+(garbage, empty, ANSI colours, scientific notation, interrupted, single-epoch,
+mixed frameworks) parse without crashing and emit valid JSON; JSON/HTML export
+survives empty, single-epoch and diverged runs; the dashboard renders empty and
+single-frame runs without errors; and SDK misuse (finish without logging, double
+finish) is a no-op.
+
+---
+
 ## [0.5.3] — 2026-07-11
 
 ### Fixed — the gradient-flow bars now show real data (honesty audit)

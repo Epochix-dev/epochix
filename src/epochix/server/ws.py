@@ -8,6 +8,7 @@ from fastapi import APIRouter, WebSocket, WebSocketDisconnect, status
 from epochix.models import WSMessage
 from epochix.server.auth import token_ok
 from epochix.server.hub import Hub
+from epochix.server.jsonsafe import ws_json
 
 logger = logging.getLogger(__name__)
 
@@ -66,7 +67,7 @@ async def ws_live(
         while True:
             await asyncio.sleep(_HEARTBEAT_INTERVAL)
             try:
-                await websocket.send_text(ping_msg.model_dump_json())
+                await websocket.send_text(ws_json(ping_msg))
             except Exception:  # noqa: BLE001
                 break
 
@@ -88,10 +89,10 @@ async def ws_live(
                     seq=-1,
                     payload={},
                 )
-                await websocket.send_text(complete.model_dump_json())
+                await websocket.send_text(ws_json(complete))
                 break
 
-            await websocket.send_text(msg.model_dump_json())
+            await websocket.send_text(ws_json(msg))
 
             if msg.type == "complete":
                 break
