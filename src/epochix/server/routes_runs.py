@@ -247,8 +247,7 @@ async def push_event(
         from epochix.story_engine import StoryEngine
 
         engine: StoryEngine = engine_map[run_id]
-        frame = engine.process(event)
-        if frame is not None:
+        for frame in engine.process_all(event):
             store.append_story_frame(frame)
             msg = hub.make_message(
                 msg_type="story_frame",

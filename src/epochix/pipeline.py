@@ -92,8 +92,10 @@ def _emit_line(
 
         store.append_metric_event(event)
 
-        frame = engine.process(event)
-        if frame is not None:
+        # process_all (not process) so a warmup backfill — where the buffered
+        # early epochs are replayed at once — persists every frame, not just the
+        # last, keeping the first epoch(s) in the story.
+        for frame in engine.process_all(event):
             last_epoch = frame.epoch
             store.append_story_frame(frame)
 

@@ -110,6 +110,40 @@ class TestStoryEngine:
         assert frame.grade in list(Grade)
         assert frame.phase in list(Phase)
 
+    def test_warmup_backfill_keeps_first_epoch(self) -> None:
+        """A run logging only 2 metrics/epoch used to drop epoch 1 from the story
+        (the primary metric fell inside the <3-event task-detection warmup).
+        process_all now backfills it, so every logged epoch produces a frame."""
+        engine = StoryEngine(run_id="test")  # auto-detect (task=None)
+        seq = 0
+        frames = []
+        # primary metric here is val_loss (custom task); 2 events per epoch
+        for epoch, (tl, vl) in enumerate([(1.9, 2.1), (1.7, 1.4), (1.5, 1.0), (1.3, 0.8)], 1):
+            for key, val in (("train_loss", tl), ("val_loss", vl)):
+                frames += engine.process_all(_event(key, val, epoch=float(epoch), seq=seq))
+                seq += 1
+        epochs = [f.epoch for f in frames]
+        values = [round(f.primary_metric_value, 6) for f in frames]
+        assert epochs == [1.0, 2.0, 3.0, 4.0], f"epoch 1 dropped: {epochs}"
+        # Values are exactly the logged val_loss series — no fabrication.
+        assert values == [2.1, 1.4, 1.0, 0.8]
+
+    def test_process_matches_process_all_last(self) -> None:
+        """process() stays a thin wrapper: same final frame as process_all's last."""
+        a = StoryEngine(run_id="r1", task=TaskType.CLASSIFICATION)
+        b = StoryEngine(run_id="r1", task=TaskType.CLASSIFICATION)
+        last_single = None
+        for i in range(5):
+            e1 = _event("val_accuracy", 0.4 + i * 0.05, epoch=float(i + 1), seq=i)
+            e2 = _event("val_accuracy", 0.4 + i * 0.05, epoch=float(i + 1), seq=i)
+            single = a.process(e1)
+            if single is not None:
+                last_single = single
+            batch = b.process_all(e2)
+            if batch:
+                assert batch[-1].primary_metric_value == single.primary_metric_value
+        assert last_single is not None
+
     def test_narrative_is_deterministic(self) -> None:
         """Same run_id + same inputs → same narrative."""
 

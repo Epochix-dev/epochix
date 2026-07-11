@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.5.2] — 2026-07-11
+
+### Fixed — the first epoch is no longer dropped from the story
+
+- **The task-detection warmup silently dropped the first epoch's story frame**
+  for runs that log ≤2 metrics per epoch (e.g. just `train_loss` + `val_loss`).
+  The engine needs 3 metric events to auto-detect the task before it emits
+  frames, so a primary-metric value logged inside that window never produced a
+  frame — the grade-arc chart and stat chip started at epoch 2. (Runs logging
+  3+ metrics/epoch were unaffected, and the raw metric events — hence the loss
+  curves — were always complete.)
+- The engine now **buffers the warmup events and backfills their frames** once
+  the task is known, so every logged epoch appears in the story. New
+  `StoryEngine.process_all()` returns all frames a single event yields
+  (`process()` stays a thin back-compat wrapper).
+- Verified with real GPU training across tasks — classification (val_accuracy),
+  gaze (MAE), NLP (perplexity): every displayed value equals the logged value
+  exactly (no fabrication) and epoch 1 is present.
+
+---
+
 ## [0.5.1] — 2026-07-11
 
 ### Fixed — the primary metric is not always accuracy

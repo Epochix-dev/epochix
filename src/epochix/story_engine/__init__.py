@@ -56,6 +56,11 @@ class StoryEngine:
     _milestones: MilestoneTracker | None = field(default=None, init=False)
     _warnings: WarningDetector = field(default_factory=WarningDetector, init=False)
     _metric_history: dict[str, list[float]] = field(default_factory=dict, init=False)
+    # Events seen during the task-detection warmup (before frames start emitting)
+    # are buffered here and replayed once emission begins, so early epochs aren't
+    # silently dropped from the story (grade-arc chart / stat chip).
+    _warmup: list[MetricEvent] = field(default_factory=list, init=False)
+    _started: bool = field(default=False, init=False)
 
     def _effective_task(self) -> TaskType:
         return self.task or TaskType.CUSTOM
@@ -78,7 +83,22 @@ class StoryEngine:
         return _PRIMARY_KEY_FOR_TASK.get(task, "val_loss")
 
     def process(self, event: MetricEvent) -> StoryFrame | None:
-        """Process one MetricEvent and return a StoryFrame (or None if not enough data yet)."""
+        """Process one MetricEvent, returning the latest StoryFrame (or None).
+
+        Thin back-compat wrapper over :meth:`process_all`; when a warmup backfill
+        emits several frames at once this returns the last one. Callers that must
+        persist every frame (the pipeline) should use :meth:`process_all`.
+        """
+        frames = self.process_all(event)
+        return frames[-1] if frames else None
+
+    def process_all(self, event: MetricEvent) -> list[StoryFrame]:
+        """Process one MetricEvent and return every StoryFrame it produces.
+
+        Usually 0 or 1 frame. The exception is the moment the task-detection
+        warmup ends: the buffered early events are replayed so the first epoch(s)
+        aren't dropped from the story, which can yield several frames at once.
+        """
         self._events_count += 1
         self._seen_keys.add(event.canonical_key)
 
@@ -102,19 +122,42 @@ class StoryEngine:
                 self._task_locked = True
                 self._milestones = MilestoneTracker(run_id=self.run_id, task=self.task)
 
-        if self._events_count < 3:
-            return None
+        # Warmup: buffer events until the task-detection window (≥3 events) is
+        # satisfied, then start emitting. On the first emit, replay the buffered
+        # events so early primary-metric epochs produce frames too (previously
+        # anything logged in the first <3 events was lost from the story).
+        if not self._started:
+            self._warmup.append(event)
+            if self._events_count < 3:
+                return []
+            self._started = True
+            self._ensure_milestones()
+            frames: list[StoryFrame] = []
+            for buffered in self._warmup:
+                f = self._emit(buffered)
+                if f is not None:
+                    frames.append(f)
+            self._warmup = []
+            return frames
 
+        self._ensure_milestones()
+        f = self._emit(event)
+        return [f] if f is not None else []
+
+    def _ensure_milestones(self) -> None:
         if self._milestones is None:
             self._milestones = MilestoneTracker(
                 run_id=self.run_id,
                 task=self._effective_task(),
             )
 
+    def _emit(self, event: MetricEvent) -> StoryFrame | None:
+        """Build a StoryFrame for a primary-metric event, or None otherwise."""
         primary_key = self._effective_primary_key()
         if event.canonical_key != primary_key:
             return None  # only emit frames on primary metric updates
 
+        assert self._milestones is not None  # callers run _ensure_milestones first
         primary_value = event.value
 
         if self._baseline is None:
