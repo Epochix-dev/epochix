@@ -22,6 +22,7 @@ import contextlib
 import threading
 import time
 from collections.abc import Callable
+from typing import Any
 
 from epochix.sdk.architecture import torch_param_modules
 
@@ -191,32 +192,31 @@ def _tensor_stats(output: object) -> tuple[float, float] | None:
     Tuple/list outputs (attention, LSTM) contribute their first tensor element;
     anything non-floating-point or non-tensor is skipped so that layer simply
     stays schematic instead of reporting a bogus number.
+
+    Fully duck-typed: neither torch nor numpy is imported (they aren't
+    dependencies), so this type-checks and runs whether or not they're present —
+    we detect a tensor by its methods, matching :mod:`architecture`.
     """
-    t = output[0] if isinstance(output, (tuple, list)) and output else output
-    try:
-        import torch
-    except Exception:  # noqa: BLE001
-        torch = None  # type: ignore[assignment]
-    if torch is not None and torch.is_tensor(t):
+    t: Any = output[0] if isinstance(output, (tuple, list)) and output else output
+    # PyTorch tensor: detach()/abs()/mean()/item() + is_floating_point()/numel().
+    if hasattr(t, "detach") and hasattr(t, "is_floating_point") and hasattr(t, "numel"):
         t = t.detach()
-        if not t.is_floating_point():
-            return None
-        if t.numel() == 0:
+        if not t.is_floating_point() or t.numel() == 0:
             return None
         mag = float(t.abs().mean().item())
         dead = float((t == 0).float().mean().item())
         return mag, dead
-    # Keras/TF eager tensor: has ``.numpy()`` and a float dtype. Reduce cheaply.
+    # Keras/TF eager tensor: ``.numpy()`` returns a numpy array we reduce with
+    # its own methods (abs()/mean()/dtype), again without importing numpy.
     numpy_fn = getattr(t, "numpy", None)
-    if numpy_fn is None:
+    if not callable(numpy_fn):
         return None
     try:
-        import numpy as np
-
-        arr = np.asarray(numpy_fn())
-        if arr.size == 0 or not np.issubdtype(arr.dtype, np.floating):
+        arr: Any = numpy_fn()
+        dtype = getattr(arr, "dtype", None)
+        if getattr(arr, "size", 0) == 0 or getattr(dtype, "kind", "") != "f":
             return None
-        mag = float(np.abs(arr).mean())
+        mag = float(abs(arr).mean())
         dead = float((arr == 0).mean())
         return mag, dead
     except Exception:  # noqa: BLE001
@@ -225,11 +225,11 @@ def _tensor_stats(output: object) -> tuple[float, float] | None:
 
 def _grad_mag(grad_output: object) -> float | None:
     """Mean ``|grad|`` over the first gradient tensor, or ``None`` to skip."""
-    g = grad_output[0] if isinstance(grad_output, (tuple, list)) and grad_output else grad_output
-    try:
-        import torch
-    except Exception:  # noqa: BLE001
+    g: Any = (
+        grad_output[0] if isinstance(grad_output, (tuple, list)) and grad_output else grad_output
+    )
+    if not hasattr(g, "detach") or not hasattr(g, "is_floating_point"):
         return None
-    if g is None or not torch.is_tensor(g) or not g.is_floating_point() or g.numel() == 0:
+    if not g.is_floating_point() or g.numel() == 0:
         return None
     return float(g.detach().abs().mean().item())
