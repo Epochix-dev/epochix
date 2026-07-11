@@ -1,0 +1,1 @@
+# Keep frontend/dist/ in the tree so hatchling force-include (frontend/dist -> epochix/_frontend/dist) resolves on fresh checkouts / editable installs (docs, benchmarks). Do NOT delete: removing it broke the Docs CI at 0.4.0. See .gitignore !frontend/dist/.gitkeep.

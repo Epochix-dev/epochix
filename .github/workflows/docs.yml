@@ -33,6 +33,12 @@ jobs:
           python-version: "3.12"
           cache: pip
 
+      # hatchling force-includes frontend/dist into the wheel; the editable
+      # install builds metadata through the same path, so the source dir must
+      # exist even though the docs job never builds the real bundle.
+      - name: Ensure frontend/dist exists (force-include source)
+        run: mkdir -p frontend/dist
+
       - name: Install docs toolchain
         run: pip install -e ".[docs]"
 
