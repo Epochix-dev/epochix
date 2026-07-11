@@ -25,9 +25,10 @@
  *     shimmering all-to-all beam web ("reads full context").
  * ⑩ Pseudo-3D depth             — zones drawn as isometric slabs (Canvas 2D,
  *     no WebGL — keeps the bundle small).
- * ⑪ Gradient-flow (backprop)    — per-layer gradient-magnitude proxy, shown as
- *     bottom bars + warm particles streaming output→input. Earlier layers show
- *     weaker flow, visualising the vanishing-gradient effect.
+ * ⑪ Gradient-flow (backprop)    — per-layer ∇ bars from REAL captured gradient
+ *     magnitudes (backward hooks), plus a warm particle stream output→input.
+ *     The bars appear only when gradients are captured; otherwise they're hidden
+ *     (the particle stream is ambient animation only, not a measurement).
  *
  * Honesty note
  * ────────────
@@ -38,8 +39,11 @@
  *  Node brightness / dead nodes → REAL captured per-layer activation magnitude
  *     and zero-unit fraction, when LiveReporter(capture_activations=True) is on
  *     (store.activations); otherwise scaled by val_accuracy as a schematic.
- *  Particle speed/spawn     → training advancement
- *  Gradient-bar heights     → per-layer |Δmetric| proxy (vanishing-gradient story)
+ *  Gradient ∇ bars          → REAL captured mean |gradient| per layer (backward
+ *     hooks), normalised across layers so the heights show the model's actual
+ *     gradient distribution. Hidden entirely when no gradients are captured —
+ *     never an invented vanishing-gradient curve.
+ *  Particle speed/spawn     → training advancement (ambient animation)
  *  Overfitting halo         → real train/val gap (val_loss − train_loss)
  * Edge colour/thickness stay schematic (illustrative +/− connections) — weights
  * aren't cheaply forward-pass observable — and the legend says so.
@@ -145,6 +149,7 @@ export class BrainCanvas {
     this._activations = null;
     this._actMax = {};
     this._hadRealActivations = false;
+    this._hasRealGrad = false;  // per-layer ∇ bars drawn only from captured grads
 
     // Render toggles (interactive via overlay buttons)
     this._depth3d   = true;
@@ -431,19 +436,27 @@ export class BrainCanvas {
     this._valAcc    += (this._targetValAcc    - this._valAcc)    * 0.03;
     this._trainLoss += (this._targetTrainLoss - this._trainLoss) * 0.03;
 
-    // ── Gradient intensity (backprop proxy) ─────────────────────────────────
-    // Strong early (far from convergence), fades as accuracy climbs — the
-    // classic vanishing-gradient story — plus transient spikes on metric jumps.
+    // ── Backprop animation liveliness (NOT a measurement) ───────────────────
+    // Drives only the density/speed of the ambient backward particle stream —
+    // more lively early, calmer near convergence. No quantitative claim.
     const gradTarget = Math.max(0.08, (1 - this._valAcc) * 0.9 + this._gradSpike * 0.6);
     this._gradIntensity += (gradTarget - this._gradIntensity) * 0.05;
     this._gradSpike      *= 0.94;
 
-    // Per-zone gradient magnitude: decays from output toward input (vanishing).
-    const n = this._zones.length;
-    for (let zi = 0; zi < n; zi++) {
-      const distFromOutput = (n - 1) - zi;
-      const decay = Math.pow(0.78, distFromOutput);
-      this._zones[zi].gradMag = this._gradIntensity * decay;
+    // ── Per-layer gradient-magnitude bars: REAL captured values only ────────
+    // mean |gradient| per layer from backward hooks (store.activations[l].grad),
+    // normalised ACROSS layers at this step so the bar heights show the model's
+    // actual gradient distribution (the real vanishing/exploding-gradient
+    // signal). With no captured gradients (capture off / log-based run) there is
+    // nothing real to show, so the bars are hidden rather than invented.
+    const gacts = this._activations;
+    const grads = this._zones.map((z) => (gacts ? gacts[z.name]?.grad : undefined));
+    const gmax = Math.max(0, ...grads.filter((g) => Number.isFinite(g)));
+    this._hasRealGrad = gmax > 0;
+    for (let zi = 0; zi < this._zones.length; zi++) {
+      const g = grads[zi];
+      this._zones[zi].gradMag =
+        this._hasRealGrad && Number.isFinite(g) ? Math.max(0, Math.min(1, g / gmax)) : 0;
     }
 
     // Update node activations. When real captured magnitudes are available for
@@ -743,10 +756,12 @@ export class BrainCanvas {
     }
 
     // ── Per-layer gradient-magnitude bars (above the bottom labels) ───────
-    if (this._showGrad) {
+    // Only when we have REAL captured gradients — never an invented curve.
+    if (this._showGrad && this._hasRealGrad) {
       const barMax = 14;
       const by = h - 34;
       for (const zone of this._zones) {
+        if (!(zone.gradMag > 0)) continue;  // skip layers with no captured grad
         const bh = Math.max(1, zone.gradMag * barMax);
         const bx = zone.x - 8;
         // track

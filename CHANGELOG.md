@@ -7,6 +7,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.5.3] — 2026-07-11
+
+### Fixed — the gradient-flow bars now show real data (honesty audit)
+
+- **The per-layer ∇ gradient-flow bars in the Network State panel were
+  fabricated** — drawn as `(1 − val_accuracy) × 0.78^depth`, an invented
+  vanishing-gradient curve unrelated to the model, even though real per-layer
+  gradient magnitudes are captured (backward hooks, 0.5.0). They now render the
+  **real** captured mean `|gradient|` per layer, normalised across layers so the
+  bar heights show the model's actual gradient distribution, and are **hidden
+  entirely** when no gradients are captured (rather than showing a made-up
+  curve). On a real run this exposes the true gradient behaviour — e.g. an
+  output-layer gradient ~1000× the early-conv-layer gradients, a real vanishing
+  signature the old fixed decay never reflected.
+- The backward particle stream is now documented as ambient animation only, not
+  a measurement.
+- Corrected the English "Maturity" label (the run-advancement signal was
+  mislabelled "Confidence"; it is not a prediction-confidence estimate — the
+  French/Persian locales were already correct).
+
+The rest of the panel was audited and is honest: node brightness / dead nodes
+use real captured activations (with a labelled schematic fallback), edge weights
+are explicitly schematic, the skill radar carries a "shape is rhetorical" caveat
+and derives from real metrics, and the detection loss curve is the real sum of
+box+cls+dfl component losses.
+
+---
+
 ## [0.5.2] — 2026-07-11
 
 ### Fixed — the first epoch is no longer dropped from the story
