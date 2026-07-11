@@ -2,8 +2,12 @@
  * ImprovementWaterfall.js — Canvas particle burst on metric improvement.
  *
  * Each epoch where the primary metric improves fires a burst of particles
- * that float upward and fade. Runs its own rAF loop.
+ * that float upward and fade. "Improves" respects the metric direction —
+ * accuracy rising vs. MAE/RMSE/loss falling — so it never celebrates a
+ * regression on a lower-is-better run. Runs its own rAF loop.
  */
+
+import { LOWER_IS_BETTER } from '../viz-util.js';
 
 export class ImprovementWaterfall {
   /** @param {HTMLCanvasElement} canvas */
@@ -21,8 +25,10 @@ export class ImprovementWaterfall {
   mount(store) {
     this._unsub = store.subscribe((s) => {
       const v = s.currentFrame?.primary_metric_value ?? null;
-      if (v !== null && this._lastValue !== null && v > this._lastValue) {
-        this._burst(v - this._lastValue);
+      const lowerBetter = LOWER_IS_BETTER.has(s.run?.primary_metric);
+      if (v !== null && this._lastValue !== null) {
+        const improved = lowerBetter ? v < this._lastValue : v > this._lastValue;
+        if (improved) this._burst(Math.abs(v - this._lastValue));
       }
       this._lastValue = v;
     });

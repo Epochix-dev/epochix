@@ -1,10 +1,14 @@
 /**
  * LearningMeter.js — SVG liquid-fill meter of the primary metric.
  *
- * Fills with the primary metric value (clamped to [0,1]) as a rising liquid
- * column. The second arg ("maturity") is accepted for callers but the column
- * tracks the metric itself. Uses CSS @property animated gradient for shimmer.
+ * The fill is a 0..1 "goodness" column and the caption is the real metric
+ * value. Accuracy-style metrics fill by their own value and read as a %;
+ * error/loss metrics (MAE, RMSE, loss) fill by their position in the observed
+ * range (oriented so "better" is fuller) and read as their raw value — never a
+ * bogus "100%" from clamping raw MAE to [0,1]. CSS @property gradient shimmer.
  */
+
+import { isPercentMetric, LOWER_IS_BETTER, formatPrimaryMetric } from '../viz-util.js';
 
 export class LearningMeter {
   /** @param {HTMLElement} container */
@@ -20,16 +24,31 @@ export class LearningMeter {
 
   /** @param {import('../store.js').AppState} store */
   mount(store) {
-    this._unsub = store.subscribe((s) => {
-      const v = s.currentFrame?.primary_metric_value ?? 0;
-      const conf = s.currentFrame?.confidence ?? 0;
-      this._update(v, conf);
-    });
-    const s = store.get();
-    this._update(
-      s.currentFrame?.primary_metric_value ?? 0,
-      s.currentFrame?.confidence ?? 0,
-    );
+    this._unsub = store.subscribe((s) => this._render(s));
+    this._render(store.get());
+  }
+
+  /** @param {import('../store.js').AppState} s */
+  _render(s) {
+    const frame = s.currentFrame;
+    const key   = s.run?.primary_metric ?? null;
+    const value = frame?.primary_metric_value ?? null;
+    if (value == null) { this._update(0, '—'); return; }
+
+    const { text } = formatPrimaryMetric(key, value);
+    let fill;
+    if (isPercentMetric(key)) {
+      fill = Math.max(0, Math.min(1, value));            // accuracy IS the fill
+    } else {
+      // Position within the observed range, oriented so "better" fills higher.
+      const vals = (s.frames ?? [])
+        .map((f) => f.primary_metric_value)
+        .filter((v) => Number.isFinite(v));
+      const lo = Math.min(...vals, value), hi = Math.max(...vals, value);
+      const n  = hi > lo ? (value - lo) / (hi - lo) : 1;
+      fill = LOWER_IS_BETTER.has(key) ? 1 - n : n;
+    }
+    this._update(fill, text);
   }
 
   unmount() {
@@ -130,13 +149,17 @@ export class LearningMeter {
     this._H = H;
   }
 
-  _update(value, confidence) {
-    const pct  = Math.max(0, Math.min(1, value));
+  /**
+   * @param {number} fill  0..1 goodness column height
+   * @param {string} text  caption (already formatted — "%.1f%%" or raw value)
+   */
+  _update(fill, text) {
+    const pct  = Math.max(0, Math.min(1, fill));
     const H    = this._H;
     const fillH = (H - 8) * pct;
     const fillY = 4 + (H - 8) - fillH;
 
-    // Color by value (green-to-blue gradient)
+    // Color by goodness (green-to-blue gradient)
     const hue = 140 + (1 - pct) * 80; // 220 (blue) → 140 (green)
     const col = `hsl(${hue}, 70%, 55%)`;
 
@@ -145,7 +168,7 @@ export class LearningMeter {
     this._fill.setAttribute('fill', col);
     this._fill.setAttribute('fill-opacity', '0.7');
 
-    this._valueText.textContent = `${(pct * 100).toFixed(1)}%`;
+    this._valueText.textContent = text;
     this._valueText.setAttribute('fill', col);
   }
 }

@@ -72,3 +72,47 @@ export const LOWER_IS_BETTER = new Set([
   'train_loss', 'val_loss', 'loss', 'MAE', 'RMSE', 'MSE',
   'EER', 'perplexity', 'eta', 'epoch_time', 'fid',
 ]);
+
+/**
+ * Canonical metrics that are 0–1 fractions and read naturally as a percentage
+ * (accuracy family). Everything else — MAE, RMSE, loss, perplexity, cm error,
+ * … — is a raw value and must NOT be multiplied by 100 or suffixed with "%".
+ */
+export const PERCENT_METRICS = new Set([
+  'accuracy', 'val_accuracy', 'mAP', 'mAP50', 'F1', 'f1',
+  'AUC', 'auc', 'top1', 'top5', 'precision', 'recall',
+]);
+
+/** True when the primary metric should be displayed as a percentage. */
+export function isPercentMetric(key) {
+  return PERCENT_METRICS.has(key);
+}
+
+/**
+ * Display label for a metric, capitalised for a stat chip. Metrics with
+ * deliberate casing (mAP50, MAE, RMSE, EER, F1) are left untouched; plain
+ * lowercase labels ("accuracy", "val loss") get a leading capital.
+ */
+export function metricDisplayLabel(key) {
+  const raw = metricLabel(key || 'metric');
+  return /[A-Z]/.test(raw) ? raw : raw.charAt(0).toUpperCase() + raw.slice(1);
+}
+
+/**
+ * Format the primary metric for a stat chip / meter: a correct label and value
+ * string for ANY task. Accuracy-style metrics render as `NN.N%`; error/loss
+ * metrics render as their raw value (adaptive precision) — never as a bogus
+ * percentage (which produced e.g. "700%" when MAE≈7 was treated as accuracy).
+ *
+ * @param {string|null|undefined} key   canonical primary-metric key (run.primary_metric)
+ * @param {number|null|undefined} value raw primary_metric_value
+ * @returns {{ label: string, text: string, pct: boolean }}
+ */
+export function formatPrimaryMetric(key, value) {
+  const label = metricDisplayLabel(key);
+  if (value == null || !Number.isFinite(value)) return { label, text: '—', pct: false };
+  if (isPercentMetric(key)) return { label, text: `${(value * 100).toFixed(1)}%`, pct: true };
+  const abs = Math.abs(value);
+  const dec = abs >= 100 ? 1 : abs >= 1 ? 2 : 4;
+  return { label, text: value.toFixed(dec), pct: false };
+}

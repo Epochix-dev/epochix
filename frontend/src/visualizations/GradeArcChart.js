@@ -11,7 +11,7 @@
  * This makes the "story" legible as a graph: you see exactly when the model
  * crossed from B to B+, when loss plateaued, when the phase changed.
  */
-import { emaSmooth } from '../viz-util.js';
+import { emaSmooth, LOWER_IS_BETTER, isPercentMetric, formatPrimaryMetric } from '../viz-util.js';
 
 const PHASE_BG = {
   awakening:     'rgba(167,139,250,0.10)',
@@ -62,6 +62,7 @@ export class GradeArcChart {
     this._unsub = store.subscribe((s) => {
       this._frames  = s.frames  ?? [];
       this._metrics = s.metrics ?? [];
+      this._primaryKey = s.run?.primary_metric ?? null;
       this._draw();
     });
     this._resizeObs = new ResizeObserver(() => this._resize());
@@ -136,9 +137,12 @@ export class GradeArcChart {
                  ?? _metricAt(this._metrics, 'train_loss', epoch);
     const lossKey = this._metrics.some((m) => m.canonical_key === 'val_loss') ? 'val loss' : 'train loss';
 
+    // Label + value follow the real primary metric — never "accuracy: 700%"
+    // when it's actually MAE≈7.
+    const pm = acc != null ? formatPrimaryMetric(this._primaryKey, acc) : null;
     const rows = [
       `<div class="arc-tip-epoch">Epoch ${_esc(String(epoch))}</div>`,
-      acc != null   ? `<div><span class="arc-tip-k">accuracy</span><span class="arc-tip-v">${(acc * 100).toFixed(1)}%</span></div>` : '',
+      pm ? `<div><span class="arc-tip-k">${_esc(pm.label.toLowerCase())}</span><span class="arc-tip-v">${_esc(pm.text)}</span></div>` : '',
       valLoss != null ? `<div><span class="arc-tip-k">${lossKey}</span><span class="arc-tip-v">${valLoss.toFixed(3)}</span></div>` : '',
       grade         ? `<div><span class="arc-tip-k">grade</span><span class="arc-tip-v">${_esc(grade)}</span></div>` : '',
     ].filter(Boolean).join('');
@@ -223,9 +227,13 @@ export class GradeArcChart {
     }
 
     // ── Grade threshold lines ──────────────────────────────────────────────
+    // These are ACCURACY thresholds (0.55–0.97). They only make sense when the
+    // primary metric is an accuracy-style fraction; for MAE/RMSE/loss the line
+    // is drawn in quality space with a data-range axis, so we omit them.
+    const primaryIsPct = isPercentMetric(this._primaryKey);
     ctx.font         = '9px DM Sans, sans-serif';
     ctx.textAlign    = 'left';
-    for (const { grade, v, color } of GRADE_LINES) {
+    for (const { grade, v, color } of (primaryIsPct ? GRADE_LINES : [])) {
       const y = yScale(v);
       if (y < MT || y > MT + ch) continue;
       ctx.beginPath();
@@ -287,7 +295,12 @@ export class GradeArcChart {
       ctx.setLineDash([]);
     }
 
-    // ── Primary metric line (val_accuracy) — main thick line ────────────
+    // ── Primary metric line — main thick line ───────────────────────────
+    // Map into the chart's 0..1 "quality" space (like the loss line). Accuracy
+    // is already 0..1 and higher-is-better, so it maps directly against the
+    // grade lines. For MAE/RMSE/loss (raw, often lower-is-better) we scale to
+    // the observed data range and orient so "better" is up — otherwise raw
+    // MAE≈7 clamped to [0,1] pinned the whole curve flat against the top.
     const accPts = frames.map((f, i) => ({
       x: xScale(f.epoch ?? i),
       v: f.primary_metric_value ?? 0,
@@ -295,6 +308,16 @@ export class GradeArcChart {
     if (this._smoothing > 0 && accPts.length > 1) {
       const sv = emaSmooth(accPts.map((p) => p.v), this._smoothing);
       accPts.forEach((p, i) => { p.v = sv[i]; });
+    }
+    if (!primaryIsPct) {
+      const vals = accPts.map((p) => p.v);
+      const lo = Math.min(...vals), hi = Math.max(...vals);
+      const span = Math.max(hi - lo, 1e-9);
+      const lowerBetter = LOWER_IS_BETTER.has(this._primaryKey);
+      accPts.forEach((p) => {
+        const n = (p.v - lo) / span;          // 0 at the lowest value … 1 at the highest
+        p.v = lowerBetter ? 1 - n : n;        // lower-is-better → smallest value rises to the top
+      });
     }
 
     // Stash geometry for hover interaction

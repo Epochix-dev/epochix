@@ -7,6 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.5.1] — 2026-07-11
+
+### Fixed — the primary metric is not always accuracy
+
+- **The stat row, learning meter, and central learning-curve chart assumed the
+  primary metric was a 0–1 accuracy and multiplied it by 100 with a "%".** On a
+  regression/gaze run, where the primary metric is MAE/RMSE/loss (raw units),
+  this rendered nonsense — e.g. **MAE ≈ 7 shown as "Accuracy: 700%"**, the meter
+  pinned at "100%", and the learning-curve line flat-lined against the top of
+  the chart (raw MAE clamped into [0,1]) under meaningless accuracy grade lines.
+- The primary metric is now formatted by its **actual type**: accuracy-style
+  metrics (accuracy, mAP, mAP50, F1, AUC, …) still read as a percentage; error
+  and loss metrics show their **raw value** with the correct label (MAE, RMSE,
+  perplexity, …) — never a percentage. The stat chip and tooltips use the real
+  metric name instead of a hardcoded "Accuracy".
+- The central learning-curve chart maps error/loss metrics into its 0–1 quality
+  space over the observed data range (oriented so *better* rises) and hides the
+  accuracy-only grade lines when they don't apply. The improvement-burst effect
+  now respects metric direction, so it no longer celebrates a rising MAE.
+- Verified end-to-end across tasks: gaze (MAE → "5.88"), classification
+  (val_accuracy → "42.0%"), detection (mAP50 → "31.0%"). Adds a viz-util test.
+
+---
+
 ## [0.5.0] — 2026-07-10
 
 ### Added — real activations, no `Math.random()`

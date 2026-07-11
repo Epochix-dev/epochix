@@ -7,6 +7,7 @@ import { GradeCard }       from '../visualizations/GradeCard.js';
 import { TimelineStory }   from '../visualizations/TimelineStory.js';
 import { EpochScrubber }   from '../visualizations/EpochScrubber.js';
 import { GradeArcChart }   from '../visualizations/GradeArcChart.js';
+import { metricDisplayLabel, isPercentMetric } from '../viz-util.js';
 
 const PHASE_ICON = {
   awakening:     '🌱',
@@ -93,19 +94,34 @@ export class JourneyPanel {
       if (!this._statEls) {
         statRow.innerHTML = `
           <span class="stat"><span class="stat-label">Epoch</span><span class="stat-val" data-k="epoch">—</span></span>
-          <span class="stat"><span class="stat-label">Accuracy</span><span class="stat-val" data-k="acc">—</span></span>
+          <span class="stat"><span class="stat-label" data-l="metric">Accuracy</span><span class="stat-val" data-k="acc">—</span></span>
           <span class="stat"><span class="stat-label">Progress</span><span class="stat-val" data-k="prog">—</span></span>
           <span class="stat"><span class="stat-label">Grade</span><span class="stat-val" data-k="grade">—</span></span>`;
         this._statEls = {
-          epoch: statRow.querySelector('[data-k="epoch"]'),
-          acc:   statRow.querySelector('[data-k="acc"]'),
-          prog:  statRow.querySelector('[data-k="prog"]'),
-          grade: statRow.querySelector('[data-k="grade"]'),
+          epoch:  statRow.querySelector('[data-k="epoch"]'),
+          acc:    statRow.querySelector('[data-k="acc"]'),
+          accLbl: statRow.querySelector('[data-l="metric"]'),
+          prog:   statRow.querySelector('[data-k="prog"]'),
+          grade:  statRow.querySelector('[data-k="grade"]'),
         };
       }
       if (frame.epoch != null) _countUp(this._statEls.epoch, frame.epoch, { decimals: 0 });
-      if (frame.primary_metric_value != null)
-        _countUp(this._statEls.acc, frame.primary_metric_value * 100, { decimals: 1, suffix: '%' });
+      // The primary metric is NOT always accuracy — for regression/gaze it's
+      // MAE/RMSE/loss (raw units), which must never be shown as a percentage
+      // (MAE≈7 rendered as "700%" was the classic bug). Label + format follow
+      // the actual metric.
+      if (frame.primary_metric_value != null) {
+        const key = run?.primary_metric;
+        this._statEls.accLbl.textContent = metricDisplayLabel(key);
+        const v = frame.primary_metric_value;
+        if (isPercentMetric(key)) {
+          _countUp(this._statEls.acc, v * 100, { decimals: 1, suffix: '%' });
+        } else {
+          const abs = Math.abs(v);
+          const dec = abs >= 100 ? 1 : abs >= 1 ? 2 : 4;
+          _countUp(this._statEls.acc, v, { decimals: dec, suffix: '' });
+        }
+      }
       if (frame.progress != null)
         _countUp(this._statEls.prog, frame.progress * 100, { decimals: 0, suffix: '% done' });
       if (frame.grade) this._statEls.grade.textContent = frame.grade;
