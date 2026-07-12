@@ -24,6 +24,9 @@ from typing import TypedDict
 
 # Cap how many layers we visualise — keeps deep models legible.
 _MAX_LAYERS = 24
+# Longest architecture/summary line we'll regex-scan. Real table rows are short;
+# this bounds worst-case regex cost on a pathological (very long) line.
+_MAX_ARCH_LINE = 2048
 
 
 # ── layer-type → (tech_label, plain_label, visual_type) ─────────────────────
@@ -521,7 +524,9 @@ def _parse_ultralytics(lines: list[str]) -> list[ArchLayer]:
 # ── one-line model summary fallback ──────────────────────────────────────────
 
 # "Ultralytics YOLOv8n summary: 225 layers, 3157200 parameters"
-_SUMMARY_LINE = re.compile(r"([A-Za-z][\w/+-]*)\s+summary:.*?([\d,]+)\s+param", re.IGNORECASE)
+# Model name bounded ({0,80}) so an unanchored search can't backtrack O(n²) on a
+# long word run before "summary:" (a real model name is short).
+_SUMMARY_LINE = re.compile(r"([A-Za-z][\w/+-]{0,80})\s+summary:.*?([\d,]+)\s+param", re.IGNORECASE)
 
 
 def _parse_summary_line(lines: list[str]) -> list[ArchLayer]:
@@ -574,6 +579,10 @@ def parse_architecture(lines: list[str]) -> list[ArchLayer]:
     Falls back to naming the model from a one-line summary when no per-layer
     table is present.
     """
+    # Architecture table/summary lines are short; truncate anything absurdly
+    # long before the regexes see it. Some of these patterns are O(n²) on a
+    # pathological line (a tensor dump), which froze detection for ~a minute.
+    lines = [ln[:_MAX_ARCH_LINE] for ln in lines]
     best: list[ArchLayer] = []
     for parser in _PARSERS:
         try:

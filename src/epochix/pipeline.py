@@ -35,10 +35,17 @@ from epochix.story_engine import StoryEngine
 _ANSI_RE = re.compile(r"\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])")
 
 
+# A real metric log line is short; anything vastly longer is a tensor/array dump
+# or binary noise. Cap before regex work so a pathological line can't dominate.
+_MAX_LINE_LEN = 65536
+
+
 def _clean_line(text: str) -> str:
     """Strip ANSI escapes and unify carriage-return progress updates into the
     final state of the line (most progress bars emit ``\\rstep1\\rstep2``;
     we only care about the last update before the actual newline)."""
+    if len(text) > _MAX_LINE_LEN:
+        text = text[:_MAX_LINE_LEN]
     cleaned = _ANSI_RE.sub("", text)
     if "\r" in cleaned:
         cleaned = cleaned.rsplit("\r", 1)[-1]

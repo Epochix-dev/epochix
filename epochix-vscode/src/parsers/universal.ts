@@ -5,8 +5,11 @@
  */
 import type { Parser, ParserContext, RawMetric } from "./base";
 
-const KV_EQ = /(\w+)\s*=\s*([-+]?\d+(?:\.\d+)?(?:[eE][-+]?\d+)?)/g;
-const KV_COLON = /(\w+)\s*:\s*([-+]?\d+(?:\.\d+)?(?:[eE][-+]?\d+)?)/g;
+// Key capture bounded ({1,64}) to prevent O(n²) regex backtracking on a long
+// word-character run before a missing delimiter (a 100k-char line hung the
+// parser for seconds). A real metric key is never that long.
+const KV_EQ = /(\w{1,64})\s*=\s*([-+]?\d+(?:\.\d+)?(?:[eE][-+]?\d+)?)/g;
+const KV_COLON = /(\w{1,64})\s*:\s*([-+]?\d+(?:\.\d+)?(?:[eE][-+]?\d+)?)/g;
 const JSON_FRAG = /\{[^{}]+\}/g;
 
 const EPOCH_KEYS = new Set(["epoch", "ep", "e"]);

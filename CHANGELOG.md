@@ -7,6 +7,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.5.5] — 2026-07-12
+
+### Fixed — a pathologically long log line can't freeze parsing (ReDoS)
+
+- **A single very long log line (a tensor/array dump, base64 blob, …) could hang
+  parsing for tens of seconds to over a minute** — catastrophic regex
+  backtracking. The metric key/value regexes, the architecture-summary parser,
+  and the Keras progress-bar sniff all used unbounded quantifiers that backtrack
+  O(n²) on long runs of word or digit characters. Found and fixed in **both** the
+  Python package and the VS Code extension's parsers:
+  - Metric-key capture bounded to 64 chars (`\\w{1,64}`) — universal, Keras,
+    PyTorch-Lightning parsers, both codebases.
+  - Keras progress-bar step counts bounded (`\\d{1,10}/\\d{1,10}`).
+  - Architecture parser truncates over-long lines before its regexes and bounds
+    the model-name capture in the summary pattern.
+  - The pipeline caps any line at 64 KiB before regex work as a backstop.
+  - A 200k-char line now parses in milliseconds (was 12–60 s). Verified the
+    whole fixture corpus still parses identically. Regression tests added.
+
+### Audited — no changes needed
+
+Stress-tested more surfaces and confirmed they hold: the broadcast hub
+(per-run isolation, ring-buffer replay on reconnect, queue-full never-drop of
+milestones, concurrent multi-run fan-out); the WebSocket reconnect/`last_seq`
+replay and compare endpoints (unknown ids, >12 ids, injection, huge/negative
+`last_seq`); six concurrent training pipelines sharing one store (correct
+isolated frames, duplicate-seq idempotency, foreign-key integrity, a 500-epoch
+run); and API hostile inputs (path traversal, bad limits, malformed pushes) all
+return proper 4xx, never 500.
+
+---
+
 ## [0.5.4] — 2026-07-11
 
 ### Fixed — a diverged (NaN/Inf) run no longer breaks the dashboard

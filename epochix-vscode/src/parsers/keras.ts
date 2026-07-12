@@ -4,8 +4,10 @@
 import type { Parser, ParserContext, RawMetric } from "./base";
 
 const EPOCH_LINE = /^Epoch\s+(\d+)\/(\d+)\s*$/;
-const METRIC_LINE = /\d+\/\d+\s+\[=+>?\.*\]/;
-const KV_PAIR = /(\w+):\s*([-+]?\d+(?:\.\d+)?(?:[eE][-+]?\d+)?)/g;
+// Step counts bounded ({1,10}) so an unanchored search can't backtrack O(n²)
+// on a long digit run (a 200k-digit line froze the sniff for seconds).
+const METRIC_LINE = /\d{1,10}\/\d{1,10}\s+\[=+>?\.*\]/;
+const KV_PAIR = /(\w{1,64}):\s*([-+]?\d+(?:\.\d+)?(?:[eE][-+]?\d+)?)/g;
 
 const SKIP_KEYS = new Set(["s", "ms", "us"]);
 

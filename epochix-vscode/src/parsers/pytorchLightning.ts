@@ -4,7 +4,7 @@
 import type { Parser, ParserContext, RawMetric } from "./base";
 
 const EPOCH_HEADER = /Epoch\s+(\d+)\/(\d+)/;
-const KV_PAIR = /(\w+)\s*=\s*([-+]?\d+(?:\.\d+)?(?:[eE][-+]?\d+)?)/g;
+const KV_PAIR = /(\w{1,64})\s*=\s*([-+]?\d+(?:\.\d+)?(?:[eE][-+]?\d+)?)/g;
 const PROGRESS_LINE = /Epoch\s+\d+\/\d+:.*\|/;
 
 const SKIP_KEYS = new Set(["epoch", "step", "it"]);

@@ -9,9 +9,11 @@ from epochix.parsers.registry import register_parser
 
 # Epoch header: "Epoch 1/50"
 _EPOCH_LINE = re.compile(r"^Epoch\s+(\d+)/(\d+)\s*$")
-# Progress bar metric: "1563/1563 [====] - 10s - loss: 0.423 - accuracy: 0.867"
-_METRIC_LINE = re.compile(r"\d+/\d+\s+\[=+>?\.*\]")
-_KV_PAIR = re.compile(r"(\w+):\s*([-+]?\d+(?:\.\d+)?(?:[eE][-+]?\d+)?)")
+# Progress bar metric: "1563/1563 [====] - 10s - loss: 0.423 - accuracy: 0.867".
+# Step counts are bounded ({1,10}) so an unanchored search can't backtrack O(n²)
+# on a long digit run (a 200k-digit line froze the sniff for ~12s).
+_METRIC_LINE = re.compile(r"\d{1,10}/\d{1,10}\s+\[=+>?\.*\]")
+_KV_PAIR = re.compile(r"(\w{1,64}):\s*([-+]?\d+(?:\.\d+)?(?:[eE][-+]?\d+)?)")
 
 _SKIP_KEYS = frozenset({"s", "ms", "us"})
 

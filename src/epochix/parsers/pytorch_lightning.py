@@ -10,7 +10,7 @@ from epochix.parsers.registry import register_parser
 # Matches lines like:
 #   Epoch 3/10: 100%|████| 250/250 [00:12<00:00, loss=0.432, acc=0.867]
 _EPOCH_HEADER = re.compile(r"Epoch\s+(\d+)/(\d+)")
-_KV_PAIR = re.compile(r"(\w+)\s*=\s*([-+]?\d+(?:\.\d+)?(?:[eE][-+]?\d+)?)")
+_KV_PAIR = re.compile(r"(\w{1,64})\s*=\s*([-+]?\d+(?:\.\d+)?(?:[eE][-+]?\d+)?)")
 _PROGRESS_LINE = re.compile(r"Epoch\s+\d+/\d+:.*\|")
 
 _SKIP_KEYS = frozenset({"epoch", "step", "it"})

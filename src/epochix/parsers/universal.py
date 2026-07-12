@@ -9,9 +9,12 @@ from epochix.parsers.base import ParserContext
 from epochix.parsers.registry import register_parser
 
 # Pattern 1: key=value
-_KV_EQ = re.compile(r"(\w+)\s*=\s*([-+]?\d+(?:\.\d+)?(?:[eE][-+]?\d+)?)")
+# Key capture is bounded ({1,64}) so a long run of word characters before a
+# missing delimiter can't trigger O(n²) backtracking (a 100k-char line used to
+# hang the parser for seconds). A real metric key is never that long.
+_KV_EQ = re.compile(r"(\w{1,64})\s*=\s*([-+]?\d+(?:\.\d+)?(?:[eE][-+]?\d+)?)")
 # Pattern 2: key: value
-_KV_COLON = re.compile(r"(\w+)\s*:\s*([-+]?\d+(?:\.\d+)?(?:[eE][-+]?\d+)?)")
+_KV_COLON = re.compile(r"(\w{1,64})\s*:\s*([-+]?\d+(?:\.\d+)?(?:[eE][-+]?\d+)?)")
 # Pattern 3: JSON-ish dict anywhere in the line
 _JSON_FRAG = re.compile(r"\{[^{}]+\}")
 
