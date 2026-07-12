@@ -61,7 +61,7 @@ def test_build_argv_minimal() -> None:
     assert "ServerAliveInterval=30" in argv
     assert "ServerAliveCountMax=4" in argv
     assert argv[-2] == "kv@trainbox"
-    assert argv[-1] == "tail -F -n +0 /workspace/train.log"
+    assert argv[-1] == "tail -F -n +0 -- /workspace/train.log"
 
 
 def test_build_argv_with_port_identity_opts() -> None:
@@ -93,7 +93,7 @@ def test_build_argv_quotes_paths_with_spaces() -> None:
     remote_cmd = argv[-1]
     # The whole path becomes one shell-quoted token, so semicolons / spaces
     # inside it can NOT execute on the remote.
-    assert remote_cmd == "tail -F -n +0 '/runs/with space/train; rm -rf ~/.log'"
+    assert remote_cmd == "tail -F -n +0 -- '/runs/with space/train; rm -rf ~/.log'"
 
 
 def test_constructor_rejects_empty_path() -> None:
@@ -104,6 +104,37 @@ def test_constructor_rejects_empty_path() -> None:
 def test_constructor_rejects_empty_target() -> None:
     with pytest.raises(ValueError):
         SSHIngester(run_id="r", target="", remote_path="/x")
+
+
+# ── argument-injection hardening ─────────────────────────────────────────────
+
+
+@pytest.mark.parametrize(
+    "evil",
+    [
+        "-oProxyCommand=touch /tmp/pwned",  # ssh option → arbitrary local exec
+        "-i/tmp/evilkey",
+        "-Flocalfile",
+        "-",
+    ],
+)
+def test_target_starting_with_dash_is_rejected(evil: str) -> None:
+    """A target beginning with '-' would be parsed by ssh as an option (e.g.
+    ProxyCommand → RCE). It must be rejected, not passed through."""
+    with pytest.raises(ValueError, match="argument injection"):
+        SSHIngester(run_id="r", target=evil, remote_path="/log")
+
+
+def test_parse_ssh_target_rejects_dash_host() -> None:
+    with pytest.raises(ValueError, match="argument injection"):
+        parse_ssh_target("-oProxyCommand=evil:/log")
+
+
+def test_remote_path_starting_with_dash_is_not_a_tail_flag() -> None:
+    """A path beginning with '-' must not be interpreted by ``tail`` as an
+    option — the ``--`` terminator keeps it a path."""
+    ing = SSHIngester(run_id="r", target="host", remote_path="--version")
+    assert ing.build_argv()[-1] == "tail -F -n +0 -- --version"
 
 
 # ── factory wiring ───────────────────────────────────────────────────────────

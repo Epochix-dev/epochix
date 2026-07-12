@@ -48,6 +48,12 @@ class SSHIngester(BaseIngester):
     ) -> None:
         if "@" not in target and not target:
             raise ValueError("ssh target must be 'user@host' or 'host'")
+        # A target starting with '-' would be parsed by ssh as an OPTION, not a
+        # destination — e.g. '-oProxyCommand=…' is arbitrary local command
+        # execution (classic argument injection). No real host/user@host starts
+        # with '-', so reject it outright.
+        if target.startswith("-"):
+            raise ValueError("ssh target must not start with '-' (argument injection)")
         if not remote_path:
             raise ValueError("remote_path is required for SSHIngester")
         self._run_id = run_id
@@ -82,8 +88,13 @@ class SSHIngester(BaseIngester):
             argv += ["-i", self._identity]
         for opt in self._extra_opts:
             argv += ["-o", opt]
-        # Remote command — quoted for the remote shell.
-        remote_cmd = f"tail -F -n +0 {shlex.quote(self._remote_path)}"
+        # Defense in depth: the constructor already rejects this, but never let a
+        # '-'-leading target reach ssh's option parser.
+        if self._target.startswith("-"):
+            raise ValueError("ssh target must not start with '-' (argument injection)")
+        # Remote command — quoted for the remote shell. ``--`` stops ``tail``
+        # from treating a path that begins with '-' as an option.
+        remote_cmd = f"tail -F -n +0 -- {shlex.quote(self._remote_path)}"
         argv += [self._target, remote_cmd]
         return argv
 
@@ -147,4 +158,6 @@ def parse_ssh_target(value: str) -> tuple[str, str]:
     target, path = value.split(":", 1)
     if not target or not path:
         raise ValueError("Expected '[user@]host:/path/to/log' — empty host or path")
+    if target.startswith("-"):
+        raise ValueError("ssh host must not start with '-' (argument injection)")
     return target, path

@@ -7,6 +7,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.5.6] — 2026-07-12
+
+### Security — SSH ingester argument injection
+
+- **The SSH-tail ingester passed the target host straight to `ssh` as a
+  positional argument.** A target beginning with `-` — e.g.
+  `-oProxyCommand=<cmd>` — would be parsed by `ssh` as an *option*, executing an
+  arbitrary local command (classic argument injection / RCE). Targets that start
+  with `-` are now rejected in the constructor and in `parse_ssh_target`.
+- The remote `tail` command now uses a `--` terminator
+  (`tail -F -n +0 -- <path>`) so a log path that begins with `-` is treated as a
+  path, not a `tail` flag.
+
+### Audited — no changes needed
+
+Continued the exhaustive pass over the remaining surfaces and confirmed they
+hold: the PDF and single-file HTML exporters escape all run-supplied text (run
+name, narrative, metric keys) — no HTML/script injection, and they build fine
+for empty / single-frame / diverged runs; and the dashboard survives aggressive
+interaction (rapid epoch scrubbing, out-of-range slider values, spamming the
+3D / gradient / theme toggles, the mixed-metric compare view) with no console
+errors.
+
+---
+
 ## [0.5.5] — 2026-07-12
 
 ### Fixed — a pathologically long log line can't freeze parsing (ReDoS)
