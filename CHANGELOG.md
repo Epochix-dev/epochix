@@ -7,7 +7,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [0.5.9] — 2026-07-13
+## [0.5.10] — 2026-07-13
+
+### Fixed — dependency floors were too low for Python 3.13; SPA route hardened
+
+Installing the declared minimum dependency versions revealed they don't actually
+work on Python 3.13, which we claim to support:
+
+- **`sqlalchemy>=2.0`** — 2.0.0 raises `AssertionError` on Python 3.13 (its
+  `TypingOnly` check rejects 3.13's new `__static_attributes__` /
+  `__firstlineno__`), fixed upstream in 2.0.31 → floor bumped to **>=2.0.31**.
+- **`pydantic>=2.7`** — 2.7's `pydantic-core` has no 3.13 wheel and won't build
+  → floor bumped to **>=2.9**.
+- **`typer>=0.12`** — 0.12 crashes on 3.13 (`Type not yet supported:
+  pathlib._local.Path | None`) → floor bumped to **>=0.15**.
+- **SPA catch-all routes**: `FileResponse` was imported inside `create_app`, so
+  under `from __future__ import annotations` the `-> FileResponse` return
+  annotation couldn't be resolved by older pydantic when FastAPI built the route.
+  Moved the import to module scope — robust across pydantic versions.
+
+The full unit + integration suite now passes against the corrected floor set
+(pydantic 2.9.2 / sqlalchemy 2.0.31 / typer 0.15.4 / fastapi 0.116 / uvicorn
+0.30) on Python 3.13. Normal `pip install` was already fine (pip resolves to
+current versions); this only bit anyone pinning the old floors.
+
+
 
 ### Fixed — localisation actually localises, and Persian renders right-to-left
 

@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "epochix"
-version = "0.5.9"
+version = "0.5.10"
 description = "Visual storytelling for deep learning training runs."
 authors = [{ name = "Epochix Team" }]
 license = "Apache-2.0"
@@ -26,12 +26,12 @@ classifiers = [
   "Operating System :: OS Independent",
 ]
 dependencies = [
-  "pydantic>=2.7",
+  "pydantic>=2.9",
   "pydantic-settings>=2.4",
   "fastapi>=0.116",
   "uvicorn[standard]>=0.30",
-  "sqlalchemy>=2.0",
-  "typer>=0.12",
+  "sqlalchemy>=2.0.31",
+  "typer>=0.15",
   "structlog>=24.1",
   "python-ulid>=3.0",
   "anyio>=4.4",

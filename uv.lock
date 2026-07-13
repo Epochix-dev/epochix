@@ -786,7 +786,7 @@ wheels = [
 
 [[package]]
 name = "epochix"
-version = "0.5.9"
+version = "0.5.10"
 source = { editable = "." }
 dependencies = [
     { name = "aiofiles" },
@@ -864,7 +864,7 @@ requires-dist = [
     { name = "mypy", marker = "extra == 'dev'", specifier = ">=1.11" },
     { name = "playwright", marker = "extra == 'dev'", specifier = ">=1.45" },
     { name = "pre-commit", marker = "extra == 'dev'", specifier = ">=3.8" },
-    { name = "pydantic", specifier = ">=2.7" },
+    { name = "pydantic", specifier = ">=2.9" },
     { name = "pydantic-settings", specifier = ">=2.4" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=8" },
     { name = "pytest-asyncio", marker = "extra == 'dev'", specifier = ">=0.24" },
@@ -874,10 +874,10 @@ requires-dist = [
     { name = "redis", marker = "extra == 'redis'", specifier = ">=5.0" },
     { name = "ruff", marker = "extra == 'dev'", specifier = "==0.15.15" },
     { name = "schemathesis", marker = "extra == 'dev'", specifier = ">=3.34" },
-    { name = "sqlalchemy", specifier = ">=2.0" },
+    { name = "sqlalchemy", specifier = ">=2.0.31" },
     { name = "structlog", specifier = ">=24.1" },
     { name = "transformers", marker = "extra == 'hf'", specifier = ">=4.40" },
-    { name = "typer", specifier = ">=0.12" },
+    { name = "typer", specifier = ">=0.15" },
     { name = "uvicorn", extras = ["standard"], specifier = ">=0.30" },
     { name = "weasyprint", marker = "extra == 'pdf'", specifier = ">=62" },
 ]

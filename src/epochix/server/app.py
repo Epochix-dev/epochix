@@ -8,6 +8,7 @@ from typing import Any
 
 from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
 from epochix.config import Settings
@@ -130,8 +131,6 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     # Absent during development / CI — the server operates in API-only mode.
     _index_html = _FRONTEND_DIR / "index.html"
     if _index_html.is_file():
-        from fastapi.responses import FileResponse
-
         # SPA catch-all: /v/<run_id>, /compare and root return index.html
         @app.get("/v/{path:path}", include_in_schema=False)
         async def _spa_view(path: str) -> FileResponse:  # noqa: ARG001
