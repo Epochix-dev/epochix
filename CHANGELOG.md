@@ -7,7 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [0.5.8] — 2026-07-13
+## [0.5.9] — 2026-07-13
+
+### Fixed — localisation actually localises, and Persian renders right-to-left
+
+- **`?locale=fr` / `?locale=fa` barely changed the UI**, and **Persian (fa)
+  rendered left-to-right** — the panel titles, nav items and chrome were
+  hardcoded English in the markup and nothing set the text direction. The static
+  chrome is now driven through the locale dictionaries via `data-i18n`
+  attributes, missing keys fall back to English (partial translations degrade
+  gracefully), and the document flips to `dir="rtl"` for Persian.
+- Added French and Persian translations for the navigation and panel titles, and
+  a unit test for the locale/direction application. Verified in the browser:
+  `fr` shows "Aperçu / État du réseau" (LTR), `fa` shows "نمای کلی / وضعیت شبکه"
+  with the sidebar mirrored to the right and no layout overflow.
+
+Note: the *dynamic* story text (narratives, milestone messages) is still
+generated in English by the server — full narrative localisation is a separate
+follow-up.
+
+
 
 ### Fixed — "Epoch N/M: metrics" logs now show the epoch and progress
 

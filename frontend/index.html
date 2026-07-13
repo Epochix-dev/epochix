@@ -43,20 +43,20 @@
       </a>
 
       <nav class="sidebar-nav" id="sidebar-nav">
-        <a class="nav-item is-active" data-target="sec-overview"><span class="nav-ico">◎</span>Overview</a>
-        <a class="nav-item" data-target="sec-explain"><span class="nav-ico">💬</span>Explain</a>
-        <a class="nav-item" data-target="sec-network"><span class="nav-ico">⬡</span>Network</a>
-        <a class="nav-item" data-target="sec-curve"><span class="nav-ico">📈</span>Learning</a>
-        <a class="nav-item" data-target="sec-diagnostics"><span class="nav-ico">🩺</span>Diagnostics</a>
-        <a class="nav-item" data-target="sec-distributions"><span class="nav-ico">▥</span>Distributions</a>
-        <a class="nav-item" data-target="sec-engineer"><span class="nav-ico">⚙</span>Engineer</a>
-        <a class="nav-item" href="/"><span class="nav-ico">▦</span>All runs</a>
+        <a class="nav-item is-active" data-target="sec-overview"><span class="nav-ico">◎</span><span data-i18n="ui.nav.overview">Overview</span></a>
+        <a class="nav-item" data-target="sec-explain"><span class="nav-ico">💬</span><span data-i18n="ui.nav.explain">Explain</span></a>
+        <a class="nav-item" data-target="sec-network"><span class="nav-ico">⬡</span><span data-i18n="ui.nav.network">Network</span></a>
+        <a class="nav-item" data-target="sec-curve"><span class="nav-ico">📈</span><span data-i18n="ui.nav.learning">Learning</span></a>
+        <a class="nav-item" data-target="sec-diagnostics"><span class="nav-ico">🩺</span><span data-i18n="ui.nav.diagnostics">Diagnostics</span></a>
+        <a class="nav-item" data-target="sec-distributions"><span class="nav-ico">▥</span><span data-i18n="ui.nav.distributions">Distributions</span></a>
+        <a class="nav-item" data-target="sec-engineer"><span class="nav-ico">⚙</span><span data-i18n="ui.nav.engineer">Engineer</span></a>
+        <a class="nav-item" href="/"><span class="nav-ico">▦</span><span data-i18n="ui.nav.allRuns">All runs</span></a>
       </nav>
 
       <div class="sidebar-foot" id="sidebar-foot">
         <div class="sidebar-card">
           <div class="sc-grade" id="sc-grade">—</div>
-          <div class="sc-label">Current grade</div>
+          <div class="sc-label" data-i18n="ui.currentGrade">Current grade</div>
           <svg class="sc-spark" id="sc-spark" viewBox="0 0 120 34" preserveAspectRatio="none" hidden></svg>
           <div class="sc-phase" id="sc-phase">—</div>
         </div>
@@ -70,7 +70,7 @@
       <header id="app-topbar">
         <div class="topbar-greet">
           <h1 class="greet-title" id="run-name">Epochix</h1>
-          <p class="greet-sub">Your model's training story</p>
+          <p class="greet-sub" data-i18n="ui.greetSub">Your model's training story</p>
         </div>
         <div class="topbar-controls">
           <span class="phase-badge" id="phase-badge">—</span>
@@ -89,7 +89,7 @@
         <!-- Left: Science-based neural network visualization -->
         <div id="hero-panel" class="panel panel-brain" data-sec="sec-network">
           <div class="brain-header">
-            <span class="panel-label">Network State</span>
+            <span class="panel-label" data-i18n="ui.panels.networkState">Network State</span>
             <div class="brain-controls" id="brain-controls">
               <button class="brain-toggle is-on" data-toggle="depth" title="Toggle 3D depth">◳ 3D</button>
               <button class="brain-toggle is-on" data-toggle="grad" title="Toggle gradient flow (backprop)">∇ Gradients</button>
@@ -120,7 +120,7 @@
       <!-- ── Row 1.5: Educational explainer (plain English, non-technical) ─── -->
       <section class="educational-row" id="sec-explain">
         <div class="panel panel-educational">
-          <div class="panel-label">In Plain English
+          <div class="panel-label"><span data-i18n="ui.panels.plainEnglish">In Plain English</span>
             <span class="panel-label-sub">what your model learned — no jargon</span>
           </div>
           <div id="educational"></div>
@@ -131,7 +131,7 @@
       <section class="arc-row" id="sec-curve">
         <div class="panel panel-arc">
           <div class="panel-label">
-            Learning Curve
+            <span data-i18n="ui.panels.learningCurve">Learning Curve</span>
             <span class="panel-label-sub">grade &amp; accuracy vs epoch — grade thresholds shown as dashed lines</span>
             <label class="cmp-ctl arc-smooth-ctl">Smoothing
               <input id="arc-smooth" type="range" min="0" max="0.9" step="0.05" value="0">
@@ -146,7 +146,7 @@
       <!-- ── Row 2.5: Phase journey ribbon (educational at-a-glance story) ── -->
       <section class="phase-journey-row">
         <div class="panel panel-phase-journey">
-          <div class="panel-label">Phase Journey
+          <div class="panel-label"><span data-i18n="ui.panels.phaseJourney">Phase Journey</span>
             <span class="panel-label-sub">the five learning phases mapped to epochs</span>
           </div>
           <div id="phase-journey"></div>
@@ -156,7 +156,7 @@
       <!-- ── Row 2.6: Training diagnostics (interpreted health readout) ────── -->
       <section class="diagnostics-row" id="sec-diagnostics">
         <div class="panel panel-diagnostics">
-          <div class="panel-label">Training Diagnostics
+          <div class="panel-label"><span data-i18n="ui.panels.diagnostics">Training Diagnostics</span>
             <span class="panel-label-sub">what the curves mean — overfitting, convergence, stability &amp; health</span>
           </div>
           <div id="training-diagnostics"></div>
@@ -166,7 +166,7 @@
       <!-- ── Row 2.7: Distributions (composition + metric spread) ─────────── -->
       <section class="distributions-row" id="sec-distributions">
         <div class="panel panel-distributions">
-          <div class="panel-label">Distributions
+          <div class="panel-label"><span data-i18n="ui.panels.distributions">Distributions</span>
             <span class="panel-label-sub">model composition &amp; metric spread</span>
           </div>
           <div id="distributions"></div>
@@ -176,7 +176,7 @@
       <!-- ── Row 3: Timeline (epoch-by-epoch progression) ─────────────────── -->
       <section class="timeline-row">
         <div id="timeline-panel" class="panel panel-timeline">
-          <div class="panel-label">Training Journey
+          <div class="panel-label"><span data-i18n="ui.panels.trainingJourney">Training Journey</span>
             <span class="panel-label-sub">drag scrubber to replay any epoch</span>
           </div>
           <div id="timeline-story"></div>
@@ -187,13 +187,13 @@
       <!-- ── Row 4: Skills + Metrics (detail row) ──────────────────────────── -->
       <section class="detail-row">
         <div id="skills-panel" class="panel panel-skills">
-          <div class="panel-label">Skill Dimensions
+          <div class="panel-label"><span data-i18n="ui.panels.skillDimensions">Skill Dimensions</span>
             <span class="panel-label-sub">glanceable summary — axes are correlated, shape is rhetorical, not multi-dimensional balance</span>
           </div>
           <div id="skill-radar"></div>
         </div>
         <div class="panel panel-confidence">
-          <div class="panel-label">Live Metrics</div>
+          <div class="panel-label" data-i18n="ui.panels.liveMetrics">Live Metrics</div>
           <div id="confidence-bars"></div>
         </div>
       </section>
@@ -202,7 +202,7 @@
       <section class="engineer-row" id="sec-engineer">
         <details id="tech-panel" class="panel panel-tech" open>
           <summary class="panel-title">
-            Engineer Panel
+            <span data-i18n="ui.panels.engineer">Engineer Panel</span>
             <span class="panel-label-sub">raw loss &amp; accuracy curves — the numbers behind the story</span>
           </summary>
           <div id="tech-panel-content">

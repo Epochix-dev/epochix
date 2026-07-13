@@ -47,5 +47,31 @@
     "nlp":            "NLP",
     "generative":     "Generative",
     "custom":         "Custom Task"
+  },
+  "ui": {
+    "greetSub":     "Your model's training story",
+    "currentGrade": "Current grade",
+    "nav": {
+      "overview":      "Overview",
+      "explain":       "Explain",
+      "network":       "Network",
+      "learning":      "Learning",
+      "diagnostics":   "Diagnostics",
+      "distributions": "Distributions",
+      "engineer":      "Engineer",
+      "allRuns":       "All runs"
+    },
+    "panels": {
+      "networkState":    "Network State",
+      "plainEnglish":    "In Plain English",
+      "learningCurve":   "Learning Curve",
+      "phaseJourney":    "Phase Journey",
+      "diagnostics":     "Training Diagnostics",
+      "distributions":   "Distributions",
+      "trainingJourney": "Training Journey",
+      "skillDimensions": "Skill Dimensions",
+      "liveMetrics":     "Live Metrics",
+      "engineer":        "Engineer Panel"
+    }
   }
 }

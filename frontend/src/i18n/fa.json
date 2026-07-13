@@ -47,5 +47,31 @@
     "nlp":            "پردازش زبان طبیعی",
     "generative":     "مولد",
     "custom":         "وظیفه سفارشی"
+  },
+  "ui": {
+    "greetSub":     "داستان آموزش مدل شما",
+    "currentGrade": "نمره فعلی",
+    "nav": {
+      "overview":      "نمای کلی",
+      "explain":       "توضیح",
+      "network":       "شبکه",
+      "learning":      "یادگیری",
+      "diagnostics":   "تشخیص",
+      "distributions": "توزیع‌ها",
+      "engineer":      "مهندسی",
+      "allRuns":       "همه اجراها"
+    },
+    "panels": {
+      "networkState":    "وضعیت شبکه",
+      "plainEnglish":    "به زبان ساده",
+      "learningCurve":   "منحنی یادگیری",
+      "phaseJourney":    "مسیر مراحل",
+      "diagnostics":     "تشخیص آموزش",
+      "distributions":   "توزیع‌ها",
+      "trainingJourney": "سفر آموزش",
+      "skillDimensions": "ابعاد مهارت",
+      "liveMetrics":     "معیارهای زنده",
+      "engineer":        "پنل مهندسی"
+    }
   }
 }

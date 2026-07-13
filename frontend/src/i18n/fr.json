@@ -47,5 +47,31 @@
     "nlp":            "TALN",
     "generative":     "Génératif",
     "custom":         "Tâche personnalisée"
+  },
+  "ui": {
+    "greetSub":     "L'histoire d'entraînement de votre modèle",
+    "currentGrade": "Note actuelle",
+    "nav": {
+      "overview":      "Aperçu",
+      "explain":       "Expliquer",
+      "network":       "Réseau",
+      "learning":      "Apprentissage",
+      "diagnostics":   "Diagnostics",
+      "distributions": "Distributions",
+      "engineer":      "Ingénieur",
+      "allRuns":       "Tous les runs"
+    },
+    "panels": {
+      "networkState":    "État du réseau",
+      "plainEnglish":    "En termes simples",
+      "learningCurve":   "Courbe d'apprentissage",
+      "phaseJourney":    "Parcours des phases",
+      "diagnostics":     "Diagnostics d'entraînement",
+      "distributions":   "Distributions",
+      "trainingJourney": "Parcours d'entraînement",
+      "skillDimensions": "Dimensions de compétence",
+      "liveMetrics":     "Métriques en direct",
+      "engineer":        "Panneau ingénieur"
+    }
   }
 }

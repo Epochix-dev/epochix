@@ -33,6 +33,7 @@ import { Educational }                       from './visualizations/Educational.
 import en from './i18n/en.json';
 import fa from './i18n/fa.json';
 import fr from './i18n/fr.json';
+import { applyStaticI18n } from './i18n/apply.js';
 
 const LOCALES = { en, fa, fr };
 
@@ -136,6 +137,7 @@ async function main() {
   const locale = getParam('locale') ?? localStorage.getItem('ms-locale') ?? 'en';
   const i18n   = loadI18n(locale);
   store.set({ locale });
+  applyStaticI18n(i18n, locale);  // localise chrome + set text direction (RTL for fa)
 
   // Mount panels early so they show skeleton state
   const hero    = new HeroPanel(store);
