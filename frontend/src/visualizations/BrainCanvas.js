@@ -308,6 +308,14 @@ export class BrainCanvas {
     const dpr = window.devicePixelRatio || 1;
     const w   = parent.clientWidth;
     const h   = parent.clientHeight || 300;
+    // A ResizeObserver can fire mid-reflow (e.g. a flex column collapsing to a
+    // narrow layout) while the parent momentarily reports 0 width. Sizing the
+    // canvas to 0 then would leave the network view permanently blank, so
+    // retry on the next frame instead of locking in a zero-width buffer.
+    if (w <= 0) {
+      requestAnimationFrame(() => this._resize());
+      return;
+    }
     this._canvas.width  = w * dpr;
     this._canvas.height = h * dpr;
     this._canvas.style.width  = `${w}px`;

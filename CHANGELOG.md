@@ -7,7 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [0.5.10] — 2026-07-13
+## [0.5.11] — 2026-07-13
+
+### Fixed — network view no longer blanks on narrow / mobile layouts
+
+- **The Network State canvas could render at zero width** (blank) on a narrow
+  viewport. Its `ResizeObserver` can fire mid-reflow while the parent momentarily
+  reports 0 width; the canvas was then sized to 0 and never recovered. It now
+  retries on the next animation frame instead of locking in a zero-width buffer.
+- Verified the dashboard at mobile (375px), tablet (768px) and desktop widths:
+  no horizontal overflow, no zero-width visible canvases, and high-DPI (2×)
+  canvas scaling renders correctly.
+
+
 
 ### Fixed — dependency floors were too low for Python 3.13; SPA route hardened
 
