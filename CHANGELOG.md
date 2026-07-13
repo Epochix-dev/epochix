@@ -7,7 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [0.5.7] — 2026-07-12
+## [0.5.8] — 2026-07-13
+
+### Fixed — "Epoch N/M: metrics" logs now show the epoch and progress
+
+- **When the epoch is printed on the same line as the metrics** — e.g.
+  `Epoch 1/8: train_loss=… val_accuracy=…` (no `epoch=1` key/value form) — the
+  universal parser extracted the metrics but not the epoch, so the dashboard
+  showed "Epoch —" and a progress bar stuck at 0 %. It now recognises a bare
+  `Epoch N` / `Epoch N/M` header, stamps each metric with the epoch, and uses
+  `M` as the total so the progress bar advances. Found by installing the
+  published wheel into a clean venv and driving it as a brand-new user.
+
+
 
 ### Fixed — file-tail ingester memory bound
 

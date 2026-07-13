@@ -17,6 +17,11 @@ _KV_EQ = re.compile(r"(\w{1,64})\s*=\s*([-+]?\d+(?:\.\d+)?(?:[eE][-+]?\d+)?)")
 _KV_COLON = re.compile(r"(\w{1,64})\s*:\s*([-+]?\d+(?:\.\d+)?(?:[eE][-+]?\d+)?)")
 # Pattern 3: JSON-ish dict anywhere in the line
 _JSON_FRAG = re.compile(r"\{[^{}]+\}")
+# Bare "Epoch N" / "Epoch N/M" header (common when the epoch is printed on the
+# same line as the metrics, e.g. "Epoch 1/8: loss=…"). Digit runs bounded to
+# stay linear. Captures the epoch and, when present, the total for the progress
+# bar. This is NOT a key=value pair, so the KV patterns miss it otherwise.
+_EPOCH_HEADER = re.compile(r"\bepoch\s+(\d{1,9})(?:\s*/\s*(\d{1,9}))?\b", re.IGNORECASE)
 
 _EPOCH_KEYS = frozenset({"epoch", "ep", "e"})
 _STEP_KEYS = frozenset({"step", "iter", "iteration", "batch"})
@@ -57,6 +62,14 @@ class UniversalParser:
                     confidence=conf,
                 )
             )
+
+        # Bare epoch header ("Epoch 1/8: …") — set the epoch/total so metrics on
+        # the same line are stamped with it and the progress bar advances.
+        eh = _EPOCH_HEADER.search(line)
+        if eh is not None:
+            ctx.current_epoch = float(eh.group(1))
+            if eh.group(2) is not None:
+                ctx.total_epochs = int(eh.group(2))
 
         # Pattern 3 first: JSON fragments (highest confidence)
         for frag in _JSON_FRAG.finditer(line):

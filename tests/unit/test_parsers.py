@@ -137,6 +137,24 @@ class TestUniversalParser:
         metrics = UniversalParser().parse_line(line, ctx)
         assert len(metrics) >= 1
 
+    def test_epoch_header_on_metric_line(self) -> None:
+        """`Epoch N/M: metrics` (epoch printed on the same line, no key=value
+        form) must stamp the metrics with the epoch and set the total, so the
+        dashboard shows the epoch number and a progress bar — not "Epoch —"."""
+        ctx = ParserContext(run_id="test", seq=1)
+        parser = UniversalParser()
+        metrics = parser.parse_line("Epoch 1/8: train_loss=2.31 val_accuracy=0.24", ctx)
+        assert ctx.current_epoch == 1.0
+        assert ctx.total_epochs == 8
+        assert all(m.epoch == 1.0 for m in metrics)
+        # "Epoch" itself must not become a spurious metric
+        assert not any(m.key.lower() == "epoch" for m in metrics)
+        # a later line advances the epoch
+        ctx.seq = 2
+        m2 = parser.parse_line("Epoch 2/8: train_loss=1.6 val_accuracy=0.51", ctx)
+        assert ctx.current_epoch == 2.0
+        assert all(m.epoch == 2.0 for m in m2)
+
     def test_never_crashes_on_garbage(self) -> None:
         ctx = ParserContext(run_id="test", seq=1)
         garbage = [
