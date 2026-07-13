@@ -90,3 +90,20 @@ class TestMakeIngester:
     def test_unknown_source_raises(self) -> None:
         with pytest.raises(ValueError, match="Unknown ingester source"):
             make_ingester(source="unknown", run_id="r1")
+
+    async def test_file_tail_flushes_newline_free_content(self, tmp_path: object) -> None:
+        """A file with no newline (binary blob / one giant line) must not grow
+        the read buffer without bound — it's flushed as a line instead."""
+        import asyncio
+
+        from epochix.ingester.file_tail import _MAX_PARTIAL, FileTailIngester
+
+        path = tmp_path / "blob.log"  # type: ignore[operator]
+        path.write_text("Z" * (_MAX_PARTIAL + 4096), encoding="utf-8")  # no "\n"
+        ing = FileTailIngester("r1", str(path), poll_interval=0.01)
+        gen = ing.lines()
+        try:
+            line = await asyncio.wait_for(gen.__anext__(), timeout=3.0)
+            assert len(line.text) >= _MAX_PARTIAL  # got the buffered blob, no OOM
+        finally:
+            await gen.aclose()

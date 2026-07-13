@@ -10,6 +10,10 @@ import aiofiles  # type: ignore[import-untyped]
 from epochix.ingester import BaseIngester
 from epochix.models import RawLogLine
 
+# Flush an un-terminated line once it exceeds this, so a newline-free file can't
+# grow the buffer without bound. Far larger than any real log line.
+_MAX_PARTIAL = 1_048_576  # 1 MiB
+
 
 class FileTailIngester(BaseIngester):
     """Tail a file asynchronously, yielding new lines as they appear.
@@ -54,6 +58,19 @@ class FileTailIngester(BaseIngester):
                             text=line,
                         )
                         seq += 1
+                    # A file with no newlines (a binary blob, or one giant JSON
+                    # line) would otherwise grow `partial` without bound. Flush
+                    # it as a line once it's clearly not a normal log line so
+                    # memory stays bounded.
+                    if len(partial) > _MAX_PARTIAL:
+                        yield RawLogLine(
+                            seq=seq,
+                            timestamp=datetime.now(tz=timezone.utc),
+                            source="file",
+                            text=partial,
+                        )
+                        seq += 1
+                        partial = ""
                 else:
                     # No new data — sleep and poll again
                     await asyncio.sleep(self._poll_interval)

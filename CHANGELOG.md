@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.5.7] — 2026-07-12
+
+### Fixed — file-tail ingester memory bound
+
+- **`FileTailIngester` accumulated an un-terminated line without bound.** Pointed
+  at a file with no newlines — a binary blob, or one enormous single-line JSON —
+  the read buffer would grow until the process ran out of memory. It now flushes
+  the buffered content as a line once it exceeds 1 MiB, so memory stays bounded
+  regardless of the file.
+
+### Audited — no changes needed
+
+Finished the sweep of the remaining ingesters and the extension's terminal
+detection: the stdin ingester uses bounded queues; the opt-in LLM-fallback
+parser wraps its network calls in try/except, guards `float()` conversions, and
+relies on the normalizer to drop any non-finite the model hallucinates; and the
+VS Code training detector runs on an 8 KiB tail (≈15 ms worst case), so its
+`\\d+/\\d+`-style patterns can't blow up in practice.
+
+---
+
 ## [0.5.6] — 2026-07-12
 
 ### Security — SSH ingester argument injection
