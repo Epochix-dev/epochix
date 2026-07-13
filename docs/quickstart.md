@@ -119,6 +119,34 @@ epochix --help
 
 ---
 
+## Remote & reverse-proxy deployment
+
+`epochix serve` is a single-origin app; it works well behind a TLS-terminating
+reverse proxy **as long as the app is served at the root of its origin** (a
+dedicated host/subdomain), because the dashboard references assets, the API and
+the WebSocket with absolute-from-root paths (`/assets`, `/api`, `/ws/live`).
+
+- **Bind address**: `epochix serve --host 0.0.0.0 --port 7860` to accept
+  non-localhost connections (only do this on a trusted network or behind a
+  proxy).
+- **TLS**: terminate HTTPS at the proxy. The dashboard detects `https://` and
+  automatically upgrades the live feed to `wss://` — no config needed.
+- **WebSocket**: the proxy must forward the WebSocket upgrade for `/ws/live/*`
+  (e.g. nginx `proxy_set_header Upgrade $http_upgrade; proxy_set_header
+  Connection "upgrade";`). If WebSockets are blocked, the dashboard falls back
+  to SSE at `/sse/*`.
+- **Auth**: set `EPOCHIX_AUTH_TOKEN` to require `?token=<token>` on the WS/SSE
+  feed and to reveal the API docs at `/api/docs`; leave it unset for
+  localhost-only use.
+- **CORS**: `EPOCHIX_CORS_ORIGINS` (comma-separated) opts into cross-origin API
+  access; the default is same-origin only.
+
+**Not supported:** serving under a URL sub-path (e.g. `https://host/epochix/`).
+The dashboard assumes it lives at the origin root — proxy it at the root of a
+(sub)domain instead.
+
+---
+
 ## Next steps
 
 - [Supported frameworks](parsers.md) — see all supported log formats
