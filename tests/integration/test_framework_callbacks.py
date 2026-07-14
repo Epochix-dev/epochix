@@ -66,8 +66,26 @@ def _only_run(db_path: str) -> Any:
     return run, store.get_story_frames(run.id), store.get_metric_events(run.id)
 
 
+def _import_lightning() -> Any:
+    """Whichever Lightning is installed.
+
+    `pip install epochix[lightning]` pulls the LEGACY `pytorch-lightning`
+    distribution, whose Callback is a different class object from the modern
+    `lightning` package's. Importorskip-ing only `lightning.pytorch` made this
+    test skip silently on exactly the version we promise to support.
+    """
+    import importlib
+
+    for name in ("lightning.pytorch", "pytorch_lightning"):
+        try:
+            return importlib.import_module(name)
+        except ImportError:
+            continue
+    pytest.skip("neither lightning nor pytorch_lightning is installed")
+
+
 def test_lightning_callback_drives_a_real_trainer(db: str) -> None:
-    pl = pytest.importorskip("lightning.pytorch")
+    pl = _import_lightning()
     from torch.nn import functional as F  # noqa: N812
     from torch.utils.data import DataLoader
 
@@ -171,19 +189,25 @@ def test_hf_callback_drives_a_real_trainer(db: str) -> None:
         logits, labels = pred
         return {"accuracy": float((np.argmax(logits, axis=1) == labels).mean())}
 
-    args = TrainingArguments(
-        output_dir=os.path.join(os.path.dirname(db), "hf_out"),
-        num_train_epochs=EPOCHS,
-        per_device_train_batch_size=64,
-        per_device_eval_batch_size=64,
-        eval_strategy="epoch",
-        logging_strategy="epoch",
-        save_strategy="no",
-        learning_rate=0.05,
-        report_to=[],
-        disable_tqdm=True,
-        use_cpu=True,
-    )
+    common = {
+        "output_dir": os.path.join(os.path.dirname(db), "hf_out"),
+        "num_train_epochs": EPOCHS,
+        "per_device_train_batch_size": 64,
+        "per_device_eval_batch_size": 64,
+        "logging_strategy": "epoch",
+        "save_strategy": "no",
+        "learning_rate": 0.05,
+        "report_to": [],
+        "disable_tqdm": True,
+        "use_cpu": True,
+    }
+    try:
+        args = TrainingArguments(eval_strategy="epoch", **common)
+    except TypeError:
+        # transformers < 5 spells it `evaluation_strategy`. The callback itself
+        # doesn't care, but the declared floor (4.40) is a supported version and
+        # this test has to run there.
+        args = TrainingArguments(evaluation_strategy="epoch", **common)
     Trainer(
         model=TinyClassifier(),
         args=args,

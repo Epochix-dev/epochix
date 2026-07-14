@@ -123,9 +123,27 @@ jobs:
     # behind that gap — including a Lightning callback that crashed fit() on
     # hook lookup, and an HF callback whose inverted MRO made every hook a
     # silent no-op. CPU-only torch keeps this job to a couple of minutes.
+    #
+    # Two rows, because 0.5.10 showed dependency floors rot silently:
+    #   latest — what a new `pip install` resolves to today.
+    #   floor  — the versions pyproject actually PROMISES. `epochix[lightning]`
+    #            installs the LEGACY `pytorch-lightning` distribution, whose
+    #            Callback is a different class object from `lightning`'s, so it
+    #            exercises the other branch of _callback_base().
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - deps: latest
+            python: "3.12"
+            pins: 'lightning "transformers>=4.40" "accelerate>=1.1.0"'
+          - deps: floor
+            python: "3.10"
+            pins: '"pytorch-lightning==2.3.0" "transformers==4.40.0" "accelerate>=0.21"'
+    name: integrations (${{ matrix.deps }})
     runs-on: ubuntu-latest
     env:
-      UV_PYTHON: "3.12"
+      UV_PYTHON: ${{ matrix.python }}
     steps:
       - uses: actions/checkout@v5
       - uses: astral-sh/setup-uv@v5
@@ -133,7 +151,7 @@ jobs:
         run: |
           uv sync --extra dev
           uv pip install torch --index-url https://download.pytorch.org/whl/cpu
-          uv pip install lightning "transformers>=4.40" "accelerate>=1.1.0" numpy
+          uv pip install ${{ matrix.pins }} numpy
           uv pip install tensorboard pandas
       - name: Real Lightning / HuggingFace training + real TensorBoard import
         run: |
