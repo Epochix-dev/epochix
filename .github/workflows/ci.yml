@@ -117,6 +117,45 @@ jobs:
               sys.exit("::error::expected 3 passing engine renders (chromium, firefox, webkit)")
           PY
 
+  integrations:
+    # Drives the Lightning and HuggingFace StoryCallbacks with the REAL
+    # frameworks. They were only ever duck-typed before, and three bugs shipped
+    # behind that gap — including a Lightning callback that crashed fit() on
+    # hook lookup, and an HF callback whose inverted MRO made every hook a
+    # silent no-op. CPU-only torch keeps this job to a couple of minutes.
+    runs-on: ubuntu-latest
+    env:
+      UV_PYTHON: "3.12"
+    steps:
+      - uses: actions/checkout@v5
+      - uses: astral-sh/setup-uv@v5
+      - name: Add the real frameworks to the project env (CPU-only torch)
+        run: |
+          uv sync --extra dev
+          uv pip install torch --index-url https://download.pytorch.org/whl/cpu
+          uv pip install lightning "transformers>=4.40" "accelerate>=1.1.0" numpy
+      - name: Real Lightning + HuggingFace training through the callbacks
+        run: |
+          # --no-sync: a plain `uv run` would re-sync the env and drop the
+          # frameworks we just installed, leaving the tests to skip.
+          uv run --no-sync pytest tests/integration/test_framework_callbacks.py -v \
+            --junitxml=integrations.xml
+          # These tests skip when a framework is missing, and an all-skipped run
+          # still exits 0 — so demand that both actually executed.
+          uv run --no-sync python - <<'PY'
+          import sys, xml.etree.ElementTree as ET
+
+          root = ET.parse("integrations.xml").getroot()
+          suite = root.find("testsuite") if root.tag == "testsuites" else root
+          total = int(suite.get("tests", 0))
+          skipped = int(suite.get("skipped", 0))
+          bad = int(suite.get("failures", 0)) + int(suite.get("errors", 0))
+          passed = total - skipped - bad
+          print(f"framework callbacks exercised: {passed} (skipped={skipped}, failed={bad})")
+          if passed != 2 or bad:
+              sys.exit("::error::expected 2 passing framework-callback tests (lightning, huggingface)")
+          PY
+
   e2e:
     # Full-pipeline tests (7 demo logs → parser → story engine → store → API).
     # No browser involved — they drive the pipeline and TestClient directly.

@@ -19,13 +19,44 @@ does not raise ``ImportError`` when Lightning is not installed.
 from __future__ import annotations
 
 import contextlib
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 if TYPE_CHECKING:
     from epochix.enums import TaskType
 
 
-class StoryCallback:
+def _callback_base() -> type:
+    """Lightning's ``Callback``, or ``object`` when Lightning isn't installed.
+
+    Subclassing is not optional: Lightning invokes every hook by bare
+    ``getattr(callback, hook_name)`` — including ``setup`` and ``state_key`` —
+    so a duck-typed callback raises AttributeError before the first epoch.
+    Inheriting gives us the no-op defaults for the hooks we don't override.
+    """
+    try:
+        from lightning.pytorch import Callback
+    except ImportError:
+        pass
+    else:
+        return cast("type", Callback)
+
+    try:
+        from pytorch_lightning import Callback
+    except ImportError:
+        return object
+    else:
+        return cast("type", Callback)
+
+
+# mypy runs in an env without Lightning, so keep the base static for type
+# checking and resolve it dynamically at runtime.
+if TYPE_CHECKING:
+    _Base = object
+else:
+    _Base = _callback_base()
+
+
+class StoryCallback(_Base):
     """Report training metrics to epochix via
     :class:`~epochix.sdk.live_reporter.LiveReporter`.
 
@@ -55,6 +86,7 @@ class StoryCallback:
         open_browser: bool = True,
         locale: str = "en",
     ) -> None:
+        super().__init__()
         self._task = task
         self._primary_metric = primary_metric
         self._name = name
@@ -94,14 +126,12 @@ class StoryCallback:
         if metrics:
             self._reporter.log(**metrics)
 
-    def on_validation_epoch_end(self, trainer: Any, pl_module: Any) -> None:  # noqa: ANN401
-        """Also push validation metrics (same epoch slot)."""
-        if self._reporter is None:
-            return
-        metrics = _collect_metrics(trainer)
-        val_metrics = {k: v for k, v in metrics.items() if "val" in k.lower()}
-        if val_metrics:
-            self._reporter.log(**val_metrics)
+    # NOTE: deliberately no on_validation_epoch_end hook. Lightning runs the
+    # validation loop *before* on_train_epoch_end, so by the time we log there,
+    # trainer.callback_metrics already holds this epoch's val_* values. Logging
+    # them again from a validation hook produced a duplicate event for every
+    # validation metric — and, because that hook filtered on `"val" in key`, it
+    # dropped the `epoch` key too, so the duplicates landed with epoch=None.
 
     def on_train_end(self, trainer: Any, pl_module: Any) -> None:  # noqa: ANN401
         """Flush the reporter when training finishes."""

@@ -7,6 +7,56 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.5.12] — 2026-07-14
+
+The PyTorch Lightning and HuggingFace integrations — the two examples the
+quickstart leads with — had never been run against the real frameworks. Doing
+so surfaced four bugs, three of which made the integrations useless.
+
+### Fixed — PyTorch Lightning integration was completely broken
+
+`trainer.fit()` crashed with `AttributeError: 'StoryCallback' object has no
+attribute 'setup'` before the first epoch. Lightning resolves every hook with a
+bare `getattr(callback, hook_name)`, so a callback that doesn't subclass
+`lightning.pytorch.Callback` dies on the first lookup — and the error handler
+then crashed again on `state_key`. `StoryCallback` now subclasses Lightning's
+`Callback` (resolved lazily, so Lightning stays an optional dependency).
+
+### Fixed — HuggingFace integration silently recorded nothing
+
+The HF `StoryCallback` was rebound to a `TrainerCallback` subclass with the
+bases the wrong way round (`class StoryCallback(TrainerCallback, StoryCallback)`),
+so `TrainerCallback`'s no-op hooks shadowed every one of ours. Training ran
+perfectly, reported no error, and stored **zero** runs. The dashboard just
+stayed empty.
+
+### Fixed — a healthy classifier was graded F under HuggingFace
+
+The HF callback defaulted `primary_metric` to `"eval_loss"`, overriding the
+metric the task implies. A classifier sitting at 84% accuracy was graded on its
+loss and came out **F**. When `primary_metric` is unset the task now decides
+(`val_accuracy` for classification), matching the Lightning path.
+
+### Fixed — metrics logged before the epoch key landed on the previous epoch
+
+`reporter.log(train_loss=…, epoch=3)` attributed the loss to epoch **2**, and
+the first epoch vanished entirely (stored as `epoch=None`). The universal parser
+stamped each metric with the epoch it had seen *so far*, scanning left to right,
+so an `epoch=` key appearing after the metrics on a line was applied too late.
+Control keys (`epoch`, `step`) now take effect before any metric on the line is
+stamped, whatever the order. This affected every SDK caller, not just Lightning.
+
+### Changed
+
+- The Lightning callback no longer logs from `on_validation_epoch_end`:
+  `on_train_epoch_end` already sees this epoch's `val_*` metrics, so the extra
+  hook duplicated every validation event (and dropped their epoch).
+- HuggingFace throughput bookkeeping (`*_runtime`, `*_samples_per_second`,
+  `*_steps_per_second`, `total_flos`) is no longer stored as dashboard metrics.
+- New CI job runs both callbacks against real Lightning and Transformers.
+
+---
+
 ## [0.5.11] — 2026-07-13
 
 ### Fixed — network view no longer blanks on narrow / mobile layouts

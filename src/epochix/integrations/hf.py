@@ -21,13 +21,36 @@ and maps HuggingFace ``TrainerCallback`` hooks to ``reporter.log()``.
 from __future__ import annotations
 
 import contextlib
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 if TYPE_CHECKING:
     from epochix.enums import TaskType
 
 
-class StoryCallback:
+def _callback_base() -> type:
+    """HuggingFace's ``TrainerCallback``, or ``object`` when it isn't installed.
+
+    Subclassing matters twice over: the Trainer resolves every hook by bare
+    ``getattr(callback, event)`` (so missing hooks raise), and inheriting gives
+    us no-op defaults for the events we don't care about.
+    """
+    try:
+        from transformers import TrainerCallback
+    except ImportError:
+        return object
+    else:
+        return cast("type", TrainerCallback)
+
+
+# mypy runs in an env without transformers, so keep the base static for type
+# checking and resolve it dynamically at runtime.
+if TYPE_CHECKING:
+    _Base = object
+else:
+    _Base = _callback_base()
+
+
+class StoryCallback(_Base):
     """Report HuggingFace Trainer metrics to epochix.
 
     Parameters
@@ -35,8 +58,10 @@ class StoryCallback:
     task:
         Task type hint (e.g. ``"nlp"``, ``"classification"``).
     primary_metric:
-        The key in the logged metrics dict to use for grading.
-        Defaults to ``"eval_loss"`` if not set.
+        The key in the logged metrics dict to use for grading. When unset the
+        task decides (e.g. ``eval_accuracy`` for classification) — do not
+        default it to a loss, or a healthy classifier gets graded on its loss
+        and lands at F.
     name:
         Human-readable run name.
     port:
@@ -57,8 +82,9 @@ class StoryCallback:
         open_browser: bool = True,
         locale: str = "en",
     ) -> None:
+        super().__init__()
         self._task = task
-        self._primary_metric = primary_metric or "eval_loss"
+        self._primary_metric = primary_metric
         self._name = name
         self._port = port
         self._open_browser = open_browser
@@ -126,9 +152,6 @@ class StoryCallback:
             self._reporter.finish()
             self._reporter = None
 
-    def __init_subclass__(cls, **kwargs: Any) -> None:  # noqa: ANN401
-        super().__init_subclass__(**kwargs)
-
 
 # ── helpers ───────────────────────────────────────────────────────────────────
 
@@ -137,22 +160,24 @@ def _get_run_name(args: Any) -> str:  # noqa: ANN401
     return str(getattr(args, "run_name", None) or getattr(args, "output_dir", "hf-run"))
 
 
+# HF logs throughput/timing bookkeeping alongside the real metrics. They are
+# numbers, but they are not training signal — without this filter they land as
+# a pile of "custom" metrics on the dashboard (and can muddy task detection for
+# runs that don't pass an explicit task=).
+_TELEMETRY_SUFFIXES = ("_runtime", "_samples_per_second", "_steps_per_second")
+_TELEMETRY_KEYS = frozenset({"total_flos", "num_tokens"})
+
+
+def _is_telemetry(key: str) -> bool:
+    k = key.lower()
+    return k in _TELEMETRY_KEYS or k.endswith(_TELEMETRY_SUFFIXES)
+
+
 def _flat_floats(d: dict[str, Any]) -> dict[str, float]:  # noqa: ANN401
     result: dict[str, float] = {}
     for k, v in d.items():
+        if _is_telemetry(k):
+            continue
         with contextlib.suppress(TypeError, ValueError):
             result[k] = float(v)
     return result
-
-
-# ── Make StoryCallback a proper HF TrainerCallback when transformers is available
-# This is done at import time so `isinstance(cb, TrainerCallback)` works.
-
-try:
-    from transformers import TrainerCallback as _TC  # type: ignore[import-not-found]
-
-    class StoryCallback(_TC, StoryCallback):  # type: ignore[no-redef,misc]
-        """StoryCallback with HuggingFace TrainerCallback base class."""
-
-except ImportError:
-    pass  # StoryCallback remains a plain Python class

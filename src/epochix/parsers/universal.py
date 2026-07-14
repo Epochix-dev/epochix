@@ -36,21 +36,68 @@ class UniversalParser:
     def sniff(self, sample_lines: list[str]) -> float:  # noqa: ARG002
         return 0.10  # always weakly confident; format detector uses this as floor
 
-    def parse_line(self, line: str, ctx: ParserContext) -> list[RawMetric]:  # noqa: C901
+    def parse_line(self, line: str, ctx: ParserContext) -> list[RawMetric]:
+        # Bare epoch header ("Epoch 1/8: …") — set the epoch/total so metrics on
+        # the same line are stamped with it and the progress bar advances.
+        eh = _EPOCH_HEADER.search(line)
+        if eh is not None:
+            ctx.current_epoch = float(eh.group(1))
+            if eh.group(2) is not None:
+                ctx.total_epochs = int(eh.group(2))
+
+        # Collect every candidate first, in confidence order (JSON > key=value >
+        # key: value), so the two passes below see the whole line.
+        candidates: list[tuple[str, float, float]] = []
+
+        for frag in _JSON_FRAG.finditer(line):
+            text = frag.group().replace("'", '"')
+            try:
+                obj: dict[str, object] = json.loads(text)
+            except json.JSONDecodeError:
+                continue
+            for k, v in obj.items():
+                if isinstance(v, (int, float)):
+                    candidates.append((k, float(v), 0.65))
+
+        for m in _KV_EQ.finditer(line):
+            with contextlib.suppress(ValueError):
+                candidates.append((m.group(1), float(m.group(2)), 0.55))
+
+        for m in _KV_COLON.finditer(line):
+            with contextlib.suppress(ValueError):
+                candidates.append((m.group(1), float(m.group(2)), 0.45))
+
+        # Pass 1 — control keys (epoch/step) take effect BEFORE any metric on
+        # this line is stamped. They can legitimately appear last: the SDK
+        # serialises log(**kwargs) in call order, and frameworks emit e.g.
+        # "loss=0.3 … epoch=3". Stamping as we scanned would have attributed
+        # those metrics to the *previous* epoch (and dropped the first epoch
+        # entirely, as epoch=None).
+        claimed: set[str] = set()
+        for key, val, _conf in candidates:
+            key_lo = key.lower()
+            if key_lo in claimed:
+                continue
+            if key_lo in _EPOCH_KEYS:
+                claimed.add(key_lo)
+                ctx.current_epoch = val
+            elif key_lo in _STEP_KEYS:
+                claimed.add(key_lo)
+                ctx.current_step = int(val)
+
+        # Pass 2 — emit the metrics; first occurrence of a key wins.
         metrics: list[RawMetric] = []
         seen_keys: set[str] = set()
-
-        def add(key: str, val: float, conf: float) -> None:
+        for key, val, conf in candidates:
             key_lo = key.lower()
-            if key_lo in seen_keys or key_lo in _SKIP_KEYS:
-                return
+            if (
+                key_lo in seen_keys
+                or key_lo in _SKIP_KEYS
+                or key_lo in _EPOCH_KEYS
+                or key_lo in _STEP_KEYS
+            ):
+                continue
             seen_keys.add(key_lo)
-            if key_lo in _EPOCH_KEYS:
-                ctx.current_epoch = val
-                return
-            if key_lo in _STEP_KEYS:
-                ctx.current_step = int(val)
-                return
             metrics.append(
                 RawMetric(
                     seq=ctx.seq,
@@ -62,34 +109,5 @@ class UniversalParser:
                     confidence=conf,
                 )
             )
-
-        # Bare epoch header ("Epoch 1/8: …") — set the epoch/total so metrics on
-        # the same line are stamped with it and the progress bar advances.
-        eh = _EPOCH_HEADER.search(line)
-        if eh is not None:
-            ctx.current_epoch = float(eh.group(1))
-            if eh.group(2) is not None:
-                ctx.total_epochs = int(eh.group(2))
-
-        # Pattern 3 first: JSON fragments (highest confidence)
-        for frag in _JSON_FRAG.finditer(line):
-            text = frag.group().replace("'", '"')
-            try:
-                obj: dict[str, object] = json.loads(text)
-                for k, v in obj.items():
-                    if isinstance(v, (int, float)):
-                        add(k, float(v), 0.65)
-            except json.JSONDecodeError:
-                pass
-
-        # Pattern 1: key=value
-        for m in _KV_EQ.finditer(line):
-            with contextlib.suppress(ValueError):
-                add(m.group(1), float(m.group(2)), 0.55)
-
-        # Pattern 2: key: value — lower confidence, more ambiguous
-        for m in _KV_COLON.finditer(line):
-            with contextlib.suppress(ValueError):
-                add(m.group(1), float(m.group(2)), 0.45)
 
         return metrics

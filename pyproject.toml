@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "epochix"
-version = "0.5.11"
+version = "0.5.12"
 description = "Visual storytelling for deep learning training runs."
 authors = [{ name = "Epochix Team" }]
 license = "Apache-2.0"
@@ -153,12 +153,20 @@ ignore = [
 "src/epochix/parsers/architecture_parser.py" = ["E501"]
 # Tests may use long inline SQL/fixtures and nested context managers.
 "tests/**" = ["E501", "SIM117"]
+# Drives real Lightning/HF objects, which are untyped — Any is unavoidable.
+"tests/integration/test_framework_callbacks.py" = ["ANN401"]
 
 [tool.mypy]
 python_version   = "3.10"
 strict           = true
 warn_return_any  = true
 warn_unused_configs = true
+
+# Optional training-framework deps: not installed in the typecheck env (and
+# unstubbed anyway). The integrations import them lazily and duck-type them.
+[[tool.mypy.overrides]]
+module = ["lightning.*", "pytorch_lightning.*", "transformers.*"]
+ignore_missing_imports = true
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"

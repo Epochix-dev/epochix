@@ -155,6 +155,35 @@ class TestUniversalParser:
         assert ctx.current_epoch == 2.0
         assert all(m.epoch == 2.0 for m in m2)
 
+    def test_epoch_key_after_the_metrics_still_stamps_them(self) -> None:
+        """`epoch=N` may come LAST on the line — the metrics before it still
+        belong to epoch N.
+
+        LiveReporter.log(**kwargs) serialises in call order, so a caller writing
+        log(train_loss=..., epoch=e) — and the Lightning callback, which appends
+        the epoch after collecting metrics — puts the epoch at the end. Stamping
+        metrics as they were scanned attributed every one to the *previous*
+        epoch and dropped epoch 0 entirely (it landed as epoch=None).
+        """
+        ctx = ParserContext(run_id="test", seq=1)
+        parser = UniversalParser()
+
+        metrics = parser.parse_line("val_loss=0.67 val_accuracy=0.79 epoch=0", ctx)
+        assert ctx.current_epoch == 0.0
+        assert metrics, "expected the metrics on the line"
+        assert all(m.epoch == 0.0 for m in metrics), (
+            f"metrics before the epoch key got a stale epoch: {[(m.key, m.epoch) for m in metrics]}"
+        )
+
+        ctx.seq = 2
+        m2 = parser.parse_line("val_loss=0.58 val_accuracy=0.82 epoch=1", ctx)
+        assert all(m.epoch == 1.0 for m in m2)
+        # step keys are order-independent too
+        ctx.seq = 3
+        m3 = parser.parse_line("loss=0.4 step=120 epoch=2", ctx)
+        assert all(m.epoch == 2.0 and m.step == 120 for m in m3)
+        assert not any(m.key.lower() in {"epoch", "step"} for m in m3)
+
     def test_never_crashes_on_garbage(self) -> None:
         ctx = ParserContext(run_id="test", seq=1)
         garbage = [
