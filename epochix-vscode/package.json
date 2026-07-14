@@ -1,7 +1,7 @@
 {
   "name": "epochix",
   "displayName": "Epochix",
-  "description": "Visual storytelling for deep learning training runs \u2014 live animated dashboard in your editor.",
+  "description": "Visual storytelling for deep learning training runs — live animated dashboard in your editor.",
   "publisher": "epochix",
   "version": "0.5.11",
   "license": "Apache-2.0",
@@ -51,7 +51,7 @@
       },
       {
         "command": "epochix.openLogFile",
-        "title": "Epochix: Open Log File\u2026",
+        "title": "Epochix: Open Log File…",
         "icon": "$(file-text)"
       },
       {
@@ -169,16 +169,22 @@
     "vscode:prepublish": "npm run build:webview && npm run compile:prod",
     "package": "vsce package",
     "lint": "eslint src --ext ts",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "pretest": "npm run compile && tsc -p ./tsconfig.test.json",
+    "test": "node ./out/test/runTest.js"
   },
   "devDependencies": {
+    "@types/mocha": "^10.0.10",
     "@types/node": "^20.0.0",
     "@types/vscode": "^1.92.0",
     "@typescript-eslint/eslint-plugin": "^7.0.0",
     "@typescript-eslint/parser": "^7.0.0",
+    "@vscode/test-electron": "^3.0.0",
     "@vscode/vsce": "^3.0.0",
     "esbuild": "^0.23.0",
     "eslint": "^8.0.0",
+    "glob": "^13.0.6",
+    "mocha": "^11.7.6",
     "typescript": "^5.5.0"
   }
 }

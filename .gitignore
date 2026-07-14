@@ -86,6 +86,8 @@ frontend/dist/**
 frontend/coverage/
 epochix-vscode/dist/
 epochix-vscode/webview-dist/
+epochix-vscode/out/
+epochix-vscode/.vscode-test/
 *.vsix
 
 # VS Code
