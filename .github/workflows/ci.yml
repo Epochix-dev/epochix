@@ -99,13 +99,23 @@ jobs:
       - run: uv run --extra dev playwright install --with-deps chromium firefox webkit
       - name: Render on every engine
         run: |
-          set -o pipefail
-          uv run --extra dev pytest tests/browser -q --tb=short | tee render.log
-          # A run where everything skipped still exits 0 — demand three real renders.
-          grep -qE "^3 passed" render.log || {
-            echo "::error::expected 3 passing engine renders (chromium, firefox, webkit)"
-            exit 1
-          }
+          uv run --extra dev pytest tests/browser --junitxml=render.xml
+          # pytest exits 0 when every test SKIPS, so the exit code alone can't
+          # prove the engines ran. Count them. (Don't grep the summary line —
+          # addopts already sets -q, so a second -q suppresses it entirely.)
+          uv run python - <<'PY'
+          import sys, xml.etree.ElementTree as ET
+
+          root = ET.parse("render.xml").getroot()
+          suite = root.find("testsuite") if root.tag == "testsuites" else root
+          total = int(suite.get("tests", 0))
+          skipped = int(suite.get("skipped", 0))
+          bad = int(suite.get("failures", 0)) + int(suite.get("errors", 0))
+          passed = total - skipped - bad
+          print(f"engines rendered: {passed} (skipped={skipped}, failed={bad})")
+          if passed != 3 or bad:
+              sys.exit("::error::expected 3 passing engine renders (chromium, firefox, webkit)")
+          PY
 
   e2e:
     # Full-pipeline tests (7 demo logs → parser → story engine → store → API).

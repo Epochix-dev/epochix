@@ -88,6 +88,7 @@ epochix-vscode/dist/
 epochix-vscode/webview-dist/
 epochix-vscode/out/
 epochix-vscode/.vscode-test/
+render.xml
 *.vsix
 
 # VS Code
