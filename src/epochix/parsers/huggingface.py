@@ -38,6 +38,14 @@ class HFParser:
         if epoch is not None and isinstance(epoch, (int, float)):
             ctx.current_epoch = float(epoch)
 
+        # `step` is training progress, not a metric. Without popping it, the HF
+        # parser (which also matches Accelerate's `accelerator.print({...})`
+        # dicts) emitted the step count as a bogus `custom` metric on the
+        # dashboard and never set the step context.
+        step = data.pop("step", None)
+        if step is not None and isinstance(step, (int, float)):
+            ctx.current_step = int(step)
+
         metrics: list[RawMetric] = []
         for key, val in data.items():
             if not isinstance(val, (int, float)):

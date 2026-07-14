@@ -39,9 +39,15 @@ class FastAIParser:
 
     def parse_line(self, line: str, ctx: ParserContext) -> list[RawMetric]:
         if _HEADER_LINE.search(line):
-            # Capture extra metric names beyond train_loss / valid_loss
+            # Capture extra metric names beyond train_loss / valid_loss. The
+            # header is `epoch train_loss valid_loss <extras…> time`, so extras
+            # start at index 3 — parts[2:-1] included valid_loss itself, which
+            # shifted every extra header by one. A run's `accuracy` column was
+            # then labelled `valid_loss` (and its real name dropped), so a
+            # classifier looked like a pure-loss run → misclassified CUSTOM,
+            # graded on loss, F.
             parts = line.split()
-            self._extra_headers = parts[2:-1] if len(parts) > 3 else []
+            self._extra_headers = parts[3:-1] if len(parts) > 4 else []
             return []
 
         m = _DATA_ROW.match(line)

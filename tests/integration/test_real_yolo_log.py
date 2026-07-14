@@ -79,3 +79,63 @@ def test_real_yolo_output_parses_without_duplicating_epochs(tmp_path: Path) -> N
     frames = store.get_story_frames(run.id)
     assert frames, "a real YOLO run produced no story frames"
     assert all(f.epoch is not None for f in frames)
+
+
+FASTAI_LOG = Path(__file__).parents[1] / "fixtures" / "logs" / "fastai_real.log"
+
+
+def test_fastai_table_keeps_the_accuracy_column(tmp_path: Path) -> None:
+    """fastai's metrics table: `epoch train_loss valid_loss accuracy time`.
+
+    The header parser took columns 2:-1 as the "extra" metrics — but index 2 is
+    valid_loss itself, so every extra header shifted by one. A run's `accuracy`
+    value was stored under the label `valid_loss` and its real name was lost, so
+    a classifier looked like a pure-loss run: misclassified CUSTOM, graded on
+    loss, F. It should be a classification run graded on accuracy.
+    """
+    db = str(tmp_path / "runs.db")
+    run = parse(FASTAI_LOG, db=db, run_name="real-fastai")
+
+    assert run.parser_used == "fastai"
+
+    store = RunStore(db_path=db)
+    metrics = store.get_metric_events(run.id)
+    keys = {m.canonical_key for m in metrics}
+
+    assert "accuracy" in keys, f"the accuracy column was dropped: saw {keys}"
+    assert run.task_type == TaskType.CLASSIFICATION, (
+        f"a run with an accuracy column is classification, not {run.task_type}"
+    )
+    assert run.primary_metric == "accuracy"
+
+    accs = sorted(m.value for m in metrics if m.canonical_key == "accuracy")
+    assert accs == pytest.approx([0.671875, 0.789062, 0.828125, 0.859375]), accs
+
+
+ACCEL_LOG = Path(__file__).parents[1] / "fixtures" / "logs" / "accelerate_real.log"
+
+
+def test_accelerate_dict_step_is_context_not_a_metric(tmp_path: Path) -> None:
+    """Real `accelerator.print({...})` output: a Python dict with a `step` key.
+
+    The dict is matched by the HuggingFace parser (same format), which popped
+    `epoch` but not `step` — so the step count was stored as a bogus `custom`
+    metric and never set the step context. Real HF Trainer output carries `step`
+    too, so this hit both.
+    """
+    db = str(tmp_path / "runs.db")
+    run = parse(ACCEL_LOG, db=db, run_name="real-accel")
+
+    store = RunStore(db_path=db)
+    metrics = store.get_metric_events(run.id)
+    keys = {m.canonical_key for m in metrics}
+
+    assert "custom" not in keys, f"step (or something) leaked as a `custom` metric: {keys}"
+    assert run.task_type == TaskType.CLASSIFICATION
+    assert run.primary_metric == "val_accuracy"
+
+    # step is carried as context on the metrics, not emitted as its own series.
+    steps = sorted({m.step for m in metrics if m.step is not None})
+    assert steps == [10, 20, 30, 40], steps
+    accs = sorted(m.value for m in metrics if m.canonical_key == "val_accuracy")
+    assert accs == pytest.approx([0.845, 0.855, 0.855, 0.86]), accs

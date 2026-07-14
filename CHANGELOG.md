@@ -7,6 +7,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.5.16] — 2026-07-14
+
+Running real ultralytics, fastai and Accelerate through their parsers for the
+first time (they had only ever been checked against hand-written fixtures, or
+fuzz-tested for crashes). Two more bugs.
+
+### Fixed — fastai dropped the accuracy column, grading classifiers F
+
+fastai's metrics table is `epoch  train_loss  valid_loss  <extras…>  time`. The
+header parser took the extra-metric names from columns `2:-1`, but index 2 is
+`valid_loss` itself — so every extra header shifted by one. A run's `accuracy`
+value was stored under the label `valid_loss` (and its real name lost), so a
+classifier looked like a pure-loss run: misclassified as `custom`, graded on
+loss, **F**. It now reads `accuracy` correctly and grades the run B+.
+
+### Fixed — `step` became a bogus "custom" metric
+
+Real Accelerate (`accelerator.print({...})`) and many HuggingFace Trainer
+configs log a Python dict that includes a `step` key. The HuggingFace parser —
+which handles both — popped `epoch` but not `step`, so the step count was
+emitted as a meaningless `custom` metric on the dashboard and the step context
+was never set. `step` is now carried as context, like `epoch`.
+
+### Added
+
+- Byte-exact real-output fixtures for ultralytics, fastai and Accelerate, with
+  correctness tests (previously these parsers had only fuzz/throughput
+  coverage, which is why both bugs shipped).
+
+---
+
 ## [0.5.15] — 2026-07-14
 
 ### Fixed — progress-bar logs recorded every metric twice (or more)
