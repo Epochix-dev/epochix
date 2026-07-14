@@ -7,6 +7,68 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.5.14] — 2026-07-14
+
+Driving the VS Code extension's terminal→dashboard journey end to end for the
+first time. **Standalone mode — the path every user takes who installs the
+extension without the Python package — was fundamentally broken.** Seven bugs.
+
+### Fixed — standalone runs shorter than 50 lines showed an empty dashboard
+
+`StandaloneEngine` discarded the first 50 lines outright (`if (seq < 50) return
+[]`) while "accumulating a sample". They were never buffered, so a run that
+finished inside that window rendered nothing at all. Lines are now held and
+replayed once the format is known, so nothing is lost.
+
+### Fixed — only the universal parser was ever used
+
+The format sniff ran on an **empty array** (both branches of its ternary
+evaluated to `[]`), so every parser scored its floor and the universal fallback
+always won. The Keras, Lightning, HuggingFace and YOLO parsers were unreachable
+in standalone mode. The sniff now runs on the actual buffered lines.
+
+### Fixed — a log with 3 metrics per line produced no frames, ever
+
+The task was classified on `_allMetrics.length === 10` — an exact match. A log
+emitting three metrics per line counts 3, 6, 9, 12 and never *equals* 10, so the
+task was never detected and not a single frame was built.
+
+### Fixed — the epochs that triggered detection were dropped
+
+Detection can only fire once it has seen some training output, and everything
+buffered up to that point was thrown away — so the dashboard always started
+mid-run. Both the terminal feed and the story engine now replay what they held
+while deciding.
+
+### Fixed — the feed could die silently mid-run
+
+Training detection was re-tested per chunk against a rolling 8 KB tail, so a
+long non-metric burst mid-run could push the last `Epoch N/M` out of the window,
+flip the check back to false, and stop feeding the dashboard for the rest of the
+run. Detection now latches.
+
+### Fixed — ordinary key=value logs never opened the dashboard
+
+The detector scored `soft * 0.15`, and `3 * 0.15 === 0.4499999999999999` in IEEE
+— a hair under its own 0.45 threshold. A log with exactly three soft signals
+(`loss=`, `accuracy=`, `val_loss`) silently failed to trigger; it took four.
+
+### Fixed — "Watch Active Terminal" captured nothing
+
+`attachToActive()` never registered the shell-execution listener — only
+`attachToActiveAutomatically()` did, and `extension.ts` skips that when
+`epochix.autoWatchTerminal` is false. The command announced *"Watching terminal
+X"* and then did nothing at all.
+
+### Fixed — the TypeScript parsers had drifted behind Python
+
+The universal parser never received the 0.5.8 bare-`Epoch N/M` header fix (so
+the extension showed "Epoch —" and a dead progress bar for any log it handled)
+nor the 0.5.12 control-key ordering fix (metrics printed before an `epoch=` key
+were attributed to the previous epoch). Both are ported.
+
+---
+
 ## [0.5.13] — 2026-07-14
 
 Same exercise as 0.5.12, applied to the three remaining integrations that had

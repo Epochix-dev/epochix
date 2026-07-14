@@ -9,14 +9,11 @@
  * Falls back gracefully when shell integration is not available.
  */
 import * as vscode from "vscode";
-import { isTraining, stripAnsi } from "./TrainingDetector";
+import { TerminalFeed } from "./TerminalFeed";
 import type { ServerManager } from "../sidecar/ServerManager";
 
-// How much terminal output to accumulate before trimming
-const BUFFER_TAIL = 8192;
-
 export class TerminalWatcher implements vscode.Disposable {
-  private _buffer = "";
+  private readonly _feed = new TerminalFeed();
   private _autoAttached = false;
   private readonly _subscriptions: vscode.Disposable[] = [];
   private _activeTerminal: vscode.Terminal | undefined;
@@ -60,6 +57,11 @@ export class TerminalWatcher implements vscode.Disposable {
       );
       return;
     }
+    // Make sure we are actually listening for shell executions. The listener
+    // was only ever registered by attachToActiveAutomatically(), which
+    // extension.ts skips when `epochix.autoWatchTerminal` is false — so this
+    // command used to announce "Watching terminal X" and then capture nothing.
+    this.attachToActiveAutomatically();
     this._activeTerminal = terminal;
     void vscode.window.showInformationMessage(
       `Epochix: Watching terminal "${terminal.name}". ` +
@@ -75,18 +77,30 @@ export class TerminalWatcher implements vscode.Disposable {
   ): Promise<void> {
     const stream = execution.read();
     for await (const chunk of stream) {
-      const text = stripAnsi(chunk);
-      this._buffer += text;
-      if (this._buffer.length > BUFFER_TAIL) {
-        this._buffer = this._buffer.slice(-BUFFER_TAIL);
-      }
+      // TerminalFeed withholds output until it recognises training, then hands
+      // back everything it buffered — so the epochs that TRIGGERED detection
+      // still reach the dashboard instead of being dropped.
+      const feedable = this._feed.push(chunk);
+      if (feedable === null) continue;
 
-      if (isTraining(this._buffer)) {
-        this._activeTerminal = terminal;
-        this._openDashboardIfNeeded();
-        this._feedDashboard(text);
-      }
+      this._activeTerminal = terminal;
+      this._openDashboardIfNeeded();
+      this._feedDashboard(feedable);
     }
+
+    // The command finished. Let the dashboard commit anything still held back
+    // by the format sniff and post the run summary.
+    if (this._feed.detected) {
+      this._endOfStream();
+    }
+  }
+
+  private _endOfStream(): void {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { DashboardPanel } = require("../webview/DashboardPanel") as {
+      DashboardPanel: typeof import("../webview/DashboardPanel").DashboardPanel;
+    };
+    DashboardPanel.current?.endOfStream();
   }
 
   private _openDashboardIfNeeded(): void {

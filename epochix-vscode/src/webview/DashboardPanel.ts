@@ -146,6 +146,23 @@ export class DashboardPanel {
     }
   }
 
+  /**
+   * The watched terminal command has ended — commit whatever the engine is
+   * still holding (a short run can finish before the format sniff settles) and
+   * publish the run summary.
+   */
+  endOfStream(): void {
+    if (!this._engine) return;
+    for (const frame of this._engine.flush()) {
+      this._post({ type: "frame", frame });
+      StatusBar.update(frame);
+    }
+    const summary = this._engine.finish();
+    if (summary) {
+      this._post({ type: "complete", run: summary });
+    }
+  }
+
   // ── Private ──────────────────────────────────────────────────────────────────
 
   private _post(msg: ExtToWeb): void {
@@ -229,6 +246,13 @@ export class DashboardPanel {
     });
 
     rl.on("close", () => {
+      // Commit anything still held back by the format sniff — a short log can
+      // end before the engine ever became confident, and those lines would
+      // otherwise never be drawn.
+      for (const frame of this._engine!.flush()) {
+        this._post({ type: "frame", frame });
+        StatusBar.update(frame);
+      }
       const summary = this._engine!.finish();
       if (summary) {
         this._post({ type: "complete", run: summary });

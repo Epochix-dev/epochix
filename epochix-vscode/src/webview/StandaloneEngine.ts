@@ -64,9 +64,34 @@ function primaryMetricFor(task: TaskType): string {
 
 // ── Engine ────────────────────────────────────────────────────────────────────
 
+// Pick a parser the moment one recognises the format, and stop waiting for a
+// confident answer after this many lines. The bar is 0.45 because that is what
+// Keras scores on a `verbose=2` run — no ASCII progress bar, just "Epoch 1/5"
+// followed by "100/100 - 2s - loss: …", which is what every redirected or
+// non-TTY run prints. Universal floors at 0.10 and is always kept as a
+// fallback alongside the winner, so an early pick is never fatal.
+const CONFIDENT_SNIFF = 0.45;
+// If nothing has recognised the format by now it is a plain key=value log, and
+// universal will handle it — stop holding output back. Kept small because a
+// LIVE run must start drawing during training, not only when it ends.
+const MAX_SNIFF_LINES = 6;
+
+// Metrics needed before the task can be classified. Everything parsed before
+// that is banked and replayed, so no epoch is lost to the warmup.
+const TASK_MIN_METRICS = 4;
+
+interface WarmupLine {
+  metrics: RawMetric[];
+  epoch: number | null;
+  totalEpochs: number | null;
+}
+
 export class StandaloneEngine {
   private readonly _parsers: Parser[];
   private _activeParsers: Parser[] | null = null;
+  private _pending: string[] = [];
+  private _warmup: WarmupLine[] = [];
+  private _taskDetected = false;
   private _ctx: ParserContext = makeContext();
 
   private _runId = generateId();
@@ -106,25 +131,47 @@ export class StandaloneEngine {
     this._buffer = lines.pop() ?? "";
 
     for (const line of lines) {
-      this._ctx.seq++;
-      const metrics = this._parseLine(line);
-      this._allMetrics.push(...metrics);
+      if (this._activeParsers === null) {
+        // Hold the line while we work out the format. It used to be DISCARDED
+        // (`if (seq < 50) return []`), so a run shorter than 50 lines rendered
+        // an empty dashboard, and the sniff then ran on an empty sample — which
+        // meant only the universal parser was ever selected.
+        this._pending.push(line);
+        if (!this._trySelectParsers()) continue;
 
-      // Detect task after first 10 metrics
-      if (this._allMetrics.length === 10) {
-        this._task = detectTask(this._allMetrics);
-        this._primaryMetric = primaryMetricFor(this._task);
+        const backlog = this._pending;
+        this._pending = [];
+        for (const held of backlog) newFrames.push(...this._processLine(held));
+        continue;
       }
-
-      // Build story frame if we have primary metric
-      const frame = this._buildFrame(metrics);
-      if (frame) {
-        this._frames.push(frame);
-        newFrames.push(frame);
-        this._checkMilestones(frame);
-        this._checkWarnings();
-      }
+      newFrames.push(...this._processLine(line));
     }
+    return newFrames;
+  }
+
+  /**
+   * Commit whatever is still held: a run can end before we ever reached a
+   * confident sniff (a short, format-ambiguous log). Without this its lines
+   * would sit in _pending forever and the dashboard would stay empty.
+   */
+  flush(): StoryFrameMsg[] {
+    const newFrames: StoryFrameMsg[] = [];
+
+    if (this._buffer.length > 0) {
+      const last = this._buffer;
+      this._buffer = "";
+      if (this._activeParsers === null) this._pending.push(last);
+      else newFrames.push(...this._processLine(last));
+    }
+
+    if (this._activeParsers === null && this._pending.length > 0) {
+      this._activeParsers = this._selectParsers(this._pending);
+      const backlog = this._pending;
+      this._pending = [];
+      for (const held of backlog) newFrames.push(...this._processLine(held));
+    }
+
+    newFrames.push(...this._drainWarmup(true));
     return newFrames;
   }
 
@@ -160,17 +207,86 @@ export class StandaloneEngine {
 
   // ── Private ──────────────────────────────────────────────────────────────────
 
-  private _parseLine(line: string): RawMetric[] {
-    // Sniff once after accumulating 50 lines
-    if (this._activeParsers === null) {
-      if (this._ctx.seq < 50) return []; // accumulate sample
-      this._activeParsers = this._selectParsers(
-        this._allMetrics.length > 0
-          ? [] // already have metrics, re-sniff later
-          : this._frames.map(() => ""), // placeholder
-      );
+  /**
+   * Pick parsers as soon as one is confident, or once the sample is big enough
+   * to stop waiting. Returns true when a selection was made.
+   */
+  private _trySelectParsers(): boolean {
+    const scores = this._parsers.map((p) => ({
+      parser: p,
+      score: p.sniff(this._pending),
+    }));
+    scores.sort((a, b) => b.score - a.score);
+
+    if (scores[0].score < CONFIDENT_SNIFF && this._pending.length < MAX_SNIFF_LINES) {
+      return false;
     }
-    return this._activeParsers.flatMap((p) => p.parseLine(line, this._ctx));
+    this._activeParsers = this._selectParsers(this._pending);
+    return true;
+  }
+
+  /** Parse one line and turn it into a frame (or bank it during warmup). */
+  private _processLine(line: string): StoryFrameMsg[] {
+    this._ctx.seq++;
+    const metrics = this._activeParsers!.flatMap((p) =>
+      p.parseLine(line, this._ctx),
+    );
+    this._allMetrics.push(...metrics);
+
+    if (!this._taskDetected) {
+      if (metrics.length > 0) {
+        // Snapshot the epoch: these frames are built later, by which time the
+        // parser context has moved on to a different epoch.
+        this._warmup.push({
+          metrics,
+          epoch: this._ctx.currentEpoch,
+          totalEpochs: this._ctx.totalEpochs,
+        });
+      }
+      // `=== 10` used to mean a log emitting 3 metrics per line counted
+      // 3,6,9,12 and NEVER hit it — so the task was never detected and not one
+      // frame was ever built.
+      if (this._allMetrics.length >= TASK_MIN_METRICS) {
+        return this._drainWarmup(false);
+      }
+      return [];
+    }
+
+    const frame = this._buildFrame(
+      metrics,
+      this._ctx.currentEpoch,
+      this._ctx.totalEpochs,
+    );
+    return frame ? [this._emit(frame)] : [];
+  }
+
+  /**
+   * Detect the task from what we've seen, then replay every banked warmup line
+   * so the epochs that arrived *before* detection still reach the dashboard.
+   */
+  private _drainWarmup(force: boolean): StoryFrameMsg[] {
+    if (this._taskDetected) return [];
+    if (this._allMetrics.length === 0) return [];
+    if (!force && this._allMetrics.length < TASK_MIN_METRICS) return [];
+
+    this._task = detectTask(this._allMetrics);
+    this._primaryMetric = primaryMetricFor(this._task);
+    this._taskDetected = true;
+
+    const out: StoryFrameMsg[] = [];
+    for (const held of this._warmup) {
+      const frame = this._buildFrame(held.metrics, held.epoch, held.totalEpochs);
+      if (frame) out.push(this._emit(frame));
+    }
+    this._warmup = [];
+    return out;
+  }
+
+  private _emit(frame: StoryFrameMsg): StoryFrameMsg {
+    this._frames.push(frame);
+    this._checkMilestones(frame);
+    this._checkWarnings();
+    return frame;
   }
 
   private _selectParsers(sampleLines: readonly string[]): Parser[] {
@@ -186,7 +302,11 @@ export class StandaloneEngine {
     return [best.parser, universal];
   }
 
-  private _buildFrame(metrics: RawMetric[]): StoryFrameMsg | null {
+  private _buildFrame(
+    metrics: RawMetric[],
+    epoch: number | null,
+    totalEpochs: number | null,
+  ): StoryFrameMsg | null {
     const primaryMetrics = metrics.filter(
       (m) => canonicalise(m.key) === this._primaryMetric,
     );
@@ -199,17 +319,14 @@ export class StandaloneEngine {
     const delta = value - this._lastPrimary;
     this._lastPrimary = value;
 
-    const progress = estimateProgress(
-      this._ctx.currentEpoch,
-      this._ctx.totalEpochs,
-    );
+    const progress = estimateProgress(epoch, totalEpochs);
     const phase: Phase = computePhase(progress, value, this._baseline, 1.0);
     const grade: Grade = computeGrade(this._task, value);
 
     const narrative = narrate({
       task: this._task,
       phase,
-      epoch: this._ctx.currentEpoch,
+      epoch,
       primaryValue: value,
       delta,
       runId: this._runId,
@@ -218,7 +335,7 @@ export class StandaloneEngine {
     return {
       runId: this._runId,
       seq: this._ctx.seq,
-      epoch: this._ctx.currentEpoch,
+      epoch,
       progress,
       phase,
       grade,

@@ -50,9 +50,15 @@ export function sniff(text: string): number {
     if (pat.test(clean)) return 0.90;
   }
 
-  // Count soft signals
+  // Count soft signals.
+  //
+  // Scored in integers and scaled at the end: `soft * 0.15` drifts in IEEE
+  // (3 * 0.15 === 0.4499999999999999), so a log with exactly three soft signals
+  // — loss=, accuracy=, val_loss, which is a completely ordinary key=value
+  // training log — landed a hair UNDER the 0.45 threshold and the dashboard
+  // never opened. It silently took four signals to trigger.
   const soft = SOFT_PATTERNS.filter((p) => p.test(clean)).length;
-  return Math.min(soft * 0.15, 0.80);
+  return Math.min(soft * 15, 80) / 100;
 }
 
 /** Return true if the text looks like ML training (above threshold). */
