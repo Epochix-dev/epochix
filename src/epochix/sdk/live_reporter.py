@@ -155,13 +155,33 @@ class LiveReporter:
             self._start()
 
         line = "  ".join(f"{k}={v}" for k, v in metrics.items())
+        self._push(line)
+        self._flush_activations()
+        self._seq += 1
+
+    def log_line(self, text: str) -> None:
+        """Feed one raw log line — exactly as a training script printed it —
+        to the parser.
+
+        Use this when you are relaying somebody else's stdout (a subprocess, a
+        notebook cell) and the metrics are already formatted in the line. It is
+        the same path ``epochix --live`` takes, so every parser applies.
+
+        Example::
+
+            reporter.log_line("Epoch 3/10 train_loss=0.42 val_accuracy=0.88")
+        """
+        if not self._started:
+            self._start()
+        self._push(text)
+        self._seq += 1
+
+    def _push(self, line: str) -> None:
         if self._receiver is not None:
             from epochix.ingester.sdk_receiver import SDKReceiver
 
             assert isinstance(self._receiver, SDKReceiver)
             self._receiver.push_line(line)
-        self._flush_activations()
-        self._seq += 1
 
     def finish(self) -> None:
         """Signal end of training and wait for the pipeline to flush."""

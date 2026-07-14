@@ -7,6 +7,60 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.5.13] — 2026-07-14
+
+Same exercise as 0.5.12, applied to the three remaining integrations that had
+never been executed: the Jupyter magics and the TensorBoard / W&B importers.
+Six more bugs.
+
+### Fixed — `%load_ext epochix` registered no magics at all
+
+It printed *"The epochix module is not an IPython extension"* and did nothing,
+so `%epochix` and `%%epochix` simply didn't exist. IPython looks for
+`load_ipython_extension` on the module you name, and it only lived on
+`epochix.integrations.jupyter`. It is now on the top-level package, so the line
+the quickstart tells you to run actually works.
+
+### Fixed — `%epochix <log>` showed an empty dashboard
+
+The magic parsed the log into the default `db=":memory:"`, threw the run away,
+and then rendered an iframe pointing at a run the server had never heard of. It
+now parses into the database the server serves, and names the run after the log.
+
+### Fixed — `%%epochix --live` recorded no real metrics
+
+It pushed a fabricated `raw=0.0` value for every output line and never fed the
+script's actual output to the parser, so a live cell produced a run containing
+nothing but heartbeats. It now relays each real line through the parser. It also
+no longer starts a second server on the port `LiveReporter` is already binding,
+which made uvicorn fail to start and killed the reporter thread.
+
+### Fixed — TensorBoard import produced a run with zero frames
+
+`import_tensorboard()` discarded the step, and `EventAccumulator` yields
+tag-by-tag (every loss, *then* every accuracy) — so the story engine saw a
+scrambled, epoch-less stream and emitted **no frames whatsoever**. Tags are also
+mapped properly now: `Loss/train` became the key `loss_train`, which the
+normalizer doesn't recognise, so every metric landed as an unusable `custom`.
+Scalars are now grouped by step (one epoch each) and tags canonicalize
+(`Loss/train` → `train_loss`, `Accuracy/val` → `val_accuracy`). It also returns
+`Run` objects, as its docstring always claimed.
+
+### Fixed — W&B import dropped the step
+
+Every `_`-prefixed column was skipped as bookkeeping, but that is exactly where
+W&B keeps the step (`_step`) — so imported runs had no epoch at all unless the
+user happened to log one. NaN holes in sparse histories are now dropped rather
+than coerced.
+
+### Added
+
+- `LiveReporter.log_line(text)` — feed one raw log line, exactly as a training
+  script printed it, through the parsers. This is the honest primitive for
+  relaying somebody else's stdout (a subprocess, a notebook cell).
+
+---
+
 ## [0.5.12] — 2026-07-14
 
 The PyTorch Lightning and HuggingFace integrations — the two examples the

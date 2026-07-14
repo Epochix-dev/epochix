@@ -94,7 +94,9 @@ def _cell_magic(line: str, cell: str) -> None:
     port = args.port
     height = args.height
 
-    _ensure_server(port=port)
+    # NOTE: no _ensure_server() here. LiveReporter hosts the dashboard on this
+    # port itself — starting a second server on the same port made uvicorn fail
+    # to bind and killed the reporter thread with SystemExit(3).
 
     # Write cell to a temp script and run it, piping stdout to epochix
     import os
@@ -112,6 +114,7 @@ def _cell_magic(line: str, cell: str) -> None:
         def _run_cell() -> None:
             reporter = LiveReporter(
                 task=args.task,
+                name="notebook cell",
                 port=port,
                 open_browser=False,
                 locale="en",
@@ -122,11 +125,16 @@ def _cell_magic(line: str, cell: str) -> None:
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
                 text=True,
+                bufsize=1,  # line-buffered: the dashboard must update per line
             )
             with reporter:
                 for out_line in proc.stdout or []:
                     print(out_line, end="")
-                    reporter.log(raw=0.0)  # push heartbeat; parser sees stdout
+                    # Feed the REAL line to the parser. This used to push a
+                    # fabricated `raw=0.0` heartbeat per line, so the run
+                    # contained no actual training metrics at all.
+                    reporter.log_line(out_line.rstrip("\n"))
+                proc.wait()
 
         t = threading.Thread(target=_run_cell, daemon=True)
         t.start()
@@ -193,11 +201,16 @@ def _ensure_server(*, port: int = 7860) -> None:
             time.sleep(0.3)
 
 
-def _parse_and_register(log_path: Path, *, task: str | None, port: int) -> Any:  # noqa: ANN401
-    """Parse *log_path* and register the run with the running server."""
+def _parse_and_register(log_path: Path, *, task: str | None, port: int) -> Any:  # noqa: ANN401,ARG001
+    """Parse *log_path* into the database the server reads, and return the run.
+
+    parse() defaults to db=":memory:", so without an explicit db the run was
+    thrown away and the iframe pointed at a run the server had never heard of.
+    """
+    from epochix.config import get_settings
     from epochix.sdk.parse import parse
 
-    return parse(str(log_path), task=task)
+    return parse(str(log_path), task=task, db=get_settings().db, run_name=log_path.name)
 
 
 # ── argument parsing ──────────────────────────────────────────────────────────

@@ -20,6 +20,7 @@ imports it lazily.
 from __future__ import annotations
 
 import logging
+import re
 from collections.abc import Iterator
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
@@ -69,7 +70,7 @@ def import_tensorboard(
             logger.warning("Skipping %s: %s", event_dir, exc)
 
     if open_browser and runs:
-        _open_dashboard(port, runs[0])
+        _open_dashboard(port, runs[0].id)
 
     return runs
 
@@ -88,6 +89,36 @@ def _find_event_dirs(root: Path) -> list[Path]:
     return dirs or [root]
 
 
+# TensorBoard tags are conventionally "Metric/split" ("Loss/train") or
+# "split/metric" ("train/loss"). The normalizer wants "train_loss" —
+# "loss_train" is not recognised and lands as an unusable `custom` metric.
+_SPLITS = {
+    "train": "train",
+    "training": "train",
+    "val": "val",
+    "valid": "val",
+    "validation": "val",
+    "eval": "val",
+    "test": "test",
+}
+
+
+def _tag_to_key(tag: str) -> str:
+    """`Loss/train` → `train_loss`, `Accuracy/val` → `val_accuracy`, `lr` → `lr`."""
+    parts = [p for p in re.split(r"[/\s]+", tag.strip()) if p]
+    lowered = [p.lower() for p in parts]
+    # YOLO and friends prefix everything with a bare "metrics/" namespace.
+    if len(lowered) > 1 and lowered[0] == "metrics":
+        lowered = lowered[1:]
+
+    for i, part in enumerate(lowered):
+        if part in _SPLITS:
+            rest = lowered[:i] + lowered[i + 1 :]
+            split = _SPLITS[part]
+            return "_".join([split, *rest]) if rest else split
+    return "_".join(lowered)
+
+
 def _import_one(event_dir: Path, *, name: str, port: int) -> Any:  # noqa: ANN401
     """Import a single TensorBoard log directory into epochix."""
     events = list(_read_scalar_events(event_dir))
@@ -95,16 +126,26 @@ def _import_one(event_dir: Path, *, name: str, port: int) -> Any:  # noqa: ANN40
         logger.warning("No scalar events found in %s", event_dir)
         return None
 
+    from epochix.config import get_settings
     from epochix.sdk.live_reporter import LiveReporter
+    from epochix.store.sqlite_store import RunStore
+
+    # Group by step. EventAccumulator yields tag-by-tag (every loss, THEN every
+    # accuracy), and the step used to be discarded entirely — so the story
+    # engine saw a scrambled, epoch-less stream and produced ZERO frames.
+    by_step: dict[int, dict[str, float]] = {}
+    for step, tag, value in events:
+        by_step.setdefault(step, {})[_tag_to_key(tag)] = value
 
     reporter = LiveReporter(name=name, port=port, open_browser=False)
     with reporter:
-        for _step, tag, value in events:
-            # Map TensorBoard tag to a canonical-ish metric name
-            key = tag.replace("/", "_").replace(" ", "_").lower()
-            reporter.log(**{key: value})
+        for step in sorted(by_step):
+            # TB's global_step is the only epoch signal there is; a run logged
+            # per-batch will simply have many "epochs".
+            reporter.log(epoch=float(step), **by_step[step])
 
-    return reporter._run_id  # noqa: SLF001
+    run_id = reporter._run_id  # noqa: SLF001
+    return RunStore(db_path=get_settings().db).get_run(run_id)
 
 
 def _read_scalar_events(event_dir: Path) -> Iterator[tuple[int, str, float]]:

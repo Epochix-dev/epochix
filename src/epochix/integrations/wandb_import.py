@@ -18,6 +18,7 @@ Usage::
 from __future__ import annotations
 
 import logging
+import math
 from typing import Any
 
 logger = logging.getLogger(__name__)
@@ -84,17 +85,7 @@ def import_wandb(
     reporter = LiveReporter(name=name, port=port, open_browser=False)
     with reporter:
         for _, row in history.iterrows():
-            metrics: dict[str, float] = {}
-            for col in history.columns:
-                if col.startswith("_"):
-                    continue  # skip W&B internal columns
-                val = row[col]
-                if val is None:
-                    continue
-                try:
-                    metrics[str(col)] = float(val)
-                except (TypeError, ValueError):
-                    continue
+            metrics = _row_to_metrics(row, list(history.columns))
             if metrics:
                 reporter.log(**metrics)
 
@@ -106,3 +97,46 @@ def import_wandb(
         webbrowser.open(f"http://127.0.0.1:{port}/v/{run_ms_id}")
 
     return run_ms_id
+
+
+def _row_to_metrics(row: Any, columns: list[str]) -> dict[str, float]:  # noqa: ANN401
+    """One row of a W&B history frame → the metrics for one epoch.
+
+    W&B keeps the step in the internal ``_step`` column, and every ``_``-prefixed
+    column is bookkeeping (``_runtime``, ``_timestamp``). Skipping all of them
+    dropped the step too, so imported runs had no epoch at all — the dashboard
+    showed "Epoch —" and a dead progress bar. Fall back to ``_step`` when the
+    user didn't log an explicit ``epoch``.
+
+    Sparse histories (a metric logged every N steps) leave NaN holes; those are
+    dropped here rather than shipped as fake zeroes.
+    """
+    metrics: dict[str, float] = {}
+
+    for col in columns:
+        if col.startswith("_"):
+            continue
+        value = _as_finite_float(row[col])
+        if value is not None:
+            metrics[str(col)] = value
+
+    if not metrics:
+        return {}
+
+    if "epoch" not in metrics and "_step" in columns:
+        step = _as_finite_float(row["_step"])
+        if step is not None:
+            metrics["epoch"] = step
+
+    return metrics
+
+
+def _as_finite_float(value: object) -> float | None:
+    """float(value) or None — NaN/±Inf and non-numerics included."""
+    if value is None:
+        return None
+    try:
+        out = float(value)  # type: ignore[arg-type]
+    except (TypeError, ValueError):
+        return None
+    return out if math.isfinite(out) else None

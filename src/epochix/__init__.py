@@ -51,6 +51,26 @@ _SDK_ATTRS = {
 }
 
 
+def load_ipython_extension(ipython: object) -> None:
+    """Entry point for ``%load_ext epochix``.
+
+    IPython looks for this on the module you name, so it has to live on the
+    top-level package — not on epochix.integrations.jupyter. Without it,
+    ``%load_ext epochix`` (what the docs tell people to run) printed "The
+    epochix module is not an IPython extension" and registered no magics.
+    """
+    from epochix.integrations.jupyter import load_ipython_extension as _load
+
+    _load(ipython)
+
+
+def unload_ipython_extension(ipython: object) -> None:
+    """Entry point for ``%unload_ext epochix``."""
+    from epochix.integrations.jupyter import unload_ipython_extension as _unload
+
+    _unload(ipython)
+
+
 def __getattr__(name: str) -> object:
     if name in _SDK_ATTRS:
         module_path, attr = _SDK_ATTRS[name]
