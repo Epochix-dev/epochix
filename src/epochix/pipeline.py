@@ -47,6 +47,11 @@ def _clean_line(text: str) -> str:
     if len(text) > _MAX_LINE_LEN:
         text = text[:_MAX_LINE_LEN]
     cleaned = _ANSI_RE.sub("", text)
+    # A trailing \r is a CRLF line ending, not a progress redraw. Collapsing on
+    # it would return the empty string after it and wipe every line of a
+    # Windows-encoded log.
+    if cleaned.endswith("\r"):
+        cleaned = cleaned[:-1]
     if "\r" in cleaned:
         cleaned = cleaned.rsplit("\r", 1)[-1]
     return cleaned

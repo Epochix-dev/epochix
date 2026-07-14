@@ -7,6 +7,39 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.5.15] — 2026-07-14
+
+### Fixed — progress-bar logs recorded every metric twice (or more)
+
+Running real ultralytics YOLO for the first time showed each epoch's losses
+stored once per **progress-bar redraw**: `box_loss` appeared 6 times for a
+3-epoch run.
+
+Real tqdm/YOLO output redraws the same line with carriage returns —
+`\r  1/3  …  0%|…|` then `\r  1/3  …  100%|…|` — all before a single newline.
+The pipeline's `_clean_line()` has always known to collapse that to the final
+visible state, but it never saw a `\r`: the file ingesters opened logs in
+Python's default **universal-newline** mode, which converts a lone `\r` into a
+line break. Every redraw arrived as its own line and was parsed as another
+epoch row.
+
+Logs are now read with `newline="\n"` so the carriage returns survive to
+`_clean_line()`, which collapses them. Affects any framework that draws a
+progress bar — tqdm, ultralytics, Keras `verbose=1`.
+
+`_clean_line()` also no longer collapses on a *trailing* `\r`: that is a CRLF
+line ending, not a redraw, and splitting on it would have returned the empty
+string for every line of a Windows-encoded log.
+
+### Added
+
+- `tests/fixtures/logs/yolo_real_ultralytics.log` — a byte-exact capture of real
+  ultralytics 8.4.55 output (carriage returns and all), with `.gitattributes`
+  marking the log fixtures `-text` so git cannot normalise away the very thing
+  they test.
+
+---
+
 ## [0.5.14] — 2026-07-14
 
 Driving the VS Code extension's terminal→dashboard journey end to end for the

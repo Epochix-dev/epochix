@@ -44,7 +44,12 @@ class FileTailIngester(BaseIngester):
     async def lines(self) -> AsyncIterator[RawLogLine]:
         seq = 0
         partial = ""
-        async with aiofiles.open(self._path, encoding=self._encoding, errors="replace") as fh:
+        # newline="\n": no universal-newline translation, or a lone \r inside a
+        # progress bar is turned into a line break and every tqdm redraw gets
+        # parsed as its own epoch row. _clean_line() collapses the \r instead.
+        async with aiofiles.open(
+            self._path, encoding=self._encoding, errors="replace", newline="\n"
+        ) as fh:
             while True:
                 chunk: str = await fh.read(65536)
                 if chunk:

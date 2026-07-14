@@ -31,7 +31,15 @@ class FileBatchIngester(BaseIngester):
 
     async def lines(self) -> AsyncIterator[RawLogLine]:
         seq = 0
-        async with aiofiles.open(self._path, encoding=self._encoding, errors="replace") as fh:
+        # newline="\n": split ONLY on newlines. The default (universal newlines)
+        # also treats a lone \r as a line break, which shreds progress-bar output
+        # — every tqdm/YOLO redraw ("\r 1/3 … 0% … \r 1/3 … 100% …") became its
+        # own line and got parsed again, so each epoch's metrics were recorded
+        # once per redraw. Keeping the \r inside the line lets _clean_line()
+        # collapse it to the final state, which is what the terminal shows.
+        async with aiofiles.open(
+            self._path, encoding=self._encoding, errors="replace", newline="\n"
+        ) as fh:
             async for raw_line in fh:
                 text = raw_line.rstrip("\n")
                 yield RawLogLine(

@@ -1,0 +1,6 @@
+# Log fixtures are byte-exact captures of real framework output. Several carry
+# carriage returns from progress bars (tqdm / YOLO / Keras verbose=1), and the
+# parsers are tested precisely on how those collapse — so git must not touch
+# their line endings.
+tests/fixtures/logs/*.log -text
+src/epochix/_demos/*.log  -text
