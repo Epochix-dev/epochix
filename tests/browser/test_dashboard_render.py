@@ -63,10 +63,16 @@ def _free_port() -> int:
 def dashboard(tmp_path_factory: pytest.TempPathFactory) -> Iterator[tuple[str, str]]:
     """Parse a real log, serve it, and yield (base_url, run_id)."""
     if not _FRONTEND_INDEX.is_file():
-        pytest.skip(
+        # Skipping here would skip EVERY browser test, and an all-skipped run
+        # still exits 0 — CI would go green having rendered nothing. Under
+        # EPOCHIX_REQUIRE_ALL_BROWSERS a missing bundle is a hard failure.
+        msg = (
             "frontend bundle not built — run `npm --prefix frontend run build` and copy "
             f"the output to {_FRONTEND_INDEX.parent}"
         )
+        if _REQUIRE_ALL:
+            pytest.fail(msg)
+        pytest.skip(msg)
 
     db_path = str(tmp_path_factory.mktemp("browser") / "runs.db")
     run = parse(_LOG, db=db_path, run_name="browser/keras_50ep")

@@ -97,7 +97,15 @@ jobs:
           cp -r frontend/dist/. src/epochix/_frontend/dist/
       - uses: astral-sh/setup-uv@v5
       - run: uv run --extra dev playwright install --with-deps chromium firefox webkit
-      - run: uv run --extra dev pytest tests/browser -q
+      - name: Render on every engine
+        run: |
+          set -o pipefail
+          uv run --extra dev pytest tests/browser -q --tb=short | tee render.log
+          # A run where everything skipped still exits 0 — demand three real renders.
+          grep -qE "^3 passed" render.log || {
+            echo "::error::expected 3 passing engine renders (chromium, firefox, webkit)"
+            exit 1
+          }
 
   e2e:
     # Full-pipeline tests (7 demo logs → parser → story engine → store → API).
