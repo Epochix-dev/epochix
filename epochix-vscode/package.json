@@ -3,7 +3,7 @@
   "displayName": "Epochix",
   "description": "Visual storytelling for deep learning training runs — live animated dashboard in your editor.",
   "publisher": "epochix",
-  "version": "0.5.19",
+  "version": "0.5.20",
   "license": "Apache-2.0",
   "icon": "icon.png",
   "repository": {
@@ -79,16 +79,48 @@
           "when": "resourceExtname == .log",
           "group": "navigation"
         }
-      ]
-    },
-    "views": {
-      "explorer": [
+      ],
+      "view/title": [
         {
-          "id": "epochixRuns",
-          "name": "Epochix Runs"
+          "command": "epochix.openDashboard",
+          "when": "view == epochixRuns",
+          "group": "navigation@1"
+        },
+        {
+          "command": "epochix.watchTerminal",
+          "when": "view == epochixRuns",
+          "group": "navigation@2"
+        },
+        {
+          "command": "epochix.openLogFile",
+          "when": "view == epochixRuns",
+          "group": "navigation@3"
         }
       ]
     },
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "epochix",
+          "title": "Epochix",
+          "icon": "media/epochix.svg"
+        }
+      ]
+    },
+    "views": {
+      "epochix": [
+        {
+          "id": "epochixRuns",
+          "name": "Runs"
+        }
+      ]
+    },
+    "viewsWelcome": [
+      {
+        "view": "epochixRuns",
+        "contents": "Visualise a training run as an animated dashboard.\n\n[Open Dashboard](command:epochix.openDashboard)\n\n[Watch Active Terminal](command:epochix.watchTerminal)\n\n[Open Log File…](command:epochix.openLogFile)\n\nA run also opens automatically when training is detected in a terminal.\nTip: $(keyboard) Ctrl+Alt+M (⌘⌥M on macOS) opens the dashboard anywhere."
+      }
+    ],
     "configuration": {
       "title": "Epochix",
       "properties": {

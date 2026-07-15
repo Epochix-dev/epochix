@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.5.20] — 2026-07-14
+
+### Fixed — there was no visible way to open the dashboard
+
+The only entry points were the `Ctrl+Alt+M` keybinding and the command palette
+— both undiscoverable. The status-bar pill *was* wired to open the dashboard,
+but it was created hidden and only shown once the dashboard was already
+streaming frames, so on a fresh session nothing was clickable at all.
+
+- The status-bar pill now shows from activation (`⚡ Epochix`, click to open) and
+  falls back to that idle state when a run ends, instead of vanishing.
+- **New Epochix activity-bar icon** (left sidebar) opens a panel with **Open
+  Dashboard**, **Watch Active Terminal** and **Open Log File** buttons, plus the
+  same actions on the view's title bar. The "Epochix Runs" view moved out of the
+  Explorer into this dedicated container.
+
+---
+
 ## [0.5.19] — 2026-07-14
 
 ### Fixed — "Epochix: Compare Two Runs" was a placeholder
