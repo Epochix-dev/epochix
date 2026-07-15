@@ -34,6 +34,24 @@ from epochix.parsers.base import ParserContext
 logger = logging.getLogger(__name__)
 
 BLOCK_LINES = 20  # Lines submitted per LLM call
+
+# Ollama/OpenAI structured-output schema. Passing the bare string "json" only
+# constrains the model to *some* valid JSON, and models routinely collapse to a
+# single object ({"key":…,"value":…}) instead of the array we ask for — so a
+# multi-metric log came back as one object and _parse_response dropped it,
+# extracting nothing. An explicit array schema forces the array.
+_METRIC_ARRAY_SCHEMA: dict[str, Any] = {
+    "type": "array",
+    "items": {
+        "type": "object",
+        "properties": {
+            "key": {"type": "string"},
+            "value": {"type": "number"},
+            "epoch": {"type": ["number", "null"]},
+        },
+        "required": ["key", "value"],
+    },
+}
 _PROMPT_TEMPLATE = """\
 You are a metric extractor. I will give you lines from a machine learning training log.
 Extract all numeric training metrics and return ONLY valid JSON — an array of objects.
@@ -47,6 +65,18 @@ Return [] if no metrics are found. No explanation, no markdown, only the JSON ar
 LOG LINES:
 {lines}
 """
+
+
+def _strip_code_fence(text: str) -> str:
+    """Remove a leading/trailing markdown code fence if the model added one."""
+    if not text.startswith("```"):
+        return text
+    lines = text.splitlines()
+    # Drop the opening fence (``` or ```json) and a closing fence if present.
+    lines = lines[1:]
+    if lines and lines[-1].strip().startswith("```"):
+        lines = lines[:-1]
+    return "\n".join(lines).strip()
 
 
 class LLMFallbackParser:
@@ -141,7 +171,7 @@ class LLMFallbackParser:
                 "model": self._model,
                 "prompt": prompt,
                 "stream": False,
-                "format": "json",
+                "format": _METRIC_ARRAY_SCHEMA,
             }
         ).encode()
 
@@ -183,8 +213,14 @@ class LLMFallbackParser:
 
     @staticmethod
     def _parse_response(raw: str) -> list[dict[str, Any]]:
-        """Parse JSON array from LLM response; tolerate wrapped objects."""
-        raw = raw.strip()
+        """Parse a JSON array of metrics from an LLM response, defensively.
+
+        Real models, even asked for "only JSON, no markdown", still sometimes
+        wrap the array in a ```json fence, return a single object instead of an
+        array, or nest it under a key like {"metrics": [...]}. Handle all three
+        rather than dropping the extraction on the floor.
+        """
+        raw = _strip_code_fence(raw.strip())
         try:
             parsed = json.loads(raw)
         except json.JSONDecodeError:
@@ -192,7 +228,10 @@ class LLMFallbackParser:
         if isinstance(parsed, list):
             return [d for d in parsed if isinstance(d, dict)]
         if isinstance(parsed, dict):
-            # Some models return {"metrics": [...]}
+            # A single metric object collapsed out of the array.
+            if "key" in parsed and "value" in parsed:
+                return [parsed]
+            # Or the array nested under a key, e.g. {"metrics": [...]}.
             for v in parsed.values():
                 if isinstance(v, list):
                     return [d for d in v if isinstance(d, dict)]

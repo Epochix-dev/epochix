@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.5.18] — 2026-07-14
+
+### Fixed — the LLM fallback parser extracted nothing
+
+Pointed at a real Ollama for the first time, the opt-in LLM fallback parser
+returned zero metrics. The Ollama call asked for `"format": "json"`, which only
+constrains the model to emit *some* valid JSON — so a multi-metric log came back
+as a single collapsed object, and `_parse_response` (which accepted only arrays)
+dropped it.
+
+It now sends an explicit array **schema** as the format, which reliably yields
+one object per metric — verified against real models, extracting all metrics
+(with epochs) from a prose log no regex parser can read. `_parse_response` is
+also hardened: it strips a markdown ```json fence and accepts a single collapsed
+object, both of which real models still emit despite being asked not to.
+
+> Note: the LLM fallback remains **manual opt-in** — it is not auto-registered
+> and is not yet wired to the `llm_*` settings. See the tracking issue for
+> connecting it end to end.
+
+---
+
 ## [0.5.17] — 2026-07-14
 
 ### Fixed — the SSH ingester leaked its `ssh` subprocess
