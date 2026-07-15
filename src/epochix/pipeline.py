@@ -16,6 +16,7 @@ Architecture (§6.2)::
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import logging
 import re
 from datetime import datetime, timezone
@@ -354,18 +355,40 @@ async def run_pipeline(
             return _done
 
     _pending: asyncio.Future[object] | None = None
-    while True:
-        if _pending is None:
-            _pending = asyncio.ensure_future(_next_or_done())
-        try:
-            item = await asyncio.wait_for(asyncio.shield(_pending), IDLE_SNIFF_SECS)
-        except asyncio.TimeoutError:
-            _flush_sniff()  # live stream idle → emit what we have
-            continue
-        _pending = None
-        if item is _done:
-            break
-        _process_line(item)
+    try:
+        while True:
+            if _pending is None:
+                _pending = asyncio.ensure_future(_next_or_done())
+            try:
+                item = await asyncio.wait_for(asyncio.shield(_pending), IDLE_SNIFF_SECS)
+            except asyncio.TimeoutError:
+                _flush_sniff()  # live stream idle → emit what we have
+                continue
+            _pending = None
+            if item is _done:
+                break
+            _process_line(item)
+    finally:
+        # Deterministically close the async generator so ingesters that own a
+        # resource release it now — not at GC time. The SSHIngester's finally
+        # runs here to terminate the `ssh` subprocess (and the remote tail -F);
+        # without this an interrupted or cancelled run orphans the connection.
+        #
+        # The in-flight __anext__ is asyncio.shield-ed, so on cancellation it is
+        # still running — aclose() on a running generator raises. Settle that
+        # task first (its cancellation drives the generator's own finally), then
+        # aclose() is a safe no-op on the now-finished generator.
+        if _pending is not None and not _pending.done():
+            _pending.cancel()
+            with contextlib.suppress(BaseException):
+                await _pending
+        # BaseIngester.lines() is typed as a plain AsyncIterator; the concrete
+        # ingesters are async generators (so they have aclose), but a custom one
+        # need not be — only close what can be closed.
+        _aclose = getattr(_line_iter, "aclose", None)
+        if _aclose is not None:
+            with contextlib.suppress(RuntimeError):
+                await _aclose()
 
     # Source ended before the sniff window filled — detect + replay now.
     _flush_sniff()

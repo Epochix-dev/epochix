@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.5.17] — 2026-07-14
+
+### Fixed — the SSH ingester leaked its `ssh` subprocess
+
+Testing the SSH ingester against a real `sshd` (tailing a remote log over an
+actual connection) showed the pipeline never closed the ingester's async
+generator — it held `ingester.lines().__aiter__()` and just let the reference
+drop. So the generator's `finally:` (which terminates the `ssh` subprocess and
+the remote `tail -F`) only ran whenever Python next garbage-collected it.
+
+Every interrupted or cancelled remote run therefore orphaned an `ssh` process
+and a remote `tail`, and a long-running server that spawned SSH runs leaked one
+per run. The pipeline now `aclose()`s the generator deterministically in a
+`finally`, settling the shielded in-flight read first so cancellation cleans up
+correctly too.
+
+The streaming itself was already correct: verified end to end against real
+`sshd` — key auth, `BatchMode`, `accept-new`, `tail -F -n +0` replay, and live
+following of an appended file all work.
+
+---
+
 ## [0.5.16] — 2026-07-14
 
 Running real ultralytics, fastai and Accelerate through their parsers for the
