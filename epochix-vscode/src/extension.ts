@@ -13,6 +13,7 @@ import { registerOpenDashboard } from "./commands/openDashboard";
 import { registerWatchTerminal } from "./commands/watchTerminal";
 import { registerOpenLogFile } from "./commands/openLogFile";
 import { registerExportRun } from "./commands/exportRun";
+import { registerCompareRuns } from "./commands/compareRuns";
 import { getConfig } from "./config";
 
 // Module-level sidecar reference — needed for deactivate()
@@ -43,12 +44,7 @@ export async function activate(ctx: vscode.ExtensionContext): Promise<void> {
     registerWatchTerminal(watcher),
     registerOpenLogFile(ctx, _sidecar),
     registerExportRun(ctx),
-    // compareRuns is a placeholder for future implementation
-    vscode.commands.registerCommand("epochix.compareRuns", () => {
-      void vscode.window.showInformationMessage(
-        "Epochix: Run comparison coming in v0.2.",
-      );
-    }),
+    registerCompareRuns(_sidecar),
   );
 
   // Show the install-sidecar hint at most ONCE (until the user acts), never

@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.5.19] — 2026-07-14
+
+### Fixed — "Epochix: Compare Two Runs" was a placeholder
+
+The command showed "Run comparison coming in v0.2." — a shipped no-op for a
+feature the Python side has had all along (`epochix compare`, and a full
+select-to-compare run list in the dashboard). It now opens the sidecar
+dashboard's run list, where you pick runs and hit Compare. In standalone mode
+(no sidecar, no stored history) it explains that comparison needs the Python
+package rather than silently doing nothing.
+
+---
+
 ## [0.5.18] — 2026-07-14
 
 ### Fixed — the LLM fallback parser extracted nothing

@@ -49,9 +49,10 @@ suite("Epochix extension — host integration", () => {
     }
   });
 
-  test("compareRuns placeholder runs without throwing", async () => {
-    // The one command with no side effects beyond an info toast — safe to
-    // invoke headless. Proves the command handler is wired, not just declared.
+  test("compareRuns runs without throwing (standalone: no sidecar)", async () => {
+    // With useSidecar=never, compareRuns takes the no-sidecar branch: it shows
+    // an info message and returns (openExternal only fires on a button click,
+    // which never happens headless). Proves the handler is wired, not declared.
     await vscode.commands.executeCommand("epochix.compareRuns");
   });
 
