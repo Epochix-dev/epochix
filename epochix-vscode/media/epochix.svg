@@ -1,8 +1,7 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-  <path d="M3 3v18h18" />
-  <path d="M7 15l4-5 3 3 5-7" />
-  <circle cx="7" cy="15" r="1.2" fill="currentColor" stroke="none" />
-  <circle cx="11" cy="10" r="1.2" fill="currentColor" stroke="none" />
-  <circle cx="14" cy="13" r="1.2" fill="currentColor" stroke="none" />
-  <circle cx="19" cy="6" r="1.2" fill="currentColor" stroke="none" />
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.1" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Epochix "E" mark: spine + top and bottom arms in one stroke (rounded
+       corners), with the shorter middle arm separate. Monochrome — VS Code
+       tints activity-bar icons with the theme colour. -->
+  <path d="M19.4 4.9 H5.6 V19.4 H11" />
+  <path d="M5.6 12.1 H14.8" />
 </svg>

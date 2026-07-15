@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.5.21] — 2026-07-15
+
+### Changed — the activity-bar icon is the Epochix "E" mark
+
+The sidebar icon shipped in 0.5.20 was a generic line-chart placeholder; it's
+now the Epochix "E" logo (a monochrome trace, since VS Code tints activity-bar
+icons with the theme colour).
+
+---
+
 ## [0.5.20] — 2026-07-14
 
 ### Fixed — there was no visible way to open the dashboard
