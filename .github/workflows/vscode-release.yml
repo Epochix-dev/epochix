@@ -167,7 +167,22 @@ jobs:
         run: npm install -g @vscode/vsce
 
       - name: Publish to VS Code Marketplace
-        run: vsce publish --packagePath ./vsix/*.vsix
+        # The Marketplace publish endpoint flakes with transient 5xx/timeouts
+        # (0.5.12 and 0.5.21 both failed here on a good VSIX and succeeded on a
+        # plain re-run). Retry before giving up. --skip-duplicate makes a retry
+        # after a partial success a no-op instead of a hard "already exists"
+        # failure. A real auth error (bad/expired PAT) still fails all attempts.
+        run: |
+          for attempt in 1 2 3; do
+            if vsce publish --packagePath ./vsix/*.vsix --skip-duplicate; then
+              echo "Published on attempt $attempt."
+              exit 0
+            fi
+            echo "::warning::vsce publish attempt $attempt failed; retrying in 60s..."
+            sleep 60
+          done
+          echo "::error::vsce publish failed after 3 attempts"
+          exit 1
         env:
           VSCE_PAT: ${{ secrets.VSCE_PAT }}
 
