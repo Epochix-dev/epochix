@@ -119,6 +119,26 @@ epochix --help
 
 ---
 
+## LLM fallback for unknown log formats (opt-in)
+
+If none of the built-in parsers recognise your log format, epochix can ask a
+local Ollama (or OpenAI) to extract the metrics. It is off by default, fires
+only at end of stream, and only when the regex parsers found **nothing** — a
+normal run never touches it.
+
+```bash
+EPOCHIX_LLM_ENABLED=true EPOCHIX_LLM_MODEL=qwen2.5:7b epochix weird.log
+```
+
+- **Ollama** (default provider): talks to `EPOCHIX_OLLAMA_URL`
+  (default `http://127.0.0.1:11434`).
+- **OpenAI**: set `EPOCHIX_LLM_PROVIDER=openai` and `EPOCHIX_LLM_KEY=sk-…`.
+- `--no-llm` disables it for a single run.
+- LLM-extracted metrics are marked with lower confidence than regex parses,
+  and non-numeric or non-finite hallucinations are dropped.
+
+---
+
 ## Remote & reverse-proxy deployment
 
 `epochix serve` is a single-origin app; it works well behind a TLS-terminating

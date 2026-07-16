@@ -7,6 +7,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.5.22] — 2026-07-15
+
+### Added — the LLM fallback is now actually reachable
+
+0.5.18 made the LLM parser extract correctly, but it was orphaned: nothing
+registered it, nothing invoked it, its settings didn't connect, and its final
+block was never flushed. It is now wired end to end:
+
+- `EPOCHIX_LLM_ENABLED=true` (or `llm_enabled` in config) turns it on; the
+  parser reads `llm_provider` / `llm_model` / `llm_key` / `ollama_url` from
+  settings, with the `EPOCHIX_LLM_URL` / `EPOCHIX_LLM_KEY` / `EPOCHIX_LLM_MODEL`
+  env vars still taking precedence.
+- It fires **only at end of stream, and only when the regex parsers extracted
+  nothing** — a normal run never touches it, and `--no-llm` disables it per run.
+- The blocking LLM calls run in a worker thread, so the event loop — and every
+  other live dashboard — stays responsive.
+- Extraction is capped at 400 lines (≤ 20 LLM round-trips); it targets short
+  exotic logs, not gigabyte transcripts.
+- Documented in the quickstart.
+
+### Added — the dashboard render suite also runs on macOS
+
+The `browser` CI job is now an OS matrix: Chromium, Firefox and WebKit render
+the dashboard on both `ubuntu-latest` and `macos-latest`. WebKit on a macOS
+runner is the closest CI gets to real Safari on a real Mac — closing the last
+rendering-verification gap that no machine in this project could reach.
+
+---
+
 ## [0.5.21] — 2026-07-15
 
 ### Changed — the activity-bar icon is the Epochix "E" mark

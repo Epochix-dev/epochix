@@ -76,10 +76,19 @@ jobs:
     # Renders the real dashboard in Chromium, Firefox and WebKit (Safari's
     # engine) against a live server. Catches engine-specific paint/layout bugs
     # that neither the Python suite nor vitest can see. Playwright's Firefox
-    # cannot spawn on Windows dev boxes, so Linux CI is the only place all
-    # three engines actually run — hence EPOCHIX_REQUIRE_ALL_BROWSERS, which
-    # turns a failed launch into a failure instead of a skip.
-    runs-on: ubuntu-latest
+    # cannot spawn on Windows dev boxes, so CI is the only place all three
+    # engines actually run — hence EPOCHIX_REQUIRE_ALL_BROWSERS, which turns a
+    # failed launch into a failure instead of a skip.
+    #
+    # macOS row: WebKit on macos-latest is the closest thing to real Safari on
+    # a real Mac that CI can provide — it closes the "does the dashboard render
+    # on macOS" gap that no machine in this project could reach.
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    name: browser (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
     env:
       UV_PYTHON: "3.12"
       EPOCHIX_REQUIRE_ALL_BROWSERS: "1"

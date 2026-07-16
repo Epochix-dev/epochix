@@ -23,7 +23,7 @@ from datetime import datetime, timezone
 from typing import TYPE_CHECKING
 
 from epochix.enums import TaskType
-from epochix.models import Run
+from epochix.models import RawMetric, Run
 from epochix.normalizer import normalize
 from epochix.parsers.base import ParserContext
 from epochix.parsers.registry import SNIFF_SAMPLE_LINES, detect_parser
@@ -72,6 +72,12 @@ logger = logging.getLogger(__name__)
 # blank until it finishes. Batch file reads never pause, so they are unaffected.
 IDLE_SNIFF_SECS = 1.5
 
+# LLM fallback: how many (non-blank) lines to keep for the end-of-stream pass.
+# Each 20-line block costs one LLM round-trip, so 400 lines = at most 20 calls.
+# The fallback targets short exotic logs the regex parsers can't read at all;
+# anything bigger gets truncated with a warning rather than an hour of calls.
+_LLM_MAX_LINES = 400
+
 
 def _emit_line(
     *,
@@ -96,6 +102,30 @@ def _emit_line(
     if ctx.total_epochs is not None and engine.total_epochs != ctx.total_epochs:
         engine.total_epochs = ctx.total_epochs
 
+    return _emit_metrics(
+        raw_metrics,
+        timestamp=timestamp,
+        run_id=run_id,
+        engine=engine,
+        store=store,
+        hub=hub,
+    )
+
+
+def _emit_metrics(
+    raw_metrics: list[RawMetric],
+    *,
+    timestamp: datetime,
+    run_id: str,
+    engine: StoryEngine,
+    store: RunStore,
+    hub: Hub,
+) -> float | None:
+    """Normalize → story → store → broadcast a batch of raw metrics.
+
+    Shared by the per-line path and the end-of-stream LLM fallback (whose
+    metrics arrive as a batch rather than from a parse_line call).
+    """
     last_epoch: float | None = None
     for raw in raw_metrics:
         try:
@@ -130,6 +160,66 @@ def _emit_line(
                 hub.publish(run_id, ms_msg)
 
     return last_epoch
+
+
+async def _llm_fallback_pass(
+    lines: list[tuple[int, str]],
+    *,
+    run_id: str,
+    engine: StoryEngine,
+    store: RunStore,
+    hub: Hub,
+) -> float | None:
+    """End-of-stream LLM extraction for logs the regex parsers couldn't read.
+
+    The LLM calls are blocking HTTP requests (up to 30s each), so the whole
+    extraction runs in a worker thread — the event loop, and every other live
+    run's dashboard, stays responsive.
+    """
+    from epochix.parsers.llm_fallback import LLMFallbackParser
+
+    llm_parser = LLMFallbackParser()
+    if not llm_parser.is_available():
+        logger.warning(
+            "llm_enabled is set but no LLM backend is configured — set "
+            "EPOCHIX_OLLAMA_URL / EPOCHIX_LLM_KEY (or EPOCHIX_LLM_URL). "
+            "Skipping the fallback."
+        )
+        return None
+
+    logger.info(
+        "Regex parsers extracted no metrics — trying the LLM fallback on %d lines",
+        len(lines),
+    )
+
+    def _extract() -> list[RawMetric]:
+        lctx = ParserContext(run_id=run_id)
+        out: list[RawMetric] = []
+        for seq, text in lines:
+            lctx.seq = seq
+            out.extend(llm_parser.parse_line(text, lctx))
+        out.extend(llm_parser.flush_remaining(lctx))
+        return out
+
+    try:
+        raw_metrics = await asyncio.to_thread(_extract)
+    except Exception as exc:  # noqa: BLE001 — the fallback must never sink a run
+        logger.warning("LLM fallback failed: %s", exc)
+        return None
+
+    if not raw_metrics:
+        logger.info("LLM fallback found no metrics either")
+        return None
+
+    logger.info("LLM fallback extracted %d metrics", len(raw_metrics))
+    return _emit_metrics(
+        raw_metrics,
+        timestamp=datetime.now(tz=timezone.utc),
+        run_id=run_id,
+        engine=engine,
+        store=store,
+        hub=hub,
+    )
 
 
 async def run_pipeline(
@@ -194,6 +284,10 @@ async def run_pipeline(
     )
 
     effective_keep = keep_raw_lines or settings.keep_raw_lines
+
+    # Only filled when the opt-in LLM fallback is on; consumed at end-of-stream
+    # if the regex parsers extracted nothing (see _llm_fallback_pass).
+    llm_lines: list[tuple[int, str]] = []
 
     # Create run record
     started_at = datetime.now(tz=timezone.utc)
@@ -309,6 +403,9 @@ async def run_pipeline(
         # downstream parsers see clean text.
         clean_text = _clean_line(raw_line.text)  # type: ignore[attr-defined]
 
+        if settings.llm_enabled and clean_text.strip() and len(llm_lines) < _LLM_MAX_LINES:
+            llm_lines.append((raw_line.seq, clean_text))  # type: ignore[attr-defined]
+
         if len(arch_scan_lines) < _ARCH_SCAN_LIMIT:
             arch_scan_lines.append(clean_text)
             if len(arch_scan_lines) >= _ARCH_SCAN_LIMIT and not arch_detected:
@@ -398,6 +495,21 @@ async def run_pipeline(
     # here. Idempotent — already-detected runs no-op.
     if not arch_detected and arch_scan_lines:
         _try_detect_architecture(broadcast=False)
+
+    # --- LLM fallback (opt-in) -------------------------------------------
+    # Only when llm_enabled, only at end-of-stream, and only when the regex
+    # parsers extracted NOTHING — so it never touches a normal run, and its
+    # blocking HTTP calls run in a worker thread, never on the event loop.
+    if llm_lines and not store.get_metric_events(run_id):
+        ep = await _llm_fallback_pass(
+            llm_lines,
+            run_id=run_id,
+            engine=engine,
+            store=store,
+            hub=hub,
+        )
+        if ep is not None:
+            last_epoch = ep
 
     # --- Finalise -------------------------------------------------------
     final_milestones = engine.finalize(last_seq, last_epoch)

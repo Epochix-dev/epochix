@@ -86,9 +86,23 @@ class LLMFallbackParser:
     priority = 0  # even lower than universal — true last resort
 
     def __init__(self) -> None:
+        # Env vars take precedence (the long-documented manual path); otherwise
+        # fall back to Settings — but only when the fallback is actually
+        # enabled, so is_available() stays False for unconfigured installs
+        # (ollama_url has a localhost default that must not count as "set up").
+        from epochix.config import get_settings
+
+        settings = get_settings()
         self._llm_url = os.environ.get("EPOCHIX_LLM_URL", "")
         self._llm_key = os.environ.get("EPOCHIX_LLM_KEY", "")
-        self._model = os.environ.get("EPOCHIX_LLM_MODEL", "llama3")
+        self._model = os.environ.get("EPOCHIX_LLM_MODEL", "") or settings.llm_model
+
+        if settings.llm_enabled:
+            if not self._llm_url and settings.llm_provider == "ollama":
+                self._llm_url = settings.ollama_url
+            if not self._llm_key and settings.llm_provider == "openai":
+                self._llm_key = settings.llm_key
+
         self._block: list[str] = []
         self._pending: list[tuple[int, int]] = []  # (seq, block_start_seq)
 
