@@ -1,0 +1,3 @@
+Performance solide à {value}. Époque {epoch} — le modèle maîtrise sa tâche.
+Le modèle opère avec précision. {value}, delta {delta}.
+Époque {epoch} : performance quasi optimale. Métrique {value}.

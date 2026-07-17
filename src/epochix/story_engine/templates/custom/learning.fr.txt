@@ -1,0 +1,3 @@
+Le modèle progresse régulièrement. Métrique : {value} à l'époque {epoch}, delta {delta}.
+Des motifs émergent des données. Valeur {value} — la tendance est positive.
+Époque {epoch} : l'amélioration continue. {value}, et ça monte.

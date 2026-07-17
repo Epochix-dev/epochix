@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.5.23] — 2026-07-16
+
+### Fixed — story narratives are now fully localised
+
+The narrative templates already had Persian and French variants for every task
+except `custom` — the fallback task every unrecognised metric lands in. So a
+Persian user with an exotic log got a correctly mirrored RTL dashboard whose
+story was narrated in English. The ten missing templates (5 phases × fa/fr) are
+now translated, and new tests fail CI if any future template ships without both
+translations or drifts its `{placeholders}` from the English original.
+
+---
+
 ## [0.5.22] — 2026-07-15
 
 ### Added — the LLM fallback is now actually reachable

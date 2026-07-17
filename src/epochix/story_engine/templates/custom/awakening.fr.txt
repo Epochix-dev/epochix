@@ -1,0 +1,3 @@
+L'entraînement commence à l'époque {epoch}. Métrique principale : {value}. Le voyage démarre ici.
+Époque {epoch} : le modèle fait ses premiers pas. Valeur de la métrique {value}.
+La référence est fixée à {value}. Chaque itération est désormais un progrès.

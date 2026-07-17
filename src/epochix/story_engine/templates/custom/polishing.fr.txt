@@ -1,0 +1,3 @@
+Derniers raffinements. Métrique {value} à l'époque {epoch} — le modèle est prêt.
+Les dernières améliorations sont incrémentales. {value}. L'excellence est à portée.
+Époque {epoch} : le modèle est peaufiné, prêt pour le déploiement. {value}.
