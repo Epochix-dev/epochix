@@ -1,0 +1,35 @@
+Model: "sequential"
+_________________________________________________________________
+ Layer (type)                Output Shape              Param #
+=================================================================
+ conv2d (Conv2D)             (None, 30, 30, 32)        896
+ max_pooling2d               (None, 15, 15, 32)        0
+ dense (Dense)               (None, 64)                460864
+ dense_1 (Dense)             (None, 10)                650
+=================================================================
+Total params: 462,410
+Trainable params: 462,410
+Non-trainable params: 0
+
+Epoch 1/20
+1563/1563 [==============================] - 8s 5ms/step - loss: 1.8234 - accuracy: 0.3245 - val_loss: 1.6543 - val_accuracy: 0.3812
+Epoch 2/20
+1563/1563 [==============================] - 7s 5ms/step - loss: 1.5432 - accuracy: 0.4423 - val_loss: 1.4321 - val_accuracy: 0.4567
+Epoch 3/20
+1563/1563 [==============================] - 7s 4ms/step - loss: 1.3456 - accuracy: 0.5123 - val_loss: 1.2765 - val_accuracy: 0.5234
+Epoch 4/20
+1563/1563 [==============================] - 7s 4ms/step - loss: 1.1987 - accuracy: 0.5678 - val_loss: 1.1543 - val_accuracy: 0.5812
+Epoch 5/20
+1563/1563 [==============================] - 7s 4ms/step - loss: 1.0876 - accuracy: 0.6098 - val_loss: 1.0432 - val_accuracy: 0.6234
+Epoch 8/20
+1563/1563 [==============================] - 6s 4ms/step - loss: 0.9123 - accuracy: 0.6789 - val_loss: 0.9012 - val_accuracy: 0.6876
+Epoch 10/20
+1563/1563 [==============================] - 6s 4ms/step - loss: 0.8234 - accuracy: 0.7123 - val_loss: 0.8321 - val_accuracy: 0.7098
+Epoch 12/20
+1563/1563 [==============================] - 6s 4ms/step - loss: 0.7543 - accuracy: 0.7398 - val_loss: 0.7765 - val_accuracy: 0.7312
+Epoch 15/20
+1563/1563 [==============================] - 6s 4ms/step - loss: 0.6876 - accuracy: 0.7612 - val_loss: 0.7123 - val_accuracy: 0.7545
+Epoch 18/20
+1563/1563 [==============================] - 6s 4ms/step - loss: 0.6345 - accuracy: 0.7801 - val_loss: 0.6765 - val_accuracy: 0.7723
+Epoch 20/20
+1563/1563 [==============================] - 6s 4ms/step - loss: 0.6012 - accuracy: 0.7923 - val_loss: 0.6543 - val_accuracy: 0.7834

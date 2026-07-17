@@ -130,6 +130,10 @@ secrets.json
 # Logs (keep demo/ but ignore generated ones)
 *.log
 !demo/*.log
+# The extension's bundled Try-a-Demo log — a shipped asset, not build noise.
+# (The *.log rule silently ate it once and the demo button shipped pointing at
+# a missing file; same trap that previously ate src/epochix/_demos/*.log.)
+!epochix-vscode/media/demo.log
 !tests/fixtures/**/*.log
 # Bundled demo logs shipped inside the wheel (force-included in pyproject);
 # the broad *.log rule above would otherwise leave them uncommitted and

@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.5.25] — 2026-07-16
+
+### Fixed — 0.5.24's demo button shipped without its demo
+
+The bundled `demo.log` was silently excluded from the 0.5.24 package by the
+repository's `*.log` ignore rule, so **Try a Demo Run** pointed at a missing
+file. The asset is now tracked (with an explicit ignore exception), and the
+extension host test fails if the demo log is ever missing or empty again —
+the dashboard panel opens even without the file, so the previous test passed
+vacuously. Install 0.5.25 instead of 0.5.24.
+
 ## [0.5.24] — 2026-07-16
 
 ### Added — one-click onboarding for non-technical users

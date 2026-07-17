@@ -58,9 +58,21 @@ suite("Epochix extension — host integration", () => {
   });
 
   test("Try a Demo Run opens a dashboard webview (zero-setup onboarding)", async () => {
-    // The one-click path for non-technical users: no Python, no data. In
-    // standalone mode this parses the bundled demo log through the built-in
-    // engine and must produce a visible dashboard panel.
+    // The bundled log must actually ship. The dashboard panel opens even when
+    // the file is missing (createOrShow runs before the parse), so checking
+    // only for a webview would pass with a broken demo — which is exactly what
+    // happened when the *.log gitignore rule silently ate media/demo.log.
+    const ext = vscode.extensions.getExtension(EXT_ID);
+    assert.ok(ext);
+    const fs = await import("fs");
+    const path = await import("path");
+    const demoPath = path.join(ext.extensionPath, "media", "demo.log");
+    assert.ok(
+      fs.existsSync(demoPath),
+      `the bundled demo log is missing: ${demoPath} — check .gitignore (*.log)`,
+    );
+    assert.ok(fs.statSync(demoPath).size > 100, "demo.log is empty/truncated");
+
     await vscode.commands.executeCommand("epochix.tryDemo");
     await new Promise((r) => setTimeout(r, 1500)); // let the log parse + render
 
