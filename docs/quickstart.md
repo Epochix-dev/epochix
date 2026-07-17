@@ -4,6 +4,19 @@ Get a live dashboard for your training run in under 60 seconds.
 
 ---
 
+## 0. Easiest: the VS Code extension (no Python needed)
+
+1. Install [**Epochix** from the Marketplace](https://marketplace.visualstudio.com/items?itemName=epochix.epochix).
+2. Click the **E** icon in the left sidebar → **▶ Try a Demo Run** — an
+   animated dashboard opens on a bundled training run.
+3. Run your own training in the integrated terminal — the dashboard opens by
+   itself the moment Epochix recognises training output.
+
+That's the whole flow. The steps below add the Python package, which the
+extension uses automatically for run history, comparison and exports.
+
+---
+
 ## 1. Install
 
 ```bash

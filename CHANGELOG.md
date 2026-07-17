@@ -7,6 +7,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.5.24] — 2026-07-16
+
+### Added — one-click onboarding for non-technical users
+
+Installing only the extension used to show nothing until you produced a
+training run yourself. Now:
+
+- **▶ Try a Demo Run** — a new command (and the first button in the Epochix
+  sidebar) opens the dashboard on a bundled real Keras run, architecture panel
+  and all. No Python, no data, no configuration: install → click → see it.
+- **Get Started walkthrough** — a native VS Code walkthrough (appears on the
+  Welcome page after install) with four steps: try the demo, watch your own
+  training, open a finished log, and — optionally — add the Python engine for
+  history/compare/exports.
+
+### Fixed — documentation
+
+- README's Lightning example imported `EpochixCallback`, a class that does not
+  exist (it's `StoryCallback`) — copy-pasting it raised ImportError.
+- The docs' "full" install suggested `epochix[full]`, an extra that does not
+  exist (it's `epochix[all]`).
+- README, docs index and quickstart now lead with the zero-setup VS Code path
+  and reflect the current feature set (LLM fallback, localised narratives,
+  sidebar entry points, run compare).
+
+---
+
 ## [0.5.23] — 2026-07-16
 
 ### Fixed — story narratives are now fully localised

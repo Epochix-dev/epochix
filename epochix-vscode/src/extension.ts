@@ -14,6 +14,7 @@ import { registerWatchTerminal } from "./commands/watchTerminal";
 import { registerOpenLogFile } from "./commands/openLogFile";
 import { registerExportRun } from "./commands/exportRun";
 import { registerCompareRuns } from "./commands/compareRuns";
+import { registerTryDemo } from "./commands/tryDemo";
 import { getConfig } from "./config";
 
 // Module-level sidecar reference — needed for deactivate()
@@ -45,6 +46,7 @@ export async function activate(ctx: vscode.ExtensionContext): Promise<void> {
     registerOpenLogFile(ctx, _sidecar),
     registerExportRun(ctx),
     registerCompareRuns(_sidecar),
+    registerTryDemo(ctx, _sidecar),
   );
 
   // Show the install-sidecar hint at most ONCE (until the user acts), never

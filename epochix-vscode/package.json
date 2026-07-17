@@ -3,7 +3,7 @@
   "displayName": "Epochix",
   "description": "Visual storytelling for deep learning training runs — live animated dashboard in your editor.",
   "publisher": "epochix",
-  "version": "0.5.23",
+  "version": "0.5.24",
   "license": "Apache-2.0",
   "icon": "icon.png",
   "repository": {
@@ -63,6 +63,11 @@
         "command": "epochix.compareRuns",
         "title": "Epochix: Compare Two Runs",
         "icon": "$(diff)"
+      },
+      {
+        "command": "epochix.tryDemo",
+        "title": "Epochix: Try a Demo Run",
+        "icon": "$(play)"
       }
     ],
     "menus": {
@@ -118,7 +123,61 @@
     "viewsWelcome": [
       {
         "view": "epochixRuns",
-        "contents": "Visualise a training run as an animated dashboard.\n\n[Open Dashboard](command:epochix.openDashboard)\n\n[Watch Active Terminal](command:epochix.watchTerminal)\n\n[Open Log File…](command:epochix.openLogFile)\n\nA run also opens automatically when training is detected in a terminal.\nTip: $(keyboard) Ctrl+Alt+M (⌘⌥M on macOS) opens the dashboard anywhere."
+        "contents": "Visualise a training run as an animated dashboard.\n\n[▶ Try a Demo Run](command:epochix.tryDemo)\n\nNo setup needed — see it working on a bundled training log.\n\n[Open Dashboard](command:epochix.openDashboard)\n\n[Watch Active Terminal](command:epochix.watchTerminal)\n\n[Open Log File…](command:epochix.openLogFile)\n\nA run also opens automatically when training is detected in a terminal.\nTip: $(keyboard) Ctrl+Alt+M (⌘⌥M on macOS) opens the dashboard anywhere."
+      }
+    ],
+    "walkthroughs": [
+      {
+        "id": "epochix.gettingStarted",
+        "title": "Get started with Epochix",
+        "description": "See a training run as an animated, plain-English story — in under a minute, no setup.",
+        "steps": [
+          {
+            "id": "epochix.step.demo",
+            "title": "Watch a demo run",
+            "description": "No Python, no data, no training script — see the dashboard on a bundled Keras run, architecture panel and all.\n[Try a Demo Run](command:epochix.tryDemo)",
+            "media": {
+              "image": "icon.png",
+              "altText": "The Epochix dashboard"
+            },
+            "completionEvents": [
+              "onCommand:epochix.tryDemo"
+            ]
+          },
+          {
+            "id": "epochix.step.watch",
+            "title": "Watch your own training",
+            "description": "Run your training script in the integrated terminal — the dashboard opens by itself when Epochix recognises training output (Keras, PyTorch Lightning, YOLO, HuggingFace, fastai, or plain key=value logs).\n[Watch Active Terminal](command:epochix.watchTerminal)",
+            "media": {
+              "image": "icon.png",
+              "altText": "Terminal training detection"
+            },
+            "completionEvents": [
+              "onCommand:epochix.watchTerminal"
+            ]
+          },
+          {
+            "id": "epochix.step.logfile",
+            "title": "Open a finished log",
+            "description": "Already have a training log? Open it and get the full story after the fact — phases, grades, milestones and narrative.\n[Open Log File…](command:epochix.openLogFile)",
+            "media": {
+              "image": "icon.png",
+              "altText": "Open a log file"
+            },
+            "completionEvents": [
+              "onCommand:epochix.openLogFile"
+            ]
+          },
+          {
+            "id": "epochix.step.engine",
+            "title": "Optional: add the Python engine",
+            "description": "Everything above works with the extension alone. Installing the Python package adds run history, run comparison and JSON/HTML/PDF exports:\n``pip install epochix``\nThe extension finds it automatically the next time it starts.",
+            "media": {
+              "image": "icon.png",
+              "altText": "pip install epochix"
+            }
+          }
+        ]
       }
     ],
     "configuration": {

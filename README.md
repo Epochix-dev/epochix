@@ -30,6 +30,24 @@ The model reaches a significant milestone at epoch 7. Val accuracy 84.7%
 
 ---
 
+## Easiest start — VS Code, no setup at all
+
+Not comfortable with terminals? Install the
+[**Epochix extension**](https://marketplace.visualstudio.com/items?itemName=epochix.epochix),
+click the **E** icon in the sidebar, and hit **▶ Try a Demo Run** — an animated
+dashboard opens on a bundled training run. No Python, no data, nothing to
+configure.
+
+From there it's automatic: run your training script in the integrated terminal
+and the dashboard **opens by itself** when Epochix recognises training output
+(Keras, PyTorch Lightning, YOLO, HuggingFace, fastai, or plain `key=value`
+logs). A *Get Started* walkthrough inside the extension covers the rest.
+
+Installing the Python package below is optional — it adds run history, run
+comparison and exports, and the extension picks it up automatically.
+
+---
+
 ## Install
 
 ```bash
@@ -113,9 +131,9 @@ result = parse("training.log")
 print(result.final_grade, result.summary)
 
 # Stream live during training (PyTorch Lightning)
-from epochix.integrations.lightning import EpochixCallback
+from epochix.integrations.lightning import StoryCallback
 
-trainer = pl.Trainer(callbacks=[EpochixCallback()])
+trainer = pl.Trainer(callbacks=[StoryCallback()])
 ```
 
 ---
@@ -124,14 +142,14 @@ trainer = pl.Trainer(callbacks=[EpochixCallback()])
 
 | | |
 |---|---|
-| **7 log parsers** | PyTorch Lightning · Keras/TF · HuggingFace · YOLO · FastAI · Accelerate · Universal |
+| **7 log parsers** | PyTorch Lightning · Keras/TF · HuggingFace · YOLO · FastAI · Accelerate · Universal — plus an opt-in **LLM fallback** (Ollama/OpenAI) for formats none of them recognise |
 | **7 task types** | Classification · Detection · Regression · Biometric · Gaze · NLP · Generative |
 | **5 training phases** | Awakening → Learning → Understanding → Mastering → Polishing |
 | **11 letter grades** | A+ through F, task-specific thresholds, configurable via `.epochix.yaml` |
 | **Live streaming** | WebSocket + SSE with ring-buffer replay on reconnect |
 | **Exports** | JSON · Markdown · HTML (self-contained < 2 MB) · PDF |
-| **i18n** | English · Farsi (RTL) · French |
-| **VS Code** | Sidebar dashboard · terminal watcher · `Ctrl+Alt+M` |
+| **i18n** | English · Farsi (RTL) · French — UI *and* story narratives |
+| **VS Code** | Activity-bar panel · one-click demo · terminal auto-detect · run compare · `Ctrl+Alt+M` |
 | **Integrations** | PyTorch Lightning · HuggingFace · Keras · Jupyter magics · TensorBoard · W&B |
 | **Plugin system** | Custom parsers, metaphor packs, task types, exporters via `entry_points` |
 

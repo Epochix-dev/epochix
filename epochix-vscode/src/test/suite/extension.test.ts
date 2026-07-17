@@ -17,6 +17,7 @@ const CONTRIBUTED_COMMANDS = [
   "epochix.openLogFile",
   "epochix.exportRun",
   "epochix.compareRuns",
+  "epochix.tryDemo",
 ];
 
 suite("Epochix extension — host integration", () => {
@@ -54,6 +55,21 @@ suite("Epochix extension — host integration", () => {
     // an info message and returns (openExternal only fires on a button click,
     // which never happens headless). Proves the handler is wired, not declared.
     await vscode.commands.executeCommand("epochix.compareRuns");
+  });
+
+  test("Try a Demo Run opens a dashboard webview (zero-setup onboarding)", async () => {
+    // The one-click path for non-technical users: no Python, no data. In
+    // standalone mode this parses the bundled demo log through the built-in
+    // engine and must produce a visible dashboard panel.
+    await vscode.commands.executeCommand("epochix.tryDemo");
+    await new Promise((r) => setTimeout(r, 1500)); // let the log parse + render
+
+    const tabs = vscode.window.tabGroups.all.flatMap((g) => g.tabs);
+    const webviews = tabs.filter((t) => t.input instanceof vscode.TabInputWebview);
+    assert.ok(
+      webviews.length > 0,
+      "the demo command opened no dashboard webview",
+    );
   });
 
   test("status bar item was created on activation", () => {

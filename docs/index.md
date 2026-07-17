@@ -4,6 +4,13 @@
 
 Turn raw terminal output from any ML framework into an animated, plain-English narrative — with a letter grade, a live brain visualization, and an exportable HTML report. No code changes required.
 
+**Easiest — in VS Code, no setup:** install the
+[Epochix extension](https://marketplace.visualstudio.com/items?itemName=epochix.epochix),
+click the **E** icon in the sidebar, and hit **▶ Try a Demo Run**. Training you
+run in the integrated terminal is detected automatically.
+
+**Or from a terminal:**
+
 ```bash
 pip install epochix
 python train.py 2>&1 | epochix --live
@@ -52,7 +59,7 @@ Existing tools (TensorBoard, W&B, MLflow) are designed for ML engineers. epochix
     pip install "epochix[hf]"
     ```
 
-=== "full"
+=== "everything"
     ```bash
-    pip install "epochix[full]"
+    pip install "epochix[all]"
     ```
