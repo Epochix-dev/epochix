@@ -107,6 +107,11 @@ function _paramWidth(params) {
 
 // ── main class ────────────────────────────────────────────────────────────────
 
+/** Read a themed CSS custom property (activity-bar/webview themes swap these). */
+function _css(name) {
+  return getComputedStyle(document.documentElement).getPropertyValue(name).trim() || '#888';
+}
+
 export class BrainCanvas {
   /** @param {HTMLCanvasElement} canvas */
   constructor(canvas) {
@@ -341,6 +346,7 @@ export class BrainCanvas {
 
     if (arch && arch.length > 0) {
       this._noArch = false;
+      this._canvas.parentElement?.classList.remove('is-empty');
       // ── Architecture-aware layout ────────────────────────────────────────
       // Zones: [INPUT] + arch layers + [OUTPUT]
       const zoneDefs = [
@@ -384,6 +390,10 @@ export class BrainCanvas {
       // message (see _draw); the SDK caller can pass model=… to show the real
       // network, or the training log can include a model summary.
       this._noArch = true;
+      // Let CSS shrink the reserved canvas area — an empty network panel used
+      // to hold its full height, so a run without a model summary scrolled
+      // through ~800px of blank box before reaching the story.
+      this._canvas.parentElement?.classList.add('is-empty');
       this._zones = [];
       this._edges = [];
       this._particles = [];
@@ -578,17 +588,27 @@ export class BrainCanvas {
 
     if (this._zones.length === 0) {
       // Honest empty state — we never draw a made-up network.
+      //
+      // Theme-aware: this used to be hardcoded rgba(255,255,255,…), which is
+      // invisible on the light theme's white panel — so a run with no model
+      // summary showed a large blank box and no explanation at all.
+      const muted = _css('--text-muted');
       ctx.textAlign = 'center';
-      ctx.fillStyle = 'rgba(255,255,255,0.42)';
+      ctx.globalAlpha = 0.9;
+      ctx.fillStyle = muted;
       ctx.font = '12px DM Sans, sans-serif';
       ctx.fillText('No architecture to display', w / 2, h / 2 - 8);
-      ctx.fillStyle = 'rgba(255,255,255,0.28)';
+
+      ctx.globalAlpha = 0.7;
       ctx.font = '10px DM Sans, sans-serif';
-      ctx.fillText(
-        'Pass model=… to LiveReporter, or include a model summary in the log',
-        w / 2,
-        h / 2 + 12,
-      );
+      // The full sentence overflows a narrow panel (a VS Code side panel is
+      // often ~300px) — wrap it instead of letting it run off both edges.
+      const hint = 'Pass model=… to LiveReporter, or include a model summary in the log';
+      const lines = w < 380
+        ? ['Pass model=… to LiveReporter, or', 'include a model summary in the log']
+        : [hint];
+      lines.forEach((line, i) => ctx.fillText(line, w / 2, h / 2 + 12 + i * 14));
+      ctx.globalAlpha = 1;
       return;
     }
 

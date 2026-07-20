@@ -7,6 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.5.26] — 2026-07-16
+
+### Fixed — the dashboard was unusable in a narrow VS Code panel
+
+Reported from a real session: opened in a side-by-side editor group (~300px
+wide) the dashboard collapsed — the run title truncated to "E…", the subtitle
+wrapped one word per line, and the collapsed sidebar rail ate a fifth of the
+width. The narrowest breakpoint was 860px, so a panel that narrow had no rules
+at all. Below 560px the nav rail is now hidden and the header stacks, so the
+title, phase and grade all fit.
+
+### Fixed — "No architecture to display" was invisible in the light theme
+
+The empty-state message was drawn in hardcoded white, so on the light theme's
+white panel a run without a model summary showed a large blank box and no
+explanation. It now uses the theme's text colour, and wraps instead of running
+off both edges of a narrow panel.
+
+### Changed — the network panel no longer reserves empty space
+
+With no architecture to draw, the canvas held its full height — roughly 800px
+of blank box to scroll past before reaching the story. It now collapses to fit
+the message.
+
 ## [0.5.25] — 2026-07-16
 
 ### Fixed — 0.5.24's demo button shipped without its demo

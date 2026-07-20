@@ -223,6 +223,9 @@ body {
   flex: 1;
   min-height: 320px;
 }
+/* No architecture to draw — don't reserve a full-height canvas for a one-line
+   message (set by BrainCanvas when the run has no model summary). */
+.brain-canvas-wrap.is-empty { min-height: 150px; flex: 0 0 150px; }
 .brain-wlegend {
   /* Lives in its own row between the panel header and the canvas — out
      of the canvas entirely so the 3D slab top faces can't overlap it. */
@@ -898,6 +901,38 @@ body {
   .greet-title { font-size: 20px; }
   #app-main { padding: 4px 14px 24px; }
   #app-topbar { padding: 14px 16px; }
+}
+
+/* Very narrow — a VS Code side panel / split editor is often only ~250-400px.
+   At that width the 64px icon rail eats a fifth of the viewport and the topbar
+   can't fit the title, phase and grade on one row, so the title collapsed to an
+   ellipsis ("E…") and the subtitle wrapped one word per line. Drop the rail
+   (the dashboard is a single scrolling view — the nav is a convenience, not a
+   requirement) and stack the header. */
+@media (max-width: 560px) {
+  #sidebar { display: none; }
+
+  #app-topbar {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 12px 14px;
+  }
+  .topbar-greet { width: 100%; }
+  /* 60vw was fine beside a sidebar; standalone it truncated far too early. */
+  .greet-title { font-size: 17px; max-width: 100%; }
+  .greet-sub { font-size: 12px; }
+
+  .topbar-controls {
+    width: 100%;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .phase-badge { font-size: 12px; padding: 3px 10px; }
+
+  #app-main { padding: 4px 12px 20px; }
+  .panel { padding: 14px 12px; }
+  .panel-label-sub { display: none; }
 }
 
 /* ── Scrollbar ───────────────────────────────────────────────────────────── */
