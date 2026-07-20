@@ -15,7 +15,13 @@
 
 </p>
 
-**Turn terminal training logs into an animated, plain-English narrative anyone can understand.**
+**See what your model is actually doing — training logs become a plain-English story with a letter grade, live in VS Code.**
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/epochix-dev/epochix/main/asset/epochix_demo.gif" alt="Epochix turns a training log into an animated dashboard with a plain-English story and a letter grade" width="820">
+</p>
+
+No code changes — it reads your training output as-is:
 
 ```
 Epoch 7/20  ████████████░░░░  train_loss: 0.312  val_accuracy: 0.847

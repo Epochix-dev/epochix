@@ -3,18 +3,26 @@
   Epochix for VS Code
 </h1>
 
-<p align="center"><em>Turn terminal training logs into an animated,
-plain-English narrative — live in your editor.</em></p>
+<p align="center"><em>See what your model is actually doing — training logs
+become a plain-English story with a letter grade, live in your editor.</em></p>
 
 <p align="center">
   <img src="https://img.shields.io/badge/Phase-Awakening→Polishing-7c6dff" alt="Phase">
   <img src="https://img.shields.io/badge/License-Apache--2.0-green" alt="License">
 </p>
 
+<p align="center">
+  <img src="https://raw.githubusercontent.com/epochix-dev/epochix/main/asset/epochix_demo.gif" alt="Epochix dashboard: an animated network, a letter grade and a plain-English story" width="760">
+</p>
+
 A live dashboard for deep-learning training runs. Drop in a training log
 (YOLO, PyTorch Lightning, Keras, HuggingFace, FastAI, …) and watch the
 metrics, the architecture, the phase journey, and a plain-English narrative
 all update epoch-by-epoch — without ever leaving the editor.
+
+**New here?** Install, click the **Epochix** icon in the sidebar, and hit
+**▶ Try a Demo Run** — the dashboard above opens on a bundled training run.
+No Python, no data, no setup.
 
 ---
 

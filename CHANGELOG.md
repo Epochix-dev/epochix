@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.5.27] — 2026-07-20
+
+### Changed — discoverability & positioning
+
+Nothing functional; this makes the project easier to find and understand.
+
+- **Animated demo GIF** at the top of the README, the VS Code Marketplace
+  listing and the docs home — the real dashboard turning a training log into a
+  network view, a letter grade and a plain-English story.
+- **Sharper hook** across PyPI, the Marketplace and the docs: *"See what your
+  model is doing — training logs become a plain-English story with a letter
+  grade."*
+- **Social-preview image** (`asset/epochix_social.png`) for link unfurls.
+- Wider Marketplace **keywords** (pytorch, tensorflow, keras, lightning,
+  huggingface, yolo, mlops, experiment tracking, …).
+- Development status promoted **Alpha → Beta**.
+
 ## [0.5.26] — 2026-07-16
 
 ### Fixed — the dashboard was unusable in a narrow VS Code panel

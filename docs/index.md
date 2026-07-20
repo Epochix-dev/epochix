@@ -1,6 +1,8 @@
 # Epochix
 
-**Visual storytelling for deep learning training runs.**
+**See what your model is actually doing — training logs become a plain-English story with a letter grade.**
+
+![Epochix turns a training log into an animated dashboard with a plain-English story and a letter grade](https://raw.githubusercontent.com/epochix-dev/epochix/main/asset/epochix_demo.gif)
 
 Turn raw terminal output from any ML framework into an animated, plain-English narrative — with a letter grade, a live brain visualization, and an exportable HTML report. No code changes required.
 

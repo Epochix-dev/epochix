@@ -1,6 +1,6 @@
 site_name: Epochix
 site_url: https://docs.epochix.dev
-site_description: Visual storytelling for deep learning training runs.
+site_description: See what your model is doing — training logs become a plain-English story with a letter grade, in a live animated dashboard.
 site_author: Epochix Team
 repo_url: https://github.com/epochix-dev/epochix
 repo_name: epochix-dev/epochix

@@ -4,15 +4,15 @@ build-backend = "hatchling.build"
 
 [project]
 name = "epochix"
-version = "0.5.26"
-description = "Visual storytelling for deep learning training runs."
+version = "0.5.27"
+description = "Turn ML training logs into a plain-English story with a letter grade — a live animated dashboard, no code changes."
 authors = [{ name = "Epochix Team" }]
 license = "Apache-2.0"
 readme = "README.md"
 requires-python = ">=3.10"
 keywords = ["machine-learning", "training", "visualization", "mlops", "deep-learning"]
 classifiers = [
-  "Development Status :: 3 - Alpha",
+  "Development Status :: 4 - Beta",
   "Intended Audience :: Science/Research",
   "License :: OSI Approved :: Apache Software License",
   "Programming Language :: Python :: 3.10",
