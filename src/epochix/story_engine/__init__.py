@@ -7,7 +7,12 @@ from epochix.enums import Grade, Phase, TaskType
 from epochix.models import MetaphorCard, MetricEvent, Milestone, StoryFrame
 from epochix.normalizer.canonical_keys import canonicalize_key
 from epochix.story_engine.config_loader import GradeConfig
-from epochix.story_engine.grade import compute_grade, is_lower_better
+from epochix.story_engine.grade import (
+    compute_grade,
+    grade_by_trajectory,
+    is_lower_better,
+    metric_lower_better,
+)
 from epochix.story_engine.milestones import MilestoneTracker
 from epochix.story_engine.narrator import narrate
 from epochix.story_engine.phases import (
@@ -170,7 +175,16 @@ class StoryEngine:
             step=event.step,
         )
 
-        lower_better = is_lower_better(self._effective_task(), self.grade_config)
+        # Direction: for a known task, trust the task. For CUSTOM (e.g. a script
+        # that logs only a loss curve and never accuracy), the task can't tell
+        # us — infer from the metric NAME so a val_loss is correctly treated as
+        # lower-is-better for phase/progress/grade.
+        task = self._effective_task()
+        if task is TaskType.CUSTOM:
+            name_dir = metric_lower_better(event.canonical_key or self.primary_metric)
+            lower_better = name_dir if name_dir is not None else False
+        else:
+            lower_better = is_lower_better(task, self.grade_config)
 
         phase = compute_phase(
             progress=progress,
@@ -196,11 +210,18 @@ class StoryEngine:
             advancement = 0.0
         advancement = max(0.0, min(1.0, advancement))
 
-        grade = compute_grade(
-            task=self._effective_task(),
-            primary_value=primary_value,
-            config=self.grade_config,
-        )
+        # CUSTOM metrics have no absolute quality scale (a "0.19 loss" is not a
+        # fixed grade), so score them on improvement from baseline. Otherwise a
+        # healthy, decreasing loss was graded against accuracy thresholds and
+        # came out F — contradicting its own "trend is positive" narrative.
+        if task is TaskType.CUSTOM and self._baseline is not None:
+            grade = grade_by_trajectory(self._baseline, primary_value, lower_better)
+        else:
+            grade = compute_grade(
+                task=task,
+                primary_value=primary_value,
+                config=self.grade_config,
+            )
 
         delta = primary_value - self._prev_primary if self._prev_primary is not None else 0.0
         narrative = narrate(

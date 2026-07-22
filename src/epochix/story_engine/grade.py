@@ -132,6 +132,86 @@ def is_lower_better(task: TaskType, config: GradeConfig | None = None) -> bool:
     return task in _LOWER_BETTER
 
 
+# Metric-name fragments that reveal a metric's direction — used for CUSTOM runs,
+# where the task can't tell us (a script that logs only `val_loss` and no
+# accuracy detects as CUSTOM, but the *name* still says "lower is better").
+_LOWER_NAME_HINTS = (
+    "loss",
+    "error",
+    "err",
+    "mae",
+    "mse",
+    "rmse",
+    "perplexity",
+    "ppl",
+    "eer",
+    "nll",
+)
+_HIGHER_NAME_HINTS = (
+    "acc",
+    "accuracy",
+    "f1",
+    "auc",
+    "map",
+    "precision",
+    "recall",
+    "iou",
+    "dice",
+    "bleu",
+    "psnr",
+    "ssim",
+    "r2",
+)
+
+
+def metric_lower_better(metric_name: str | None) -> bool | None:
+    """Infer grade direction from a metric name, or ``None`` if unknown."""
+    if not metric_name:
+        return None
+    n = metric_name.lower()
+    if any(h in n for h in _LOWER_NAME_HINTS):
+        return True
+    if any(h in n for h in _HIGHER_NAME_HINTS):
+        return False
+    return None
+
+
+# Improvement-fraction → grade, for metrics with no absolute quality scale
+# (CUSTOM runs — typically a bare loss curve). Sorted best-first; the value is
+# the minimum fraction of improvement-from-baseline for that grade.
+_TRAJECTORY_THRESHOLDS: list[tuple[Grade, float]] = [
+    (Grade.A_PLUS, 0.70),
+    (Grade.A, 0.55),
+    (Grade.A_MINUS, 0.45),
+    (Grade.B_PLUS, 0.35),
+    (Grade.B, 0.25),
+    (Grade.B_MINUS, 0.16),
+    (Grade.C_PLUS, 0.09),
+    (Grade.C, 0.04),
+    (Grade.C_MINUS, 0.005),
+    (Grade.D, -0.03),  # essentially flat
+    # anything worse (the metric moved the wrong way — a diverging loss) → F
+]
+
+
+def grade_by_trajectory(baseline: float, current: float, lower_better: bool) -> Grade:
+    """Grade a metric that has no absolute scale by how far it improved.
+
+    For a bare loss/error there is no "an 0.19 loss is a B" — the number only
+    means something relative to where it started. So a run whose loss fell a
+    lot earns an A; one that barely moved earns a C/D; one that got *worse*
+    (a diverging loss) earns an F. This keeps the grade coherent with the
+    "the trend is positive/negative" narrative instead of scoring a healthy,
+    decreasing loss as if it were 19% accuracy.
+    """
+    denom = abs(baseline) if abs(baseline) > 1e-9 else 1e-9
+    improvement = (baseline - current) / denom if lower_better else (current - baseline) / denom
+    for grade, threshold in _TRAJECTORY_THRESHOLDS:
+        if improvement >= threshold:
+            return grade
+    return Grade.F
+
+
 def _dict_to_thresholds(
     d: dict[str, float], *, lower_better: bool = False
 ) -> list[tuple[Grade, float]]:

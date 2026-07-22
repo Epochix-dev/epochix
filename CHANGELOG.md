@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.5.28] — 2026-07-20
+
+### Fixed — a healthy model logging only loss was graded "F"
+
+Reported from a real run: a Fashion-MNIST CNN whose validation loss was falling
+nicely (training well) got a scary grade **F**, with the metric shown generically
+as "METRIC" and narrated as "reduced its error … earning a grade of F".
+
+The cause: a script that logs only a loss curve (no accuracy) detects as the
+`custom` task, and `custom` had no grade thresholds — so `compute_grade` fell
+back to the **classification** scale (higher-is-better accuracy) and scored a
+`val_loss` of 0.19 as if it were 19 % accuracy → F, contradicting its own
+"the trend is positive" narrative.
+
+`custom` metrics have no absolute scale, so they are now graded on **improvement
+from baseline** and their direction inferred from the metric name: a loss that
+falls a lot earns an A, one that barely moves earns a C, one that *diverges*
+still earns an F. Grades for all the named tasks (classification on accuracy,
+regression on MAE, etc.) are unchanged. The custom narrative templates also no
+longer assume a direction ("and climbing" / "the trend is positive"), so they
+read correctly for a decreasing loss.
+
 ## [0.5.27] — 2026-07-20
 
 ### Changed — discoverability & positioning
