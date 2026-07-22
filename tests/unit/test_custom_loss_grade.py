@@ -11,11 +11,16 @@ from baseline instead.
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 from epochix.enums import Grade
 from epochix.story_engine.grade import (
     grade_by_trajectory,
     metric_lower_better,
 )
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 
 class TestMetricDirection:
