@@ -123,12 +123,54 @@ epochix --help
 | Command | Description |
 |--|--|
 | `epochix <file>` | Parse a finished log file |
+| `epochix check <file>` | Say what epochix can read from a log — and what to add |
 | `epochix --live` | Pipe stdin in live mode |
 | `epochix serve` | Start the dashboard server only |
 | `epochix list` | List all saved runs |
 | `epochix export <id> --format html` | Export a run |
 | `epochix compare <id1> <id2>` | Side-by-side run comparison |
 | `epochix prune --older-than 30d` | Delete old runs |
+
+---
+
+## Dashboard looks empty or the grade looks wrong?
+
+Ask epochix what it can see:
+
+```bash
+epochix check train.log
+```
+
+It reports which parser matched, which metrics it found (and their range), the
+task it inferred, and — the useful part — exactly what's missing:
+
+```
+  parser        universal
+  task          custom
+  epochs seen   5
+
+  metrics found
+    train_loss          5 values   0.4 -> 0.28
+    val_loss            5 values   0.207 -> 0.187
+
+  to improve this run
+    ! No task-defining metric (accuracy / mAP / F1 / MAE / perplexity ...),
+      so the run is graded on how much its loss improved rather than on
+      task quality. Log one to get a real grade, e.g.
+        print(f"Epoch {epoch}/{total} train_loss={loss:.4f} val_accuracy={acc:.4f}")
+    ! No model architecture - the Network panel will stay empty.
+      Either print the model summary once at the start ...
+```
+
+**Writing your own training loop?** One `print` per epoch is all epochix needs:
+
+```python
+print(f"Epoch {epoch}/{total} train_loss={loss:.4f} val_accuracy={acc:.4f}", flush=True)
+```
+
+Include the epoch (`Epoch 3/20` or `epoch=3`) so the progress bar advances, and
+print your model summary once at the start (Keras `model.summary()`, torchinfo,
+or plain `print(model)`) to fill the Network panel.
 
 ---
 

@@ -14,7 +14,7 @@ from epochix.story_engine.grade import (
     metric_lower_better,
 )
 from epochix.story_engine.milestones import MilestoneTracker
-from epochix.story_engine.narrator import narrate
+from epochix.story_engine.narrator import narrate, narrate_stalled
 from epochix.story_engine.phases import (
     compute_phase,
     estimate_progress,
@@ -38,6 +38,13 @@ _PREFERRED_KEYS_FOR_TASK: dict[TaskType, tuple[str, ...]] = {
     TaskType.GENERATIVE: ("fid", "is_score"),
     TaskType.CUSTOM: ("val_loss", "train_loss"),
 }
+
+# A run is "stalled" when, after this many epochs of the primary metric, it has
+# realised less than this fraction of its achievable improvement. Deliberately
+# conservative: we would rather stay quiet than wrongly call a slow-but-real
+# improvement a failure.
+_STALL_MIN_EPOCHS = 3
+_STALL_REL_IMPROVEMENT = 0.03
 
 _PRIMARY_KEY_FOR_TASK: dict[TaskType, str] = {
     task: keys[0] for task, keys in _PREFERRED_KEYS_FOR_TASK.items()
@@ -224,15 +231,34 @@ class StoryEngine:
             )
 
         delta = primary_value - self._prev_primary if self._prev_primary is not None else 0.0
-        narrative = narrate(
-            task=self._effective_task(),
-            phase=phase,
-            epoch=event.epoch,
-            primary_value=primary_value,
-            delta=delta,
-            run_id=self.run_id,
-            locale=self.locale,
+
+        # Honesty guard: the phase templates are driven by how far through
+        # training we are, so a model stuck at chance level was still narrated
+        # as "a diligent student" / "patterns are starting to click". Say what
+        # is actually true when the metric has not meaningfully moved.
+        epochs_seen = len(self._metric_history.get(event.canonical_key, ()))
+        stalled = (
+            epochs_seen >= _STALL_MIN_EPOCHS and rel is not None and rel < _STALL_REL_IMPROVEMENT
         )
+        if stalled and self._baseline is not None:
+            narrative = narrate_stalled(
+                epoch=event.epoch,
+                primary_value=primary_value,
+                baseline=self._baseline,
+                epochs_seen=epochs_seen,
+                run_id=self.run_id,
+                locale=self.locale,
+            )
+        else:
+            narrative = narrate(
+                task=self._effective_task(),
+                phase=phase,
+                epoch=event.epoch,
+                primary_value=primary_value,
+                delta=delta,
+                run_id=self.run_id,
+                locale=self.locale,
+            )
 
         milestones = self._milestones.check(
             epoch=event.epoch,

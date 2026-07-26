@@ -31,6 +31,50 @@ def _load_templates(task: TaskType, phase: Phase, locale: str = "en") -> list[st
     return [fallback]
 
 
+def _load_stalled(locale: str = "en") -> list[str]:
+    """Templates for a run whose metric has not meaningfully moved."""
+    key = f"_stalled/{locale}"
+    if key in _template_cache:
+        return _template_cache[key]
+    for suffix in (f".{locale}.txt", ".txt"):
+        path = _TEMPLATES_DIR / f"_stalled{suffix}"
+        if path.exists():
+            lines = [
+                ln.strip() for ln in path.read_text(encoding="utf-8").splitlines() if ln.strip()
+            ]
+            _template_cache[key] = lines or ["The metric has not moved yet."]
+            return _template_cache[key]
+    fallback = ["The metric has not moved meaningfully yet."]
+    _template_cache[key] = fallback
+    return fallback
+
+
+def narrate_stalled(
+    epoch: float | None,
+    primary_value: float,
+    baseline: float,
+    epochs_seen: int,
+    run_id: str,
+    locale: str = "en",
+) -> str:
+    """Narrate a run that is not learning — honestly, instead of encouragement.
+
+    The phase templates are driven by how far through training we are, so a
+    model stuck at chance level still got "the model is a diligent student".
+    That asserts progress the data does not show; this says what is true and
+    points at the usual causes.
+    """
+    templates = _load_stalled(locale)
+    seed = int(hashlib.md5(run_id.encode(), usedforsecurity=False).hexdigest()[:8], 16)
+    template = random.Random(seed).choice(templates)
+    return (
+        template.replace("{epoch}", str(int(epoch)) if epoch is not None else "?")
+        .replace("{value}", f"{primary_value:.4f}")
+        .replace("{baseline}", f"{baseline:.4f}")
+        .replace("{epochs_seen}", str(epochs_seen))
+    )
+
+
 def narrate(
     task: TaskType,
     phase: Phase,

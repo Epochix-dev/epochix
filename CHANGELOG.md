@@ -7,6 +7,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.5.29] — 2026-07-25
+
+An AI agent asked to demo the library ended up calling `inspect.getsource()` on
+our internals to work out what log format we accept — and the dashboard cheered
+on a model that had learned nothing. Both are addressed here.
+
+### Added — `epochix check <log>`
+
+Point it at a log and it says what epochix can read and what is missing:
+which parser matched, which metrics were found (with their range), the task it
+inferred, and the exact `print(...)` line to add for anything absent — a
+task-defining metric, epoch numbers, or a model summary for the Network panel.
+This is the answer to "the dashboard is empty and I do not know why", for
+humans and for agents, neither of whom should have to read our source.
+
+### Fixed — the story no longer claims progress that did not happen
+
+A run pinned at ~11 % accuracy on a 10-class problem (chance is 10 %) was
+narrated "Loss curves bend downward. The model is a diligent student." The
+narrative is driven by how far through training you are, not by whether the
+metric actually moved. When a run has seen a few epochs and realised almost
+none of its achievable improvement, it now says so plainly — and points at the
+usual causes (learning rate, data pipeline, label mapping) — in all three
+locales. Runs that are genuinely improving, including slowly, are unaffected.
+
+### Fixed — a new CLI command was unreachable, and Unicode crashed old consoles
+
+The command router matched against a hardcoded list, so `epochix check` was
+parsed as a log-file path ("Got unexpected extra argument"); the list is now
+derived from the registered commands. Console output also falls back to ASCII
+when the terminal cannot encode `→`/`✓` — a Windows cp1252 console raised
+`UnicodeEncodeError` and killed the command mid-print (`epochix list` had the
+same latent flaw).
+
 ## [0.5.28] — 2026-07-20
 
 ### Fixed — a healthy model logging only loss was graded "F"

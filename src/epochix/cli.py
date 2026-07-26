@@ -396,9 +396,10 @@ def cmd_list(
     if not runs:
         typer.echo("No runs found.")
         return
+    _, tick, _, spin = _console_symbols()
     for run in runs:
-        grade = run.final_grade.value if run.final_grade else "—"
-        status = "✓" if run.finished_at else "⟳"
+        grade = run.final_grade.value if run.final_grade else "-"
+        status = tick if run.finished_at else spin
         typer.echo(
             f"  {status}  {run.id}  [{grade}]  {run.task_type.value}"
             f"  {run.started_at.strftime('%Y-%m-%d %H:%M')}"
@@ -545,6 +546,138 @@ def cmd_demo(
     )
 
 
+def _console_symbols() -> tuple[str, str, str, str]:
+    """(arrow, tick, cross, spinner) — ASCII fallbacks on legacy consoles.
+
+    A Windows console still defaults to cp1252, which cannot encode "→" or
+    "✓"; printing them raises UnicodeEncodeError and kills the command.
+    """
+    encoding = getattr(sys.stdout, "encoding", None) or "ascii"
+    try:
+        "→✓✗⟳".encode(encoding)
+    except (LookupError, UnicodeEncodeError):
+        return "->", "OK", "!", "~"
+    return "→", "✓", "✗", "⟳"
+
+
+@app.command("check")
+def cmd_check(
+    log_file: Path = typer.Argument(..., help="Training log to inspect."),
+    log_level: str = typer.Option("WARNING", "--log-level"),
+) -> None:
+    """Explain what epochix can and cannot read from a log - and what to add.
+
+    Nothing is stored or served; this only reports. Use it when the dashboard
+    looks empty or the grade seems wrong, to see exactly which parser matched,
+    which metrics were found, and what is missing.
+    """
+    _configure_logging(log_level)
+
+    if not log_file.is_file():
+        typer.echo(f"No such file: {log_file}", err=True)
+        raise typer.Exit(1)
+
+    from epochix.normalizer import normalize
+    from epochix.parsers.architecture_parser import parse_architecture
+    from epochix.parsers.base import ParserContext
+    from epochix.parsers.registry import SNIFF_SAMPLE_LINES, detect_parser
+    from epochix.pipeline import _clean_line
+    from epochix.story_engine.task_classifier import classify_task
+
+    raw_lines = log_file.read_text(encoding="utf-8", errors="replace").splitlines()
+    lines = [_clean_line(ln) for ln in raw_lines]
+    if not lines:
+        typer.echo("The file is empty - nothing to parse.")
+        raise typer.Exit(1)
+
+    parser = detect_parser(lines[:SNIFF_SAMPLE_LINES])
+    ctx = ParserContext(run_id="check")
+    # name -> [count, first, last, any_epoch]
+    found: dict[str, list[float]] = {}
+    seen_keys: set[str] = set()
+    epochs: set[float] = set()
+
+    for i, line in enumerate(lines):
+        ctx.seq = i
+        for raw in parser.parse_line(line, ctx):
+            try:
+                event = normalize(raw, run_id="check")
+            except ValueError:
+                continue
+            seen_keys.add(event.canonical_key)
+            if event.epoch is not None:
+                epochs.add(event.epoch)
+            entry = found.get(event.canonical_key)
+            if entry is None:
+                found[event.canonical_key] = [1, event.value, event.value]
+            else:
+                entry[0] += 1
+                entry[2] = event.value
+
+    task = classify_task(seen_keys)
+    arch = parse_architecture(lines)
+    arrow, tick, cross, _ = _console_symbols()
+
+    typer.echo("")
+    typer.echo(f"  file          {log_file}")
+    typer.echo(f"  lines         {len(lines)}")
+    typer.echo(f"  parser        {parser.name}")
+    typer.echo(f"  task          {task.value}")
+    typer.echo(f"  epochs seen   {len(epochs) or '-'}")
+    typer.echo("")
+
+    if found:
+        typer.echo("  metrics found")
+        for key in sorted(found):
+            count, first, last = found[key]
+            typer.echo(f"    {key:<16} {int(count):>4} values   {first:.4g} {arrow} {last:.4g}")
+    else:
+        typer.echo("  metrics found   (none)")
+    typer.echo("")
+
+    # ── actionable gaps ──────────────────────────────────────────────────────
+    problems: list[str] = []
+
+    if not found:
+        problems.append(
+            "No metrics were recognised at all.\n"
+            "      Print one line per epoch containing key=value pairs, e.g.\n"
+            '        print(f"Epoch {epoch}/{total} train_loss={loss:.4f} '
+            'val_accuracy={acc:.4f}")'
+        )
+    elif task is TaskType.CUSTOM:
+        problems.append(
+            "No task-defining metric (accuracy / mAP / F1 / MAE / perplexity ...),\n"
+            "      so the run is graded on how much its loss improved rather than on\n"
+            "      task quality. Log one to get a real grade, e.g.\n"
+            '        print(f"Epoch {epoch}/{total} train_loss={loss:.4f} '
+            'val_accuracy={acc:.4f}")'
+        )
+
+    if not epochs:
+        problems.append(
+            "No epoch numbers were found, so the progress bar cannot advance.\n"
+            '      Include the epoch on the metric line: "Epoch 3/20 ..." or "epoch=3".'
+        )
+
+    if not arch:
+        problems.append(
+            "No model architecture - the Network panel will stay empty.\n"
+            "      Either print the model summary once at the start (Keras\n"
+            "      model.summary(), torchinfo, or plain print(model)), or use the SDK:\n"
+            "        from epochix.sdk import LiveReporter\n"
+            "        with LiveReporter(model=model) as r: r.log(...)"
+        )
+
+    if problems:
+        typer.echo("  to improve this run")
+        for p in problems:
+            typer.echo(f"    {cross} {p}")
+    else:
+        typer.echo(f"  {tick} everything epochix needs is present ({len(arch)} layers detected)")
+    typer.echo("")
+
+
 @app.command("config")
 def cmd_config(
     action: str = typer.Argument(..., help="show | set"),
@@ -599,12 +732,31 @@ def _open_store(settings: Settings) -> RunStore:
 # Console entry point
 # ------------------------------------------------------------------
 
+
 # Real subcommands. Anything else in first position is treated as a log file
 # and routed to the implicit ``run`` command, so both of these work:
 #   epochix train.log          (shorthand → `run train.log`)
 #   epochix --live             (shorthand → `run --live`)
 #   epochix serve --port 8000  (dispatches the serve subcommand)
-_SUBCOMMANDS = frozenset({"run", "serve", "list", "open", "export", "prune", "config", "demo"})
+def _subcommand_names() -> frozenset[str]:
+    """Names of every registered subcommand, read from the Typer app itself.
+
+    This used to be a hardcoded set, so a newly added command was silently
+    unreachable — the router treated its name as a log-file path and handed it
+    to ``run`` ("Got unexpected extra argument"). Deriving it means adding a
+    command is enough.
+    """
+    names: set[str] = set()
+    for cmd in app.registered_commands:
+        if cmd.name:
+            names.add(cmd.name)
+        elif cmd.callback is not None:
+            names.add(cmd.callback.__name__.removeprefix("cmd_").replace("_", "-"))
+    return frozenset(names)
+
+
+# Derived once at import — after every @app.command above has registered.
+_SUBCOMMANDS = _subcommand_names()
 
 
 def main_entry() -> None:

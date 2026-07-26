@@ -1,0 +1,3 @@
+Epoch {epoch}: the metric has barely moved — {baseline} to {value} over {epochs_seen} epochs. The model is not learning yet.
+After {epochs_seen} epochs the metric sits at {value}, essentially where it started ({baseline}). Worth checking the learning rate, the data pipeline and the label mapping.
+No meaningful progress yet: {baseline} to {value} across {epochs_seen} epochs. This usually points to a setup problem rather than a model that needs more time.
