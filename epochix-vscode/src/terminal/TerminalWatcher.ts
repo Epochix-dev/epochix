@@ -10,7 +10,6 @@
  */
 import * as vscode from "vscode";
 import { TerminalFeed } from "./TerminalFeed";
-import type { ServerManager } from "../sidecar/ServerManager";
 
 export class TerminalWatcher implements vscode.Disposable {
   private readonly _feed = new TerminalFeed();
@@ -19,7 +18,6 @@ export class TerminalWatcher implements vscode.Disposable {
   private _activeTerminal: vscode.Terminal | undefined;
 
   constructor(
-    private readonly _sidecar: ServerManager | null,
     private readonly _extensionUri: vscode.Uri,
     private readonly _locale: string,
   ) {}
@@ -110,7 +108,13 @@ export class TerminalWatcher implements vscode.Disposable {
       DashboardPanel: typeof import("../webview/DashboardPanel").DashboardPanel;
     };
     if (!DashboardPanel.current) {
-      DashboardPanel.createOrShow(this._extensionUri, this._sidecar, this._locale);
+      // Always standalone: terminal output reaches the dashboard ONLY through
+      // DashboardPanel.feedLines -> StandaloneEngine, and feedLines is a no-op
+      // when a sidecar owns the panel (the sidecar has no terminal-ingest
+      // endpoint — it can only parse a file on disk). Passing the sidecar here
+      // therefore made "Watch Active Terminal" silently show nothing for every
+      // user who had the Python package installed.
+      DashboardPanel.createOrShow(this._extensionUri, null, this._locale);
     }
   }
 

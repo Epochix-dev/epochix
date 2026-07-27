@@ -32,11 +32,21 @@ export function which(bin: string): Promise<string | null> {
  */
 export async function resolveEpochix(
   override: string,
+  extraPythons: string[] = [],
 ): Promise<[string, string[]] | null> {
   if (override) return [override, []];
 
   const direct = await which("epochix");
   if (direct) return [direct, []];
+
+  // Interpreters the editor knows about but the shell does not — the selected
+  // Python extension interpreter and workspace virtualenvs. This is the common
+  // real-world case: epochix is installed in a venv, so `epochix` and a bare
+  // `python` on PATH both miss it, and the user is told to install a package
+  // they already have.
+  for (const py of extraPythons) {
+    if (await canImportEpochix(py)) return [py, ["-m", "epochix"]];
+  }
 
   for (const py of ["python", "py", "python3"]) {
     const pyPath = await which(py);

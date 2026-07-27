@@ -8,6 +8,7 @@
 import * as vscode from "vscode";
 import { ChildProcess, spawn } from "child_process";
 import { resolveEpochix } from "./which";
+import { candidateInterpreters } from "./interpreters";
 import { findFreePort } from "./PortAllocator";
 import { waitReady } from "./HealthCheck";
 import * as http from "http";
@@ -35,14 +36,28 @@ export class ServerManager implements vscode.Disposable {
 
     const binOverride = cfg.get<string>("sidecarPath", "");
 
-    const resolved = await resolveEpochix(binOverride);
+    const resolved = await resolveEpochix(
+      binOverride,
+      await candidateInterpreters(),
+    );
     if (!resolved) {
       if (mode === "always") {
-        void vscode.window.showErrorMessage(
-          "Epochix: Cannot find the `epochix` package. Install it with " +
-            "`pip install epochix`, or set `epochix.sidecarPath` to the " +
-            "executable (e.g. …/Scripts/epochix.exe on Windows).",
-        );
+        void vscode.window
+          .showErrorMessage(
+            "Epochix: cannot find the `epochix` Python package. The extension " +
+              "works without it — it just cannot save run history. Install it " +
+              "with `pip install epochix`, or point `epochix.sidecarPath` at " +
+              "the executable if it is already installed somewhere unusual.",
+            "Open Settings",
+          )
+          .then((choice) => {
+            if (choice === "Open Settings") {
+              void vscode.commands.executeCommand(
+                "workbench.action.openSettings",
+                "epochix.sidecarPath",
+              );
+            }
+          });
       }
       return null; // standalone mode
     }

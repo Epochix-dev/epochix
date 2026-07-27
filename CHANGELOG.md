@@ -7,6 +7,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.5.31] — 2026-07-27
+
+The VS Code extension's two onboarding buttons both failed on a fresh machine.
+Same root cause as 0.5.30's report, opposite halves of the same switch.
+
+### Fixed
+
+- **"Try a Demo Run" and "Open Log File" died with a raw
+  `connect ECONNREFUSED 127.0.0.1:7860`** and left an empty dashboard whenever
+  the Python sidecar was registered but unreachable. The extension ships a
+  complete standalone engine, so this never had to fail: the panel now drops
+  the dead sidecar, switches to the built-in engine, parses the log locally,
+  and says what happened in plain language. Socket error codes are no longer
+  shown to users verbatim.
+- **"Watch Active Terminal" silently showed nothing for anyone who had the
+  Python package installed.** Terminal output reaches the dashboard only
+  through the standalone engine, and that path is a no-op when a sidecar owns
+  the panel — but the watcher handed its panel the sidecar. The sidecar has no
+  terminal-ingest endpoint (it can only parse a file on disk), so the watched
+  dashboard now always uses the built-in engine.
+- **epochix installed in a virtualenv was reported as "not installed".** The
+  launcher only looked for `epochix` and a bare `python` on PATH, which misses
+  the overwhelmingly common case of a project venv. It now also tries the
+  interpreter selected in the Python extension, `python.defaultInterpreterPath`,
+  and `.venv`/`venv`/`env` in each workspace folder. The not-found message now
+  says the extension still works without the package, and offers a button
+  straight to the `epochix.sidecarPath` setting.
+
+The existing demo test could not have caught any of this: it forces
+`useSidecar: "never"`, which is the mode that already worked. Three host tests
+now cover the sidecar-present and sidecar-dead paths.
+
+---
+
 ## [0.5.30] — 2026-07-27
 
 A cold-start usability test — an outside agent, a fresh machine, no prior

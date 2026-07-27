@@ -22,9 +22,9 @@ export class DashboardPanel {
   static current: DashboardPanel | undefined;
 
   private readonly _panel: vscode.WebviewPanel;
-  private readonly _engine: StandaloneEngine | null;
+  private _engine: StandaloneEngine | null;
   private _disposables: vscode.Disposable[] = [];
-  private readonly _sidecar: ServerManager | null;
+  private _sidecar: ServerManager | null;
   private readonly _locale: string;
   private readonly _theme: "light" | "dark";
 
@@ -121,8 +121,17 @@ export class DashboardPanel {
           });
         })
         .catch((err: unknown) => {
-          void vscode.window.showErrorMessage(
-            `Epochix: Failed to parse log — ${String(err)}`,
+          // The sidecar is unreachable (it died, never bound, or the port was
+          // taken). We ship a complete standalone engine, so there is no
+          // reason to fail here — degrade instead of leaving a dead panel
+          // showing a raw ECONNREFUSED, which is what "Try a Demo Run" and
+          // "Open Log File" both did when epochix was not on PATH.
+          panel._degradeToStandalone(extensionUri, locale);
+          panel._parseLogFile(fileUri.fsPath);
+          void vscode.window.showWarningMessage(
+            `Epochix: could not reach the Python engine (${describeSidecarError(err)}). ` +
+              "Showing the story with the built-in engine instead — " +
+              "everything works except saved run history.",
           );
         });
     } else {
@@ -229,6 +238,24 @@ export class DashboardPanel {
     }
   }
 
+  /**
+   * Drop the sidecar and switch this panel to the built-in engine.
+   *
+   * Rebuilds the webview without a sidecar URL so it renders locally rather
+   * than pointing an iframe at a server that is not answering.
+   */
+  private _degradeToStandalone(extensionUri: vscode.Uri, locale: string): void {
+    this._sidecar = null;
+    this._engine = new StandaloneEngine();
+    this._panel.webview.html = buildWebviewHtml({
+      extensionUri,
+      webview: this._panel.webview,
+      sidecarUrl: undefined,
+      theme: resolveTheme(),
+      locale,
+    });
+  }
+
   private _parseLogFile(filePath: string): void {
     if (!this._engine) return;
 
@@ -269,6 +296,20 @@ export class DashboardPanel {
 }
 
 // ── helpers ───────────────────────────────────────────────────────────────────
+
+/**
+ * Turn a Node socket error into something a person can act on.
+ *
+ * A newcomer clicking "Try a Demo Run" should never be shown
+ * "Error: connect ECONNREFUSED 127.0.0.1:7860".
+ */
+export function describeSidecarError(err: unknown): string {
+  const msg = err instanceof Error ? err.message : String(err);
+  if (msg.includes("ECONNREFUSED")) return "the local server is not responding";
+  if (msg.includes("ETIMEDOUT")) return "the local server timed out";
+  if (msg.includes("ECONNRESET")) return "the connection was reset";
+  return msg;
+}
 
 function resolveTheme(): "light" | "dark" {
   return vscode.window.activeColorTheme.kind === vscode.ColorThemeKind.Light

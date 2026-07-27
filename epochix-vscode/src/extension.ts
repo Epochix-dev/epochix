@@ -31,8 +31,9 @@ export async function activate(ctx: vscode.ExtensionContext): Promise<void> {
     vscode.workspace.getConfiguration("epochix"),
   );
 
-  // Terminal watcher (standalone or sidecar)
-  const watcher = new TerminalWatcher(_sidecar, ctx.extensionUri, cfg.locale);
+  // Terminal watcher — always standalone: the sidecar has no endpoint that
+  // accepts streamed terminal output, only a parse-this-file-on-disk one.
+  const watcher = new TerminalWatcher(ctx.extensionUri, cfg.locale);
 
   if (cfg.autoWatchTerminal) {
     watcher.attachToActiveAutomatically();
