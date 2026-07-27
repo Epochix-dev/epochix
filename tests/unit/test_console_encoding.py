@@ -11,6 +11,7 @@ user data, so no amount of transliterating *our* decorations can save them.
 from __future__ import annotations
 
 import os
+import socket
 import subprocess
 import sys
 from typing import TYPE_CHECKING
@@ -21,6 +22,15 @@ from epochix.console import console_safe, console_symbols
 
 if TYPE_CHECKING:
     from pathlib import Path
+
+
+def _free_port() -> int:
+    """Never use the default port: a developer machine (or another test) may
+    already have an epochix server on it, and the run would fail for a reason
+    that has nothing to do with what is being tested."""
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as probe:
+        probe.bind(("127.0.0.1", 0))
+        return int(probe.getsockname()[1])
 
 
 def _cli(*args: str, db: Path, encoding: str = "cp1252") -> subprocess.CompletedProcess[str]:
@@ -51,14 +61,15 @@ def _training_log(tmp_path: Path) -> Path:
 
 @pytest.mark.parametrize("command", [("demo", "--headless"), ("list",)])
 def test_commands_survive_a_legacy_console(command: tuple[str, ...], tmp_path: Path) -> None:
-    result = _cli(*command, db=tmp_path / "runs.db")
+    extra = ("--port", str(_free_port())) if command[0] == "demo" else ()
+    result = _cli(*command, *extra, db=tmp_path / "runs.db")
     assert "UnicodeEncodeError" not in result.stderr, result.stderr
     assert result.returncode == 0, result.stderr
 
 
 def test_demo_still_announces_itself_without_the_glyph(tmp_path: Path) -> None:
     """Degrading must not mean printing nothing."""
-    result = _cli("demo", "--headless", db=tmp_path / "runs.db")
+    result = _cli("demo", "--headless", "--port", str(_free_port()), db=tmp_path / "runs.db")
     assert "Running bundled demo" in result.stdout, result.stdout
 
 
@@ -72,6 +83,8 @@ def test_a_run_name_the_console_cannot_encode(tmp_path: Path) -> None:
         "--headless",
         "--name",
         "تجربه 🚀 run",
+        "--port",
+        str(_free_port()),
         db=db,
     )
     assert "UnicodeEncodeError" not in run.stderr, run.stderr
@@ -84,7 +97,9 @@ def test_a_run_name_the_console_cannot_encode(tmp_path: Path) -> None:
 
 def test_utf8_console_keeps_the_real_glyphs(tmp_path: Path) -> None:
     """The fallback must not punish consoles that are perfectly capable."""
-    result = _cli("demo", "--headless", db=tmp_path / "runs.db", encoding="utf-8")
+    result = _cli(
+        "demo", "--headless", "--port", str(_free_port()), db=tmp_path / "runs.db", encoding="utf-8"
+    )
     assert result.returncode == 0, result.stderr
     assert "▶" in result.stdout, result.stdout
 

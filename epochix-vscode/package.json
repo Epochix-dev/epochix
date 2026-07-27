@@ -3,7 +3,7 @@
   "displayName": "Epochix",
   "description": "See what your model is doing — training logs become a plain-English story with a letter grade, in a live animated dashboard. No code changes.",
   "publisher": "epochix",
-  "version": "0.5.36",
+  "version": "0.5.37",
   "license": "Apache-2.0",
   "icon": "icon.png",
   "repository": {
@@ -16,6 +16,16 @@
   "homepage": "https://epochix.dev",
   "engines": {
     "vscode": "^1.92.0"
+  },
+  "capabilities": {
+    "untrustedWorkspaces": {
+      "supported": "limited",
+      "description": "In an untrusted folder Epochix runs its built-in engine only. It will not launch the Python package, because doing so would execute an interpreter that could come from the folder itself.",
+      "restrictedConfigurations": [
+        "epochix.sidecarPath",
+        "epochix.useSidecar"
+      ]
+    }
   },
   "galleryBanner": {
     "color": "#0f1220",

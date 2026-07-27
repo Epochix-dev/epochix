@@ -21,6 +21,15 @@ if TYPE_CHECKING:
     from pathlib import Path
 
 
+def _free_port() -> int:
+    """`epochix run` starts a server. Never let that be the default port: a
+    developer machine may already have one, and the test would fail for a
+    reason unrelated to what it checks."""
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as probe:
+        probe.bind(("127.0.0.1", 0))
+        return int(probe.getsockname()[1])
+
+
 def _training_log(tmp_path: Path) -> Path:
     log = tmp_path / "train.log"
     log.write_text(
@@ -58,6 +67,8 @@ def test_export_output_writes_where_asked(tmp_path: Path) -> None:
         "md",
         "--output",
         str(out),
+        "--port",
+        str(_free_port()),
         cwd=tmp_path,
         db=tmp_path / "runs.db",
     )
@@ -74,6 +85,8 @@ def test_export_reports_an_absolute_path(tmp_path: Path) -> None:
         "--headless",
         "--export",
         "json",
+        "--port",
+        str(_free_port()),
         cwd=tmp_path,
         db=tmp_path / "runs.db",
     )

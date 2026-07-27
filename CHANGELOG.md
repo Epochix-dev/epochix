@@ -7,6 +7,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.5.37] — 2026-07-27
+
+Found by installing the published extension on a clean machine and clicking the
+onboarding button, rather than testing the code that implements it.
+
+### Fixed
+
+- **The extension was invisible in a new folder.** VS Code opens any folder a
+  user has not trusted in Restricted Mode, and an extension that does not
+  declare `capabilities.untrustedWorkspaces` is disabled there. So a newcomer
+  who installed Epochix and opened their project saw no activity-bar icon and
+  no "Try a Demo Run" button at all. The extension now declares `limited`
+  support and works in an untrusted folder using its built-in engine.
+
+  It deliberately does **not** claim full support: starting the Python sidecar
+  means executing an interpreter that may have been resolved from the folder
+  itself, and a hostile repository can ship a `.venv`. Untrusted folders get
+  the standalone engine, which is pure JavaScript in the extension host.
+
+- **A stale Python package silently downgraded the whole product.** The
+  launcher resolves whichever interpreter it can find, and on the test machine
+  that was one carrying epochix **0.5.0** — so extension 0.5.36 was driving a
+  36-release-old backend. Everything appeared to work while quietly missing
+  features: the architecture panel just read "no architecture to display".
+  The sidecar's version is now checked against the extension's on startup, and
+  a mismatch says so and points at the fix.
+- Several CLI tests assumed port 7860 was free, so they failed on any machine
+  already running an epochix server — which the port guard added in 0.5.32
+  turned from a silent hang into a visible failure. They now bind a free port.
+
+---
+
 ## [0.5.36] — 2026-07-27
 
 **`epochix demo` crashed on Windows.** The first command the docs tell a

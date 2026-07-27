@@ -110,3 +110,19 @@ suite("Sidecar unreachable — the dashboard must still tell the story", () => {
     );
   });
 });
+
+suite("Sidecar version skew", () => {
+  test("an older sidecar than the extension is detected", async () => {
+    const { isOlder } = await import("../../sidecar/ServerManager");
+    // The case observed on a real machine: extension 0.5.36, a stale
+    // `pip install epochix` on PATH serving 0.5.0, and nothing said so.
+    assert.strictEqual(isOlder("0.5.0", "0.5.36"), true);
+    assert.strictEqual(isOlder("0.5.36", "0.5.36"), false);
+    assert.strictEqual(isOlder("0.5.37", "0.5.36"), false);
+    assert.strictEqual(isOlder("0.4.9", "0.5.0"), true);
+    assert.strictEqual(isOlder("1.0.0", "0.9.9"), false);
+    // 0.5.9 vs 0.5.10 is the classic string-compare trap.
+    assert.strictEqual(isOlder("0.5.9", "0.5.10"), true);
+    assert.strictEqual(isOlder("0.5.36-beta.1", "0.5.36"), false);
+  });
+});
