@@ -1,7 +1,7 @@
 name: Docs
 
 # Build the MkDocs site on every push/PR that touches docs, and deploy to
-# GitHub Pages on pushes to main. Point the docs.epochix.dev CNAME at
+# GitHub Pages on pushes to main. Point the epochix.dev CNAME at
 # <org>.github.io once DNS is set up; until then the site is served at
 # https://epochix-dev.github.io/epochix/.
 

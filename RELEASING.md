@@ -238,24 +238,31 @@ skip if you want (see the note at the end of this step).
 
 ---
 
-## Step 5 — Docs domain (~5 min, or defer)
+## Step 5 — Docs domain (done)
 
-`docs.epochix.dev` is referenced in the README, `pyproject.toml` and
-`mkdocs.yml`.
+`epochix.dev` is live and serves the docs from GitHub Pages. It is referenced
+in `README.md`, `pyproject.toml` (`Homepage` + `Documentation`), `mkdocs.yml`
+(`site_url`), and `epochix-vscode/README.md` + `package.json` (`homepage`),
+which is what the Marketplace listing shows.
 
-**Option A — own the domain.**
-1. Buy `epochix.dev` at any registrar (Cloudflare / Porkbun / Namecheap;
-   `.dev` costs ~$12/yr and is HTTPS-only by design — that's fine).
-2. In the registrar's DNS panel add:
-   `CNAME` · host/name `docs` · target `epochix-dev.github.io` · TTL auto.
-3. Repo → Settings → **Pages** → *Custom domain* → `docs.epochix.dev` →
-   **Save**. Wait for the DNS check (minutes to ~1 h), then tick
-   **Enforce HTTPS** once the certificate is issued.
+The domain is claimed by `docs/CNAME` — mkdocs copies it into `site/` on build,
+so the deploy carries it. **Do not delete that file**; losing it drops the
+custom domain on the next deploy.
 
-**Option B — defer.** Docs already deploy to
-`https://epochix-dev.github.io/epochix/` with zero setup. If you stay on that
-URL, tell Claude to replace the `docs.epochix.dev` references so the links
-in the README/PyPI page aren't dead.
+Registered at Namecheap, apex pointed at GitHub Pages:
+
+- `A` · `@` · `185.199.108.153` / `.109.153` / `.110.153` / `.111.153`
+- `AAAA` · `@` · `2606:50c0:8000::153` / `8001` / `8002` / `8003::153`
+- `CNAME` · `www` · `epochix-dev.github.io.`
+
+`https://epochix-dev.github.io/epochix/` now 301-redirects to `epochix.dev`,
+as does `www.` and plain `http://`.
+
+**Why the apex and not a `docs.` subdomain:** VS Code Marketplace
+verified-publisher eligibility rejects subdomains. The domain must be an apex,
+serve HTTPS, and return 200 to a HEAD request. Verification additionally needs
+the publisher to have shipped an extension for 6+ months *and* the domain to be
+6+ months old — see the verification task before applying.
 
 ---
 

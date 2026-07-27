@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.5.34] — 2026-07-27
+
+`epochix.dev` is live. This sweeps up the references 0.5.33 missed.
+
+### Fixed
+
+- **The Marketplace listing still linked to the dead host.** The extension's
+  own README — which *is* the listing page — pointed at `docs.epochix.dev`,
+  which has no DNS record and never had one. Its `homepage` field pointed at
+  the GitHub README rather than the site.
+- The README's docs link was labelled `docs.epochix.dev` while pointing at
+  `epochix.dev`, so the visible text advertised a dead host.
+- `RELEASING.md` still described buying the domain as a to-do, and instructed
+  a `docs.` subdomain — which would have been permanently ineligible for
+  Marketplace verified-publisher status, since that rejects subdomains.
+  It now records the live setup instead.
+- Stale mentions in `ARCHITECTURE.md`, `TASKS.md`, and the docs workflow.
+
+---
+
 ## [0.5.33] — 2026-07-27
 
 Every documentation link this project published was broken.

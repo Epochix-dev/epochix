@@ -246,7 +246,7 @@ conversation artifact to get a fully interactive training story viewer — no se
 
 ## Documentation
 
-Full docs at **[docs.epochix.dev](https://epochix.dev)**
+Full docs at **[epochix.dev](https://epochix.dev)**
 
 - [Getting started](https://epochix.dev/quickstart/)
 - [CLI reference](https://epochix.dev/cli/)

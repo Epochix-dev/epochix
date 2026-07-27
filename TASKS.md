@@ -360,7 +360,7 @@
 - [ ] `docs/plugins.md` — write a custom parser or metaphor pack
 - [ ] `docs/deployment.md` — local / team server / Docker / hosted
 - [ ] MkDocs-material setup with mkdocstrings
-- [ ] `docs.epochix.dev` — deploy via CI on every tag
+- [x] `epochix.dev` — deploy via CI on every tag
 - [ ] Record 90-second demo video (live training + dashboard side-by-side)
 - [ ] `demo/` — all 6 realistic fixture logs
 

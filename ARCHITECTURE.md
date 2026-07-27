@@ -1578,7 +1578,7 @@ model-learning-story/
 
 ### 25.4 Documentation site
 
-- `docs.epochix.dev` — mkdocs-material.
+- `epochix.dev` — mkdocs-material, served by GitHub Pages.
 - Deployed by CI on every tag.
 
 ### 25.5 Marketing & adoption
