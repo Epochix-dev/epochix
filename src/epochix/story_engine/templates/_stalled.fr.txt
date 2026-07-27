@@ -1,3 +1,3 @@
-Époque {epoch} : la métrique a à peine bougé — de {baseline} à {value} en {epochs_seen} époques. Le modèle n'apprend pas encore.
+Époque {epoch} : la métrique a à peine bougé — de {baseline} à {value} en {epochs_seen} époques. Le modèle n'apprend pas encore — vérifiez d'abord le taux d'apprentissage, puis le pipeline de données.
 Après {epochs_seen} époques, la métrique reste à {value}, quasiment son point de départ ({baseline}). Vérifiez le taux d'apprentissage, le pipeline de données et le mappage des étiquettes.
 Aucun progrès significatif : de {baseline} à {value} sur {epochs_seen} époques. Cela indique généralement un problème de configuration plutôt qu'un modèle ayant besoin de plus de temps.

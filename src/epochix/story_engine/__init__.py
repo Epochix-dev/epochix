@@ -14,7 +14,7 @@ from epochix.story_engine.grade import (
     metric_lower_better,
 )
 from epochix.story_engine.milestones import MilestoneTracker
-from epochix.story_engine.narrator import narrate, narrate_stalled
+from epochix.story_engine.narrator import narrate, narrate_past_peak, narrate_stalled
 from epochix.story_engine.phases import (
     compute_phase,
     estimate_progress,
@@ -43,6 +43,11 @@ _PREFERRED_KEYS_FOR_TASK: dict[TaskType, tuple[str, ...]] = {
 # realised less than this fraction of its achievable improvement. Deliberately
 # conservative: we would rather stay quiet than wrongly call a slow-but-real
 # improvement a failure.
+
+# A run is 'past peak' when the primary metric has fallen this far (relative)
+# below its own best. Above noise, below the point of nagging about jitter.
+_PAST_PEAK_REL_DROP = 0.01
+
 _STALL_MIN_EPOCHS = 3
 _STALL_REL_IMPROVEMENT = 0.03
 
@@ -64,6 +69,9 @@ class StoryEngine:
     _events_count: int = field(default=0, init=False)
     _task_locked: bool = field(default=False, init=False)
     _baseline: float | None = field(default=None, init=False)
+    _best_primary: float | None = field(default=None, init=False)
+    _best_epoch: float | None = field(default=None, init=False)
+    _primary_key_used: str | None = field(default=None, init=False)
     _prev_frame: StoryFrame | None = field(default=None, init=False)
     _prev_primary: float | None = field(default=None, init=False)
     _milestones: MilestoneTracker | None = field(default=None, init=False)
@@ -173,6 +181,17 @@ class StoryEngine:
         assert self._milestones is not None  # callers run _ensure_milestones first
         primary_value = event.value
 
+        # The primary metric can change once the task is detected (a run whose
+        # first events were only losses starts on the CUSTOM fallback). Restart
+        # the baseline/best bookkeeping so trajectory maths never mixes a loss
+        # with an accuracy.
+        if self._primary_key_used is not None and self._primary_key_used != primary_key:
+            self._baseline = None
+            self._best_primary = None
+            self._best_epoch = None
+            self._prev_primary = None
+        self._primary_key_used = primary_key
+
         if self._baseline is None:
             self._baseline = primary_value
 
@@ -236,6 +255,25 @@ class StoryEngine:
         # training we are, so a model stuck at chance level was still narrated
         # as "a diligent student" / "patterns are starting to click". Say what
         # is actually true when the metric has not meaningfully moved.
+        # Track the run's own best so the story can't claim "peak form" while
+        # sitting below a better earlier checkpoint.
+        if self._best_primary is None or (
+            primary_value < self._best_primary
+            if lower_better
+            else primary_value > self._best_primary
+        ):
+            self._best_primary = primary_value
+            self._best_epoch = event.epoch
+
+        past_peak = False
+        if self._best_primary is not None and abs(self._best_primary) > 1e-9:
+            drop = (
+                (primary_value - self._best_primary)
+                if lower_better
+                else (self._best_primary - primary_value)
+            ) / abs(self._best_primary)
+            past_peak = drop > _PAST_PEAK_REL_DROP
+
         epochs_seen = len(self._metric_history.get(event.canonical_key, ()))
         stalled = (
             epochs_seen >= _STALL_MIN_EPOCHS and rel is not None and rel < _STALL_REL_IMPROVEMENT
@@ -246,6 +284,15 @@ class StoryEngine:
                 primary_value=primary_value,
                 baseline=self._baseline,
                 epochs_seen=epochs_seen,
+                run_id=self.run_id,
+                locale=self.locale,
+            )
+        elif past_peak and self._best_primary is not None:
+            narrative = narrate_past_peak(
+                epoch=event.epoch,
+                primary_value=primary_value,
+                best_value=self._best_primary,
+                best_epoch=self._best_epoch,
                 run_id=self.run_id,
                 locale=self.locale,
             )
@@ -291,6 +338,7 @@ class StoryEngine:
             phase=phase,
             grade=grade,
             primary_metric_value=primary_value,
+            primary_metric=primary_key,
             # "confidence" is the run's *advancement/maturity* (0–1), not a
             # prediction-confidence estimate — kept under this field name for
             # storage/back-compat; UI labels it "Maturity".

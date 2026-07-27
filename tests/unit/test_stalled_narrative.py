@@ -88,3 +88,16 @@ def test_slow_but_real_improvement_is_not_called_stalled(tmp_path: Path) -> None
 def test_the_stalled_message_is_localised(tmp_path: Path) -> None:
     last = _narratives(tmp_path, _stuck_lines(), locale="fa")[-1]
     assert re.search(r"[؀-ۿ]", last), f"expected Persian, got {last!r}"
+
+
+def test_every_stalled_variant_is_actionable() -> None:
+    """Variant choice is seeded by the run id, so ONE unhelpful variant means a
+    random third of users get a dead end — and a randomly failing test.
+    """
+    from epochix.story_engine.narrator import _load_stalled
+
+    for variant in _load_stalled("en"):
+        low = variant.lower()
+        assert "learning rate" in low or "setup problem" in low, (
+            f"stalled variant offers nothing to check: {variant!r}"
+        )

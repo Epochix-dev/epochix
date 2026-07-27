@@ -111,7 +111,10 @@ export class JourneyPanel {
       // (MAE≈7 rendered as "700%" was the classic bug). Label + format follow
       // the actual metric.
       if (frame.primary_metric_value != null) {
-        const key = run?.primary_metric;
+        // Per-FRAME metric, not the run's: early frames can predate task
+        // detection and measure a loss. Formatting those with the run's
+        // accuracy formatter is how a train_loss of 1.2364 became "123.6%".
+        const key = frame.primary_metric ?? run?.primary_metric;
         this._statEls.accLbl.textContent = metricDisplayLabel(key);
         const v = frame.primary_metric_value;
         if (isPercentMetric(key)) {

@@ -84,6 +84,11 @@ class StoryFrame(BaseModel):
     phase: Phase
     grade: Grade
     primary_metric_value: FiniteFloat
+    # The canonical key primary_metric_value was measured from. Early frames can
+    # predate task detection and so carry a different metric than the run's final
+    # primary — without this the dashboard formatted a train_loss of 1.2364 with
+    # the run's accuracy formatter and displayed "123.6%".
+    primary_metric: str | None = None
     confidence: float = Field(ge=0.0, le=1.0)
     narrative: str
     metaphor_cards: list[MetaphorCard] = Field(default_factory=list)

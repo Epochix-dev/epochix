@@ -7,6 +7,44 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.5.30] — 2026-07-27
+
+A cold-start usability test — an outside agent, a fresh machine, no prior
+knowledge of epochix — found three places where the dashboard stated something
+that was not true. All three are fixed here.
+
+### Fixed
+
+- **"VAL ACCURACY 123.6%"**. A frame built before the task was detected measures
+  whatever metric had arrived so far, which on a classification run is usually a
+  loss. The dashboard formatted *every* frame with the run's **final** primary
+  metric, so a `train_loss` of 1.2364 was rendered as accuracy. Frames now carry
+  the metric key they were actually measured from (`StoryFrame.primary_metric`,
+  persisted via an additive `story_frames.primary_key` column), and the panels
+  format each frame by its own metric. Existing databases are migrated in place;
+  frames written before the column existed read back as `None` and fall back to
+  the run's metric as before.
+- **Fabricated "custom" metric series.** Following our own `epochix check`
+  advice to `print(model)` injected `kernel_size`, `in_features`, `stride` and
+  friends into the chart as a metric series next to real accuracy. tqdm and
+  download bars did the same via `Downloading=100`. Run configuration
+  (`batch_size`, `num_workers`, `epochs`, …) was also charted as a flat series.
+  All three classes are now filtered; `lr` stays, because a learning-rate
+  schedule is a real curve.
+- **"Peak form" on a model that was overfitting.** The phase templates are
+  driven by how far through training we are, so a run that peaked at epoch 5 and
+  declined for five more was still narrated "final refinements bring the model
+  to peak form" — contradicting the diagnostics panel on the same page. The
+  engine now tracks the best value and its epoch, and says so: "performance has
+  slipped from 0.8650 (epoch 5) to 0.8520. That is usually overfitting rather
+  than progress." Localised to Persian and French.
+- A stalled-run template variant offered no diagnosis, so a random third of runs
+  (variant choice is seeded by the run id) got a dead end instead of something
+  to check. Every variant is now actionable, and a test enforces it — the same
+  randomness was making that test fail intermittently.
+
+---
+
 ## [0.5.29] — 2026-07-25
 
 An AI agent asked to demo the library ended up calling `inspect.getsource()` on

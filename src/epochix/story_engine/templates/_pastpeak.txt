@@ -1,0 +1,3 @@
+Epoch {epoch}: {value}, below the best of {best} at epoch {best_epoch}. The model has passed its peak — the earlier checkpoint is the better one.
+Past its best: {best} at epoch {best_epoch}, now {value}. The later epochs are not improving on it; stopping earlier would have been better.
+Epoch {epoch}: performance has slipped from {best} (epoch {best_epoch}) to {value}. That is usually overfitting rather than progress.

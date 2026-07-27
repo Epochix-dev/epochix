@@ -31,7 +31,7 @@ export class LearningMeter {
   /** @param {import('../store.js').AppState} s */
   _render(s) {
     const frame = s.currentFrame;
-    const key   = s.run?.primary_metric ?? null;
+    const key   = s.currentFrame?.primary_metric ?? s.run?.primary_metric ?? null;
     const value = frame?.primary_metric_value ?? null;
     if (value == null) { this._update(0, '—'); return; }
 

@@ -73,6 +73,10 @@ story_frames_table = Table(
     Column("phase", String),
     Column("grade", String),
     Column("primary_value", Float),
+    # The canonical key primary_value was measured from. Early frames can
+    # predate task detection and carry a different metric than the run's final
+    # primary; without this the dashboard formatted them with the wrong one.
+    Column("primary_key", String),
     Column("confidence", Float),
     Column("narrative", Text),
     Column("metaphor_json", Text),
@@ -131,6 +135,29 @@ class RunStore:
         event.listen(self._engine, "connect", _configure_sqlite)
         metadata.create_all(self._engine)
         self._heal_metric_events_pk()
+        self._add_missing_columns()
+
+    def _add_missing_columns(self) -> None:
+        """Additively backfill columns added after a database was created.
+
+        Nullable columns only, so a plain ALTER TABLE is enough — no rebuild and
+        no data loss. Frames written before the column existed simply read back
+        as ``primary_metric=None``, which the dashboard already falls back on.
+        """
+        raw = self._engine.raw_connection()
+        try:
+            cur = raw.cursor()
+            for table, column, ddl in (("story_frames", "primary_key", "TEXT"),):
+                info = cur.execute(f"PRAGMA table_info({table})").fetchall()
+                if not info:
+                    continue  # created fresh with the current schema
+                if column in {row[1] for row in info}:
+                    continue
+                logger.info("Adding %s.%s to an existing database", table, column)
+                cur.execute(f"ALTER TABLE {table} ADD COLUMN {column} {ddl}")
+            raw.commit()
+        finally:
+            raw.close()
 
     def _heal_metric_events_pk(self) -> None:
         """Upgrade pre-0.1 databases in place.
@@ -330,6 +357,7 @@ class RunStore:
                     "phase": frame.phase.value,
                     "grade": frame.grade.value,
                     "primary_value": frame.primary_metric_value,
+                    "primary_key": frame.primary_metric,
                     "confidence": frame.confidence,
                     "narrative": frame.narrative,
                     "metaphor_json": json.dumps([m.model_dump() for m in frame.metaphor_cards]),
@@ -371,6 +399,7 @@ class RunStore:
                     phase=Phase(r.phase),
                     grade=Grade(r.grade),
                     primary_metric_value=r.primary_value,
+                    primary_metric=r.primary_key,
                     confidence=r.confidence or 0.0,
                     narrative=r.narrative or "",
                     metaphor_cards=[MetaphorCard(**m) for m in json.loads(r.metaphor_json or "[]")],

@@ -303,7 +303,7 @@ async def _run_batch_or_live(
 
 def _cli_export(run_id: str, fmt: str, store: RunStore, outfile: Path | None = None) -> None:
     outfile = outfile or Path(f"{run_id}.{fmt}")
-    typer.echo(f"  Exporting {fmt.upper()} → {outfile}")
+    typer.echo(f"  Exporting {fmt.upper()} {_console_symbols()[0]} {outfile}")
 
     if fmt == "json":
         import json

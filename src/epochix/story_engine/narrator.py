@@ -31,6 +31,49 @@ def _load_templates(task: TaskType, phase: Phase, locale: str = "en") -> list[st
     return [fallback]
 
 
+def _load_special(name: str, locale: str, fallback: str) -> list[str]:
+    """Load a phase-independent template set (``_stalled``, ``_pastpeak``)."""
+    key = f"{name}/{locale}"
+    if key in _template_cache:
+        return _template_cache[key]
+    for suffix in (f".{locale}.txt", ".txt"):
+        path = _TEMPLATES_DIR / f"{name}{suffix}"
+        if path.exists():
+            lines = [
+                ln.strip() for ln in path.read_text(encoding="utf-8").splitlines() if ln.strip()
+            ]
+            _template_cache[key] = lines or [fallback]
+            return _template_cache[key]
+    _template_cache[key] = [fallback]
+    return [fallback]
+
+
+def narrate_past_peak(
+    epoch: float | None,
+    primary_value: float,
+    best_value: float,
+    best_epoch: float | None,
+    run_id: str,
+    locale: str = "en",
+) -> str:
+    """Say the run is past its best instead of calling it "peak form".
+
+    The phase templates are progress-driven, so a run that peaked at epoch 7
+    and declined afterwards was still narrated "Final refinements bring the
+    model to peak form" at epoch 10 — contradicting the diagnostics panel on
+    the same page, which correctly reported the earlier best checkpoint.
+    """
+    templates = _load_special("_pastpeak", locale, "The run is past its best value.")
+    seed = int(hashlib.md5(run_id.encode(), usedforsecurity=False).hexdigest()[:8], 16)
+    template = random.Random(seed).choice(templates)
+    return (
+        template.replace("{epoch}", str(int(epoch)) if epoch is not None else "?")
+        .replace("{value}", f"{primary_value:.4f}")
+        .replace("{best}", f"{best_value:.4f}")
+        .replace("{best_epoch}", str(int(best_epoch)) if best_epoch is not None else "?")
+    )
+
+
 def _load_stalled(locale: str = "en") -> list[str]:
     """Templates for a run whose metric has not meaningfully moved."""
     key = f"_stalled/{locale}"

@@ -25,7 +25,75 @@ _EPOCH_HEADER = re.compile(r"\bepoch\s+(\d{1,9})(?:\s*/\s*(\d{1,9}))?\b", re.IGN
 
 _EPOCH_KEYS = frozenset({"epoch", "ep", "e"})
 _STEP_KEYS = frozenset({"step", "iter", "iteration", "batch"})
-_SKIP_KEYS = frozenset({"pid", "port", "seed", "rank", "world_size", "node"})
+# Never charted as metrics. Beyond obvious run metadata these cover the keyword
+# arguments in a torch `print(model)` dump — following our own `epochix check`
+# advice to print the model used to inject kernel_size/in_features/... into the
+# dashboard as a fake "custom" metric series next to real accuracy.
+_SKIP_KEYS = frozenset(
+    {
+        "pid",
+        "port",
+        "seed",
+        "rank",
+        "world_size",
+        "node",
+        # Run configuration, not performance. These are constants for the whole
+        # run, so charting them produced a flat "custom" series sitting next to
+        # real accuracy as though it were something the model was doing.
+        "batch_size",
+        "batchsize",
+        "bs",
+        "num_workers",
+        "workers",
+        "img_size",
+        "imgsz",
+        "epochs",
+        "num_epochs",
+        "max_epochs",
+        "total_epochs",
+        "gpus",
+        "devices",
+        "precision",
+        "accumulate_grad_batches",
+        "log_every_n_steps",
+        "save_top_k",
+        "patience",
+        "verbose",
+        # nn.Module repr kwargs
+        "kernel_size",
+        "stride",
+        "padding",
+        "dilation",
+        "groups",
+        "ceil_mode",
+        "in_features",
+        "out_features",
+        "in_channels",
+        "out_channels",
+        "bias",
+        "num_features",
+        "eps",
+        "momentum",
+        "affine",
+        "track_running_stats",
+        "inplace",
+        "output_padding",
+        "padding_mode",
+        "num_embeddings",
+        "embedding_dim",
+        "hidden_size",
+        "num_layers",
+        "nhead",
+        "dropout",
+        "batch_first",
+        "return_indices",
+        "count_include_pad",
+    }
+)
+
+# tqdm / download progress bars ("Downloading: 100%|####| 26.4M/26.4M [00:03…]")
+# yielded bogus "Downloading=100" and "00=3" metrics. Whole line is noise.
+_PROGRESS_BAR = re.compile(r"\d{1,3}%\|")
 
 
 @register_parser
@@ -37,6 +105,8 @@ class UniversalParser:
         return 0.10  # always weakly confident; format detector uses this as floor
 
     def parse_line(self, line: str, ctx: ParserContext) -> list[RawMetric]:
+        if _PROGRESS_BAR.search(line):
+            return []
         # Bare epoch header ("Epoch 1/8: …") — set the epoch/total so metrics on
         # the same line are stamped with it and the progress bar advances.
         eh = _EPOCH_HEADER.search(line)
