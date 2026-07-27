@@ -745,7 +745,10 @@ def cmd_config(
         if key is None or value is None:
             typer.echo("Usage: epochix config set <key> <value>", err=True)
             raise typer.Exit(1)
-        env_key = f"EPOCHIX_{key.upper()}"
+        # Accept both "port" and "EPOCHIX_PORT" — blindly prefixing turned the
+        # latter into EPOCHIX_EPOCHIX_PORT, a key nothing ever reads.
+        bare = key.upper().removeprefix("EPOCHIX_")
+        env_key = f"EPOCHIX_{bare}"
         env_path = Path(".env")
         lines = env_path.read_text(encoding="utf-8").splitlines() if env_path.exists() else []
         prefix = f"{env_key}="

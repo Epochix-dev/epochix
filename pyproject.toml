@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "epochix"
-version = "0.5.32"
+version = "0.5.33"
 description = "Turn ML training logs into a plain-English story with a letter grade — a live animated dashboard, no code changes."
 authors = [{ name = "Epochix Team" }]
 license = "Apache-2.0"
@@ -73,8 +73,8 @@ dev       = [
 ]
 
 [project.urls]
-Homepage      = "https://github.com/epochix-dev/epochix"
-Documentation = "https://docs.epochix.dev"
+Homepage      = "https://epochix.dev"
+Documentation = "https://epochix.dev"
 Repository    = "https://github.com/epochix-dev/epochix"
 Issues        = "https://github.com/epochix-dev/epochix/issues"
 Changelog     = "https://github.com/epochix-dev/epochix/blob/main/CHANGELOG.md"

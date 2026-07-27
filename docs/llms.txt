@@ -1,0 +1,84 @@
+# Epochix
+
+> Turns a deep-learning training log into a plain-English story with a letter
+> grade, as an animated dashboard. It reads logs you already produce — no
+> changes to your training code are required. Everything runs locally by
+> default; nothing is uploaded anywhere.
+
+Epochix is for *explaining* a training run to a person: what the model learned,
+when it stopped improving, and whether the result is any good. It is not a
+metrics database or an experiment tracker, and it does not train models.
+
+## What it does with a log
+
+Parses the metrics out of it, detects the task type (classification,
+regression, detection, NLP, gaze, biometric, generative, or custom), grades the
+run, and narrates each epoch. It never invents data: if a value cannot be
+derived from the log, it is shown as absent rather than as zero or a guess.
+
+## Fastest way to see it
+
+```bash
+pip install epochix
+epochix demo             # a bundled real run — no log of your own needed
+epochix run train.log    # your own log
+```
+
+There is also a VS Code extension (`epochix.epochix`) with a "Try a Demo Run"
+button. The extension works with or without the Python package installed.
+
+## Using it from your own training loop
+
+Epochix reads stdout, so a script that prints its metrics needs no integration
+at all:
+
+```python
+for epoch in range(1, epochs + 1):
+    ...
+    print(f"Epoch {epoch}/{epochs} train_loss={loss:.4f} val_acc={acc:.4f}")
+```
+
+```bash
+python train.py | epochix        # piped input is detected automatically
+```
+
+Recognised out of the box: `key=value` and `key: value` pairs, a bare
+`Epoch N/M` header, JSON fragments, and the native output of PyTorch Lightning,
+Keras, HuggingFace Trainer, YOLO/Ultralytics, fastai, and Accelerate.
+
+Metric names drive the story, so use conventional ones — `loss`, `train_loss`,
+`val_loss`, `val_acc`/`val_accuracy`, `mae`, `rmse`, `map50`, `perplexity`.
+A run that logs only a loss curve is graded on its improvement trajectory
+rather than an absolute scale.
+
+## When the dashboard looks wrong
+
+```bash
+epochix check train.log
+```
+
+This reports exactly what the parsers can and cannot read from the log, and
+what to add. Use it before assuming a bug — an empty dashboard is almost always
+a log whose metrics were not in a recognised shape.
+
+## Things that are commonly assumed and are not true
+
+- It does not need a GPU, an account, an API key, or a network connection.
+- It does not send logs anywhere. The optional LLM fallback parser is off by
+  default and, when enabled, defaults to a local Ollama endpoint.
+- `print(model)` is not required. It enriches the architecture panel when
+  present, but is not needed for the story or the grade.
+- Do not add a `print(model)` dump or a tqdm bar expecting them to be charted —
+  they are deliberately filtered out, because they are configuration and
+  progress noise rather than model performance.
+
+## Docs
+
+- [Quickstart](https://epochix.dev/quickstart/): install and first run
+- [CLI reference](https://epochix.dev/cli/): every command
+- [Configuration](https://epochix.dev/config/): environment variables
+- [Python SDK](https://epochix.dev/api/): logging from inside your code
+- [Parsers](https://epochix.dev/parsers/): supported log formats
+- [Plugins](https://epochix.dev/plugins/): writing your own parser
+- [Deployment](https://epochix.dev/deployment/): serving beyond localhost
+- [Source](https://github.com/epochix-dev/epochix)

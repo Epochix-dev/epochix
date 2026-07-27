@@ -1,5 +1,5 @@
 site_name: Epochix
-site_url: https://docs.epochix.dev
+site_url: https://epochix.dev
 site_description: See what your model is doing — training logs become a plain-English story with a letter grade, in a live animated dashboard.
 site_author: Epochix Team
 repo_url: https://github.com/epochix-dev/epochix
@@ -45,6 +45,8 @@ plugins:
 nav:
   - Home: index.md
   - Quickstart: quickstart.md
+  - CLI reference: cli.md
+  - Configuration: config.md
   - Parsers: parsers.md
   - Plugins: plugins.md
   - Python SDK: api.md

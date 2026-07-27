@@ -7,6 +7,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.5.33] — 2026-07-27
+
+Every documentation link this project published was broken.
+
+### Fixed
+
+- **The docs host never resolved.** `docs.epochix.dev` appeared in the README,
+  in `mkdocs.yml`, and as the `Documentation` URL on the PyPI and Marketplace
+  listings, but was never registered — the site has been served from
+  `epochix-dev.github.io/epochix/` all along. Everything now points at
+  `epochix.dev`, and `docs/CNAME` claims it.
+- **Four of the six linked doc paths were 404 even on the working site.**
+  `/getting-started/` and `/sdk/` never existed under those names (they are
+  `/quickstart/` and `/api/`), and `/cli/` and `/config/` did not exist at all.
+  Both missing pages are now written, from the actual command and settings
+  definitions.
+- **`epochix config set EPOCHIX_PORT 8080` wrote `EPOCHIX_EPOCHIX_PORT`** — a
+  key nothing reads, reported as success. The prefix is no longer applied
+  twice; `port`, `EPOCHIX_PORT`, and `epochix_port` all set the same variable.
+
+### Added
+
+- `AGENTS.md` — the conventions and traps of this repository, for anyone
+  changing it.
+- `/llms.txt` — a machine-readable summary of what epochix is for and how to
+  drive it, including the things people (and coding agents) reliably assume
+  and get wrong.
+
+---
+
 ## [0.5.32] — 2026-07-27
 
 The last two findings from the cold-start usability report.
