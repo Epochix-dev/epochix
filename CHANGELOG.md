@@ -7,6 +7,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.5.35] — 2026-07-27
+
+### Added
+
+- **The VS Code extension is linted.** `npm run lint` has been in
+  `package.json` since the extension existed, but there was no ESLint config
+  file, so it always failed and CI never ran it — the half of the codebase with
+  the most shipped bugs had no static checking beyond `tsc`. Added an ESLint 8
+  config with type-aware rules, and wired **lint and typecheck into CI** so it
+  cannot rot again silently.
+
+  The rules were chosen for bugs this repo has actually had:
+  `no-floating-promises` (an awaited `showInformationMessage` once hung a host
+  test for 60 s), `no-misused-promises`, `await-thenable`, `require-await`.
+
+- **[Writing your own training loop](https://epochix.dev/training-loop/)** — a
+  page for the most common way epochix is used, and previously the least
+  documented. Covers the print-only path, the log shapes that are recognised,
+  how metric naming drives task detection and grading, why `flush=True` matters
+  when piping, and what deliberately is *not* charted.
+
+### Fixed
+
+- Three `eslint-disable` comments in `TerminalWatcher.ts` named
+  `@typescript-eslint/no-require-imports`, a rule that never applied; the rule
+  that fires is `no-var-requires`. They had been silently inert — which is what
+  you would expect of disable comments written against a linter that had never
+  run.
+
+---
+
 ## [0.5.34] — 2026-07-27
 
 `epochix.dev` is live. This sweeps up the references 0.5.33 missed.

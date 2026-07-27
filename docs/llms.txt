@@ -75,6 +75,7 @@ a log whose metrics were not in a recognised shape.
 ## Docs
 
 - [Quickstart](https://epochix.dev/quickstart/): install and first run
+- [Your own training loop](https://epochix.dev/training-loop/): the print-based path, in full
 - [CLI reference](https://epochix.dev/cli/): every command
 - [Configuration](https://epochix.dev/config/): environment variables
 - [Python SDK](https://epochix.dev/api/): logging from inside your code

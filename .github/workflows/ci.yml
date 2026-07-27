@@ -68,6 +68,12 @@ jobs:
           cache: npm
           cache-dependency-path: epochix-vscode/package-lock.json
       - run: cd epochix-vscode && npm ci
+      - name: Lint the extension
+        run: npm run lint
+        working-directory: epochix-vscode
+      - name: Typecheck the extension
+        run: npm run typecheck
+        working-directory: epochix-vscode
       - name: Run extension host integration tests
         run: xvfb-run -a npm test
         working-directory: epochix-vscode
