@@ -228,7 +228,9 @@ export class BrainCanvas {
     const r = best ? 5 + best.activation * 5 : 0;
     if (best && bestD <= (r + 9) ** 2 && this._tooltip) {
       this._hoverNode = best;
-      const paramStr = bestZone.paramsStr
+      // `?? ` is not enough: an EMPTY paramsStr means "could not be derived"
+      // (a custom block in a print(model) dump) and must show nothing, not "".
+      const paramStr = (bestZone.paramsStr || null)
         ?? (bestZone.params ? _fmtParams(bestZone.params) : null);
       // Activity is a layer-level reading of the real training signal (val
       // accuracy), not per-node noise — so every neuron in a layer reads the

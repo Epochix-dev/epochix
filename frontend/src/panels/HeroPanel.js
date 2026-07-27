@@ -66,7 +66,13 @@ export class HeroPanel {
 function _renderSummary(el, s) {
   const arch = s.architecture;
   if (!arch?.length) { el.hidden = true; return; }
+  // A plain `print(model)` carries no parameter counts; we derive them from
+  // each layer's own shapes, which works for the weight-bearing built-ins but
+  // not for a custom block. An empty params_str marks "not derivable" — summing
+  // those as zero would state a total that is quietly too low, so when any
+  // layer is unknown we show the layer count and no parameter claim at all.
   const total = arch.reduce((sum, l) => sum + (l.params ?? 0), 0);
+  const complete = arch.every((l) => l.params_str !== '');
   const paramStr = total >= 1e6 ? `${(total / 1e6).toFixed(1)}M`
                  : total >= 1e3 ? `${(total / 1e3).toFixed(1)}K`
                  : String(total);
@@ -74,13 +80,15 @@ function _renderSummary(el, s) {
   // as "Conv ×4 + C2f ×3 + SPPF + Upsample" instead of an unreadable train
   // of "Conv + Conv + C2f + Conv + C2f + Conv + C2f + Conv + SPPF + …".
   const names = _compactLayerSequence(arch);
-  const sig = `${names}|${paramStr}`;
+  const sig = `${names}|${complete ? paramStr : '?'}`;
   if (el.dataset.sig === sig) return;     // avoid needless DOM churn
   el.dataset.sig = sig;
   el.hidden = false;
   el.innerHTML = `
     <span class="bs-name" title="${_esc(names)}">${_esc(names)}</span>
-    <span class="bs-meta">${arch.length} layer${arch.length !== 1 ? 's' : ''} · ${paramStr} params</span>`;
+    <span class="bs-meta">${arch.length} layer${arch.length !== 1 ? 's' : ''}${
+      complete ? ` · ${paramStr} params` : ''
+    }</span>`;
 }
 
 /** Collapse adjacent runs of identical layer_type into "Type ×N". */

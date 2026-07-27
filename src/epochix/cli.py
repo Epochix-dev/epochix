@@ -135,6 +135,13 @@ def cmd_run(  # noqa: C901
         help="Export format (html|pdf|md|json) in headless mode.",
         show_default=False,
     ),
+    output: Path | None = typer.Option(
+        None,
+        "--output",
+        "-o",
+        help="Where to write --export output (default: <run_id>.<format> here).",
+        show_default=False,
+    ),
     name: str | None = typer.Option(None, "--name", "-n", help="Run name.", show_default=False),
     log_level: str = typer.Option("INFO", "--log-level", help="Logging level."),
 ) -> None:
@@ -196,6 +203,7 @@ def cmd_run(  # noqa: C901
             port=port,
             headless=headless,
             export_format=export_format,
+            export_output=output,
             ssh_target=ssh_target_host,
             ssh_port=ssh_port,
             ssh_identity=ssh_identity,
@@ -215,6 +223,7 @@ async def _run_batch_or_live(
     port: int,
     headless: bool,
     export_format: str | None,
+    export_output: Path | None = None,
     ssh_target: str | None = None,
     ssh_port: int | None = None,
     ssh_identity: str | None = None,
@@ -246,6 +255,7 @@ async def _run_batch_or_live(
     )
 
     # Start the uvicorn server in a background task
+    _require_free_port(settings.host, port)
     config = uvicorn.Config(
         _app,
         host=settings.host,
@@ -298,12 +308,49 @@ async def _run_batch_or_live(
 
     # Headless export
     if export_format and headless:
-        _cli_export(run_id=run_id, fmt=export_format, store=store)
+        _cli_export(run_id=run_id, fmt=export_format, store=store, outfile=export_output)
+
+
+def _require_free_port(host: str, port: int) -> None:
+    """Fail with a usable message instead of a raw OSError traceback.
+
+    The server is started as a background asyncio task, so a bind failure
+    surfaced as an unhandled OSError stack trace with no hint about what to do.
+    """
+    import socket
+
+    # No SO_REUSEADDR: we want the bind to fail exactly when something else is
+    # already listening, on Windows as well as POSIX.
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as probe:
+        try:
+            probe.bind((host, port))
+        except OSError:
+            typer.secho(
+                f"Port {port} on {host} is already in use.",
+                fg=typer.colors.RED,
+                err=True,
+            )
+            typer.echo(
+                f"  Another epochix server may already be running. "
+                f"Try a different port:  --port {port + 1}",
+                err=True,
+            )
+            raise typer.Exit(1) from None
 
 
 def _cli_export(run_id: str, fmt: str, store: RunStore, outfile: Path | None = None) -> None:
     outfile = outfile or Path(f"{run_id}.{fmt}")
-    typer.echo(f"  Exporting {fmt.upper()} {_console_symbols()[0]} {outfile}")
+    # Absolute: the default lands in the current directory, and "Exporting HTML
+    # -> 01K….html" left people hunting for a file they could not place.
+    typer.echo(f"  Exporting {fmt.upper()} {_console_symbols()[0]} {outfile.resolve()}")
+
+    # `--output reports/run.md` should work without a prior mkdir.
+    try:
+        if outfile.parent != Path():
+            outfile.parent.mkdir(parents=True, exist_ok=True)
+    except OSError as exc:
+        typer.echo(f"  Cannot create {outfile.parent}: {exc.strerror}", err=True)
+        raise typer.Exit(1) from None
 
     if fmt == "json":
         import json
@@ -379,6 +426,7 @@ def cmd_serve(
             err=True,
         )
 
+    _require_free_port(host, port)
     typer.echo(f"Starting epochix server on http://{host}:{port}")
     uvicorn.run(_app, host=host, port=port, log_level=log_level.lower())
 

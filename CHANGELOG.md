@@ -7,6 +7,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.5.32] — 2026-07-27
+
+The last two findings from the cold-start usability report.
+
+### Fixed
+
+- **The architecture panel reported "0 params" for every layer.** A plain
+  `print(model)` carries no parameter counts, and the module-repr parser
+  hardcoded `0` — so a model with 211,690 parameters was described as having
+  none. A module's repr *does* carry the shapes its parameters are built from,
+  so the count is now derived exactly for the weight-bearing built-ins:
+  `Linear`, `Conv*d`/`ConvTranspose*d` (including `groups=` and `bias=False`),
+  `BatchNorm`/`InstanceNorm`/`GroupNorm`/`LayerNorm` (respecting `affine=` and
+  its differing defaults), `Embedding`, and `LSTM`/`GRU`/`RNN` (stacked and
+  bidirectional). Every expected value in the new tests came from real PyTorch
+  `sum(p.numel() ...)`, not from hand arithmetic.
+- **A count that cannot be derived now shows nothing instead of "0".** A custom
+  block's parameters are genuinely unknown, and `0` is a false claim rather
+  than a missing one; a `ReLU`'s `0` is real and stays. Where any layer is
+  unknown, the summary chip drops the total rather than quietly understating it.
+- **`epochix run --export` gained `--output`/`-o`**, creates the parent
+  directory if needed, and prints the absolute path it wrote — it used to drop
+  `<run_id>.<fmt>` into the current directory and report a bare relative name.
+- **A busy port is now explained instead of traced.** The server starts as a
+  background asyncio task, so a collision surfaced as an unhandled `OSError`
+  stack trace. `epochix run` and `epochix serve` now check the port first and
+  say which one is taken and which to try instead.
+
+---
+
 ## [0.5.31] — 2026-07-27
 
 The VS Code extension's two onboarding buttons both failed on a fresh machine.

@@ -469,6 +469,215 @@ def _parse_torchinfo(lines: list[str]) -> list[ArchLayer]:
 _REPR_CHILD = re.compile(r"^\s{2,4}\(([\w.]+)\):\s*([A-Za-z][\w.]*)\s*\(")
 _REPR_OPEN = re.compile(r"^[A-Za-z][\w.]*\s*\(\s*$")
 
+# `print(model)` prints no parameter counts — but a module's repr carries the
+# shapes its parameters are built from, so for the layer types that hold
+# weights we can derive the count exactly. Reporting "0 params" for a Linear
+# layer is simply false; where a count cannot be derived we report nothing.
+_PARAMETERLESS = frozenset(
+    {
+        "relu",
+        "relu6",
+        "leakyrelu",
+        "elu",
+        "selu",
+        "celu",
+        "gelu",
+        "silu",
+        "mish",
+        "softplus",
+        "softsign",
+        "tanh",
+        "sigmoid",
+        "hardsigmoid",
+        "hardswish",
+        "hardtanh",
+        "logsigmoid",
+        "softmax",
+        "logsoftmax",
+        "maxpool1d",
+        "maxpool2d",
+        "maxpool3d",
+        "avgpool1d",
+        "avgpool2d",
+        "avgpool3d",
+        "adaptiveavgpool1d",
+        "adaptiveavgpool2d",
+        "adaptiveavgpool3d",
+        "adaptivemaxpool1d",
+        "adaptivemaxpool2d",
+        "adaptivemaxpool3d",
+        "dropout",
+        "dropout1d",
+        "dropout2d",
+        "dropout3d",
+        "alphadropout",
+        "flatten",
+        "unflatten",
+        "identity",
+        "upsample",
+        "pixelshuffle",
+        "zeropad2d",
+        "reflectionpad2d",
+        "replicationpad2d",
+        "constantpad2d",
+    }
+)
+
+# Layers whose repr starts with positional (in, out) — used when the caller
+# wrote Conv2d(1, 32, ...) instead of Conv2d(in_channels=1, out_channels=32).
+_CONV_TYPES = frozenset(
+    {"conv1d", "conv2d", "conv3d", "convtranspose1d", "convtranspose2d", "convtranspose3d"}
+)
+_NORM_TYPES = frozenset(
+    {
+        "batchnorm1d",
+        "batchnorm2d",
+        "batchnorm3d",
+        "instancenorm1d",
+        "instancenorm2d",
+        "instancenorm3d",
+        "groupnorm",
+        "syncbatchnorm",
+    }
+)
+_RNN_GATES = {"lstm": 4, "gru": 3, "rnn": 1}
+
+
+def _split_top_level(argstr: str) -> list[str]:
+    """Split a repr argument list on commas that are not nested."""
+    parts: list[str] = []
+    depth = 0
+    current: list[str] = []
+    for ch in argstr:
+        if ch in "([{":
+            depth += 1
+        elif ch in ")]}":
+            depth -= 1
+        if ch == "," and depth == 0:
+            parts.append("".join(current).strip())
+            current = []
+            continue
+        current.append(ch)
+    if current and "".join(current).strip():
+        parts.append("".join(current).strip())
+    return parts
+
+
+def _repr_args(raw: str, layer_type: str) -> tuple[list[str], dict[str, str]]:
+    """Positional args and kwargs from `(name): Type(a, b, k=v)`."""
+    start = raw.find(layer_type + "(")
+    if start < 0:
+        return [], {}
+    inner = raw[start + len(layer_type) + 1 :].rstrip().rstrip(")")
+    pos: list[str] = []
+    kw: dict[str, str] = {}
+    for part in _split_top_level(inner):
+        if "=" in part and re.match(r"^\w+\s*=", part):
+            k, _, v = part.partition("=")
+            kw[k.strip().lower()] = v.strip()
+        else:
+            pos.append(part)
+    return pos, kw
+
+
+def _as_int(text: str | None) -> int | None:
+    if text is None:
+        return None
+    try:
+        return int(float(text.strip()))
+    except (TypeError, ValueError):
+        return None
+
+
+def _tuple_product(text: str) -> int | None:
+    """`(3, 3)` -> 9;  `3` -> 3;  `(2, 2, 2)` -> 8."""
+    nums = re.findall(r"-?\d+", text)
+    if not nums:
+        return None
+    out = 1
+    for n in nums:
+        out *= int(n)
+    return out
+
+
+def _is_true(kw: dict[str, str], key: str, default: bool) -> bool:
+    v = kw.get(key)
+    return default if v is None else v.strip().lower() == "true"
+
+
+def _params_from_repr(layer_type: str, raw: str) -> int | None:  # noqa: PLR0911
+    """Exact parameter count for a module repr line, or None if underivable.
+
+    Returns 0 only for layers that genuinely hold no parameters (ReLU, pooling,
+    dropout) — never as a stand-in for "unknown".
+    """
+    t = layer_type.lower()
+    if t in _PARAMETERLESS:
+        return 0
+
+    pos, kw = _repr_args(raw, layer_type)
+
+    def arg(i: int, *names: str) -> str | None:
+        for n in names:
+            if n in kw:
+                return kw[n]
+        return pos[i] if i < len(pos) else None
+
+    if t == "linear" or t == "lazylinear":
+        fan_in, fan_out = _as_int(arg(0, "in_features")), _as_int(arg(1, "out_features"))
+        if fan_in is None or fan_out is None:
+            return None
+        return fan_in * fan_out + (fan_out if _is_true(kw, "bias", default=True) else 0)
+
+    if t in _CONV_TYPES:
+        c_in, c_out = _as_int(arg(0, "in_channels")), _as_int(arg(1, "out_channels"))
+        k_raw = arg(2, "kernel_size")
+        groups = _as_int(kw.get("groups")) or 1
+        if c_in is None or c_out is None or k_raw is None:
+            return None
+        k = _tuple_product(k_raw)
+        if k is None or groups <= 0:
+            return None
+        return (c_out * (c_in // groups) * k) + (c_out if _is_true(kw, "bias", default=True) else 0)
+
+    if t in _NORM_TYPES:
+        # affine weight + bias. InstanceNorm defaults to affine=False.
+        default_affine = not t.startswith("instancenorm")
+        if not _is_true(kw, "affine", default=default_affine):
+            return 0
+        n = _as_int(arg(1, "num_channels") if t == "groupnorm" else arg(0, "num_features"))
+        return None if n is None else 2 * n
+
+    if t == "layernorm":
+        shape = arg(0, "normalized_shape")
+        n = None if shape is None else _tuple_product(shape)
+        if n is None:
+            return None
+        return 2 * n if _is_true(kw, "elementwise_affine", default=True) else 0
+
+    if t == "embedding":
+        rows, dim = _as_int(arg(0, "num_embeddings")), _as_int(arg(1, "embedding_dim"))
+        return None if rows is None or dim is None else rows * dim
+
+    if t in _RNN_GATES:
+        fan_in, hidden = _as_int(arg(0, "input_size")), _as_int(arg(1, "hidden_size"))
+        if fan_in is None or hidden is None:
+            return None
+        gates = _RNN_GATES[t]
+        layers = _as_int(kw.get("num_layers")) or 1
+        directions = 2 if _is_true(kw, "bidirectional", default=False) else 1
+        has_bias = _is_true(kw, "bias", default=True)
+        total = 0
+        for layer in range(layers):
+            layer_in = fan_in if layer == 0 else hidden * directions
+            per_direction = gates * hidden * (layer_in + hidden) + (
+                2 * gates * hidden if has_bias else 0
+            )
+            total += per_direction * directions
+        return total
+
+    return None
+
 
 def _parse_module_repr(lines: list[str]) -> list[ArchLayer]:
     result: list[ArchLayer] = []
@@ -486,7 +695,11 @@ def _parse_module_repr(lines: list[str]) -> list[ArchLayer]:
         # Detect bi-directional recurrent layers for a richer label.
         if "bidirectional=true" in raw.lower() and layer_type.lower() in ("lstm", "gru", "rnn"):
             layer_type = "Bi" + layer_type
-        result.append(_make_layer(idx, name, layer_type, "0"))
+        # Derived from the repr's own shapes. None = not derivable, which is
+        # shown as nothing rather than as "0 params" — the panel used to
+        # report 0 for every layer of a ~207K-parameter model.
+        exact = _params_from_repr(m.group(2), raw)
+        result.append(_make_layer(idx, name, layer_type, "" if exact is None else str(exact)))
         idx += 1
     return result
 
