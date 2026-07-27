@@ -93,7 +93,7 @@ def test_console_symbols_fall_back_on_a_legacy_encoding(monkeypatch) -> None:
         encoding = "cp1252"
 
     monkeypatch.setattr(_sys, "stdout", _Cp1252Stream())
-    assert cli._console_symbols() == ("->", "OK", "!", "~")
+    assert cli.console_symbols() == ("->", "OK", "!", "~")
 
 
 def test_check_output_is_ascii_safe_on_a_legacy_console(tmp_path: Path, monkeypatch) -> None:
@@ -104,7 +104,7 @@ def test_check_output_is_ascii_safe_on_a_legacy_console(tmp_path: Path, monkeypa
     """
     from epochix import cli
 
-    monkeypatch.setattr(cli, "_console_symbols", lambda: ("->", "OK", "!", "~"))
+    monkeypatch.setattr(cli, "console_symbols", lambda: ("->", "OK", "!", "~"))
 
     log = tmp_path / "loss.log"
     log.write_text(_LOSS_ONLY, encoding="utf-8")

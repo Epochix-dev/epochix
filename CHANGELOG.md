@@ -7,6 +7,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.5.36] — 2026-07-27
+
+**`epochix demo` crashed on Windows.** The first command the docs tell a
+newcomer to run, and the one the extension's demo button is modelled on.
+
+### Fixed
+
+- **`epochix demo` died with `UnicodeEncodeError` before printing anything.**
+  It emitted a raw `▶`, which a Windows console — still cp1252 by default —
+  cannot encode. 0.5.29 added an ASCII-fallback helper for exactly this, but
+  `demo` never used it, and neither did `epochix open` or the SDK's comparison
+  output. Found by cold-installing the published wheel and running the
+  quickstart, not by reading the code.
+- **A run name the console cannot encode killed `run` and `list`.** Run names
+  are user data, so transliterating our own decorations cannot help: a Persian
+  name — entirely ordinary, since epochix ships Persian localisation — aborted
+  both commands. Output streams are now hardened so an unencodable character
+  degrades to `?` instead of ending the command.
+- The symbol helper moved to `epochix.console` (`console_safe`,
+  `console_symbols`, `harden_streams`) so the SDK no longer has to import the
+  CLI to print an arrow.
+
+Regression tests drive the real CLI under `PYTHONIOENCODING=cp1252`, so they
+reproduce a Windows console on any OS and run in CI. Verified they fail against
+the previous code.
+
+### Changed
+
+- The Marketplace listing gets a `galleryBanner` so the header matches the icon.
+
+---
+
 ## [0.5.35] — 2026-07-27
 
 ### Added

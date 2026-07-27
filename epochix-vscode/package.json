@@ -3,7 +3,7 @@
   "displayName": "Epochix",
   "description": "See what your model is doing — training logs become a plain-English story with a letter grade, in a live animated dashboard. No code changes.",
   "publisher": "epochix",
-  "version": "0.5.35",
+  "version": "0.5.36",
   "license": "Apache-2.0",
   "icon": "icon.png",
   "repository": {
@@ -16,6 +16,10 @@
   "homepage": "https://epochix.dev",
   "engines": {
     "vscode": "^1.92.0"
+  },
+  "galleryBanner": {
+    "color": "#0f1220",
+    "theme": "dark"
   },
   "categories": [
     "Visualization",

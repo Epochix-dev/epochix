@@ -5,6 +5,8 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
+from epochix.console import console_safe
+
 if TYPE_CHECKING:
     from epochix.models import Run
 
@@ -28,11 +30,11 @@ class RunDiff:
         print(f"\n  Run A: {a.name or a.id}  [{ga}]  task={a.task_type.value}")
         print(f"  Run B: {b.name or b.id}  [{gb}]  task={b.task_type.value}")
         if self.better == "a":
-            print(f"  → Run A wins  ({self.grade_delta})")
+            print(console_safe(f"  → Run A wins  ({self.grade_delta})"))
         elif self.better == "b":
-            print(f"  → Run B wins  ({self.grade_delta})")
+            print(console_safe(f"  → Run B wins  ({self.grade_delta})"))
         else:
-            print("  → Tie")
+            print(console_safe("  → Tie"))
         if self.summary:
             print(f"\n  {self.summary}")
         for key, (va, vb) in self.metric_diffs.items():

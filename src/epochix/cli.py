@@ -33,6 +33,7 @@ import typer
 import uvicorn
 
 from epochix.config import Settings, get_settings
+from epochix.console import console_safe, console_symbols, harden_streams
 from epochix.enums import TaskType
 
 if TYPE_CHECKING:
@@ -342,7 +343,7 @@ def _cli_export(run_id: str, fmt: str, store: RunStore, outfile: Path | None = N
     outfile = outfile or Path(f"{run_id}.{fmt}")
     # Absolute: the default lands in the current directory, and "Exporting HTML
     # -> 01K….html" left people hunting for a file they could not place.
-    typer.echo(f"  Exporting {fmt.upper()} {_console_symbols()[0]} {outfile.resolve()}")
+    typer.echo(f"  Exporting {fmt.upper()} {console_symbols()[0]} {outfile.resolve()}")
 
     # `--output reports/run.md` should work without a prior mkdir.
     try:
@@ -444,7 +445,7 @@ def cmd_list(
     if not runs:
         typer.echo("No runs found.")
         return
-    _, tick, _, spin = _console_symbols()
+    _, tick, _, spin = console_symbols()
     for run in runs:
         grade = run.final_grade.value if run.final_grade else "-"
         status = tick if run.finished_at else spin
@@ -472,7 +473,7 @@ def cmd_open(
     from epochix.server.app import create_app
 
     _app = create_app(settings=settings)
-    typer.echo(f"Opening run {run_id} …")
+    typer.echo(console_safe(f"Opening run {run_id} …"))
     webbrowser.open(f"http://127.0.0.1:{port}/v/{run_id}")
     uvicorn.run(_app, host="127.0.0.1", port=port, log_level="warning")
 
@@ -571,7 +572,7 @@ def cmd_demo(
         raise typer.Exit(1)
 
     typer.secho(
-        f"▶ Running bundled demo: {fname}",
+        console_safe(f"▶ Running bundled demo: {fname}"),
         fg=typer.colors.CYAN,
     )
     # Reuse the regular `run` path so behaviour matches what users see with
@@ -592,20 +593,6 @@ def cmd_demo(
         name=f"Demo · {fname}",
         log_level=log_level,
     )
-
-
-def _console_symbols() -> tuple[str, str, str, str]:
-    """(arrow, tick, cross, spinner) — ASCII fallbacks on legacy consoles.
-
-    A Windows console still defaults to cp1252, which cannot encode "→" or
-    "✓"; printing them raises UnicodeEncodeError and kills the command.
-    """
-    encoding = getattr(sys.stdout, "encoding", None) or "ascii"
-    try:
-        "→✓✗⟳".encode(encoding)
-    except (LookupError, UnicodeEncodeError):
-        return "->", "OK", "!", "~"
-    return "→", "✓", "✗", "⟳"
 
 
 @app.command("check")
@@ -664,7 +651,7 @@ def cmd_check(
 
     task = classify_task(seen_keys)
     arch = parse_architecture(lines)
-    arrow, tick, cross, _ = _console_symbols()
+    arrow, tick, cross, _ = console_symbols()
 
     typer.echo("")
     typer.echo(f"  file          {log_file}")
@@ -819,6 +806,7 @@ def main_entry() -> None:
     subcommands, we route any invocation whose first positional token is not a
     known subcommand to the default ``run`` command.
     """
+    harden_streams()
     argv = sys.argv[1:]
 
     # No args, or a top-level help flag → let Typer show the group help.
