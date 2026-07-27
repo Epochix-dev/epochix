@@ -58,6 +58,11 @@ export async function activate(ctx: vscode.ExtensionContext): Promise<void> {
   if (
     !_sidecar &&
     cfg.useSidecar !== "never" &&
+    // In an untrusted folder there is no sidecar BY DESIGN, so "install the
+    // package" is wrong — it is usually already installed. Saying it here also
+    // burned the one-shot flag, so the user never saw the real hint after
+    // trusting the folder.
+    vscode.workspace.isTrusted &&
     !ctx.globalState.get<boolean>(NAG_KEY)
   ) {
     const guide = "Install guide";
@@ -73,7 +78,7 @@ export async function activate(ctx: vscode.ExtensionContext): Promise<void> {
       .then(async (choice) => {
         if (choice === guide) {
           void vscode.env.openExternal(
-            vscode.Uri.parse("https://github.com/epochix-dev/epochix#install"),
+            vscode.Uri.parse("https://epochix.dev/quickstart/"),
           );
         } else if (choice === standalone) {
           await vscode.workspace

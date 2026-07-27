@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.5.38] — 2026-07-27
+
+Follow-up from re-running the cold install test against 0.5.37.
+
+### Fixed
+
+- **The install hint fired in untrusted folders, where it was wrong.** With
+  0.5.37 correctly declining to start the sidecar in an untrusted folder, the
+  "install the `epochix` Python package" notification appeared for users who
+  already had it installed — the reason was trust, not absence. Worse, it set
+  the one-shot dismissal flag, so the genuinely useful hint would never appear
+  again after the folder was trusted. It is now skipped entirely while a folder
+  is untrusted.
+- The hint's "Install guide" button pointed at a GitHub README anchor; it now
+  opens <https://epochix.dev/quickstart/>.
+
+---
+
 ## [0.5.37] — 2026-07-27
 
 Found by installing the published extension on a clean machine and clicking the
