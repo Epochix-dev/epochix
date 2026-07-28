@@ -89,7 +89,8 @@ function _diagnose(s) {
 
   const overfit        = _diagnoseOverfit(trainLoss, valLoss, acc, valAcc);
   const convergence    = _diagnoseConvergence(valLoss.length >= 2 ? valLoss : trainLoss,
-                                              valLoss.length >= 2 ? 'val loss' : 'train loss');
+                                              valLoss.length >= 2 ? 'val loss' : 'train loss',
+                                              trainLoss);
   const best           = _diagnoseBest(valLoss, valAcc, trainLoss, acc);
   const stability      = _diagnoseStability(trainLoss.length >= 3 ? trainLoss : valLoss);
   const generalisation = _diagnoseGeneralisation(valAcc, acc);
@@ -104,7 +105,12 @@ function _diagnoseOverfit(trainLoss, valLoss, acc, valAcc) {
   if (trainLoss.length >= 1 && valLoss.length >= 1) {
     const tl = _last(trainLoss), vl = _last(valLoss);
     const gap = vl - tl;
-    const rel = gap / Math.max(tl, 1e-6);
+    // Dividing by the training loss alone explodes as the model fits: a run at
+    // train 0.01 / val 0.02 is excellent, yet scores 100% and reads
+    // "memorises". Normalise by the LEVEL of the two losses instead, so the
+    // ratio stays meaningful as both approach zero.
+    const level = Math.max((Math.abs(tl) + Math.abs(vl)) / 2, 1e-6);
+    const rel = gap / level;
     let status = 'good', verdict = 'Generalises well — barely any train/val gap.';
     if (rel > 0.45)      { status = 'bad';  verdict = 'Overfitting — it memorises training data more than it learns.'; }
     else if (rel > 0.18) { status = 'warn'; verdict = 'Mild overfitting starting to show.'; }
@@ -113,7 +119,7 @@ function _diagnoseOverfit(trainLoss, valLoss, acc, valAcc) {
       status,
       big: (gap >= 0 ? '+' : '') + gap.toFixed(3),
       plain: verdict,
-      tech: `val−train loss = ${gap.toFixed(3)} (${(rel * 100).toFixed(0)}% of train loss)`,
+      tech: `val−train loss = ${gap.toFixed(3)} (${(rel * 100).toFixed(0)}% of the loss level)`,
     };
   }
   if (acc.length >= 1 && valAcc.length >= 1) {
@@ -137,7 +143,7 @@ function _diagnoseOverfit(trainLoss, valLoss, acc, valAcc) {
   };
 }
 
-function _diagnoseConvergence(series, name) {
+function _diagnoseConvergence(series, name, trainLoss = []) {
   if (series.length < 2) {
     return { label: 'Convergence', status: 'neutral', big: '—',
              plain: 'Not enough epochs yet.', tech: `${name}: <2 points` };
@@ -152,7 +158,18 @@ function _diagnoseConvergence(series, name) {
   // Loss: negative slope = improving.
   let status, verdict, head;
   if (relSlope < -0.01)      { status = 'good';    head = 'Improving';  verdict = `${name} is still dropping — more training will likely help.`; }
-  else if (relSlope > 0.008) { status = 'bad';     head = 'Diverging';  verdict = `${name} is rising — try a lower learning rate.`; }
+  else if (relSlope > 0.008) {
+    status = 'bad'; head = 'Diverging';
+    // A rising VALIDATION loss while training loss still falls is overfitting,
+    // and the fix is to stop earlier — not to lower the learning rate. Only
+    // when BOTH are rising is the step size the likely culprit. Telling every
+    // overfitting run to lower its LR was advice for the wrong problem.
+    const trainTail = trainLoss.slice(-Math.min(5, trainLoss.length));
+    const trainRising = trainTail.length >= 2 && _slope(trainTail) > 0;
+    verdict = trainRising
+      ? `${name} and training loss are both rising — the step size is likely too large.`
+      : `${name} is rising while training loss falls — that is overfitting; the best checkpoint is behind you.`;
+  }
   else                       { status = 'warn';    head = 'Plateaued';  verdict = `${name} has flattened — near its best, consider stopping.`; }
   return {
     label: 'Convergence', status, big: head,
@@ -192,16 +209,29 @@ function _diagnoseStability(series) {
     return { label: 'Stability', status: 'neutral', big: '—',
              plain: 'Needs a few more epochs.', tech: 'σ of Δ: n/a' };
   }
-  const deltas = [];
-  for (let i = 1; i < series.length; i++) deltas.push(series[i].value - series[i - 1].value);
-  const sigma = _std(deltas);
+  // Measure noise AROUND the trend, not the trend itself. The first differences
+  // of a healthy run are dominated by the loss legitimately falling, so σ(Δ)
+  // scores a textbook-clean run as unstable — measurably WORSE than a genuinely
+  // noisy one (47% vs 46% on our own demo). Second differences cancel any
+  // constant slope, leaving the epoch-to-epoch wobble; /√2 undoes the variance
+  // doubling that differencing twice introduces.
+  const d1 = [];
+  for (let i = 1; i < series.length; i++) d1.push(series[i].value - series[i - 1].value);
+  if (d1.length < 2) {
+    return { label: 'Stability', status: 'neutral', big: '—',
+             plain: 'Needs a few more epochs.', tech: 'detrended σ: n/a' };
+  }
+  const d2 = [];
+  for (let i = 1; i < d1.length; i++) d2.push(d1[i] - d1[i - 1]);
+  const sigma = _std(d2) / Math.SQRT2;
   const scale = Math.max(_mean(series.map((p) => Math.abs(p.value))), 1e-6);
   const rel = sigma / scale;
   let status = 'good', verdict = 'Smooth, steady training — no instability.';
   if (rel > 0.5)      { status = 'bad';  verdict = 'Noisy / unstable — loss bounces between epochs.'; }
   else if (rel > 0.2) { status = 'warn'; verdict = 'Some epoch-to-epoch jitter.'; }
   return { label: 'Stability', status, big: sigma.toFixed(3),
-           plain: verdict, tech: `σ(Δloss) = ${sigma.toFixed(4)} (${(rel * 100).toFixed(0)}% of level)` };
+           plain: verdict,
+           tech: `detrended σ = ${sigma.toFixed(4)} (${(rel * 100).toFixed(0)}% of level)` };
 }
 
 function _diagnoseGeneralisation(valAcc, acc) {
@@ -222,7 +252,10 @@ function _diagnoseGeneralisation(valAcc, acc) {
 }
 
 function _healthScore({ overfit, convergence, stability, generalisation }) {
-  // Combine sub-scores into 0–100.
+  // A weighted blend of the four verdicts above — NOT a measured quantity, and
+  // it has no meaning outside this dashboard. The weights are a judgement call.
+  // It is labelled as such in the UI so a reader does not mistake a round
+  // number for an instrument reading.
   const sc = { good: 1, warn: 0.55, bad: 0.2, neutral: 0.6 };
   const w  = { overfit: 0.3, convergence: 0.2, stability: 0.2, generalisation: 0.3 };
   const raw =
@@ -274,6 +307,7 @@ function _gaugeCard(h) {
         </div>
       </div>
       <div class="diag-plain">${_esc(h.verdict)}</div>
+      <div class="diag-tech">summary of the four checks above — not a measured quantity</div>
     </div>`;
 }
 

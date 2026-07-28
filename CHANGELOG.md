@@ -7,6 +7,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.5.44] — 2026-07-27
+
+An audit of the diagnostics formulas, prompted by a fair question: are these
+numbers actually sound? Four were not.
+
+### Fixed
+
+- **The stability metric measured the learning trend, not instability.** It took
+  σ of the first differences of the loss — but in a healthy run those
+  differences are dominated by the loss legitimately falling. On our own demo it
+  scored a textbook-clean run at 47% ("noisy"), which is *worse* than a
+  deliberately noisy version of the same run at 46%. The metric was
+  **non-monotonic in the thing it claimed to measure.** It now differences twice
+  to cancel the trend (÷√2 for the variance that differencing doubles), which
+  puts the clean run at 12% and the noisy one at 38% — the right way round.
+
+- **The overfitting ratio exploded as the model fitted.** Dividing the
+  train/val gap by the *training loss* means a run at train 0.01 / val 0.02 —
+  an excellent result — scores 100% and reads "it memorises training data".
+  The gap is now normalised by the mean level of the two losses, so the ratio
+  stays meaningful as both approach zero.
+
+- **"Diverging — try a lower learning rate" was usually the wrong advice.** A
+  rising *validation* loss while training loss still falls is overfitting, and
+  the fix is to stop earlier, not to change the step size. Only when both are
+  rising is the learning rate the likely cause. The two cases are now
+  distinguished and told apart in the text.
+
+- **The health score is a composite, not a measurement.** It is a weighted blend
+  of the four verdicts with weights that are a judgement call, and it looked
+  like an instrument reading. It now says so on the card.
+
+---
+
 ## [0.5.43] — 2026-07-27
 
 ### Added
