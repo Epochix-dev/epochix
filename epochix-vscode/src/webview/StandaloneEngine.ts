@@ -142,16 +142,18 @@ export class StandaloneEngine {
 
     // A model summary is printed once, at the top. Scan a bounded window for
     // one and stop as soon as it is found.
-    if (!this._architecture.length && this._archScan.length < _ARCH_SCAN_LINES) {
+    if (this._archScan.length < _ARCH_SCAN_LINES) {
       for (const ln of lines) {
         if (this._archScan.length >= _ARCH_SCAN_LINES) break;
         this._archScan.push(ln);
       }
+      // Keep the LONGEST parse rather than latching on the first success. A
+      // summary arrives one line at a time, so the first successful parse sees
+      // exactly one layer — latching there reported a single-layer model for an
+      // eight-layer network.
       const found = parseArchitecture(this._archScan);
-      if (found.length) {
-        this._architecture = found;
-        this._archScan = [];
-      }
+      if (found.length > this._architecture.length) this._architecture = found;
+      if (this._archScan.length >= _ARCH_SCAN_LINES) this._archScan = [];
     }
 
     for (const line of lines) {

@@ -48,6 +48,7 @@ export interface RunSummaryMsg {
 export type ExtToWeb =
   | {
       type: "init";
+      architecture?: unknown[];
       theme: "light" | "dark";
       locale: string;
       snapshot: StoryFrameMsg[];

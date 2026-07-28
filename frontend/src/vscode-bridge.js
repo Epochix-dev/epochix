@@ -49,7 +49,9 @@ export function startVscodeBridge(applyTheme) {
           live: !msg.hasSidecar,
           connected: true,
           metrics: [],
-          architecture: null,
+          architecture: Array.isArray(msg.architecture) && msg.architecture.length
+            ? msg.architecture
+            : null,
           activations: null,
         });
         for (const f of msg.snapshot ?? []) pushFrame(mapFrame(f));

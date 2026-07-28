@@ -24,6 +24,7 @@ export class DashboardPanel {
   private readonly _panel: vscode.WebviewPanel;
   private _engine: StandaloneEngine | null;
   private _architectureSent = false;
+
   private _disposables: vscode.Disposable[] = [];
   private _sidecar: ServerManager | null;
   private readonly _locale: string;
@@ -232,6 +233,10 @@ export class DashboardPanel {
       snapshot,
       milestones: this._engine?.milestones() ?? [],
       warnings: this._engine?.warnings() ?? [],
+      // Must ride along with init: a separate message posted before the
+      // webview finishes its ready handshake is simply dropped, which is why
+      // the Network State panel stayed empty even once detection worked.
+      architecture: this._engine?.architecture() ?? [],
       hasSidecar,
     });
 

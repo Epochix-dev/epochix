@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.5.40] — 2026-07-27
+
+0.5.39 added architecture detection to the standalone engine and it still did
+not appear. Two bugs downstream of it, both found by running the published
+extension rather than the code.
+
+### Fixed
+
+- **The parse latched on the first layer.** A log is read line by line, so the
+  first successful parse of a model summary sees exactly *one* row — and that
+  result was kept, discarding the seven layers still streaming in. An
+  eight-layer network was reported as a one-layer network. The scan now keeps
+  the longest parse across the whole window instead of stopping at the first
+  success.
+- **The architecture message could arrive before anyone was listening.** It was
+  posted on its own, but the webview only attaches its message handler after
+  the `ready` handshake, so an early post was dropped. It now also rides along
+  in the `init` payload, which is sent in response to `ready`.
+
+---
+
 ## [0.5.39] — 2026-07-27
 
 The demo is the first thing anyone sees, and three separate things were wrong

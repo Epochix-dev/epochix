@@ -167,3 +167,31 @@ suite("Standalone architecture detection", () => {
     assert.strictEqual(layers[0].params_str, "");
   });
 });
+
+
+suite("Architecture arrives one line at a time", () => {
+  test("a summary fed line-by-line yields every layer, not just the first", async () => {
+    // A log is streamed, so the first successful parse sees exactly ONE layer.
+    // Latching there reported a single-layer model for an eight-layer network,
+    // and the panel silently showed a fraction of the truth.
+    const { StandaloneEngine } = await import("../../webview/StandaloneEngine");
+    const ext = vscode.extensions.getExtension(EXT_ID);
+    assert.ok(ext);
+    const fs = await import("fs");
+    const lines = fs
+      .readFileSync(path.join(ext.extensionPath, "media", "demo.log"), "utf-8")
+      .split(/\r?\n/);
+
+    const engine = new StandaloneEngine();
+    for (const line of lines) engine.feed(line + "\n");
+    engine.flush();
+
+    const arch = engine.architecture();
+    assert.ok(
+      arch.length >= 6,
+      `only ${arch.length} layers survived streaming — the parse latched early`,
+    );
+    const total = arch.reduce((sum, l) => sum + l.params, 0);
+    assert.strictEqual(total, 53002, "parameter total does not match the model");
+  });
+});
