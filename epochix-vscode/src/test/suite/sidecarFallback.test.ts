@@ -126,3 +126,44 @@ suite("Sidecar version skew", () => {
     assert.strictEqual(isOlder("0.5.36-beta.1", "0.5.36"), false);
   });
 });
+
+suite("Standalone architecture detection", () => {
+  test("the bundled demo lights up the network panel without Python", async () => {
+    // The demo command's comment always claimed the architecture panel "lights
+    // up", but the standalone engine had no architecture support at all — so
+    // with no Python installed, or in an untrusted folder, it never did.
+    const { parseArchitecture } = await import("../../story/architecture");
+    const ext = vscode.extensions.getExtension(EXT_ID);
+    assert.ok(ext);
+    const fs = await import("fs");
+    const lines = fs
+      .readFileSync(path.join(ext.extensionPath, "media", "demo.log"), "utf-8")
+      .split(/\r?\n/);
+
+    const layers = parseArchitecture(lines);
+    assert.ok(layers.length >= 4, `only ${layers.length} layers parsed`);
+    assert.ok(
+      layers.some((l) => l.params > 0),
+      "every layer reported 0 params — the counts were not read",
+    );
+    assert.ok(
+      layers.some((l) => l.visual_type === "conv"),
+      "no convolutional layer classified",
+    );
+  });
+
+  test("a torch print(model) dump reports unknown counts, not zero", async () => {
+    const { parseArchitecture } = await import("../../story/architecture");
+    const layers = parseArchitecture(
+      [
+        "Sequential(",
+        "  (0): Conv2d(1, 32, kernel_size=(3, 3), stride=(1, 1))",
+        "  (1): Linear(in_features=256, out_features=10, bias=True)",
+        ")",
+      ],
+    );
+    assert.strictEqual(layers.length, 2);
+    // A repr carries no counts; claiming 0 would be false, so it reads empty.
+    assert.strictEqual(layers[0].params_str, "");
+  });
+});

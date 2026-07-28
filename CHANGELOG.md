@@ -7,6 +7,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.5.39] — 2026-07-27
+
+The demo is the first thing anyone sees, and three separate things were wrong
+with it.
+
+### Fixed
+
+- **The standalone engine had no architecture support at all.** The Network
+  State panel read "no architecture to display" for every log, including our
+  own demo — whose first twelve lines are a Keras model summary. The demo
+  command's comment even claimed the panel "lights up". It does now: a new
+  TypeScript parser reads Keras `model.summary()` and torch `print(model)`,
+  and the layers reach the webview over a new `architecture` message.
+
+  A torch repr carries no parameter counts, so those layers report the count as
+  *unknown* rather than as `0`.
+
+- **`Total params: 462,410` was charted as a metric worth 462.** The comma
+  truncated it, and the Keras parser kept its own three-entry skip list that
+  knew nothing about model summaries — so the bundled demo shipped with a
+  fabricated flat series on its chart. Every parser now shares one
+  `NEVER_METRICS` table, so a key filtered in one cannot leak through another.
+
+### Changed
+
+- **A better demo.** The old log had 11 epochs, no learning-rate schedule, and
+  a truncated summary. The new one comes from an actual training run — a small
+  CNN on scikit-learn's `digits`, 1797 real handwritten images — and gives 20
+  epochs, a real cosine LR schedule so the LR chart renders, 8 layers totalling
+  53,002 real parameters, and a final 98.0% validation accuracy. The script
+  that produced it ships alongside as `media/demo_source.py`, so every number
+  is reproducible rather than asserted.
+
+---
+
 ## [0.5.38] — 2026-07-27
 
 Follow-up from re-running the cold install test against 0.5.37.

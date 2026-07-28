@@ -20,6 +20,7 @@ import type { Grade, TaskType } from "../story/grader";
 import { computeGrade } from "../story/grader";
 import { narrate } from "../story/narrator";
 import type { StoryFrameMsg, MilestoneMsg, WarningMsg, RunSummaryMsg } from "./messages";
+import { parseArchitecture, type ArchLayer } from "../story/architecture";
 
 // ── Canonical key normalisation ───────────────────────────────────────────────
 
@@ -86,6 +87,10 @@ interface WarmupLine {
   totalEpochs: number | null;
 }
 
+// A model summary is printed once at the top of a run; scanning further is
+// wasted work and unbounded memory.
+const _ARCH_SCAN_LINES = 200;
+
 export class StandaloneEngine {
   private readonly _parsers: Parser[];
   private _activeParsers: Parser[] | null = null;
@@ -105,6 +110,11 @@ export class StandaloneEngine {
   private _warnings: WarningMsg[] = [];
   private _seenMilestones = new Set<string>();
   private _buffer = "";
+  // Lines kept only long enough to look for a model summary. A summary is
+  // printed once, at the top, so a bounded window is enough and a long run
+  // cannot grow this without limit.
+  private _archScan: string[] = [];
+  private _architecture: ArchLayer[] = [];
 
   constructor(taskHint?: TaskType) {
     this._parsers = [
@@ -129,6 +139,20 @@ export class StandaloneEngine {
     // Process complete lines
     const lines = this._buffer.split(/\r?\n/);
     this._buffer = lines.pop() ?? "";
+
+    // A model summary is printed once, at the top. Scan a bounded window for
+    // one and stop as soon as it is found.
+    if (!this._architecture.length && this._archScan.length < _ARCH_SCAN_LINES) {
+      for (const ln of lines) {
+        if (this._archScan.length >= _ARCH_SCAN_LINES) break;
+        this._archScan.push(ln);
+      }
+      const found = parseArchitecture(this._archScan);
+      if (found.length) {
+        this._architecture = found;
+        this._archScan = [];
+      }
+    }
 
     for (const line of lines) {
       if (this._activeParsers === null) {
@@ -186,6 +210,11 @@ export class StandaloneEngine {
       finalGrade: last.grade,
       storySummary: last.narrative,
     };
+  }
+
+  /** Layers detected from a model summary, or an empty list. */
+  architecture(): ArchLayer[] {
+    return this._architecture;
   }
 
   snapshot(): StoryFrameMsg[] {

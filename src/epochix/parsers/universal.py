@@ -5,6 +5,7 @@ import json
 import re
 
 from epochix.models import RawMetric
+from epochix.parsers._never_metrics import NEVER_METRICS
 from epochix.parsers.base import ParserContext
 from epochix.parsers.registry import register_parser
 
@@ -29,37 +30,8 @@ _STEP_KEYS = frozenset({"step", "iter", "iteration", "batch"})
 # arguments in a torch `print(model)` dump — following our own `epochix check`
 # advice to print the model used to inject kernel_size/in_features/... into the
 # dashboard as a fake "custom" metric series next to real accuracy.
-_SKIP_KEYS = frozenset(
+_NN_REPR_KWARGS = frozenset(
     {
-        "pid",
-        "port",
-        "seed",
-        "rank",
-        "world_size",
-        "node",
-        # Run configuration, not performance. These are constants for the whole
-        # run, so charting them produced a flat "custom" series sitting next to
-        # real accuracy as though it were something the model was doing.
-        "batch_size",
-        "batchsize",
-        "bs",
-        "num_workers",
-        "workers",
-        "img_size",
-        "imgsz",
-        "epochs",
-        "num_epochs",
-        "max_epochs",
-        "total_epochs",
-        "gpus",
-        "devices",
-        "precision",
-        "accumulate_grad_batches",
-        "log_every_n_steps",
-        "save_top_k",
-        "patience",
-        "verbose",
-        # nn.Module repr kwargs
         "kernel_size",
         "stride",
         "padding",
@@ -90,6 +62,10 @@ _SKIP_KEYS = frozenset(
         "count_include_pad",
     }
 )
+
+# Run config, model-summary totals and units come from the shared table so the
+# parsers cannot drift apart again.
+_SKIP_KEYS = NEVER_METRICS | _NN_REPR_KWARGS
 
 # tqdm / download progress bars ("Downloading: 100%|####| 26.4M/26.4M [00:03…]")
 # yielded bogus "Downloading=100" and "00=3" metrics. Whole line is noise.

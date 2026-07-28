@@ -129,3 +129,13 @@ def test_parameterless_layers_are_a_real_zero() -> None:
     for layer in parse_architecture(repr_txt.splitlines()):
         assert layer.params == 0
         assert layer.params_str == "0", "a genuine zero must not read as unknown"
+
+
+def test_the_bundled_demo_log_has_a_clean_architecture() -> None:
+    """The demo is the first thing a newcomer sees; it must light every panel."""
+    from pathlib import Path as _P
+
+    lines = _P("epochix-vscode/media/demo.log").read_text(encoding="utf-8").splitlines()
+    layers = parse_architecture(lines)
+    assert len(layers) >= 4, f"only {len(layers)} layers parsed from the demo"
+    assert sum(layer.params for layer in layers) == 53002, "param total drifted"

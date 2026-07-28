@@ -4,6 +4,7 @@ import contextlib
 import re
 
 from epochix.models import RawMetric
+from epochix.parsers._never_metrics import NEVER_METRICS
 from epochix.parsers.base import ParserContext
 from epochix.parsers.registry import register_parser
 
@@ -15,7 +16,8 @@ _EPOCH_LINE = re.compile(r"^Epoch\s+(\d+)/(\d+)\s*$")
 _METRIC_LINE = re.compile(r"\d{1,10}/\d{1,10}\s+\[=+>?\.*\]")
 _KV_PAIR = re.compile(r"(\w{1,64}):\s*([-+]?\d+(?:\.\d+)?(?:[eE][-+]?\d+)?)")
 
-_SKIP_KEYS = frozenset({"s", "ms", "us"})
+# Shared so a key filtered in one parser cannot leak through another.
+_SKIP_KEYS = NEVER_METRICS
 
 
 @register_parser

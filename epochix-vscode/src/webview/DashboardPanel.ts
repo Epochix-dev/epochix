@@ -23,6 +23,7 @@ export class DashboardPanel {
 
   private readonly _panel: vscode.WebviewPanel;
   private _engine: StandaloneEngine | null;
+  private _architectureSent = false;
   private _disposables: vscode.Disposable[] = [];
   private _sidecar: ServerManager | null;
   private readonly _locale: string;
@@ -149,6 +150,7 @@ export class DashboardPanel {
   feedLines(buffer: string): void {
     if (!this._engine) return;
     const frames = this._engine.feed(buffer);
+    this._postArchitecture();
     for (const frame of frames) {
       this._post({ type: "frame", frame });
       StatusBar.update(frame);
@@ -254,6 +256,14 @@ export class DashboardPanel {
       theme: resolveTheme(),
       locale,
     });
+  }
+
+  /** Send the detected model layers once, when they first appear. */
+  private _postArchitecture(): void {
+    const arch = this._engine?.architecture() ?? [];
+    if (!arch.length || this._architectureSent) return;
+    this._architectureSent = true;
+    this._post({ type: "architecture", architecture: arch });
   }
 
   private _parseLogFile(filePath: string): void {

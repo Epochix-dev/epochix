@@ -60,7 +60,8 @@ export type ExtToWeb =
   | { type: "warning"; warning: WarningMsg }
   | { type: "complete"; run: RunSummaryMsg }
   | { type: "themeChange"; theme: "light" | "dark" }
-  | { type: "installBanner"; visible: boolean };
+  | { type: "installBanner"; visible: boolean }
+  | { type: "architecture"; architecture: unknown[] };
 
 // ── WebView → Extension ───────────────────────────────────────────────────────
 

@@ -63,6 +63,14 @@ export function startVscodeBridge(applyTheme) {
         if (msg.frame) pushFrame(mapFrame(msg.frame));
         break;
 
+      // Standalone mode detects the model summary itself; without this the
+      // Network State panel stayed empty even for logs that carry one.
+      case 'architecture':
+        if (Array.isArray(msg.architecture) && msg.architecture.length) {
+          store.set({ architecture: msg.architecture });
+        }
+        break;
+
       case 'milestone':
         if (msg.milestone) pushMilestone(msg.milestone);
         break;
