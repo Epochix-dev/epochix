@@ -29,14 +29,17 @@ from epochix.story_engine.warnings import WarningDetector
 # mAP50, bleu instead of perplexity — still produces frames instead of matching
 # nothing. The first entry doubles as the default when none has been seen yet.
 _PREFERRED_KEYS_FOR_TASK: dict[TaskType, tuple[str, ...]] = {
-    TaskType.CLASSIFICATION: ("val_accuracy", "accuracy"),
-    TaskType.DETECTION: ("mAP50", "mAP"),
-    TaskType.NLP: ("perplexity", "bleu", "rouge"),
+    # A metric only reaches the story if it is listed here. Recognising an
+    # alias is not enough: MAPE parsed correctly yet the run still graded on
+    # train_loss, so an improving and a worsening run scored the same.
+    TaskType.CLASSIFICATION: ("val_accuracy", "accuracy", "AUC", "PR_AUC", "f1", "top5_accuracy"),
+    TaskType.DETECTION: ("mAP50", "mAP", "mAP75"),
+    TaskType.NLP: ("perplexity", "bleu", "rouge", "WER", "CER", "BPC"),
     TaskType.BIOMETRIC: ("EER", "TAR"),
     TaskType.GAZE: ("MAE", "RMSE"),
-    TaskType.SEGMENTATION: ("mIoU", "IoU", "Dice"),
-    TaskType.REGRESSION: ("MAE", "RMSE", "MSE"),
-    TaskType.GENERATIVE: ("fid", "is_score"),
+    TaskType.SEGMENTATION: ("mIoU", "IoU", "Dice", "pixel_accuracy"),
+    TaskType.REGRESSION: ("MAE", "RMSE", "MSE", "R2", "MAPE"),
+    TaskType.GENERATIVE: ("fid", "is_score", "PSNR", "SSIM", "LPIPS"),
     TaskType.CUSTOM: ("val_loss", "train_loss"),
 }
 
@@ -207,9 +210,16 @@ class StoryEngine:
         # us — infer from the metric NAME so a val_loss is correctly treated as
         # lower-is-better for phase/progress/grade.
         task = self._effective_task()
-        if task is TaskType.CUSTOM:
-            name_dir = metric_lower_better(event.canonical_key or self.primary_metric)
-            lower_better = name_dir if name_dir is not None else False
+        # Direction belongs to the METRIC, not the task. R2 lives in the
+        # regression task, whose other metrics are errors, so the task-level
+        # answer said "lower is better" and an improving R2 run graded WORSE
+        # than a worsening one. Trust the metric name whenever it is known and
+        # fall back to the task only when it is not.
+        name_dir = metric_lower_better(event.canonical_key or self.primary_metric)
+        if name_dir is not None:
+            lower_better = name_dir
+        elif task is TaskType.CUSTOM:
+            lower_better = False
         else:
             lower_better = is_lower_better(task, self.grade_config)
 
@@ -241,7 +251,17 @@ class StoryEngine:
         # fixed grade), so score them on improvement from baseline. Otherwise a
         # healthy, decreasing loss was graded against accuracy thresholds and
         # came out F — contradicting its own "trend is positive" narrative.
-        if task is TaskType.CUSTOM and self._baseline is not None:
+        # The absolute thresholds belong to a task's CANONICAL metric — the
+        # first preferred key. A run whose primary metric is a secondary one
+        # (PSNR inside "generative", whose bands are built for FID; WER inside
+        # "nlp", built for perplexity) would be scored against a scale that has
+        # nothing to do with it: PSNR graded A+ whether it improved or got
+        # worse. And R2 inside "regression" was graded as if lower were better,
+        # so an improving run scored WORSE than a worsening one. Where the
+        # scale does not apply, grade on improvement from baseline instead.
+        canonical_key = _PREFERRED_KEYS_FOR_TASK.get(task, ())
+        off_scale = bool(canonical_key) and primary_key != canonical_key[0]
+        if (task is TaskType.CUSTOM or off_scale) and self._baseline is not None:
             grade = grade_by_trajectory(self._baseline, primary_value, lower_better)
         else:
             grade = compute_grade(

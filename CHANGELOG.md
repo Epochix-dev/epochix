@@ -7,6 +7,39 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.5.47] — 2026-07-27
+
+0.5.46 recognised twenty new metrics. It turned out only one of them could
+actually affect anything.
+
+### Fixed
+
+- **A recognised metric could not reach the grade.** Only segmentation was
+  wired into task detection and primary-metric selection, so the other
+  nineteen parsed, charted, and then had no effect. A run whose MAPE improved
+  from 0.31 to 0.08 and one whose MAPE *worsened* from 0.08 to 0.31 both came
+  back `task=custom, primary=val_loss, grade=D` — indistinguishable. AUC, R²,
+  MAPE, PSNR, SSIM, WER, CER, BPC, top-5 accuracy and mAP75 now have task
+  signals and can be a run's primary metric.
+
+- **R² was graded backwards.** Direction was decided per *task*, and R² lives
+  in `regression` alongside error metrics, so the task-level answer said
+  "lower is better" and an improving run scored *worse* than a worsening one.
+  Direction is a property of the metric, so the metric's own answer now wins
+  and the task is only the fallback.
+
+- **PSNR and WER were graded against a scale built for something else.** The
+  `generative` bands are calibrated for FID and the `nlp` bands for
+  perplexity, so both graded A+ whichever way they moved. A run whose primary
+  metric is not its task's canonical one is now graded on improvement from
+  baseline instead of against thresholds that do not apply to it.
+
+Ten metrics are covered by a new test that runs each one improving *and*
+worsening and requires the grades to differ in the right direction — the check
+that exposed all three faults.
+
+---
+
 ## [0.5.46] — 2026-07-27
 
 Coverage, measured and then closed. 22 of 23 metrics that appear routinely in

@@ -82,7 +82,11 @@ function detectTask(metrics: readonly RawMetric[]): TaskType {
   // keys too, but IoU/Dice decide what it actually is.
   if (keys.has("iou") || keys.has("miou") || keys.has("dice")) return "segmentation";
   if (keys.has("map50") || keys.has("map")) return "detection";
-  if (keys.has("perplexity") || keys.has("ppl")) return "nlp";
+  if (keys.has("psnr") || keys.has("ssim") || keys.has("lpips")) return "generative";
+  if (keys.has("perplexity") || keys.has("ppl") || keys.has("wer") || keys.has("cer"))
+    return "nlp";
+  if (keys.has("r2") || keys.has("mape")) return "regression";
+  if (keys.has("auc") || keys.has("pr_auc")) return "classification";
   if (keys.has("eer") || keys.has("equal_error_rate")) return "biometric";
   if (keys.has("mae") && !keys.has("val_accuracy")) return "gaze";
   return "classification";
@@ -93,13 +97,14 @@ function detectTask(metrics: readonly RawMetric[]): TaskType {
 // segmentation run may log IoU, mIoU or Dice, and demanding exactly "mIoU"
 // produced ZERO frames for a log that only had IoU.
 const PREFERRED_KEYS: Partial<Record<TaskType, string[]>> = {
-  segmentation: ["mIoU", "IoU", "Dice"],
-  detection: ["mAP50", "mAP"],
-  nlp: ["perplexity"],
+  segmentation: ["mIoU", "IoU", "Dice", "pixel_accuracy"],
+  detection: ["mAP50", "mAP", "mAP75"],
+  nlp: ["perplexity", "WER", "CER", "BPC"],
   biometric: ["EER"],
   gaze: ["MAE", "RMSE"],
-  regression: ["MAE", "RMSE"],
-  classification: ["val_accuracy", "accuracy"],
+  regression: ["MAE", "RMSE", "R2", "MAPE"],
+  classification: ["val_accuracy", "accuracy", "AUC", "PR_AUC", "top5_accuracy"],
+  generative: ["fid", "PSNR", "SSIM", "LPIPS"],
 };
 
 /** First preferred key this run actually logged, else the task default. */

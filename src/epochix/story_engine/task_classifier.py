@@ -9,13 +9,18 @@ _TASK_SIGNALS: list[tuple[frozenset[str], TaskType]] = [
     # keys too, but IoU/Dice are the decisive signal for what it actually is.
     (frozenset({"mIoU", "IoU", "Dice", "pixel_accuracy"}), TaskType.SEGMENTATION),
     (frozenset({"mAP", "mAP50", "box_loss", "cls_loss"}), TaskType.DETECTION),
-    (frozenset({"perplexity", "bleu", "rouge"}), TaskType.NLP),
+    (frozenset({"perplexity", "bleu", "rouge", "WER", "CER", "BPC"}), TaskType.NLP),
+    # Image quality metrics: a restoration/generation run, not a classifier.
+    (frozenset({"PSNR", "SSIM", "LPIPS"}), TaskType.GENERATIVE),
     (frozenset({"fid", "is_score"}), TaskType.GENERATIVE),
     (
-        frozenset({"MAE", "RMSE", "MSE"}),
+        frozenset({"MAE", "RMSE", "MSE", "R2", "MAPE"}),
         TaskType.REGRESSION,
     ),  # any error metric → regression / gaze
-    (frozenset({"accuracy", "val_accuracy"}), TaskType.CLASSIFICATION),
+    (
+        frozenset({"accuracy", "val_accuracy", "AUC", "PR_AUC", "top5_accuracy"}),
+        TaskType.CLASSIFICATION,
+    ),
 ]
 
 
