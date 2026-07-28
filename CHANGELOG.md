@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.5.49] — 2026-07-27
+
+### Fixed
+
+- **0.5.48 turned the type-check job red.** `mypy --strict` passed locally
+  because Pillow was installed there, but CI type-checks with `--extra dev`
+  only, where the optional `gif` dependency is absent and the `PIL` import
+  cannot resolve. Added the same `ignore_missing_imports` override the other
+  optional integrations already use.
+
+  Verified by reproducing CI's environment exactly — syncing *without* the
+  extra — rather than trusting a local pass.
+
+---
+
 ## [0.5.48] — 2026-07-27
 
 ### Added

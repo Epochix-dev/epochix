@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "epochix"
-version = "0.5.48"
+version = "0.5.49"
 description = "Turn ML training logs into a plain-English story with a letter grade — a live animated dashboard, no code changes."
 authors = [{ name = "Epochix Team" }]
 license = "Apache-2.0"
@@ -169,7 +169,9 @@ warn_unused_configs = true
 # Optional training-framework deps: not installed in the typecheck env (and
 # unstubbed anyway). The integrations import them lazily and duck-type them.
 [[tool.mypy.overrides]]
-module = ["lightning.*", "pytorch_lightning.*", "transformers.*"]
+# PIL joins them: the `gif` extra is optional, so CI's type-check
+# environment has no Pillow and mypy cannot resolve the import.
+module = ["lightning.*", "pytorch_lightning.*", "transformers.*", "PIL.*"]
 ignore_missing_imports = true
 
 # IPython.display.display/IFrame are untyped, so calling them from strict code
