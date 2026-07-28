@@ -1,0 +1,1 @@
+{a} and {b} finished within {gap} of each other ({metric}), which is no larger than the epoch-to-epoch movement in either run. On this evidence there is no meaningful difference between them.

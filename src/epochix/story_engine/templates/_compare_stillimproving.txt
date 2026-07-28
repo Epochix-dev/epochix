@@ -1,0 +1,1 @@
+{winner} was still improving when it stopped, so its result is probably not its ceiling.

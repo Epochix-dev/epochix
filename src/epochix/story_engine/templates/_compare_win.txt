@@ -1,0 +1,1 @@
+{winner} finished ahead of {loser}: {win_value} against {lose_value} ({metric}).

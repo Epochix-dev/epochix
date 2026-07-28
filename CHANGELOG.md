@@ -7,6 +7,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.5.43] — 2026-07-27
+
+### Added
+
+- **Comparison now explains itself.** Overlaying two curves is what every tool
+  does; saying what the overlay *means* is the part that was missing. `compare`
+  and `GET /api/compare` now return a narrative built from facts the engine
+  already tracks:
+
+  > lower-lr finished ahead of baseline: 0.8970 against 0.8460 (val_accuracy).
+  > baseline peaked at 0.8650 on epoch 7 and ended worse, at 0.8460. Had it
+  > stopped at its best the gap would have been 0.0320 rather than 0.0510.
+  > lower-lr was still improving when it stopped, so its result is probably not
+  > its ceiling.
+
+  Localised to Persian and French, with a test asserting every translation
+  keeps the same placeholders — a locale that drops one would otherwise fail
+  silently while English passed.
+
+  Three honesty rules are enforced by tests rather than by convention:
+
+  - Runs measured on **different primary metrics are refused**, not compared.
+  - A gap **no larger than the runs' own epoch-to-epoch movement** is reported
+    as no meaningful difference. Two seeds of one config must not produce a
+    winner.
+  - Nothing claims causation. It reports what the curves did; it does not blame
+    a hyperparameter for it.
+
+  Early frames that predate task detection are dropped from a trajectory, so a
+  comparison can never join a loss to an accuracy — the 0.5.30 lesson applied
+  to a second surface.
+
+---
+
 ## [0.5.42] — 2026-07-27
 
 "Diagnostics appear once metrics arrive…" — they never did.

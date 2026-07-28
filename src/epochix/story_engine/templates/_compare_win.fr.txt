@@ -1,0 +1,1 @@
+{winner} termine devant {loser} : {win_value} contre {lose_value} ({metric}).

@@ -1,0 +1,1 @@
+{winner} از {loser} جلو زد: {win_value} در برابر {lose_value} ({metric}).

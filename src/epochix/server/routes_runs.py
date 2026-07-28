@@ -83,6 +83,9 @@ class CompareRun(BaseModel):
 class CompareResponse(BaseModel):
     runs: list[CompareRun]
     total: int
+    #: Plain-English account of WHY the runs differ. Empty when they cannot be
+    #: compared (different metrics) or have too little data.
+    narrative: str = ""
 
 
 # ------------------------------------------------------------------
@@ -177,7 +180,25 @@ async def compare_runs(
                 metrics=store.get_metric_events(rid),
             )
         )
-    return CompareResponse(runs=out, total=len(out))
+    return CompareResponse(runs=out, total=len(out), narrative=_compare_narrative(out))
+
+
+def _compare_narrative(runs: list[CompareRun]) -> str:
+    """Explain the difference; a failure here must not break the comparison."""
+    from epochix.story_engine.comparison import narrate_comparison, trajectory_from_frames
+
+    trajectories = []
+    for entry in runs:
+        traj = trajectory_from_frames(
+            entry.run.name or entry.run.id,
+            list(entry.frames),
+            grade=entry.run.final_grade.value if entry.run.final_grade else None,
+        )
+        if traj is not None:
+            trajectories.append(traj)
+    if len(trajectories) < 2:
+        return ""
+    return narrate_comparison(trajectories)
 
 
 @router.get("/runs/{run_id}", response_model=Run, dependencies=[Depends(require_auth)])

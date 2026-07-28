@@ -1,0 +1,1 @@
+{loser} a culminé à {best} à l'époque {best_epoch} puis a fini moins bien, à {lose_value}. En s'arrêtant à son meilleur, l'écart aurait été de {recovered} au lieu de {gap}.

@@ -1,0 +1,1 @@
+{loser} peaked at {best} on epoch {best_epoch} and ended worse, at {lose_value}. Had it stopped at its best the gap would have been {recovered} rather than {gap}.

@@ -19,6 +19,9 @@ class RunDiff:
     run_b: Run
     grade_delta: str = ""
     summary: str = ""
+    #: Plain-English account of WHY the runs differ — the part a curve overlay
+    #: cannot tell you. Empty when the runs have too little data to compare.
+    narrative: str = ""
     better: str = ""  # "a", "b", or "tie"
     metric_diffs: dict[str, tuple[float, float]] = field(default_factory=dict)
 
@@ -100,7 +103,32 @@ def compare(
         grade_delta=grade_delta,
         summary=summary,
         better=better,
+        narrative=_comparison_narrative(a, b, db=db),
     )
+
+
+def _comparison_narrative(a: Run, b: Run, *, db: str | None) -> str:
+    """Best-effort explanation of the difference; never fatal to `compare`."""
+    from epochix.config import get_settings
+    from epochix.store.sqlite_store import RunStore
+    from epochix.story_engine.comparison import narrate_comparison, trajectory_from_frames
+
+    try:
+        store = RunStore(db_path=db or get_settings().db)
+        trajectories = []
+        for run in (a, b):
+            traj = trajectory_from_frames(
+                run.name or run.id,
+                list(store.get_story_frames(run.id)),
+                grade=run.final_grade.value if run.final_grade else None,
+            )
+            if traj is not None:
+                trajectories.append(traj)
+        if len(trajectories) < 2:
+            return ""
+        return narrate_comparison(trajectories)
+    except Exception:  # noqa: BLE001 - a missing DB must not break comparison
+        return ""
 
 
 def _resolve(run_or_path: Run | str, db: str | None) -> Run:
