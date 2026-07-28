@@ -5,6 +5,9 @@ from epochix.enums import TaskType
 # Keys that strongly imply a task type
 _TASK_SIGNALS: list[tuple[frozenset[str], TaskType]] = [
     (frozenset({"EER", "TAR", "FAR", "TAR_at_FAR_0_001"}), TaskType.BIOMETRIC),
+    # Segmentation before detection: a segmentation run often logs mAP-style
+    # keys too, but IoU/Dice are the decisive signal for what it actually is.
+    (frozenset({"mIoU", "IoU", "Dice", "pixel_accuracy"}), TaskType.SEGMENTATION),
     (frozenset({"mAP", "mAP50", "box_loss", "cls_loss"}), TaskType.DETECTION),
     (frozenset({"perplexity", "bleu", "rouge"}), TaskType.NLP),
     (frozenset({"fid", "is_score"}), TaskType.GENERATIVE),

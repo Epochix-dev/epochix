@@ -1,0 +1,2 @@
+Époque {epoch} : les formes émergent. Le recouvrement atteint {value} ({delta} sur cette époque).
+Les masques s'alignent — IoU {value} à l'époque {epoch}, évolution {delta}.

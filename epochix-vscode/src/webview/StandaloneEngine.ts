@@ -25,6 +25,11 @@ import { parseArchitecture, type ArchLayer } from "../story/architecture";
 // ── Canonical key normalisation ───────────────────────────────────────────────
 
 const CANONICAL_MAP: Record<string, string> = {
+  // Direct entries MUST exist for split metrics that are their own canonical
+  // key. Prefix-stripping runs only when there is no direct hit, and without
+  // these `val_accuracy` strips to `accuracy` and the two series merge again —
+  // the bug 0.5.42 fixed.
+  val_accuracy: "val_accuracy", validation_accuracy: "val_accuracy",
   val_acc: "val_accuracy", val_accy: "val_accuracy",
   // `accuracy` is TRAINING accuracy. Mapping it onto val_accuracy merged two
   // different measurements into one series — the demo produced 40 "val_accuracy"
@@ -37,22 +42,72 @@ const CANONICAL_MAP: Record<string, string> = {
   perplexity: "perplexity", ppl: "perplexity",
   eer: "EER", equal_error_rate: "EER",
   mae: "MAE", mean_absolute_error: "MAE",
+  // Mirrors src/epochix/normalizer/canonical_keys.py. Keep the two in sync:
+  // a key recognised on one side only produces a different task, a different
+  // primary metric and a different grade for the same log.
+  iou: "IoU", jaccard: "IoU", miou: "mIoU", mean_iou: "mIoU",
+  dice: "Dice", dice_coef: "Dice", dice_score: "Dice",
+  auc: "AUC", roc_auc: "AUC", auroc: "AUC",
+  psnr: "PSNR", ssim: "SSIM", lpips: "LPIPS",
+  wer: "WER", cer: "CER", bpc: "BPC",
+  r2: "R2", r2_score: "R2", mape: "MAPE",
+  top5_accuracy: "top5_accuracy", specificity: "specificity",
+  ndcg: "NDCG", mrr: "MRR", grad_norm: "grad_norm",
 };
+
+// Split prefixes, mirroring _SPLIT_PREFIXES in canonical_keys.py. Without this
+// `val_iou` never reached "IoU" on the TypeScript side, so a segmentation run
+// produced ZERO frames in the extension while working fine through Python.
+const SPLIT_PREFIXES = ["val_", "valid_", "validation_", "test_", "eval_", "train_"];
 
 function canonicalise(key: string): string {
   const lo = key.toLowerCase().replace(/-/g, "_");
-  return CANONICAL_MAP[lo] ?? CANONICAL_MAP[key] ?? key;
+  const direct = CANONICAL_MAP[lo] ?? CANONICAL_MAP[key];
+  if (direct !== undefined) return direct;
+  for (const pre of SPLIT_PREFIXES) {
+    if (lo.startsWith(pre)) {
+      const rest = CANONICAL_MAP[lo.slice(pre.length)];
+      if (rest !== undefined) return rest;
+      break;
+    }
+  }
+  return key;
 }
 
 // ── Task detection ────────────────────────────────────────────────────────────
 
 function detectTask(metrics: readonly RawMetric[]): TaskType {
   const keys = new Set(metrics.map((m) => canonicalise(m.key).toLowerCase()));
+  // Segmentation before detection: a segmentation run often logs mAP-style
+  // keys too, but IoU/Dice decide what it actually is.
+  if (keys.has("iou") || keys.has("miou") || keys.has("dice")) return "segmentation";
   if (keys.has("map50") || keys.has("map")) return "detection";
   if (keys.has("perplexity") || keys.has("ppl")) return "nlp";
   if (keys.has("eer") || keys.has("equal_error_rate")) return "biometric";
   if (keys.has("mae") && !keys.has("val_accuracy")) return "gaze";
   return "classification";
+}
+
+// Preference order per task, mirroring _PREFERRED_KEYS_FOR_TASK in
+// story_engine/__init__.py. A single hardcoded name is not enough: a
+// segmentation run may log IoU, mIoU or Dice, and demanding exactly "mIoU"
+// produced ZERO frames for a log that only had IoU.
+const PREFERRED_KEYS: Partial<Record<TaskType, string[]>> = {
+  segmentation: ["mIoU", "IoU", "Dice"],
+  detection: ["mAP50", "mAP"],
+  nlp: ["perplexity"],
+  biometric: ["EER"],
+  gaze: ["MAE", "RMSE"],
+  regression: ["MAE", "RMSE"],
+  classification: ["val_accuracy", "accuracy"],
+};
+
+/** First preferred key this run actually logged, else the task default. */
+function primaryMetricFrom(task: TaskType, seen: ReadonlySet<string>): string {
+  for (const key of PREFERRED_KEYS[task] ?? []) {
+    if (seen.has(key)) return key;
+  }
+  return primaryMetricFor(task);
 }
 
 function primaryMetricFor(task: TaskType): string {
@@ -61,6 +116,7 @@ function primaryMetricFor(task: TaskType): string {
     case "nlp": return "perplexity";
     case "biometric": return "EER";
     case "gaze": return "MAE";
+    case "segmentation": return "mIoU";
     case "regression": return "MAE";
     default: return "val_accuracy";
   }
@@ -320,7 +376,10 @@ export class StandaloneEngine {
     if (!force && this._allMetrics.length < TASK_MIN_METRICS) return [];
 
     this._task = detectTask(this._allMetrics);
-    this._primaryMetric = primaryMetricFor(this._task);
+    this._primaryMetric = primaryMetricFrom(
+      this._task,
+      new Set(this._allMetrics.map((m) => canonicalise(m.key))),
+    );
     this._taskDetected = true;
 
     const out: StoryFrameMsg[] = [];

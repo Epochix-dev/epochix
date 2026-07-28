@@ -1,0 +1,2 @@
+Époque {epoch} : le modèle a saisi la forme des objets. IoU {value} — contours proches, intérieurs pleins.
+Recouvrement de {value} à l'époque {epoch}. Il sait quoi segmenter ; restent les bords.

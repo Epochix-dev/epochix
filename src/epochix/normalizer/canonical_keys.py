@@ -70,6 +70,60 @@ CANONICAL_MAP: dict[str, str] = {
     "epoch_time": "epoch_time",
     "time": "epoch_time",
     "eta": "eta",
+    # ── Segmentation ────────────────────────────────────────────────────────
+    # Previously every one of these fell through to "custom", so a U-Net run
+    # was graded on the generic trajectory scale with no idea what it measured.
+    "iou": "IoU",
+    "mean_iou": "mIoU",
+    "miou": "mIoU",
+    "jaccard": "IoU",
+    "jaccard_index": "IoU",
+    "dice": "Dice",
+    "dice_coef": "Dice",
+    "dice_coefficient": "Dice",
+    "dice_score": "Dice",
+    "pixel_accuracy": "pixel_accuracy",
+    # ── Classification, beyond plain accuracy ───────────────────────────────
+    "auc": "AUC",
+    "roc_auc": "AUC",
+    "auroc": "AUC",
+    "auc_roc": "AUC",
+    "pr_auc": "PR_AUC",
+    "auprc": "PR_AUC",
+    "average_precision": "PR_AUC",
+    "top_1_accuracy": "accuracy",
+    "top5": "top5_accuracy",
+    "top5_accuracy": "top5_accuracy",
+    "top_5_accuracy": "top5_accuracy",
+    "specificity": "specificity",
+    "sensitivity": "recall",
+    "tpr": "recall",
+    # ── Regression ──────────────────────────────────────────────────────────
+    "r2": "R2",
+    "r2_score": "R2",
+    "r_squared": "R2",
+    "mape": "MAPE",
+    "smape": "MAPE",
+    # ── Image restoration / generative ──────────────────────────────────────
+    "psnr": "PSNR",
+    "ssim": "SSIM",
+    "ms_ssim": "SSIM",
+    "lpips": "LPIPS",
+    # ── Speech / sequence ───────────────────────────────────────────────────
+    "wer": "WER",
+    "word_error_rate": "WER",
+    "cer": "CER",
+    "char_error_rate": "CER",
+    "bpc": "BPC",
+    "bits_per_char": "BPC",
+    # ── Ranking ─────────────────────────────────────────────────────────────
+    "ndcg": "NDCG",
+    "mrr": "MRR",
+    # ── Optimisation health (charted, never a primary metric) ───────────────
+    "grad_norm": "grad_norm",
+    "gradient_norm": "grad_norm",
+    "map75": "mAP75",
+    "map_75": "mAP75",
 }
 
 CANONICAL_SET = frozenset(CANONICAL_MAP.values())

@@ -7,6 +7,42 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.5.46] — 2026-07-27
+
+Coverage, measured and then closed. 22 of 23 metrics that appear routinely in
+real logs were unrecognised and fell into the generic `custom` bucket.
+
+### Added
+
+- **Segmentation is a supported task.** IoU, mIoU, Dice, Jaccard and pixel
+  accuracy previously all landed in `custom`, so a U-Net run was graded on the
+  generic trajectory scale with no idea what it measured. It now detects as
+  segmentation, takes mIoU/IoU/Dice as its primary metric, gets its own phase
+  narratives in English, Persian and French, and is graded on a scale
+  appropriate to IoU — where 0.75 is a strong result, not the mediocre one the
+  accuracy bands would have called it.
+
+- **47 canonical metric keys, up from 27** (103 aliases, up from 58): AUC and
+  PR-AUC, top-5 accuracy, specificity, R², MAPE, PSNR, SSIM, LPIPS, WER, CER,
+  BPC, NDCG, MRR, mAP75 and gradient norm.
+
+### Fixed
+
+- **`MAPE` was classified as higher-is-better.** It is an error metric, so a
+  model whose percentage error grew would have been graded as improving. The
+  direction table now matches exact canonical keys before falling back to
+  substring hints, which is what got this one backwards.
+
+- **The extension diverged from Python on split metrics.** `canonicalise` had
+  no prefix handling, so `val_iou` never reached `IoU` and a segmentation log
+  produced **zero frames** in the extension while working correctly through the
+  Python package. It also demanded one exact primary key per task, so a run
+  logging `IoU` but not `mIoU` rendered nothing; it now walks the same
+  preference list Python does. Both sides now agree: 10 frames, grade A−, on
+  the same log.
+
+---
+
 ## [0.5.45] — 2026-07-27
 
 The rest of the audit: the remaining quantitative visuals, checked against what

@@ -1,0 +1,2 @@
+Epoch {epoch}: the masks are still noise — IoU {value}. The model has not found the object boundaries yet.
+First light at epoch {epoch}. Overlap with the truth is {value}; everything is still guesswork.

@@ -1,0 +1,2 @@
+Epoch {epoch}: the model has the shape of the objects. IoU {value} — the boundaries are close, the interiors solid.
+Overlap of {value} at epoch {epoch}. It knows what to segment; the edges are the remaining work.

@@ -3,6 +3,7 @@
  */
 
 export type TaskType =
+  | "segmentation"
   | "classification"
   | "detection"
   | "regression"
@@ -21,6 +22,13 @@ export type Grade =
 type Threshold = [Grade, number];
 
 const DEFAULT_THRESHOLDS: Record<TaskType, Threshold[]> = {
+  // Mirrors _DEFAULT_THRESHOLDS in src/epochix/story_engine/grade.py.
+  // IoU is a stricter scale than accuracy: 0.75 IoU is strong where 0.75
+  // accuracy is mediocre, so the bands sit lower.
+  segmentation: [
+    ["A+", 0.85], ["A", 0.78], ["A-", 0.72], ["B+", 0.66], ["B", 0.60],
+    ["B-", 0.54], ["C+", 0.47], ["C", 0.40], ["C-", 0.32], ["D", 0.20],
+  ],
   classification: [
     ["A+", 0.95], ["A", 0.90], ["A-", 0.87],
     ["B+", 0.82], ["B", 0.75], ["B-", 0.70],

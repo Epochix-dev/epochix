@@ -1,0 +1,2 @@
+Epoch {epoch}: IoU {value}. Only the difficult edges and thin structures are still costing overlap.
+At {value} overlap the masks are accurate — what remains is boundary precision, not recognition.

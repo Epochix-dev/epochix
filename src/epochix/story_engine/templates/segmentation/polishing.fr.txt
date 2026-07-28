@@ -1,0 +1,2 @@
+Époque {epoch} : IoU {value}. La segmentation approche la limite des annotations ; les gains restants seront faibles.
+Le recouvrement s'est stabilisé à {value}. L'erreur restante se concentre là où les annotateurs eux-mêmes divergent.

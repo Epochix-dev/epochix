@@ -1,0 +1,2 @@
+Epoch {epoch}: IoU {value}. The segmentation is close to the annotation limit; further gains will be small.
+Overlap has settled at {value}. Remaining error is concentrated where annotators themselves disagree.

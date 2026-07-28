@@ -27,6 +27,7 @@ class Grade(str, Enum):
 class TaskType(str, Enum):
     CLASSIFICATION = "classification"
     DETECTION = "detection"
+    SEGMENTATION = "segmentation"
     REGRESSION = "regression"
     BIOMETRIC = "biometric"
     GAZE = "gaze"

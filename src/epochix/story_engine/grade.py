@@ -8,6 +8,20 @@ from epochix.story_engine.config_loader import GradeConfig
 # For EER/loss/perplexity: lower = better (threshold = maximum value for that grade).
 # Format: list of (Grade, threshold) sorted from best to worst.
 _DEFAULT_THRESHOLDS: dict[TaskType, list[tuple[Grade, float]]] = {
+    # Segmentation is graded on mIoU/IoU, a stricter scale than accuracy:
+    # an IoU of 0.75 is a strong result where a 0.75 accuracy is mediocre.
+    TaskType.SEGMENTATION: [
+        (Grade.A_PLUS, 0.85),
+        (Grade.A, 0.78),
+        (Grade.A_MINUS, 0.72),
+        (Grade.B_PLUS, 0.66),
+        (Grade.B, 0.60),
+        (Grade.B_MINUS, 0.54),
+        (Grade.C_PLUS, 0.47),
+        (Grade.C, 0.40),
+        (Grade.C_MINUS, 0.32),
+        (Grade.D, 0.20),
+    ],
     TaskType.CLASSIFICATION: [
         (Grade.A_PLUS, 0.95),
         (Grade.A, 0.90),
@@ -164,11 +178,37 @@ _HIGHER_NAME_HINTS = (
 )
 
 
+# Exact canonical keys whose direction substring-matching gets wrong or misses.
+# `mape` matched a higher-is-better hint despite being an ERROR — a model whose
+# percentage error grew would have been graded as improving.
+_DIRECTION_BY_KEY: dict[str, bool] = {
+    # lower is better
+    "mape": True,
+    "smape": True,
+    "wer": True,
+    "cer": True,
+    "bpc": True,
+    "lpips": True,
+    "nll": True,
+    # higher is better
+    "ndcg": False,
+    "mrr": False,
+    "specificity": False,
+    "sensitivity": False,
+    "pixel_accuracy": False,
+    "top5_accuracy": False,
+}
+
+
 def metric_lower_better(metric_name: str | None) -> bool | None:
     """Infer grade direction from a metric name, or ``None`` if unknown."""
     if not metric_name:
         return None
     n = metric_name.lower()
+    # Exact match first: substring hints are a heuristic and get some names
+    # backwards, which silently inverts the grade for that metric.
+    if n in _DIRECTION_BY_KEY:
+        return _DIRECTION_BY_KEY[n]
     if any(h in n for h in _LOWER_NAME_HINTS):
         return True
     if any(h in n for h in _HIGHER_NAME_HINTS):

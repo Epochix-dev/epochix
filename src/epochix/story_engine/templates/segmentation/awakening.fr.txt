@@ -1,0 +1,2 @@
+Époque {epoch} : les masques sont encore du bruit — IoU {value}. Le modèle n'a pas trouvé les contours.
+Premier signal à l'époque {epoch}. Le recouvrement avec la vérité terrain est de {value} ; tout reste approximatif.

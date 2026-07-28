@@ -1,0 +1,2 @@
+Epoch {epoch}: shapes are emerging. Overlap with the ground truth reaches {value} ({delta} this epoch).
+The masks are starting to line up — IoU {value} at epoch {epoch}, moving {delta}.

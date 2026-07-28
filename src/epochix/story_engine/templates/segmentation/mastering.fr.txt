@@ -1,0 +1,2 @@
+Époque {epoch} : IoU {value}. Seuls les bords difficiles et les structures fines coûtent encore du recouvrement.
+À {value} de recouvrement les masques sont justes ; il reste la précision des contours, pas la reconnaissance.

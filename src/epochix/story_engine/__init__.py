@@ -34,6 +34,7 @@ _PREFERRED_KEYS_FOR_TASK: dict[TaskType, tuple[str, ...]] = {
     TaskType.NLP: ("perplexity", "bleu", "rouge"),
     TaskType.BIOMETRIC: ("EER", "TAR"),
     TaskType.GAZE: ("MAE", "RMSE"),
+    TaskType.SEGMENTATION: ("mIoU", "IoU", "Dice"),
     TaskType.REGRESSION: ("MAE", "RMSE", "MSE"),
     TaskType.GENERATIVE: ("fid", "is_score"),
     TaskType.CUSTOM: ("val_loss", "train_loss"),
