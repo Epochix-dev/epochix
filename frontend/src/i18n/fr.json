@@ -1,77 +1,78 @@
 {
   "phases": {
-    "awakening":    "🌱 Éveil",
-    "learning":     "📚 Apprentissage",
-    "understanding":"💡 Compréhension",
-    "mastering":    "⚡ Maîtrise",
-    "polishing":    "✨ Perfectionnement"
+    "awakening": "🌱 Éveil",
+    "learning": "📚 Apprentissage",
+    "understanding": "💡 Compréhension",
+    "mastering": "⚡ Maîtrise",
+    "polishing": "✨ Perfectionnement"
   },
   "milestones": {
-    "first_above_25":     "Premier 25% atteint",
-    "first_above_50":     "À mi-chemin",
-    "first_above_75":     "75% atteint",
-    "first_above_90":     "Plus de 90%",
-    "best_so_far":        "Nouveau record personnel",
-    "biggest_jump":       "Plus grande progression",
-    "overfit_warning":    "Sur-apprentissage détecté",
-    "plateau":            "Plateau d'apprentissage",
-    "lr_drop":            "Taux d'apprentissage réduit",
-    "divergence":         "Divergence de l'entraînement",
-    "training_complete":  "Entraînement terminé"
+    "first_above_25": "Premier 25% atteint",
+    "first_above_50": "À mi-chemin",
+    "first_above_75": "75% atteint",
+    "first_above_90": "Plus de 90%",
+    "best_so_far": "Nouveau record personnel",
+    "biggest_jump": "Plus grande progression",
+    "overfit_warning": "Sur-apprentissage détecté",
+    "plateau": "Plateau d'apprentissage",
+    "lr_drop": "Taux d'apprentissage réduit",
+    "divergence": "Divergence de l'entraînement",
+    "training_complete": "Entraînement terminé"
   },
   "warnings": {
-    "overfit":    "Le modèle mémorise peut-être les exemples plutôt que de généraliser.",
-    "plateau":    "L'apprentissage ralentit. Le modèle ne trouve plus de nouveaux schémas.",
+    "overfit": "Le modèle mémorise peut-être les exemples plutôt que de généraliser.",
+    "plateau": "L'apprentissage ralentit. Le modèle ne trouve plus de nouveaux schémas.",
     "divergence": "Un problème est survenu — le score du modèle a augmenté de façon inattendue."
   },
   "labels": {
-    "epoch":        "Époque",
-    "grade":        "Note",
-    "phase":        "Phase",
-    "connected":    "En direct",
+    "epoch": "Époque",
+    "grade": "Note",
+    "phase": "Phase",
+    "connected": "En direct",
     "disconnected": "Hors ligne",
-    "loading":      "Chargement…",
-    "waiting":      "En attente des données d'entraînement…",
-    "engineer":     "Panneau Ingénieur",
-    "skills":       "Compétences",
-    "confidence":   "Maturité",
-    "timeline":     "Parcours d'entraînement",
-    "export":       "Exporter"
+    "loading": "Chargement…",
+    "waiting": "En attente des données d'entraînement…",
+    "engineer": "Panneau Ingénieur",
+    "skills": "Compétences",
+    "confidence": "Maturité",
+    "timeline": "Parcours d'entraînement",
+    "export": "Exporter"
   },
   "tasks": {
     "classification": "Classification",
-    "detection":      "Détection d'objets",
-    "regression":     "Régression",
-    "biometric":      "Biométrique",
-    "gaze":           "Estimation du regard",
-    "nlp":            "TALN",
-    "generative":     "Génératif",
-    "custom":         "Tâche personnalisée"
+    "detection": "Détection d'objets",
+    "regression": "Régression",
+    "biometric": "Biométrique",
+    "gaze": "Estimation du regard",
+    "nlp": "TALN",
+    "generative": "Génératif",
+    "custom": "Tâche personnalisée"
   },
   "ui": {
-    "greetSub":     "L'histoire d'entraînement de votre modèle",
+    "greetSub": "L'histoire d'entraînement de votre modèle",
     "currentGrade": "Note actuelle",
     "nav": {
-      "overview":      "Aperçu",
-      "explain":       "Expliquer",
-      "network":       "Réseau",
-      "learning":      "Apprentissage",
-      "diagnostics":   "Diagnostics",
+      "overview": "Aperçu",
+      "explain": "Expliquer",
+      "network": "Réseau",
+      "learning": "Apprentissage",
+      "diagnostics": "Diagnostics",
       "distributions": "Distributions",
-      "engineer":      "Ingénieur",
-      "allRuns":       "Tous les runs"
+      "engineer": "Ingénieur",
+      "allRuns": "Tous les runs"
     },
     "panels": {
-      "networkState":    "État du réseau",
-      "plainEnglish":    "En termes simples",
-      "learningCurve":   "Courbe d'apprentissage",
-      "phaseJourney":    "Parcours des phases",
-      "diagnostics":     "Diagnostics d'entraînement",
-      "distributions":   "Distributions",
+      "networkState": "État du réseau",
+      "plainEnglish": "En termes simples",
+      "learningCurve": "Courbe d'apprentissage",
+      "phaseJourney": "Parcours des phases",
+      "diagnostics": "Diagnostics d'entraînement",
+      "distributions": "Distributions",
       "trainingJourney": "Parcours d'entraînement",
       "skillDimensions": "Dimensions de compétence",
-      "liveMetrics":     "Métriques en direct",
-      "engineer":        "Panneau ingénieur"
-    }
+      "liveMetrics": "Métriques en direct",
+      "engineer": "Panneau ingénieur"
+    },
+    "gradeCaveat": "Noté selon des seuils fixes pour ce type de tâche — sans connaître la difficulté de vos données. La tendance et le meilleur epoch sont les parties fiables."
   }
 }

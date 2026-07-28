@@ -1,77 +1,78 @@
 {
   "phases": {
-    "awakening":    "🌱 Awakening",
-    "learning":     "📚 Learning",
-    "understanding":"💡 Understanding",
-    "mastering":    "⚡ Mastering",
-    "polishing":    "✨ Polishing"
+    "awakening": "🌱 Awakening",
+    "learning": "📚 Learning",
+    "understanding": "💡 Understanding",
+    "mastering": "⚡ Mastering",
+    "polishing": "✨ Polishing"
   },
   "milestones": {
-    "first_above_25":     "First 25% achieved",
-    "first_above_50":     "Halfway milestone",
-    "first_above_75":     "75% reached",
-    "first_above_90":     "90%+ performance",
-    "best_so_far":        "New personal best",
-    "biggest_jump":       "Biggest single-epoch leap",
-    "overfit_warning":    "Overfitting detected",
-    "plateau":            "Learning plateau",
-    "lr_drop":            "Learning rate reduced",
-    "divergence":         "Training diverged",
-    "training_complete":  "Training complete"
+    "first_above_25": "First 25% achieved",
+    "first_above_50": "Halfway milestone",
+    "first_above_75": "75% reached",
+    "first_above_90": "90%+ performance",
+    "best_so_far": "New personal best",
+    "biggest_jump": "Biggest single-epoch leap",
+    "overfit_warning": "Overfitting detected",
+    "plateau": "Learning plateau",
+    "lr_drop": "Learning rate reduced",
+    "divergence": "Training diverged",
+    "training_complete": "Training complete"
   },
   "warnings": {
-    "overfit":    "The model may be memorising examples instead of learning to generalise.",
-    "plateau":    "Learning has slowed. The model has stopped finding new patterns.",
+    "overfit": "The model may be memorising examples instead of learning to generalise.",
+    "plateau": "Learning has slowed. The model has stopped finding new patterns.",
     "divergence": "Something went wrong — the model's score has spiked unexpectedly."
   },
   "labels": {
-    "epoch":        "Epoch",
-    "grade":        "Grade",
-    "phase":        "Phase",
-    "connected":    "Live",
+    "epoch": "Epoch",
+    "grade": "Grade",
+    "phase": "Phase",
+    "connected": "Live",
     "disconnected": "Offline",
-    "loading":      "Loading…",
-    "waiting":      "Waiting for training data…",
-    "engineer":     "Engineer Panel",
-    "skills":       "Skills",
-    "confidence":   "Maturity",
-    "timeline":     "Training Journey",
-    "export":       "Export"
+    "loading": "Loading…",
+    "waiting": "Waiting for training data…",
+    "engineer": "Engineer Panel",
+    "skills": "Skills",
+    "confidence": "Maturity",
+    "timeline": "Training Journey",
+    "export": "Export"
   },
   "tasks": {
     "classification": "Classification",
-    "detection":      "Object Detection",
-    "regression":     "Regression",
-    "biometric":      "Biometric",
-    "gaze":           "Gaze Estimation",
-    "nlp":            "NLP",
-    "generative":     "Generative",
-    "custom":         "Custom Task"
+    "detection": "Object Detection",
+    "regression": "Regression",
+    "biometric": "Biometric",
+    "gaze": "Gaze Estimation",
+    "nlp": "NLP",
+    "generative": "Generative",
+    "custom": "Custom Task"
   },
   "ui": {
-    "greetSub":     "Your model's training story",
+    "greetSub": "Your model's training story",
     "currentGrade": "Current grade",
     "nav": {
-      "overview":      "Overview",
-      "explain":       "Explain",
-      "network":       "Network",
-      "learning":      "Learning",
-      "diagnostics":   "Diagnostics",
+      "overview": "Overview",
+      "explain": "Explain",
+      "network": "Network",
+      "learning": "Learning",
+      "diagnostics": "Diagnostics",
       "distributions": "Distributions",
-      "engineer":      "Engineer",
-      "allRuns":       "All runs"
+      "engineer": "Engineer",
+      "allRuns": "All runs"
     },
     "panels": {
-      "networkState":    "Network State",
-      "plainEnglish":    "In Plain English",
-      "learningCurve":   "Learning Curve",
-      "phaseJourney":    "Phase Journey",
-      "diagnostics":     "Training Diagnostics",
-      "distributions":   "Distributions",
+      "networkState": "Network State",
+      "plainEnglish": "In Plain English",
+      "learningCurve": "Learning Curve",
+      "phaseJourney": "Phase Journey",
+      "diagnostics": "Training Diagnostics",
+      "distributions": "Distributions",
       "trainingJourney": "Training Journey",
       "skillDimensions": "Skill Dimensions",
-      "liveMetrics":     "Live Metrics",
-      "engineer":        "Engineer Panel"
-    }
+      "liveMetrics": "Live Metrics",
+      "engineer": "Engineer Panel"
+    },
+    "gradeCaveat": "Graded against fixed thresholds for this task type — it does not know how hard your dataset is. The trend and the best-epoch call are the reliable parts."
   }
 }

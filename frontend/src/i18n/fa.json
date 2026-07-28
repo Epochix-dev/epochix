@@ -1,77 +1,78 @@
 {
   "phases": {
-    "awakening":    "🌱 بیداری",
-    "learning":     "📚 یادگیری",
-    "understanding":"💡 درک",
-    "mastering":    "⚡ تسلط",
-    "polishing":    "✨ پالایش"
+    "awakening": "🌱 بیداری",
+    "learning": "📚 یادگیری",
+    "understanding": "💡 درک",
+    "mastering": "⚡ تسلط",
+    "polishing": "✨ پالایش"
   },
   "milestones": {
-    "first_above_25":     "اولین ۲۵٪ حاصل شد",
-    "first_above_50":     "نقطه میانی",
-    "first_above_75":     "۷۵٪ رسید",
-    "first_above_90":     "بیش از ۹۰٪",
-    "best_so_far":        "بهترین نتیجه تاکنون",
-    "biggest_jump":       "بزرگ‌ترین پیشرفت",
-    "overfit_warning":    "بیش‌برازش تشخیص داده شد",
-    "plateau":            "توقف یادگیری",
-    "lr_drop":            "کاهش نرخ یادگیری",
-    "divergence":         "واگرایی آموزش",
-    "training_complete":  "آموزش کامل شد"
+    "first_above_25": "اولین ۲۵٪ حاصل شد",
+    "first_above_50": "نقطه میانی",
+    "first_above_75": "۷۵٪ رسید",
+    "first_above_90": "بیش از ۹۰٪",
+    "best_so_far": "بهترین نتیجه تاکنون",
+    "biggest_jump": "بزرگ‌ترین پیشرفت",
+    "overfit_warning": "بیش‌برازش تشخیص داده شد",
+    "plateau": "توقف یادگیری",
+    "lr_drop": "کاهش نرخ یادگیری",
+    "divergence": "واگرایی آموزش",
+    "training_complete": "آموزش کامل شد"
   },
   "warnings": {
-    "overfit":    "مدل ممکن است داده‌های آموزشی را حفظ کند نه تعمیم دهد.",
-    "plateau":    "یادگیری کند شده. مدل الگوی جدیدی نمی‌یابد.",
+    "overfit": "مدل ممکن است داده‌های آموزشی را حفظ کند نه تعمیم دهد.",
+    "plateau": "یادگیری کند شده. مدل الگوی جدیدی نمی‌یابد.",
     "divergence": "مشکلی رخ داده — امتیاز مدل به‌طور غیرمنتظره افزایش یافته."
   },
   "labels": {
-    "epoch":        "دوره",
-    "grade":        "نمره",
-    "phase":        "مرحله",
-    "connected":    "زنده",
+    "epoch": "دوره",
+    "grade": "نمره",
+    "phase": "مرحله",
+    "connected": "زنده",
     "disconnected": "آفلاین",
-    "loading":      "در حال بارگذاری…",
-    "waiting":      "در انتظار داده آموزشی…",
-    "engineer":     "پانل مهندس",
-    "skills":       "مهارت‌ها",
-    "confidence":   "بلوغ آموزش",
-    "timeline":     "مسیر آموزش",
-    "export":       "خروجی"
+    "loading": "در حال بارگذاری…",
+    "waiting": "در انتظار داده آموزشی…",
+    "engineer": "پانل مهندس",
+    "skills": "مهارت‌ها",
+    "confidence": "بلوغ آموزش",
+    "timeline": "مسیر آموزش",
+    "export": "خروجی"
   },
   "tasks": {
     "classification": "دسته‌بندی",
-    "detection":      "تشخیص اشیاء",
-    "regression":     "رگرسیون",
-    "biometric":      "بیومتریک",
-    "gaze":           "تخمین نگاه",
-    "nlp":            "پردازش زبان طبیعی",
-    "generative":     "مولد",
-    "custom":         "وظیفه سفارشی"
+    "detection": "تشخیص اشیاء",
+    "regression": "رگرسیون",
+    "biometric": "بیومتریک",
+    "gaze": "تخمین نگاه",
+    "nlp": "پردازش زبان طبیعی",
+    "generative": "مولد",
+    "custom": "وظیفه سفارشی"
   },
   "ui": {
-    "greetSub":     "داستان آموزش مدل شما",
+    "greetSub": "داستان آموزش مدل شما",
     "currentGrade": "نمره فعلی",
     "nav": {
-      "overview":      "نمای کلی",
-      "explain":       "توضیح",
-      "network":       "شبکه",
-      "learning":      "یادگیری",
-      "diagnostics":   "تشخیص",
+      "overview": "نمای کلی",
+      "explain": "توضیح",
+      "network": "شبکه",
+      "learning": "یادگیری",
+      "diagnostics": "تشخیص",
       "distributions": "توزیع‌ها",
-      "engineer":      "مهندسی",
-      "allRuns":       "همه اجراها"
+      "engineer": "مهندسی",
+      "allRuns": "همه اجراها"
     },
     "panels": {
-      "networkState":    "وضعیت شبکه",
-      "plainEnglish":    "به زبان ساده",
-      "learningCurve":   "منحنی یادگیری",
-      "phaseJourney":    "مسیر مراحل",
-      "diagnostics":     "تشخیص آموزش",
-      "distributions":   "توزیع‌ها",
+      "networkState": "وضعیت شبکه",
+      "plainEnglish": "به زبان ساده",
+      "learningCurve": "منحنی یادگیری",
+      "phaseJourney": "مسیر مراحل",
+      "diagnostics": "تشخیص آموزش",
+      "distributions": "توزیع‌ها",
       "trainingJourney": "سفر آموزش",
       "skillDimensions": "ابعاد مهارت",
-      "liveMetrics":     "معیارهای زنده",
-      "engineer":        "پنل مهندسی"
-    }
+      "liveMetrics": "معیارهای زنده",
+      "engineer": "پنل مهندسی"
+    },
+    "gradeCaveat": "نمره بر پایهٔ آستانه‌های ثابت برای این نوع وظیفه است و از دشواری داده‌های شما خبر ندارد. روند و تشخیص بهترین دوره، بخش‌های قابل‌اتکا هستند."
   }
 }

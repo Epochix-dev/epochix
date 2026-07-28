@@ -369,7 +369,14 @@ class StoryEngine:
             return seq[-1] if seq else None
 
         def _inv(v: float | None, *, scale: float = 1.0) -> float | None:
-            """Invert a lower-is-better metric into a [0,1] "skill" score."""
+            """Invert a lower-is-better metric into a [0,1] "skill" score.
+
+            An unbounded metric needs SOME reference to land on a 0–1 axis, and
+            these references are a judgement call, not a standard. The axis
+            label therefore carries the divisor ("1 − MAE/30"), because a label
+            reading "1 − MAE" lets a reader back out a value that is wrong by
+            the scale factor.
+            """
             return None if v is None else max(0.0, 1.0 - min(v / scale, 1.0))
 
         dims: dict[str, float] = {}
@@ -389,21 +396,21 @@ class StoryEngine:
             _add("Precision", _last("precision"))
             _add("Recall", _last("recall"))
             # Localisation quality: low box_loss → tight boxes.
-            _add("Localisation", _inv(_last("box_loss"), scale=4.0))
+            _add("1 − box_loss/4", _inv(_last("box_loss"), scale=4.0))
         elif task == TaskType.BIOMETRIC:
-            _add("1 − EER", _inv(_last("EER"), scale=0.5))
+            _add("1 − EER/0.5", _inv(_last("EER"), scale=0.5))
             _add("TAR", _last("TAR"))
             _add("TAR@FAR=1e-3", _last("TAR_at_FAR_0_001"))
         elif task == TaskType.GAZE:
-            _add("1 − MAE", _inv(_last("MAE"), scale=30.0))
-            _add("1 − RMSE", _inv(_last("RMSE"), scale=30.0))
+            _add("1 − MAE/30", _inv(_last("MAE"), scale=30.0))
+            _add("1 − RMSE/30", _inv(_last("RMSE"), scale=30.0))
         elif task == TaskType.NLP:
-            _add("1 − Perplexity", _inv(_last("perplexity"), scale=200.0))
+            _add("1 − PPL/200", _inv(_last("perplexity"), scale=200.0))
             _add("BLEU", _last("bleu"))
             _add("ROUGE", _last("rouge"))
         elif task == TaskType.REGRESSION:
-            _add("1 − MAE", _inv(_last("MAE"), scale=2.0))
-            _add("1 − RMSE", _inv(_last("RMSE"), scale=2.0))
+            _add("1 − MAE/2", _inv(_last("MAE"), scale=2.0))
+            _add("1 − RMSE/2", _inv(_last("RMSE"), scale=2.0))
 
         # Classification axes — also act as the universal fallback so any run
         # that happens to log these gets them on the radar regardless of task.

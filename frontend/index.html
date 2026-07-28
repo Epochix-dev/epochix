@@ -115,6 +115,12 @@
           </div>
           <div class="stat-row" id="stat-row"></div>
           <div class="metaphor-cards" id="metaphor-cards"></div>
+          <!-- The grade is an absolute threshold per task type. It knows the
+               metric but not the dataset, so 85% on MNIST and 85% on ImageNet
+               grade alike. Say so rather than let the letter imply otherwise. -->
+          <p class="grade-caveat" data-i18n="ui.gradeCaveat">Graded against fixed
+            thresholds for this task type — it does not know how hard your dataset
+            is. The trend and the best-epoch call are the reliable parts.</p>
         </div>
       </section>
 

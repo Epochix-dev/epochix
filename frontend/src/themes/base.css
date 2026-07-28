@@ -960,3 +960,14 @@ body {
   margin-top: 2px;
   font-variant-numeric: tabular-nums;
 }
+
+
+/* The grade is a summary against fixed thresholds, not a measurement of model
+   quality relative to the dataset. Stated, not hidden. */
+.grade-caveat {
+  margin-top: 10px;
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--text-muted);
+  opacity: 0.8;
+}

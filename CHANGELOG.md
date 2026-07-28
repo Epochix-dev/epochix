@@ -7,6 +7,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.5.45] — 2026-07-27
+
+The rest of the audit: the remaining quantitative visuals, checked against what
+they actually compute.
+
+### Fixed
+
+- **Radar axes were mislabelled.** An axis reading `1 − MAE` plotted
+  `1 − MAE/30`; `1 − Perplexity` plotted `1 − PPL/200`. A reader backing the
+  metric out of the chart would be wrong by the scale factor. An unbounded
+  metric needs *some* reference to reach a 0–1 axis, and these references are a
+  judgement call — so the divisor is now part of the label
+  (`1 − MAE/30`, `1 − PPL/200`, `1 − EER/0.5`, `1 − box_loss/4`).
+
+- **The grade never said what it does not know.** It is an absolute threshold
+  per task type, so 85% on MNIST and 85% on ImageNet grade identically. The
+  hero panel now states that, and points at the parts that *are* reliable — the
+  trend and the best-epoch call. Localised to Persian and French.
+
+### Checked and found sound — no change needed
+
+- **Phase boundaries.** These are gated on real improvement, not the clock: a
+  run stuck at chance level stays in "learning" through epoch 20 rather than
+  marching to "mastering". Verified by driving `compute_phase` with a
+  plateaued and a healthy series. *(An earlier note in this project claimed
+  otherwise; that claim was wrong.)*
+
+- **Network-state node brightness.** Uses real captured activations when the
+  SDK recorded them, and when it did not, the legend says
+  "schematic · illustrative, not measured weights". A labelled schematic is
+  honest; this one is labelled.
+
+---
+
 ## [0.5.44] — 2026-07-27
 
 An audit of the diagnostics formulas, prompted by a fair question: are these
