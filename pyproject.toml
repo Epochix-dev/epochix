@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "epochix"
-version = "0.5.47"
+version = "0.5.48"
 description = "Turn ML training logs into a plain-English story with a letter grade — a live animated dashboard, no code changes."
 authors = [{ name = "Epochix Team" }]
 license = "Apache-2.0"
@@ -40,6 +40,7 @@ dependencies = [
 
 [project.optional-dependencies]
 pdf       = ["weasyprint>=62"]
+gif       = ["pillow>=10.0"]
 lightning = ["pytorch-lightning>=2.3"]
 hf        = ["transformers>=4.40"]
 llm       = ["httpx>=0.27"]

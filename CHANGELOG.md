@@ -7,6 +7,44 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.5.48] — 2026-07-27
+
+### Added
+
+- **`--format gif`** — an animated learning curve you can post. The run's
+  primary metric draws itself epoch by epoch and settles on a final frame
+  carrying the run name, the metric, the final value and the grade, because
+  that frame is what most platforms show as the still preview.
+
+  ```bash
+  pip install 'epochix[gif]'
+  epochix export <run_id> --format gif --output run.gif
+  ```
+
+  Rendered **server-side with Pillow**, deliberately: capturing the live canvas
+  would make the CLI depend on a headless browser, which is slow, fragile in CI
+  and impossible on a machine with no display.
+
+  Design decisions worth knowing:
+
+  - **Fixed frame budget.** A 20-epoch and a 2000-epoch run produce animations
+    of the same length; long runs are subsampled, and the last frame always
+    shows the complete curve.
+  - **Flat palette.** GIF quantises to 256 colours and the dashboard's
+    gradients band badly, so the export has its own solid-colour theme — which
+    also reads better at the size these are actually viewed.
+  - **Bounded metrics keep an honest axis.** Padding the range once topped an
+    accuracy axis at **1.007**, a value no model can reach. Metrics that live
+    in [0, 1] are clamped; unbounded ones are not, or their curve would be
+    crushed.
+  - One metric only. A run whose early frames measured something else cannot
+    produce a curve that joins a loss to an accuracy.
+
+  Missing the extra exits 1 with an actionable message and no traceback, the
+  same as `[pdf]`.
+
+---
+
 ## [0.5.47] — 2026-07-27
 
 0.5.46 recognised twenty new metrics. It turned out only one of them could

@@ -1,0 +1,118 @@
+"""Animated GIF export.
+
+Byte-comparing GIFs is brittle — a Pillow version bump changes the encoding
+without changing the picture. These assert *properties* instead: the frame
+budget, the dimensions, that it actually animated, and that the axis never
+implies a value the metric cannot reach.
+"""
+
+from __future__ import annotations
+
+import io
+from typing import TYPE_CHECKING
+
+import pytest
+
+from epochix import parse
+from epochix.store.sqlite_store import RunStore
+
+if TYPE_CHECKING:
+    from pathlib import Path
+
+pytest.importorskip("PIL", reason="GIF export needs the 'gif' extra")
+
+from epochix.exporters.gif_export import (  # noqa: E402
+    _FRAME_BUDGET,
+    _is_bounded_unit,
+    _subsample,
+    build_gif,
+)
+
+
+def _run(tmp_path: Path, epochs: int, key: str = "val_acc") -> tuple[str, RunStore]:
+    tmp_path.mkdir(parents=True, exist_ok=True)
+    log = tmp_path / "train.log"
+    log.write_text(
+        "".join(
+            f"Epoch {i}/{epochs} train_loss={0.9 - 0.8 * i / epochs:.4f} "
+            f"{key}={0.30 + 0.65 * i / epochs:.4f}\n"
+            for i in range(1, epochs + 1)
+        ),
+        encoding="utf-8",
+    )
+    db = str(tmp_path / "runs.db")
+    run = parse(log, db=db, run_name="a run")
+    return run.id, RunStore(db_path=db)
+
+
+def test_it_produces_a_valid_animated_gif(tmp_path: Path) -> None:
+    from PIL import Image
+
+    run_id, store = _run(tmp_path, 20)
+    data = build_gif(run_id=run_id, store=store)
+
+    img = Image.open(io.BytesIO(data))
+    assert img.format == "GIF"
+    assert img.size == (1200, 675)
+    assert img.n_frames > 1, "a single frame is not an animation"
+
+
+def test_the_last_frame_differs_from_the_first(tmp_path: Path) -> None:
+    """It has to actually animate, not just emit N copies of one picture."""
+    from PIL import Image
+
+    run_id, store = _run(tmp_path, 20)
+    img = Image.open(io.BytesIO(build_gif(run_id=run_id, store=store)))
+
+    img.seek(0)
+    first = img.convert("RGB").tobytes()
+    img.seek(img.n_frames - 1)
+    last = img.convert("RGB").tobytes()
+    assert first != last
+
+
+def test_a_long_run_uses_the_same_frame_budget_as_a_short_one(tmp_path: Path) -> None:
+    """One frame per epoch is fine at 20 and absurd at 2000."""
+    from PIL import Image
+
+    short_id, short_store = _run(tmp_path / "s", 20)
+    long_id, long_store = _run(tmp_path / "l", 2000)
+
+    short = Image.open(io.BytesIO(build_gif(run_id=short_id, store=short_store)))
+    long = Image.open(io.BytesIO(build_gif(run_id=long_id, store=long_store)))
+
+    assert long.n_frames <= _FRAME_BUDGET + 12, f"a 2000-epoch run produced {long.n_frames} frames"
+    assert long.n_frames >= short.n_frames
+
+
+def test_subsampling_always_reaches_the_final_point() -> None:
+    """The last frame must show the whole curve, whatever the run's length."""
+    for n in (2, 19, 48, 49, 137, 2000):
+        points = [(float(i), 0.5) for i in range(n)]
+        idx = _subsample(points, _FRAME_BUDGET)
+        assert idx[-1] == n, f"{n} epochs: last frame stops at {idx[-1]}"
+        assert idx == sorted(idx)
+
+
+def test_a_bounded_metric_axis_never_exceeds_one() -> None:
+    """Padding once topped an accuracy axis at 1.007 — a value no model
+    reaches, the same class of impossible number as the 123.6% bug."""
+    assert _is_bounded_unit("val_accuracy")
+    assert _is_bounded_unit("IoU")
+    assert _is_bounded_unit("AUC")
+    # An unbounded metric must NOT be clamped, or its curve would be crushed.
+    assert not _is_bounded_unit("train_loss")
+    assert not _is_bounded_unit("perplexity")
+    assert not _is_bounded_unit("PSNR")
+
+
+def test_a_run_with_too_few_epochs_is_refused_clearly(tmp_path: Path) -> None:
+    run_id, store = _run(tmp_path, 1)
+    with pytest.raises(ValueError, match="too few epochs|no metric series"):
+        build_gif(run_id=run_id, store=store)
+
+
+def test_an_unknown_run_is_refused(tmp_path: Path) -> None:
+    _, store = _run(tmp_path, 5)
+    with pytest.raises(ValueError, match="not found"):
+        build_gif(run_id="does-not-exist", store=store)

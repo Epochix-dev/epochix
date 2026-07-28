@@ -133,7 +133,7 @@ def cmd_run(  # noqa: C901
     export_format: str | None = typer.Option(
         None,
         "--export",
-        help="Export format (html|pdf|md|json) in headless mode.",
+        help="Export format (html|pdf|md|json|gif) in headless mode.",
         show_default=False,
     ),
     output: Path | None = typer.Option(
@@ -380,6 +380,17 @@ def _cli_export(run_id: str, fmt: str, store: RunStore, outfile: Path | None = N
                 err=True,
             )
             raise typer.Exit(1) from None
+    elif fmt == "gif":
+        from epochix.exporters.gif_export import build_gif
+
+        try:
+            outfile.write_bytes(build_gif(run_id=run_id, store=store))
+        except NotImplementedError as exc:
+            typer.echo(f"  {exc}", err=True)
+            raise typer.Exit(1) from None
+        except ValueError as exc:
+            typer.echo(f"  Cannot animate this run: {exc}", err=True)
+            raise typer.Exit(1) from None
     elif fmt == "pdf":
         from epochix.exporters.pdf_export import build_pdf
 
@@ -481,7 +492,7 @@ def cmd_open(
 @app.command("export")
 def cmd_export(
     run_id: str = typer.Argument(..., help="Run ID to export."),
-    fmt: str = typer.Option("html", "--format", "-f", help="Format: html|pdf|md|json."),
+    fmt: str = typer.Option("html", "--format", "-f", help="Format: html|pdf|md|json|gif."),
     output: Path | None = typer.Option(None, "--output", "-o", help="Output path."),
     log_level: str = typer.Option("WARNING", "--log-level"),
 ) -> None:
