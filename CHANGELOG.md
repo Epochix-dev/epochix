@@ -7,6 +7,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.5.42] — 2026-07-27
+
+"Diagnostics appear once metrics arrive…" — they never did.
+
+### Fixed
+
+- **Without the Python package, half the dashboard was permanently empty.** The
+  extension sent story frames and nothing else: there was no `metrics` message
+  in the protocol at all. Training Diagnostics, Metric Spread, Value Histograms
+  and the learning-rate chart all read `store.metrics`, so on the bundled demo
+  they showed their empty state forever. The standalone engine now exposes its
+  metric events in the same shape as the server's `/api/metrics`, and sends
+  them incrementally as parsing proceeds as well as with `init`.
+
+- **`Total params: 53,002` was charted as a metric worth 53.** The comma
+  truncated it. The Python parsers stopped doing this in 0.5.39, but the
+  TypeScript parsers kept their own skip lists — `keras.ts` knew only
+  `s`/`ms`/`us` — so the extension still did. Both sides now share one table
+  (`_never_metrics.py` / `neverMetrics.ts`).
+
+- **The extension merged training accuracy into validation accuracy.** Its
+  canonical map aliased `accuracy` → `val_accuracy`, so a 20-epoch run produced
+  40 "val_accuracy" points, half of them training numbers plotted as
+  validation. They are now distinct, matching the Python normaliser.
+
+---
+
 ## [0.5.41] — 2026-07-27
 
 Three display faults, reported from a screenshot.

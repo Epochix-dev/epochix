@@ -194,4 +194,48 @@ suite("Architecture arrives one line at a time", () => {
     const total = arch.reduce((sum, l) => sum + l.params, 0);
     assert.strictEqual(total, 53002, "parameter total does not match the model");
   });
+
+  test("the demo yields the same metric series the Python side produces", async () => {
+    // Diagnostics, metric spread, histograms and the learning-rate chart all
+    // read store.metrics, and the extension never sent any — so those panels
+    // read "Diagnostics appear once metrics arrive…" forever without Python.
+    const { StandaloneEngine } = await import("../../webview/StandaloneEngine");
+    const ext = vscode.extensions.getExtension(EXT_ID);
+    assert.ok(ext);
+    const fs = await import("fs");
+    const lines = fs
+      .readFileSync(path.join(ext.extensionPath, "media", "demo.log"), "utf-8")
+      .split(/\r?\n/);
+
+    const engine = new StandaloneEngine();
+    for (const line of lines) engine.feed(line + "\n");
+    engine.flush();
+
+    const metrics = engine.metrics();
+    const keys = [...new Set(metrics.map((m) => m.canonical_key))].sort();
+
+    // Exactly what `epochix parse` reports for the same file.
+    assert.deepStrictEqual(keys, [
+      "accuracy",
+      "lr",
+      "train_loss",
+      "val_accuracy",
+      "val_loss",
+    ]);
+
+    // "Total params: 53,002" must not be charted — the comma made it 53.
+    assert.ok(
+      !keys.includes("params"),
+      "a model-summary total was charted as a metric",
+    );
+
+    // Training accuracy must stay distinct from validation accuracy. Aliasing
+    // them produced 40 val_accuracy points for a 20-epoch run, half of which
+    // were training numbers.
+    assert.strictEqual(
+      metrics.filter((m) => m.canonical_key === "val_accuracy").length,
+      20,
+      "val_accuracy absorbed another series",
+    );
+  });
 });

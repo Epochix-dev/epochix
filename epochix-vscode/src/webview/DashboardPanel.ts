@@ -24,6 +24,7 @@ export class DashboardPanel {
   private readonly _panel: vscode.WebviewPanel;
   private _engine: StandaloneEngine | null;
   private _architectureSent = false;
+  private _metricsSent = 0;
 
   private _disposables: vscode.Disposable[] = [];
   private _sidecar: ServerManager | null;
@@ -152,6 +153,7 @@ export class DashboardPanel {
     if (!this._engine) return;
     const frames = this._engine.feed(buffer);
     this._postArchitecture();
+    this._postMetrics();
     for (const frame of frames) {
       this._post({ type: "frame", frame });
       StatusBar.update(frame);
@@ -237,6 +239,7 @@ export class DashboardPanel {
       // webview finishes its ready handshake is simply dropped, which is why
       // the Network State panel stayed empty even once detection worked.
       architecture: this._engine?.architecture() ?? [],
+      metrics: this._engine?.metrics() ?? [],
       hasSidecar,
     });
 
@@ -264,6 +267,15 @@ export class DashboardPanel {
   }
 
   /** Send the detected model layers once, when they first appear. */
+  /** Send metric events parsed since the last call. */
+  private _postMetrics(): void {
+    const all = this._engine?.metrics() ?? [];
+    if (all.length <= this._metricsSent) return;
+    const fresh = all.slice(this._metricsSent);
+    this._metricsSent = all.length;
+    this._post({ type: "metrics", metrics: fresh });
+  }
+
   private _postArchitecture(): void {
     const arch = this._engine?.architecture() ?? [];
     if (!arch.length || this._architectureSent) return;

@@ -49,6 +49,7 @@ export type ExtToWeb =
   | {
       type: "init";
       architecture?: unknown[];
+      metrics?: unknown[];
       theme: "light" | "dark";
       locale: string;
       snapshot: StoryFrameMsg[];
@@ -62,7 +63,8 @@ export type ExtToWeb =
   | { type: "complete"; run: RunSummaryMsg }
   | { type: "themeChange"; theme: "light" | "dark" }
   | { type: "installBanner"; visible: boolean }
-  | { type: "architecture"; architecture: unknown[] };
+  | { type: "architecture"; architecture: unknown[] }
+  | { type: "metrics"; metrics: unknown[] };
 
 // ── WebView → Extension ───────────────────────────────────────────────────────
 

@@ -2,6 +2,7 @@
  * TypeScript port of src/epochix/parsers/keras_tensorflow.py
  */
 import type { Parser, ParserContext, RawMetric } from "./base";
+import { NEVER_METRICS } from "./neverMetrics";
 
 const EPOCH_LINE = /^Epoch\s+(\d+)\/(\d+)\s*$/;
 // Step counts bounded ({1,10}) so an unanchored search can't backtrack O(n²)
@@ -9,7 +10,9 @@ const EPOCH_LINE = /^Epoch\s+(\d+)\/(\d+)\s*$/;
 const METRIC_LINE = /\d{1,10}\/\d{1,10}\s+\[=+>?\.*\]/;
 const KV_PAIR = /(\w{1,64}):\s*([-+]?\d+(?:\.\d+)?(?:[eE][-+]?\d+)?)/g;
 
-const SKIP_KEYS = new Set(["s", "ms", "us"]);
+// Shared table — see neverMetrics.ts. A key filtered in one parser must
+// not leak through another.
+const SKIP_KEYS = NEVER_METRICS;
 
 export class KerasParser implements Parser {
   readonly name = "keras_tensorflow";

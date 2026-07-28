@@ -26,8 +26,11 @@ import { parseArchitecture, type ArchLayer } from "../story/architecture";
 
 const CANONICAL_MAP: Record<string, string> = {
   val_acc: "val_accuracy", val_accy: "val_accuracy",
-  accuracy: "val_accuracy", acc: "val_accuracy",
-  train_acc: "train_accuracy",
+  // `accuracy` is TRAINING accuracy. Mapping it onto val_accuracy merged two
+  // different measurements into one series — the demo produced 40 "val_accuracy"
+  // points for a 20-epoch run, half of which were training numbers.
+  accuracy: "accuracy", acc: "accuracy",
+  train_acc: "train_accuracy", train_accuracy: "train_accuracy",
   loss: "train_loss", train_loss: "train_loss",
   val_loss: "val_loss", validation_loss: "val_loss",
   map50: "mAP50", "mAP50-95": "mAP", map: "mAP",
@@ -217,6 +220,22 @@ export class StandaloneEngine {
   /** Layers detected from a model summary, or an empty list. */
   architecture(): ArchLayer[] {
     return this._architecture;
+  }
+
+  /**
+   * Raw metric events, shaped like the server's `/api/metrics` payload.
+   *
+   * The dashboard's diagnostics, metric-spread, histogram and learning-rate
+   * panels all read `store.metrics`, and the extension never sent any — so
+   * without the Python package those panels read "Diagnostics appear once
+   * metrics arrive…" forever, including on the bundled demo.
+   */
+  metrics(): { canonical_key: string; epoch: number | null; value: number }[] {
+    return this._allMetrics.map((m) => ({
+      canonical_key: canonicalise(m.key),
+      epoch: m.epoch,
+      value: m.value,
+    }));
   }
 
   snapshot(): StoryFrameMsg[] {

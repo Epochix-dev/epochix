@@ -4,6 +4,7 @@
  * Three-pattern regex fallback: JSON fragments, key=value, key: value.
  */
 import type { Parser, ParserContext, RawMetric } from "./base";
+import { NEVER_METRICS } from "./neverMetrics";
 
 // Key capture bounded ({1,64}) to prevent O(n²) regex backtracking on a long
 // word-character run before a missing delimiter (a 100k-char line hung the
@@ -20,7 +21,9 @@ const EPOCH_HEADER = /\bepoch\s+(\d{1,9})(?:\s*\/\s*(\d{1,9}))?\b/i;
 
 const EPOCH_KEYS = new Set(["epoch", "ep", "e"]);
 const STEP_KEYS = new Set(["step", "iter", "iteration", "batch"]);
-const SKIP_KEYS = new Set(["pid", "port", "seed", "rank", "world_size", "node"]);
+// Shared table — see neverMetrics.ts. A key filtered in one parser must
+// not leak through another.
+const SKIP_KEYS = NEVER_METRICS;
 
 interface Candidate {
   key: string;

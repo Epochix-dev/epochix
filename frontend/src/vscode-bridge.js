@@ -57,7 +57,7 @@ export function startVscodeBridge(applyTheme) {
           milestones: [],
           warnings: [],
           currentFrame: null,
-          metrics: [],
+          metrics: Array.isArray(msg.metrics) ? msg.metrics : [],
           architecture: Array.isArray(msg.architecture) && msg.architecture.length
             ? msg.architecture
             : null,
@@ -72,6 +72,16 @@ export function startVscodeBridge(applyTheme) {
 
       case 'frame':
         if (msg.frame) pushFrame(mapFrame(msg.frame));
+        break;
+
+      // Raw metric events. Diagnostics, metric spread, histograms and the
+      // learning-rate chart all read store.metrics, and standalone mode never
+      // sent any — so those panels read "Diagnostics appear once metrics
+      // arrive…" forever, including on the bundled demo.
+      case 'metrics':
+        if (Array.isArray(msg.metrics) && msg.metrics.length) {
+          store.set({ metrics: [...store.get().metrics, ...msg.metrics] });
+        }
         break;
 
       // Standalone mode detects the model summary itself; without this the
