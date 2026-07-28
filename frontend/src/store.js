@@ -69,6 +69,9 @@ export const store = createStore({
  */
 export function pushFrame(frame) {
   const s = store.get();
+  // A replayed snapshot can redeliver frames we already have (reconnect with
+  // last_seq, a repeated init). Appending them duplicated the whole run.
+  if (frame?.seq != null && s.frames.some((f) => f.seq === frame.seq)) return;
   const frames = [...s.frames, frame];
   const currentFrame = s.scrubEpoch === -1 ? frame : s.currentFrame;
   store.set({ frames, currentFrame });

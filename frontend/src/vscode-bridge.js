@@ -48,6 +48,15 @@ export function startVscodeBridge(applyTheme) {
           run: null,
           live: !msg.hasSidecar,
           connected: true,
+          // init replays the WHOLE snapshot, so the stream must be cleared
+          // first. Without this a second init (a reload, a theme change, any
+          // repeated ready handshake) appended the run on top of itself — the
+          // phase journey then drew every phase twice, with the same epoch
+          // ranges repeated.
+          frames: [],
+          milestones: [],
+          warnings: [],
+          currentFrame: null,
           metrics: [],
           architecture: Array.isArray(msg.architecture) && msg.architecture.length
             ? msg.architecture

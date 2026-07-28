@@ -845,6 +845,12 @@ body {
 .pj-bar {
   display: flex; align-items: stretch; gap: 6px; width: 100%;
   min-height: 92px;
+  /* Many phases used to be squeezed until "Awakening" read "A..." and the
+     epoch range vanished. Segments now keep a legible floor and the row
+     scrolls instead of shrinking text into nothing. */
+  overflow-x: auto;
+  scrollbar-width: thin;
+  padding-bottom: 2px;
 }
 .pj-seg {
   position: relative;
@@ -857,7 +863,9 @@ body {
     var(--bg-surface-alt);
   border: 1px solid color-mix(in srgb, var(--pj-c) 26%, transparent);
   overflow: hidden;
-  min-width: 0;
+  /* Never narrower than its own label. Below this the name truncates to a
+     single letter and the card stops meaning anything. */
+  min-width: 104px;
   transition: flex-grow 0.4s ease, border-color var(--transition-fast), box-shadow var(--transition-fast);
 }
 .pj-seg.is-active {
@@ -940,3 +948,15 @@ body {
 ::-webkit-scrollbar-track  { background: transparent; }
 ::-webkit-scrollbar-thumb  { background: var(--border-default); border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+
+/* Scale band under the sidebar sparkline. The shape is auto-scaled, so the
+   numbers are what stop it being read as an absolute magnitude. */
+.sidebar-card .sc-spark-range {
+  font-size: 9px;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+  opacity: 0.75;
+  margin-top: 2px;
+  font-variant-numeric: tabular-nums;
+}

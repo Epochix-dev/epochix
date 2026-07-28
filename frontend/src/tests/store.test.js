@@ -257,3 +257,29 @@ describe('scrubTo', () => {
     expect(store.get().currentFrame).toBeNull();
   });
 });
+
+describe('pushFrame de-duplication', () => {
+  it('ignores a frame whose seq is already held', async () => {
+    // A replayed snapshot (repeated init, reconnect with last_seq) used to
+    // append the whole run on top of itself, so the phase journey drew every
+    // phase twice with the same epoch ranges.
+    const { store, pushFrame } = await import('../store.js');
+    store.set({ frames: [], currentFrame: null, scrubEpoch: -1 });
+
+    pushFrame({ seq: 1, epoch: 1, phase: 'awakening', grade: 'F' });
+    pushFrame({ seq: 2, epoch: 2, phase: 'learning', grade: 'B' });
+    pushFrame({ seq: 1, epoch: 1, phase: 'awakening', grade: 'F' }); // replay
+    pushFrame({ seq: 2, epoch: 2, phase: 'learning', grade: 'B' }); // replay
+
+    expect(store.get().frames.length).toBe(2);
+    expect(store.get().frames.map((f) => f.seq)).toEqual([1, 2]);
+  });
+
+  it('still appends frames that have no seq', async () => {
+    const { store, pushFrame } = await import('../store.js');
+    store.set({ frames: [], currentFrame: null, scrubEpoch: -1 });
+    pushFrame({ epoch: 1 });
+    pushFrame({ epoch: 2 });
+    expect(store.get().frames.length).toBe(2);
+  });
+});

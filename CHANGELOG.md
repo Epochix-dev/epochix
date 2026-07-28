@@ -7,6 +7,39 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.5.41] — 2026-07-27
+
+Three display faults, reported from a screenshot.
+
+### Fixed
+
+- **The phase journey drew every phase twice.** `init` replays the whole frame
+  snapshot, but the webview bridge cleared `metrics` and `architecture` and left
+  `frames` alone — so any repeated ready handshake appended the run on top of
+  itself, and the ribbon showed `ep 1, 2–7, 8–13, 14–20` followed by the same
+  four again. `init` now resets the stream, and `pushFrame` ignores a `seq` it
+  already holds, which also covers a reconnect replaying from `last_seq`.
+
+- **The sidebar sparkline charted two different metrics as one line.** It
+  plotted `primary_metric_value` across frames without checking
+  `primary_metric` — the field added in 0.5.30 precisely because an early frame
+  can predate task detection. On the bundled demo that meant frame 1's training
+  `accuracy` was joined to nineteen frames of `val_accuracy`. It now plots only
+  the metric most frames actually measured.
+
+- **The sparkline stated no scale.** It auto-scales to its own min and max with
+  no axis, so a 0.7-point wobble and a total collapse draw an identical shape.
+  It now carries the band it was scaled to (`0.838 – 0.989`) beneath it and in
+  its accessible label, so the shape reads as relative rather than absolute.
+
+- **Phase labels truncated to "A…" when a phase was short.** Segments were
+  sized purely by epoch share, so a one-epoch phase became a sliver with an
+  unreadable name. Segments now have a legible minimum width and the ribbon
+  scrolls horizontally instead — verified at 375 px that the labels stay whole,
+  the ribbon scrolls, and the page itself does not overflow sideways.
+
+---
+
 ## [0.5.40] — 2026-07-27
 
 0.5.39 added architecture detection to the standalone engine and it still did

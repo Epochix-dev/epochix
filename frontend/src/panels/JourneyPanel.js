@@ -205,9 +205,24 @@ function _phaseLabel(i18n, phase) {
  */
 function _renderSparkline(svg, frames) {
   if (!svg) return;
+
+  // Plot ONE metric. Early frames can predate task detection and measure
+  // something else — the demo's first frame is train `accuracy` while the rest
+  // are `val_accuracy` — and drawing both as one line is a chart of two
+  // different quantities. Keep whichever metric most frames actually used.
+  const counts = new Map();
+  for (const f of frames) {
+    if (!Number.isFinite(f.primary_metric_value)) continue;
+    const k = f.primary_metric ?? '';
+    counts.set(k, (counts.get(k) ?? 0) + 1);
+  }
+  let dominant = null, best = 0;
+  for (const [k, n] of counts) if (n > best) { dominant = k; best = n; }
+
   const pts = frames
-    .map((f) => f.primary_metric_value)
-    .filter((v) => Number.isFinite(v));
+    .filter((f) => Number.isFinite(f.primary_metric_value)
+      && (dominant === null || (f.primary_metric ?? '') === dominant))
+    .map((f) => f.primary_metric_value);
   if (pts.length < 2) { svg.hidden = true; return; }
 
   const sig = pts.map((v) => v.toFixed(3)).join(',');
@@ -225,7 +240,19 @@ function _renderSparkline(svg, frames) {
   pts.forEach((v, i) => { line += `${i === 0 ? 'M' : 'L'} ${x(i).toFixed(1)} ${y(v).toFixed(1)} `; });
   const area = `${line} L ${x(pts.length - 1).toFixed(1)} ${H} L ${x(0).toFixed(1)} ${H} Z`;
 
+  // An auto-scaled sparkline with no axis carries no magnitude: a 0.7-point
+  // wobble and a total collapse draw the same shape. State the band it is
+  // scaled to, so the shape is read as relative rather than absolute.
+  const fmt = (v) => (Math.abs(v) < 10 ? v.toFixed(3) : v.toFixed(1));
+  svg.setAttribute(
+    'aria-label',
+    `${dominant || 'metric'} from ${fmt(min)} to ${fmt(max)} over ${pts.length} epochs`,
+  );
+  const caption = svg.parentElement?.querySelector('.sc-spark-range');
+  if (caption) caption.textContent = `${fmt(min)} – ${fmt(max)}`;
+
   svg.innerHTML = `
+    <title>${_esc(dominant || 'metric')}: ${fmt(min)} to ${fmt(max)} (scaled to this range)</title>
     <defs>
       <linearGradient id="spark-fill" x1="0" y1="0" x2="0" y2="1">
         <stop offset="0%"  stop-color="#7c6dff" stop-opacity="0.55"/>
