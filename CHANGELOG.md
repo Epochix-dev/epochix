@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.5.56] — 2026-07-29
+
+### Fixed
+
+- **Export still did nothing inside the VS Code extension.** 0.5.55 fixed the
+  browser by switching to an `<a download>` click, and I verified it in a
+  browser — but in the extension the dashboard runs inside the webview's
+  **iframe**, and a VS Code webview blocks downloads outright. The anchor click
+  was discarded silently, so the menu opened and no file ever arrived. Two
+  different environments; only one of them had been tested.
+
+  The iframe is a separate document with no `acquireVsCodeApi` of its own, so
+  its only way out is `postMessage` to its parent. The webview host now listens
+  for that and forwards it to the extension, which opens the export URL in a
+  real browser where the download can land. Verified with an iframe harness
+  reproducing the webview's structure: clicking "Animated GIF" inside the frame
+  delivers `{type:"export", format:"gif", runId:…}` to the parent.
+
+---
+
 ## [0.5.55] — 2026-07-29
 
 ### Fixed

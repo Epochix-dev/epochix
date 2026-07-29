@@ -35,6 +35,23 @@ export function buildWebviewHtml(opts: WebviewHtmlOptions): string {
 </head>
 <body>
   <iframe src="${sidecarUrl}" allowfullscreen></iframe>
+  <script>
+    // Bridge for the dashboard running inside the iframe.
+    //
+    // A VS Code webview blocks downloads outright, so the dashboard's
+    // <a download> click does nothing here — the export menu opened and no
+    // file ever appeared. The iframe is cross-origin from this host and has no
+    // acquireVsCodeApi of its own, so its only route out is postMessage to its
+    // parent. We forward that to the extension, which opens the URL in the
+    // real browser where a download can actually land.
+    const vscode = acquireVsCodeApi();
+    window.addEventListener('message', (e) => {
+      const msg = e.data;
+      if (msg && msg.type === 'export' && typeof msg.format === 'string') {
+        vscode.postMessage({ type: 'export', format: msg.format, runId: msg.runId });
+      }
+    });
+  </script>
 </body>
 </html>`;
   }

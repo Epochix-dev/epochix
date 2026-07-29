@@ -215,6 +215,11 @@ async function main() {
       if (window.__EPOCHIX_VSCODE__) {
         // The webview cannot reach the sidecar itself; the extension host can.
         window.__EPOCHIX_VSCODE__.postMessage({ type: 'export', format: fmt, runId });
+      } else if (window.parent !== window) {
+        // Embedded in the VS Code webview's iframe. Downloads are blocked
+        // there, so an <a download> click is silently discarded — ask the host
+        // to hand the URL to the extension, which opens it in a real browser.
+        window.parent.postMessage({ type: 'export', format: fmt, runId }, '*');
       } else {
         // An <a download> click, not window.open. Every export route replies
         // with Content-Disposition: attachment, so window.open spawns a tab
