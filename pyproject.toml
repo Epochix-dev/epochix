@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "epochix"
-version = "0.5.60"
+version = "0.5.61"
 description = "Turn ML training logs into a plain-English story with a letter grade — a live animated dashboard, no code changes."
 authors = [{ name = "Epochix Team" }]
 license = "Apache-2.0"
@@ -114,6 +114,7 @@ exclude = [
   "src/epochix/_artifacts/**",
   "src/epochix/_demos/**",
   "src/epochix/_frontend/dist/**",
+  "src/epochix/_brand/**",
 ]
 
 [tool.hatch.build.targets.wheel.shared-data]
@@ -130,6 +131,9 @@ exclude = [
 "src/epochix/_demos" = "epochix/_demos"
 # Frontend bundle vendored at release time via CI (build-frontend step).
 "frontend/dist" = "epochix/_frontend/dist"
+# Brand mark, composited into the GIF export's watermark. Vendored because
+# `asset/` sits outside the package and is not otherwise shipped.
+"asset/epochix_mark_512.png" = "epochix/_brand/mark.png"
 
 [tool.hatch.envs.default]
 features = ["dev"]

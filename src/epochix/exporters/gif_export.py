@@ -21,6 +21,7 @@ from __future__ import annotations
 import io
 import math
 import unicodedata
+from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
@@ -46,6 +47,10 @@ _MAX_FPS = 30
 # characters is not a crash but it is free CPU for an attacker, and the excess
 # renders off-canvas where nobody sees it anyway.
 _MAX_NAME_CHARS = 80
+
+# Watermark mark height. Small enough to stay a signature, large enough to be
+# recognisable when the GIF is scaled down to a timeline thumbnail.
+_MARK_H = 20
 _PAD_L, _PAD_R, _PAD_T, _PAD_B = 96, 56, 132, 88
 
 # Flat palette: no gradients, so the 256-colour quantisation has nothing to
@@ -134,6 +139,30 @@ def _safe_label(text: str) -> str:
     return cleaned or "run"
 
 
+def _brand_mark(height: int) -> Any | None:  # noqa: ANN401 - PIL image, optional dep
+    """The Epochix mark, scaled to *height* px, or None if it is unavailable.
+
+    Vendored into the wheel as ``epochix/_brand/mark.png`` (see the
+    force-include in pyproject). A source checkout that lacks it — or a mark
+    that fails to decode — must not break the export: the watermark falls back
+    to the wordmark text alone.
+    """
+    from PIL import Image
+
+    path = Path(__file__).resolve().parents[1] / "_brand" / "mark.png"
+    if not path.is_file():
+        return None
+    try:
+        mark = Image.open(path).convert("RGBA")
+    except OSError:  # pragma: no cover - corrupt or unreadable asset
+        return None
+    w = max(1, round(mark.width * height / mark.height))
+    # Image.Resampling, not the bare Image.LANCZOS alias: the alias still works
+    # at runtime but is absent from Pillow's type stubs, so mypy --strict
+    # rejects it. The `gif` extra floors at Pillow 10, which has Resampling.
+    return mark.resize((w, height), Image.Resampling.LANCZOS)
+
+
 def _font(size: int) -> Any:  # noqa: ANN401 - PIL font object, optional dep
     from PIL import ImageFont
 
@@ -218,6 +247,8 @@ def build_gif(
     )
     grade = run.final_grade.value if run.final_grade else "—"
     name = _safe_label(run.name or run_id)
+    # Decoded and scaled once, not per frame — there are ~48 of them.
+    mark = _brand_mark(_MARK_H)
 
     images: list[Any] = []
     for upto in _subsample(points, _FRAME_BUDGET):
@@ -269,10 +300,17 @@ def build_gif(
             width=2,
         )
         # The URL is the point: this file travels, and it is the only thing
-        # that turns a viewer into a visitor.
-        d.text(
-            (width - _PAD_R, height - 40), "epochix.dev", font=small_font, fill=_MUTED, anchor="ra"
-        )
+        # that turns a viewer into a visitor. The mark sits to its left so the
+        # pair reads as one lockup rather than two stray marks in a corner.
+        wm_y = height - 40
+        d.text((width - _PAD_R, wm_y), "epochix.dev", font=small_font, fill=_MUTED, anchor="ra")
+        if mark is not None:
+            text_w = d.textlength("epochix.dev", font=small_font)
+            img.paste(
+                mark,
+                (int(width - _PAD_R - text_w - mark.width - 8), wm_y - 3),
+                mark,  # its own alpha, so the rounded edges stay clean
+            )
 
         # Grade appears only once the curve is complete — it is the run's
         # verdict, not a running commentary.

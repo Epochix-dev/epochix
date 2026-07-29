@@ -145,3 +145,8 @@ src/epochix/_frontend/dist/
 
 # MkDocs build output
 site/
+
+# Brand mark vendored into the wheel from asset/ at build time (see the
+# force-include in pyproject). Copied here for local dev runs; not tracked,
+# so the PNG lives in exactly one place in the repo.
+src/epochix/_brand/

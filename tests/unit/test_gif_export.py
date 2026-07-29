@@ -116,3 +116,28 @@ def test_an_unknown_run_is_refused(tmp_path: Path) -> None:
     _, store = _run(tmp_path, 5)
     with pytest.raises(ValueError, match="not found"):
         build_gif(run_id="does-not-exist", store=store)
+
+
+def test_the_watermark_carries_the_brand_mark() -> None:
+    """The GIF is the artefact that travels, so the mark rides with it."""
+    from epochix.exporters.gif_export import _MARK_H, _brand_mark
+
+    mark = _brand_mark(_MARK_H)
+    assert mark is not None, "brand mark missing — is asset/ vendored into the wheel?"
+    assert mark.height == _MARK_H
+    assert mark.mode == "RGBA", "needs alpha so the rounded edges composite cleanly"
+
+
+def test_a_missing_brand_mark_does_not_break_the_export(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A source checkout without the vendored asset still exports — the
+    watermark just falls back to the wordmark text."""
+    from PIL import Image
+
+    from epochix.exporters import gif_export
+
+    monkeypatch.setattr(gif_export, "_brand_mark", lambda _h: None)
+    run_id, store = _run(tmp_path, 8)
+    img = Image.open(io.BytesIO(gif_export.build_gif(run_id=run_id, store=store)))
+    assert img.format == "GIF"

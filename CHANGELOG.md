@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.5.61] — 2026-07-29
+
+### Added
+
+- **The Epochix mark now rides in the GIF watermark**, set beside the
+  `epochix.dev` wordmark so the two read as one lockup rather than as two
+  strays in a corner. The GIF is the artefact that travels — it gets posted,
+  embedded and screenshotted away from anything else — so the mark belongs on
+  it.
+
+  The mark is vendored into the wheel as `epochix/_brand/mark.png` from
+  `asset/epochix_mark_512.png`, decoded and scaled once per export rather than
+  once per frame. It composites with its own alpha, so the rounded edges stay
+  clean against the dark background. A checkout without the vendored asset
+  still exports — the watermark simply falls back to the wordmark alone.
+
+---
+
 ## [0.5.60] — 2026-07-29
 
 ### Fixed
