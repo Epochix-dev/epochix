@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.5.55] — 2026-07-29
+
+### Fixed
+
+- **Export did nothing when you clicked a format.** The menu opened and the
+  server answered correctly — verified from the page itself: GIF 104 KB, HTML
+  183 KB, JSON 51 KB, Markdown 830 B, all 200 — but the download never
+  surfaced. Every export route replies `Content-Disposition: attachment`, and
+  `window.open` on an attachment spawns a tab that immediately aborts its own
+  navigation (200 OK, then `ERR_ABORTED`). Depending on the browser and its
+  popup blocking that is a blank flash, a silent download, or nothing at all;
+  inside an embedded browser it is reliably nothing. Downloads now go through a
+  temporary `<a download>` click, which downloads in place with no popup.
+
+  Found by driving the actual dashboard in a browser and clicking the button,
+  which is how the last several of these should have been found.
+
+---
+
 ## [0.5.54] — 2026-07-29
 
 ### Fixed

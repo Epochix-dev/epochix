@@ -216,7 +216,18 @@ async function main() {
         // The webview cannot reach the sidecar itself; the extension host can.
         window.__EPOCHIX_VSCODE__.postMessage({ type: 'export', format: fmt, runId });
       } else {
-        window.open(`/api/export/${runId}/${fmt}`, '_blank');
+        // An <a download> click, not window.open. Every export route replies
+        // with Content-Disposition: attachment, so window.open spawns a tab
+        // that immediately aborts its own navigation (200 OK then
+        // ERR_ABORTED) — leaving a blank flash, a silent download, or with a
+        // popup blocker nothing whatsoever. An anchor downloads in place.
+        const a = document.createElement('a');
+        a.href = `/api/export/${runId}/${fmt}`;
+        a.download = '';
+        a.rel = 'noopener';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
       }
     });
 
