@@ -7,6 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.5.58] — 2026-07-29
+
+### Fixed
+
+- **The ReDoS regression tests measured how busy the CI runner was.** They
+  asserted a flat 1.0 s wall-clock budget; a Windows runner took 2.44 s on
+  input that parses in 0.041 s locally, and CI went red on two releases in a
+  row with nothing wrong in the parser.
+
+  Catastrophic backtracking is *superlinear growth*, not slowness, and that
+  distinction is what the test now measures: quadruple the input and compare.
+  A linear scan grows ~4x and a quadratic blow-up ~16x, and the ratio holds
+  however slow the hardware is. Confirmed against the original defect — the
+  bounded regex in the code today scales 3.9x, the unbounded one it replaced
+  scales 15.8x and is caught.
+
+  The remaining absolute-time checks are now documented as hang guards with a
+  20 s ceiling, since the bugs they cover took ten seconds or more.
+
+Nothing in the parser changed; it was never slow.
+
+---
+
 ## [0.5.57] — 2026-07-29
 
 ### Fixed
