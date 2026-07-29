@@ -7,6 +7,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.5.60] — 2026-07-29
+
+### Fixed
+
+- **The learning curve drew a rising model as a falling line.** On the demo,
+  accuracy climbs 0.74 → 0.98 and the story panel says so — while the chart
+  showed the blue "val accuracy" line descending. The two disagreed, and the
+  chart was wrong.
+
+  Cause, and it came from 0.5.52: the extension creates the run over HTTP but
+  never sent `primary_metric`, so the server applied its default of `val_loss`
+  while the frames carried accuracy values. The chart reads
+  `run.primary_metric` to decide orientation, saw a lower-is-better metric, and
+  inverted a series that was already higher-is-better. The extension now sends
+  the metric its own frames measure.
+
+  Same shape as the 123.6% bug: the declared metric and the values disagreed.
+  When those two drift apart, everything downstream is confidently wrong.
+
+- **The chart legend always read "val accuracy"**, whatever the run's primary
+  metric actually was — labelling MAE or perplexity as accuracy, with nothing
+  to reveal it. It now shows the real metric.
+
+- **The loss line is inverted, and never said so.** It is deliberately drawn
+  upside down so falling loss reads as rising quality, but the legend said only
+  "val loss" — so a rising line looked like loss increasing. The legend now
+  reads "val loss (inverted — ↑ = lower loss)".
+
+---
+
 ## [0.5.59] — 2026-07-29
 
 ### Fixed

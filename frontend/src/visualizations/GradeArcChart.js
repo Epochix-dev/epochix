@@ -11,7 +11,13 @@
  * This makes the "story" legible as a graph: you see exactly when the model
  * crossed from B to B+, when loss plateaued, when the phase changed.
  */
-import { emaSmooth, LOWER_IS_BETTER, isPercentMetric, formatPrimaryMetric } from '../viz-util.js';
+import {
+  emaSmooth,
+  LOWER_IS_BETTER,
+  isPercentMetric,
+  formatPrimaryMetric,
+  metricLabel,
+} from '../viz-util.js';
 
 const PHASE_BG = {
   awakening:     'rgba(167,139,250,0.10)',
@@ -279,8 +285,12 @@ export class GradeArcChart {
       const sv = emaSmooth(lossData.map((p) => p.v), this._smoothing);
       lossData = lossData.map((p, i) => ({ x: p.x, v: sv[i] }));
     }
+    // The line is drawn inverted (below), so it rises as loss falls. Say so:
+    // an unannotated rising line labelled "val loss" reads as loss going up,
+    // which is the opposite of what happened.
     const lossLabel = this._metrics.some((m) => m.canonical_key === 'val_loss')
-      ? 'val loss' : 'train loss (↓ better)';
+      ? 'val loss (inverted — ↑ = lower loss)'
+      : 'train loss (inverted — ↑ = lower loss)';
     if (lossData.length >= 2) {
       const maxL = Math.max(...lossData.map((p) => p.v), 0.001);
       // Invert so decreasing loss → rising line (matches "quality" direction)
@@ -396,7 +406,10 @@ export class GradeArcChart {
     ctx.moveTo(lx, MT + 10); ctx.lineTo(lx + 18, MT + 10);
     ctx.strokeStyle = '#60a5fa'; ctx.lineWidth = 2; ctx.setLineDash([]); ctx.stroke();
     ctx.fillStyle = 'rgba(148,163,184,0.8)';
-    ctx.fillText('val accuracy', lx + 22, MT + 14);
+    // The real metric, not a hardcoded "val accuracy" — this chart plots
+    // whatever the run's primary metric is, and labelling MAE or perplexity
+    // as accuracy is a lie the reader has no way to catch.
+    ctx.fillText(metricLabel(this._primaryKey || 'metric'), lx + 22, MT + 14);
 
     if (lossData.length >= 2) {
       ctx.beginPath();

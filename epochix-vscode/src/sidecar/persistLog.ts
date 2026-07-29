@@ -45,11 +45,21 @@ export async function persistLogFile(
     throw new Error("no metrics found in this log");
   }
 
+  // The dominant metric the frames actually measure. Without this the server
+  // defaults `primary_metric` to "val_loss" while the frames carry accuracy,
+  // and the learning curve then applies its lower-is-better inversion to
+  // accuracy data — drawing a rising model as a falling line. The declared
+  // metric and the values must agree; disagreeing is how the 123.6% bug
+  // happened too.
+  const counts = new Map<string, number>();
+  for (const m of metrics) counts.set(m.canonical_key, (counts.get(m.canonical_key) ?? 0) + 1);
+  const primary = engine.primaryMetricKey?.() ?? null;
+
   // Hand over the model summary too. The server no longer reads the file, so
   // this is the only route by which it can learn the architecture — without it
   // the Network State panel reads "No architecture to display" for a log that
   // plainly contains one.
-  const runId = await sidecar.createRun(runName, undefined, engine.architecture());
+  const runId = await sidecar.createRun(runName, undefined, engine.architecture(), primary);
 
   for (let i = 0; i < metrics.length; i += _CONCURRENCY) {
     await Promise.all(

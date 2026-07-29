@@ -163,11 +163,13 @@ export class ServerManager implements vscode.Disposable {
     name: string,
     task?: string,
     architecture?: unknown[],
+    primaryMetric?: string | null,
   ): Promise<string> {
     const res = await this._post("/api/runs", {
       name,
       task,
       architecture: architecture?.length ? architecture : undefined,
+      primary_metric: primaryMetric || undefined,
     });
     const id = res["id"] ?? res["run_id"];
     if (typeof id !== "string") {

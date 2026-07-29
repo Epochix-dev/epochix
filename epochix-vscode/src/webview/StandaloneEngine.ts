@@ -291,6 +291,18 @@ export class StandaloneEngine {
    * without the Python package those panels read "Diagnostics appear once
    * metrics arrive…" forever, including on the bundled demo.
    */
+  /**
+   * The metric the frames actually measure.
+   *
+   * The server must be told this at run creation: its default is `val_loss`,
+   * and a run whose frames carry accuracy but whose `primary_metric` says
+   * loss makes the learning curve invert the line — a rising model drawn as
+   * a falling one.
+   */
+  primaryMetricKey(): string {
+    return this._primaryMetric;
+  }
+
   metrics(): { canonical_key: string; epoch: number | null; value: number }[] {
     return this._allMetrics.map((m) => ({
       canonical_key: canonicalise(m.key),
