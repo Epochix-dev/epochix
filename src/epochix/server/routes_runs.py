@@ -65,6 +65,12 @@ class RunCreateRequest(BaseModel):
     primary_metric: str | None = Field(default=None, max_length=64)
     total_epochs: int | None = Field(default=None, ge=0, le=10_000_000)
     locale: str = Field(default="en", max_length=8)
+    #: Layers parsed by the caller, in the shape the Network State panel reads.
+    #: A client that parsed the log itself (the VS Code extension does) has the
+    #: model summary in hand; without this it had no way to hand it over, and
+    #: the panel showed "No architecture to display" for a log that plainly
+    #: contained one. Capped because it is untrusted input like any other.
+    architecture: list[dict[str, Any]] | None = Field(default=None, max_length=512)
 
 
 class DeleteResponse(BaseModel):
@@ -134,6 +140,22 @@ async def create_run(
         parser_used="sdk",
     )
     store.create_run(run)
+
+    # Same handling as the SDK path in pipeline.py: park it in the run config
+    # and broadcast, so a panel that is already open fills in rather than
+    # waiting for a reload.
+    if body.architecture:
+        store.update_run_config(run_id, {**run.config, "architecture": body.architecture})
+        hub = request.app.state.hub
+        hub.publish(
+            run_id,
+            hub.make_message(
+                msg_type="architecture",
+                run_id=run_id,
+                seq=-1,
+                payload={"architecture": body.architecture},
+            ),
+        )
 
     engine = StoryEngine(
         run_id=run_id,

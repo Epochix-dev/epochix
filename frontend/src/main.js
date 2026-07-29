@@ -180,9 +180,54 @@ async function main() {
     applyTheme(cur === 'dark' ? 'light' : 'dark');
   });
 
-  document.getElementById('export-btn')?.addEventListener('click', () => {
+  // Export offered every format the server serves, not just JSON — and routed
+  // through the extension host when we are inside the VS Code webview, where
+  // the CSP is `default-src 'none'` and a relative window.open silently does
+  // nothing at all.
+  const EXPORT_FORMATS = [
+    ['html', 'Standalone HTML'],
+    ['gif', 'Animated GIF'],
+    ['pdf', 'PDF report'],
+    ['md', 'Markdown'],
+    ['json', 'JSON (re-importable)'],
+  ];
+
+  document.getElementById('export-btn')?.addEventListener('click', (ev) => {
     const runId = getRunId();
-    if (runId) window.open(`/api/export/${runId}/json`, '_blank');
+    if (!runId) return;
+
+    document.querySelector('.export-menu')?.remove();
+    const menu = document.createElement('div');
+    menu.className = 'export-menu';
+    menu.innerHTML = EXPORT_FORMATS.map(
+      ([fmt, label]) => `<button class="export-opt" data-fmt="${fmt}">${_esc(label)}</button>`,
+    ).join('');
+    document.body.appendChild(menu);
+
+    const btn = ev.currentTarget.getBoundingClientRect();
+    menu.style.top = `${btn.bottom + 8}px`;
+    menu.style.right = `${Math.max(8, window.innerWidth - btn.right)}px`;
+
+    menu.addEventListener('click', (e) => {
+      const fmt = e.target?.dataset?.fmt;
+      if (!fmt) return;
+      menu.remove();
+      if (window.__EPOCHIX_VSCODE__) {
+        // The webview cannot reach the sidecar itself; the extension host can.
+        window.__EPOCHIX_VSCODE__.postMessage({ type: 'export', format: fmt, runId });
+      } else {
+        window.open(`/api/export/${runId}/${fmt}`, '_blank');
+      }
+    });
+
+    setTimeout(() => {
+      document.addEventListener('click', function close(e) {
+        if (!menu.contains(e.target)) {
+          menu.remove();
+          document.removeEventListener('click', close);
+        }
+      });
+    }, 0);
   });
 
   // ── data loading ───────────────────────────────────────────────────────────

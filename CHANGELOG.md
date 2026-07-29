@@ -7,6 +7,48 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.5.53] — 2026-07-29
+
+### Fixed
+
+- **"No architecture to display" for a log that plainly had one.** 0.5.52 moved
+  parsing into the extension, which meant the server no longer read the file —
+  and there was no way to hand the model summary over, because
+  `RunCreateRequest` had no field for it. `demo.log` carries a full Keras
+  summary (8 layers, 53,002 params) and the Network State panel still showed
+  the empty state. Run creation now accepts `architecture`, stores it in
+  `run.config` and broadcasts it exactly as the SDK path in `pipeline.py` does,
+  and the extension sends what it parsed.
+
+- **The export button only ever produced JSON**, and inside the VS Code webview
+  it did nothing at all — the CSP is `default-src 'none'`, so a relative
+  `window.open` is silently dropped. It now offers every format the server
+  serves and routes through the extension host when running in the webview.
+
+- **Export from the extension always 404'd.** `_handleExport` sent the literal
+  string `"current"` as the run id, on the assumption that the server tracked
+  an active run. It does not. The panel now remembers the id the sidecar
+  assigned, and says so plainly when a run was never persisted.
+
+### Added
+
+- **`GET /api/export/{run_id}/gif`.** `build_gif` had worked since 0.5.48 and
+  was reachable from the CLI, but no HTTP route served it — so no button in any
+  UI could have called it, which is why there was no GIF option to find.
+  Returns `image/gif`, 501 without the `gif` extra, and 400 (not 500) for a run
+  with nothing to animate.
+
+- **A format menu on the export button** — Standalone HTML, Animated GIF, PDF,
+  Markdown, JSON.
+
+### Notes
+
+The multi-run comparison *race* — an animated GIF across several runs for
+presentations — is still not built. `/compare` renders its static chart, and
+the single-run GIF is what exists today.
+
+---
+
 ## [0.5.52] — 2026-07-29
 
 ### Fixed

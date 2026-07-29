@@ -45,7 +45,11 @@ export async function persistLogFile(
     throw new Error("no metrics found in this log");
   }
 
-  const runId = await sidecar.createRun(runName);
+  // Hand over the model summary too. The server no longer reads the file, so
+  // this is the only route by which it can learn the architecture — without it
+  // the Network State panel reads "No architecture to display" for a log that
+  // plainly contains one.
+  const runId = await sidecar.createRun(runName, undefined, engine.architecture());
 
   for (let i = 0; i < metrics.length; i += _CONCURRENCY) {
     await Promise.all(

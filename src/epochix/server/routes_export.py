@@ -82,6 +82,29 @@ async def export_markdown(
     )
 
 
+@router.get("/{run_id}/gif", dependencies=[Depends(require_auth)])
+async def export_gif(
+    run_id: str,
+    store: StoreDep,
+) -> Response:
+    """Render the run's learning curve as an animated GIF (needs the `gif` extra)."""
+    from epochix.exporters.gif_export import build_gif
+
+    _require_run(run_id, store)
+    try:
+        data = build_gif(run_id=run_id, store=store)
+    except NotImplementedError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_501_NOT_IMPLEMENTED,
+            detail="GIF export needs the 'gif' extra: pip install 'epochix[gif]'",
+        ) from exc
+    except ValueError as exc:
+        # "too few epochs" / "no metric series" — the run is real, it just has
+        # nothing to animate. That is the caller's problem, not a server fault.
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
+    return Response(content=data, media_type="image/gif", headers=_attachment(run_id, "gif"))
+
+
 @router.get("/{run_id}/json", dependencies=[Depends(require_auth)])
 async def export_json(
     run_id: str,

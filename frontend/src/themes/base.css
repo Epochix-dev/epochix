@@ -971,3 +971,37 @@ body {
   color: var(--text-muted);
   opacity: 0.8;
 }
+
+/* Export format menu — the button used to fire a JSON download and nothing
+   else, with no way to reach the other formats the server already served. */
+.export-menu {
+  position: fixed;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  min-width: 200px;
+  padding: 6px;
+  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.12));
+  border-radius: 12px;
+  background: var(--bg-elevated, #161a2b);
+  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.46);
+}
+
+.export-opt {
+  padding: 9px 12px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-primary, #e8ecf8);
+  font: inherit;
+  font-size: 0.9rem;
+  text-align: left;
+  cursor: pointer;
+}
+
+.export-opt:hover,
+.export-opt:focus-visible {
+  background: var(--accent-primary, #7c6dff);
+  color: #fff;
+  outline: none;
+}

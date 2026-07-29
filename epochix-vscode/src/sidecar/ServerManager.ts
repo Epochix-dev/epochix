@@ -151,8 +151,16 @@ export class ServerManager implements vscode.Disposable {
   }
 
   /** Create a run and return its id. */
-  async createRun(name: string, task?: string): Promise<string> {
-    const res = await this._post("/api/runs", { name, task });
+  async createRun(
+    name: string,
+    task?: string,
+    architecture?: unknown[],
+  ): Promise<string> {
+    const res = await this._post("/api/runs", {
+      name,
+      task,
+      architecture: architecture?.length ? architecture : undefined,
+    });
     const id = res["id"] ?? res["run_id"];
     if (typeof id !== "string") {
       throw new Error(`POST /api/runs returned no id: ${JSON.stringify(res).slice(0, 200)}`);

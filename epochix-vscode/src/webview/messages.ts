@@ -71,6 +71,10 @@ export type ExtToWeb =
 export type WebToExt =
   | { type: "ready" }
   | { type: "scrub"; seq: number }
-  | { type: "export"; format: "html" | "pdf" | "md" }
+  | {
+      type: "export";
+      format: "html" | "pdf" | "md" | "json" | "gif";
+      runId?: string;
+    }
   | { type: "openExternal"; url: string }
   | { type: "installSidecar" };

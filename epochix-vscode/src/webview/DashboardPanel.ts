@@ -25,6 +25,8 @@ export class DashboardPanel {
 
   private readonly _panel: vscode.WebviewPanel;
   private _engine: StandaloneEngine | null;
+  /** Set once the sidecar has persisted this run — the id the export routes need. */
+  private _runId: string | undefined;
   private _architectureSent = false;
   private _metricsSent = 0;
 
@@ -117,6 +119,7 @@ export class DashboardPanel {
       // run lands in saved history.
       persistLogFile(sidecar, fileUri.fsPath, path.basename(fileUri.fsPath))
         .then((runId) => {
+          panel._runId = runId;
           panel._panel.webview.html = buildWebviewHtml({
             extensionUri,
             webview: panel._panel.webview,
@@ -191,7 +194,7 @@ export class DashboardPanel {
         this._sendInit();
         break;
       case "export":
-        this._handleExport(msg.format);
+        this._handleExport(msg.format, msg.runId ?? this._runId);
         break;
       case "openExternal":
         void vscode.env.openExternal(vscode.Uri.parse(msg.url));
@@ -210,21 +213,31 @@ export class DashboardPanel {
     }
   }
 
-  private _handleExport(format: "html" | "pdf" | "md"): void {
-    if (this._sidecar) {
-      // With sidecar: open the export URL in the browser
-      const runId = "current"; // sidecar tracks the active run
-      void vscode.env.openExternal(
-        vscode.Uri.parse(
-          `http://127.0.0.1:${this._sidecar.port}/api/export/${runId}/${format}`,
-        ),
-      );
-    } else {
+  private _handleExport(
+    format: "html" | "pdf" | "md" | "json" | "gif",
+    runId?: string,
+  ): void {
+    if (!this._sidecar) {
       void vscode.window.showInformationMessage(
-        `Epochix: HTML/PDF export requires the Python sidecar. ` +
-          `Install with: pip install epochix`,
+        "Epochix: export needs the Python engine — the built-in engine renders " +
+          "the story but cannot write files. Install it with: pip install 'epochix[gif]'",
       );
+      return;
     }
+    if (!runId) {
+      // Previously this passed the literal string "current", on the assumption
+      // that the server tracked an active run. It does not, so every export
+      // 404'd. The id has to come from the run actually on screen.
+      void vscode.window.showWarningMessage(
+        "Epochix: this run was not saved to the Python engine, so it cannot be exported.",
+      );
+      return;
+    }
+    void vscode.env.openExternal(
+      vscode.Uri.parse(
+        `http://127.0.0.1:${this._sidecar.port}/api/export/${encodeURIComponent(runId)}/${format}`,
+      ),
+    );
   }
 
   private _sendInit(): void {

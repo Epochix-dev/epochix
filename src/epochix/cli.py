@@ -496,7 +496,7 @@ def cmd_export(
     output: Path | None = typer.Option(None, "--output", "-o", help="Output path."),
     log_level: str = typer.Option("WARNING", "--log-level"),
 ) -> None:
-    """Export a run as HTML, PDF, Markdown, or JSON."""
+    """Export a run as HTML, PDF, Markdown, JSON, or an animated GIF."""
     _configure_logging(log_level)
     settings = get_settings()
     store = _open_store(settings)
