@@ -7,6 +7,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.5.51] — 2026-07-28
+
+### Security
+
+Completes the 0.5.50 audit by widening it past the export/render surface to
+every place the library touches the host.
+
+- **A run id could inject a response header.** The export routes echoed
+  `run_id` straight into `Content-Disposition`. A quote ends the filename
+  value; a CRLF ends the header. This was safe only *indirectly* — the API
+  constrains the charset at run creation — but a run inserted through the CLI
+  or SDK carries whatever id it was given, so the id is now sanitised at the
+  point of use rather than trusted to have been checked upstream.
+
+Audited in this pass and found already correct, so unchanged:
+
+- **The SSH ingester** builds `argv` for `create_subprocess_exec` (never a
+  shell), `shlex.quote`s the remote path, and explicitly rejects a `-`-leading
+  target so it cannot reach ssh's option parser.
+- **The LLM fallback parser cannot silently exfiltrate a training log**:
+  `llm_enabled` defaults to `False`, `sniff()` always returns `0.0`, and
+  `is_available()` requires an explicitly configured URL or key — a localhost
+  Ollama default deliberately does not count as configured.
+- **No archive extraction and no unsafe deserialisation** anywhere in the
+  package: no `zipfile`/`tarfile`/`extractall`, no `torch.load`, `pickle`,
+  `joblib`, `marshal` or `dill`, so there is no zip-slip or gadget-chain
+  surface to guard.
+- **The WebSocket is token-gated**, and the ingest models bound every string
+  and numeric field.
+
+---
+
 ## [0.5.50] — 2026-07-28
 
 ### Security

@@ -91,3 +91,26 @@ def test_a_backtick_cannot_escape_a_code_span() -> None:
 def test_control_characters_never_reach_the_document() -> None:
     for raw in ("a\x00b", "a\x1b[31mb", "a\x07b"):
         assert all(ch.isprintable() or ch in " \\" for ch in _md_escape(raw)), repr(raw)
+
+
+def test_a_run_id_cannot_inject_a_response_header() -> None:
+    """The export routes echo the run id into Content-Disposition. A quote ends
+    the filename value and a CRLF ends the header itself, so ids that entered
+    through the CLI or SDK (which are not charset-constrained the way the API's
+    RunCreateRequest is) are sanitised at the point of use."""
+    from epochix.server.routes_export import _attachment
+
+    for hostile in (
+        'a"; filename="evil.exe',
+        "a\r\nX-Injected: yes",
+        "../../etc/passwd",
+        "a\x00b",
+    ):
+        value = _attachment(hostile, "md")["Content-Disposition"]
+        assert value.count('"') == 2, value
+        assert "\r" not in value and "\n" not in value
+        assert "/" not in value and "\\" not in value
+
+    assert _attachment("", "md")["Content-Disposition"] == 'attachment; filename="run.md"'
+    ulid = "01J8XKQ2P3RSTVWXYZ0123"
+    assert _attachment(ulid, "json")["Content-Disposition"] == f'attachment; filename="{ulid}.json"'

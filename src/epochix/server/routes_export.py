@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
@@ -59,7 +60,7 @@ async def export_pdf(
     return Response(
         content=pdf_bytes,
         media_type="application/pdf",
-        headers={"Content-Disposition": f'attachment; filename="{run_id}.pdf"'},
+        headers=_attachment(run_id, "pdf"),
     )
 
 
@@ -77,7 +78,7 @@ async def export_markdown(
     return Response(
         content=md,
         media_type="text/markdown; charset=utf-8",
-        headers={"Content-Disposition": f'attachment; filename="{run_id}.md"'},
+        headers=_attachment(run_id, "md"),
     )
 
 
@@ -93,7 +94,7 @@ async def export_json(
     return Response(
         content=build_json(run_id=run_id, store=store),
         media_type="application/json",
-        headers={"Content-Disposition": f'attachment; filename="{run_id}.json"'},
+        headers=_attachment(run_id, "json"),
     )
 
 
@@ -101,3 +102,23 @@ def _require_run(run_id: str, store: RunStore) -> None:
     """Raise 404 if the run doesn't exist."""
     if store.get_run(run_id) is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Run not found")
+
+
+# Anything outside this set is dropped rather than escaped: a run id has no
+# legitimate reason to contain a quote, a newline or a path separator, and a
+# filename is not a place to be permissive.
+_UNSAFE_IN_FILENAME = re.compile(r"[^A-Za-z0-9_.\-]")
+
+
+def _attachment(run_id: str, ext: str) -> dict[str, str]:
+    """Build the Content-Disposition header for a downloaded export.
+
+    The id reaching here has already been found in the database, and ids
+    created through the API are charset-constrained (see ``RunCreateRequest``).
+    But a run inserted by the CLI or the SDK carries whatever id it was given,
+    and a quote or a CRLF in a header value ends the value — so the id is
+    sanitised at the point of use rather than trusted to have been validated
+    somewhere upstream.
+    """
+    safe = _UNSAFE_IN_FILENAME.sub("_", run_id)[:100] or "run"
+    return {"Content-Disposition": f'attachment; filename="{safe}.{ext}"'}
