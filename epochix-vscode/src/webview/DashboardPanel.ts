@@ -15,6 +15,8 @@ import * as readline from "readline";
 import { buildWebviewHtml } from "./webview.html";
 import type { ExtToWeb, StoryFrameMsg, WebToExt } from "./messages";
 import type { ServerManager } from "../sidecar/ServerManager";
+import * as path from "path";
+import { persistLogFile } from "../sidecar/persistLog";
 import { StatusBar } from "../statusBar";
 import { StandaloneEngine } from "./StandaloneEngine";
 
@@ -111,9 +113,9 @@ export class DashboardPanel {
     const panel = DashboardPanel.createOrShow(extensionUri, sidecar, locale);
 
     if (sidecar) {
-      // Ask sidecar to parse + register the log file
-      sidecar
-        .parseLogFile(fileUri.fsPath)
+      // Parse locally, then persist through the sidecar's public API so the
+      // run lands in saved history.
+      persistLogFile(sidecar, fileUri.fsPath, path.basename(fileUri.fsPath))
         .then((runId) => {
           panel._panel.webview.html = buildWebviewHtml({
             extensionUri,

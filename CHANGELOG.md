@@ -7,6 +7,44 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.5.52] — 2026-07-29
+
+### Fixed
+
+- **The VS Code sidecar never worked.** Opening a log with the Python engine
+  installed always fell back to the built-in engine with "could not reach the
+  Python engine (No run_id in response)", so saved run history was silently
+  lost on every install.
+
+  The extension POSTed the log's path to `/api/parse` — an endpoint that was
+  never implemented. The server answered 404, and a 404 body
+  (`{"detail":"Not Found"}`) is valid JSON: the client's `JSON.parse` succeeded,
+  found no `run_id`, and reported the failure as an unreachable engine. The
+  client also never checked `res.statusCode`, so every HTTP error looked
+  identical.
+
+  The extension now parses locally and persists through the endpoints that
+  exist — `POST /api/runs`, then `POST /api/runs/{run_id}/event`. Sending the
+  parsed data rather than the path is the better shape anyway: the extension
+  already reads the file, so the server needs no route that opens an arbitrary
+  path on the host.
+
+- **A failed sidecar call now names its own cause** (`POST /api/x → HTTP 404`)
+  instead of reporting every error as a missing `run_id`.
+
+### Added
+
+- `tests/unit/test_extension_server_contract.py` — asserts every `/api` URL in
+  the extension resolves to a real route in the app's OpenAPI schema. Verified
+  to fail on the original bug before being committed.
+
+  The existing suite missed this for a reason worth recording: the sidecar test
+  *mocks* `parseLogFile`, so it exercised the fallback while stubbing out the
+  call that was broken. A green test for a degraded path is not evidence the
+  primary path works.
+
+---
+
 ## [0.5.51] — 2026-07-28
 
 ### Security

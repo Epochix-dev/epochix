@@ -106,25 +106,40 @@ export class ServerManager implements vscode.Disposable {
 
   // ── Public methods ───────────────────────────────────────────────────────────
 
-  /** Tell the sidecar to parse a log file and return the new run ID. */
-  async parseLogFile(filePath: string): Promise<string> {
+  /**
+   * POST JSON to the sidecar and return the decoded body.
+   *
+   * Checks the status code. The previous version did not, so any error whose
+   * body happened to be JSON — a 404 is `{"detail":"Not Found"}` — decoded
+   * cleanly, produced no `run_id`, and surfaced as "No run_id in response".
+   * That masked a missing route for as long as it existed; a failure should
+   * name itself.
+   */
+  private _post(path: string, payload: unknown): Promise<Record<string, unknown>> {
     return new Promise((resolve, reject) => {
-      const url = `http://127.0.0.1:${this.port}/api/parse`;
-      const body = JSON.stringify({ path: filePath });
-
+      const body = JSON.stringify(payload);
       const req = http.request(
-        url,
-        { method: "POST", headers: { "Content-Type": "application/json" } },
+        `http://127.0.0.1:${this.port}${path}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Content-Length": Buffer.byteLength(body),
+          },
+        },
         (res) => {
           let data = "";
           res.on("data", (chunk: Buffer) => { data += chunk.toString(); });
           res.on("end", () => {
+            const code = res.statusCode ?? 0;
+            if (code < 200 || code >= 300) {
+              reject(new Error(`POST ${path} → HTTP ${code}: ${data.slice(0, 200)}`));
+              return;
+            }
             try {
-              const parsed = JSON.parse(data) as { run_id?: string };
-              if (parsed.run_id) resolve(parsed.run_id);
-              else reject(new Error("No run_id in response"));
+              resolve(data ? (JSON.parse(data) as Record<string, unknown>) : {});
             } catch {
-              reject(new Error(`Bad response: ${data}`));
+              reject(new Error(`POST ${path} → unparseable body: ${data.slice(0, 200)}`));
             }
           });
         },
@@ -135,6 +150,21 @@ export class ServerManager implements vscode.Disposable {
     });
   }
 
+  /** Create a run and return its id. */
+  async createRun(name: string, task?: string): Promise<string> {
+    const res = await this._post("/api/runs", { name, task });
+    const id = res["id"] ?? res["run_id"];
+    if (typeof id !== "string") {
+      throw new Error(`POST /api/runs returned no id: ${JSON.stringify(res).slice(0, 200)}`);
+    }
+    return id;
+  }
+
+  /** Push one already-normalised metric event onto a run. */
+  async pushEvent(runId: string, event: SidecarEvent): Promise<void> {
+    await this._post(`/api/runs/${encodeURIComponent(runId)}/event`, event);
+  }
+
   /** Kill the sidecar process. */
   dispose(): void {
     try {
@@ -143,6 +173,17 @@ export class ServerManager implements vscode.Disposable {
       // already dead
     }
   }
+}
+
+/** Matches the server's `EventPushRequest`. */
+export interface SidecarEvent {
+  seq: number;
+  epoch?: number | null;
+  step?: number | null;
+  canonical_key: string;
+  raw_key: string;
+  value: number;
+  unit?: string | null;
 }
 
 
