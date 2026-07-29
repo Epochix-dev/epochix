@@ -184,6 +184,49 @@ async function main() {
   // through the extension host when we are inside the VS Code webview, where
   // the CSP is `default-src 'none'` and a relative window.open silently does
   // nothing at all.
+  /** Filename the server chose, from Content-Disposition. */
+  function _filenameFrom(header, runId, fmt) {
+    const m = /filename="([^"]+)"/.exec(header || '');
+    return m ? m[1] : `${runId}.${fmt}`;
+  }
+
+  async function _download(runId, fmt) {
+    let res;
+    try {
+      res = await fetch(`/api/export/${runId}/${fmt}`);
+    } catch (err) {
+      _toast(`Export failed: ${err.message}`);
+      return;
+    }
+    if (!res.ok) {
+      // The server explains itself — a missing optional dependency (501) or a
+      // run with nothing to animate (400). Show that rather than saving the
+      // error to disk as a file, which is what an <a href> would have done.
+      let detail = `HTTP ${res.status}`;
+      try { detail = (await res.json()).detail || detail; } catch { /* not JSON */ }
+      _toast(detail);
+      return;
+    }
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = _filenameFrom(res.headers.get('content-disposition'), runId, fmt);
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  }
+
+  function _toast(message) {
+    document.querySelector('.export-toast')?.remove();
+    const el = document.createElement('div');
+    el.className = 'export-toast';
+    el.textContent = message;
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 6000);
+  }
+
   const EXPORT_FORMATS = [
     ['html', 'Standalone HTML'],
     ['gif', 'Animated GIF'],
@@ -221,18 +264,13 @@ async function main() {
         // to hand the URL to the extension, which opens it in a real browser.
         window.parent.postMessage({ type: 'export', format: fmt, runId }, '*');
       } else {
-        // An <a download> click, not window.open. Every export route replies
-        // with Content-Disposition: attachment, so window.open spawns a tab
-        // that immediately aborts its own navigation (200 OK then
-        // ERR_ABORTED) — leaving a blank flash, a silent download, or with a
-        // popup blocker nothing whatsoever. An anchor downloads in place.
-        const a = document.createElement('a');
-        a.href = `/api/export/${runId}/${fmt}`;
-        a.download = '';
-        a.rel = 'noopener';
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
+        // Fetch first, then download the blob — rather than pointing an
+        // anchor straight at the URL. An anchor cannot see a status code, so
+        // a 501 ("GIF export needs the 'gif' extra") or a 400 ("no metric
+        // series to animate") was *saved to disk as a JSON file* instead of
+        // being reported. Reading the response lets a failure say what is
+        // wrong, which is the whole point of the server sending a message.
+        _download(runId, fmt);
       }
     });
 

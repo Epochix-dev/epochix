@@ -804,7 +804,7 @@ wheels = [
 
 [[package]]
 name = "epochix"
-version = "0.5.58"
+version = "0.5.59"
 source = { editable = "." }
 dependencies = [
     { name = "aiofiles" },
@@ -822,6 +822,7 @@ dependencies = [
 [package.optional-dependencies]
 all = [
     { name = "httpx" },
+    { name = "pillow" },
     { name = "pytorch-lightning" },
     { name = "transformers" },
     { name = "weasyprint" },
@@ -876,7 +877,7 @@ requires-dist = [
     { name = "alembic", marker = "extra == 'postgres'", specifier = ">=1.13" },
     { name = "anyio", specifier = ">=4.4" },
     { name = "asyncpg", marker = "extra == 'postgres'", specifier = ">=0.30" },
-    { name = "epochix", extras = ["pdf", "lightning", "hf", "llm"], marker = "extra == 'all'" },
+    { name = "epochix", extras = ["pdf", "gif", "lightning", "hf", "llm"], marker = "extra == 'all'" },
     { name = "fastapi", specifier = ">=0.116" },
     { name = "httpx", marker = "extra == 'dev'", specifier = ">=0.27" },
     { name = "httpx", marker = "extra == 'llm'", specifier = ">=0.27" },

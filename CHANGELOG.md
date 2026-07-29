@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.5.59] — 2026-07-29
+
+### Fixed
+
+- **`epochix[all]` did not include GIF export.** The `all` extra expanded to
+  `pdf,lightning,hf,llm` — so installing the extra that means "everything"
+  still left the GIF button unable to work. It now includes `gif`.
+
+- **A failed export was saved to disk as a JSON file.** An `<a href>` cannot
+  read a status code, so a 501 (`gif` extra not installed) or a 400 (run has
+  no metric series) downloaded the error body instead of reporting it. The
+  dashboard now fetches first, shows the server's own message when the request
+  fails, and only downloads on success — using the filename the server chose.
+
+### Notes
+
+`pip install epochix` remains the normal install. The `gif` extra is only
+Pillow, and only GIF export needs it; every other format works without it.
+
+---
+
 ## [0.5.58] — 2026-07-29
 
 ### Fixed

@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "epochix"
-version = "0.5.58"
+version = "0.5.59"
 description = "Turn ML training logs into a plain-English story with a letter grade — a live animated dashboard, no code changes."
 authors = [{ name = "Epochix Team" }]
 license = "Apache-2.0"
@@ -50,7 +50,7 @@ redis     = ["redis>=5.0"]
 # mkdocs pinned <2: the 2.0 rewrite removes the plugin system that
 # mkdocs-material + mkdocstrings depend on.
 docs      = ["mkdocs>=1.6,<2", "mkdocs-material>=9.5", "mkdocstrings[python]>=0.25"]
-all       = ["epochix[pdf,lightning,hf,llm]"]
+all       = ["epochix[pdf,gif,lightning,hf,llm]"]
 dev       = [
   "pytest>=8",
   "pytest-asyncio>=0.24",
