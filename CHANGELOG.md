@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.5.54] — 2026-07-29
+
+### Fixed
+
+- **The extension could block VS Code's own updater.** The sidecar was spawned
+  with no `cwd`, so it inherited the extension host's working directory — on
+  Windows, the VS Code *installation* folder. A running process holds a lock on
+  its own working directory, which is enough to make the updater fail with
+  "the process cannot access the file because it is being used by another
+  process". It now starts in the system temp directory. An editor extension
+  must not be able to stop the editor updating itself.
+
+- **The sidecar could outlive VS Code.** `ChildProcess.kill()` signals only the
+  direct child, and `dispose()` never runs at all if the host dies abruptly. An
+  orphaned `epochix serve` was observed still running on a machine with no
+  `Code.exe` left — holding its cwd and its port indefinitely. Disposal now
+  takes down the whole tree with `taskkill /T /F` on Windows.
+
+---
+
 ## [0.5.53] — 2026-07-29
 
 ### Fixed

@@ -12,6 +12,7 @@ import { candidateInterpreters } from "./interpreters";
 import { findFreePort } from "./PortAllocator";
 import { waitReady } from "./HealthCheck";
 import * as http from "http";
+import * as os from "os";
 
 export class ServerManager implements vscode.Disposable {
   readonly port: number;
@@ -84,6 +85,13 @@ export class ServerManager implements vscode.Disposable {
           detached: false,
           stdio: ["ignore", "pipe", "pipe"],
           windowsHide: true,
+          // Never inherit the extension host's working directory. On Windows
+          // that is the VS Code *installation* folder, and a running process
+          // holds a lock on its own cwd — which is enough to make VS Code's
+          // updater fail with "the process cannot access the file because it
+          // is being used by another process". An editor extension must not be
+          // able to block the editor's own update.
+          cwd: os.tmpdir(),
         },
       );
 
@@ -173,12 +181,31 @@ export class ServerManager implements vscode.Disposable {
     await this._post(`/api/runs/${encodeURIComponent(runId)}/event`, event);
   }
 
-  /** Kill the sidecar process. */
+  /**
+   * Kill the sidecar, and on Windows its whole tree.
+   *
+   * `ChildProcess.kill()` signals only the direct child. `epochix serve` is a
+   * Python process that may own further children, and a survivor keeps its cwd
+   * locked and its port bound long after VS Code has gone — an orphaned
+   * sidecar was observed still running with no Code.exe on the machine at all.
+   * `taskkill /T /F` is the only reliable way to take the tree down on Windows.
+   */
   dispose(): void {
+    const pid = this._proc.pid;
     try {
       this._proc.kill();
     } catch {
       // already dead
+    }
+    if (process.platform === "win32" && pid !== undefined) {
+      try {
+        spawn("taskkill", ["/pid", String(pid), "/T", "/F"], {
+          stdio: "ignore",
+          windowsHide: true,
+        });
+      } catch {
+        // best effort — the direct kill above may already have done it
+      }
     }
   }
 }
