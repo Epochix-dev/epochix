@@ -17,19 +17,29 @@ from typing import TYPE_CHECKING
 import pytest
 from fastapi.testclient import TestClient
 
+from epochix.config import Settings
 from epochix.server.app import create_app
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
-    from pathlib import Path
 
 
 @pytest.fixture
-def client(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Iterator[TestClient]:
-    """Must be entered as a context manager — ``app.state.store`` is created by
-    the lifespan handler, which a bare ``TestClient(app)`` never runs."""
-    monkeypatch.setenv("EPOCHIX_DB_PATH", str(tmp_path / "runs.db"))
-    with TestClient(create_app()) as client:
+def client() -> Iterator[TestClient]:
+    """An in-memory database, matching the pattern in tests/integration/test_api.py.
+
+    Two reasons, both learned the hard way. The store must be handed over as
+    ``Settings(db=...)`` — the settings field is ``db``, so the
+    ``EPOCHIX_DB_PATH`` env var this fixture first used was simply ignored and
+    the tests wrote into the developer's real run database. And an on-disk
+    SQLite file under ``tmp_path`` leaves a handle open on Windows, where the
+    teardown cannot then remove it.
+
+    It must also be entered as a context manager: ``app.state.store`` is built
+    by the lifespan handler, which a bare ``TestClient(app)`` never runs.
+    """
+    app = create_app(settings=Settings(db=":memory:"))
+    with TestClient(app, raise_server_exceptions=True) as client:
         yield client
 
 

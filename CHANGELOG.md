@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.5.57] — 2026-07-29
+
+### Fixed
+
+- **A test fixture wrote to the developer's real run database.** The tests
+  added in 0.5.53 set `EPOCHIX_DB_PATH` to point at a temp file — but the
+  settings field is `db`, so that env var was ignored entirely and every one of
+  those tests ran against whatever database the machine actually uses. It also
+  left an on-disk SQLite handle open, which is what turned the Windows CI job
+  red. The fixture now uses `Settings(db=":memory:")`, matching the pattern
+  already established in `tests/integration/test_api.py`.
+
+  Green on both paths: 511 tests with `--extra dev` alone (what CI runs) and
+  527 with the `gif` extra.
+
+---
+
 ## [0.5.56] — 2026-07-29
 
 ### Fixed
