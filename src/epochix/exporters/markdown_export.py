@@ -2,10 +2,38 @@
 
 from __future__ import annotations
 
+import re
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from epochix.store.sqlite_store import RunStore
+
+# Characters that turn text into markup. A run name comes from a log file, and
+# these exports get pasted into VS Code previews, Notion and README renderers —
+# several of which honour raw HTML, and most of which honour a link.
+_MD_SPECIALS = re.compile(r"([\\`*_{}\[\]()#+\-.!|<>])")
+_CONTROL = re.compile(r"[\x00-\x08\x0b-\x1f\x7f]")
+
+
+def _md_escape(text: str) -> str:
+    """Escape a log-derived string so it renders as the text it is.
+
+    Without this, a run named ``[click](javascript:alert(1))`` exports as a
+    working link, and ``<script>`` survives into any renderer that allows
+    inline HTML. Neither is a name — both are markup the log author chose.
+    """
+    return _MD_SPECIALS.sub(r"\\\1", _CONTROL.sub("", text)).replace("\n", " ").replace("\r", " ")
+
+
+def _code_safe(text: str) -> str:
+    """Make a string safe *inside* a code span.
+
+    Backslash escapes do not apply within backticks, so the only thing that can
+    escape a code span is another backtick. Drop them, along with the pipe that
+    would otherwise end the table cell.
+    """
+    return _CONTROL.sub("", text).replace("`", "").replace("|", "\\|").replace("\n", " ")
+
 
 _GRADE_EMOJI: dict[str, str] = {
     "A+": "🏆",
@@ -63,7 +91,7 @@ def build_markdown(run_id: str, store: RunStore) -> str:
     lines: list[str] = []
 
     # ── Title & metadata ──────────────────────────────────────────────────
-    title = run.name or run.id
+    title = _md_escape(run.name or run.id)
     lines.append(f"# {title}")
     lines.append("")
 
@@ -80,7 +108,7 @@ def build_markdown(run_id: str, store: RunStore) -> str:
     lines.append(f"| **Grade** | {grade_emoji} **{grade_str}** |")
     lines.append(f"| **Task** | {task_str} |")
     lines.append(f"| **Final phase** | {phase_str or '—'} |")
-    lines.append(f"| **Primary metric** | {run.primary_metric} |")
+    lines.append(f"| **Primary metric** | {_md_escape(str(run.primary_metric))} |")
     if run.total_epochs_est:
         lines.append(f"| **Epochs** | {run.total_epochs_est} |")
     if run.framework_detected:
@@ -117,7 +145,7 @@ def build_markdown(run_id: str, store: RunStore) -> str:
         lines.append("| Metric | Final Value |")
         lines.append("|--------|-------------|")
         for key, val in sorted(latest.items()):
-            lines.append(f"| `{key}` | `{val:.4f}` |")
+            lines.append(f"| `{_code_safe(key)}` | `{val:.4f}` |")
         lines.append("")
 
     # ── Milestones ────────────────────────────────────────────────────────

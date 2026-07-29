@@ -19,6 +19,8 @@ Ships behind the ``gif`` extra: ``pip install 'epochix[gif]'``.
 from __future__ import annotations
 
 import io
+import math
+import unicodedata
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
@@ -32,6 +34,18 @@ _HOLD_FRAMES = 9  # ~1.5 s on the final frame, so it can actually be read
 _FPS = 6
 
 _W, _H = 1200, 675  # 16:9 — embeds cleanly and is legible as a thumbnail
+
+# Hard bounds on anything a caller can set. `build_gif` is a public function and
+# will be reachable over HTTP once the dashboard's Record button lands, so a
+# caller-supplied size must never decide how much memory we allocate:
+# 20000x20000 is 1.2 GB *per frame*, and there are dozens of frames.
+_MIN_DIM, _MAX_DIM = 320, 2400
+_MAX_FPS = 30
+
+# A run name comes from a log file, which is untrusted input. Drawing 100k
+# characters is not a crash but it is free CPU for an attacker, and the excess
+# renders off-canvas where nobody sees it anyway.
+_MAX_NAME_CHARS = 80
 _PAD_L, _PAD_R, _PAD_T, _PAD_B = 96, 56, 132, 88
 
 # Flat palette: no gradients, so the 256-colour quantisation has nothing to
@@ -104,6 +118,22 @@ def _is_bounded_unit(metric: str) -> bool:
     return metric in _UNIT_METRICS
 
 
+def _safe_label(text: str) -> str:
+    """Make a log-derived string safe to draw.
+
+    Control characters and bidi overrides can reorder or hide what a reader
+    sees — a name like "safe‮gnp.exe" displays reversed. Strip the
+    formatting classes, collapse whitespace, and cap the length.
+    """
+    cleaned = "".join(
+        " " if ch in "\r\n\t" else ch for ch in text if unicodedata.category(ch) not in {"Cc", "Cf"}
+    )
+    cleaned = " ".join(cleaned.split())
+    if len(cleaned) > _MAX_NAME_CHARS:
+        cleaned = cleaned[: _MAX_NAME_CHARS - 1] + "…"
+    return cleaned or "run"
+
+
 def _font(size: int) -> Any:  # noqa: ANN401 - PIL font object, optional dep
     from PIL import ImageFont
 
@@ -126,6 +156,11 @@ def build_gif(
     """Render the run's primary-metric curve as an animated GIF."""
     Image, ImageDraw = _require_pillow()
 
+    # Clamp before allocating anything.
+    width = max(_MIN_DIM, min(int(width), _MAX_DIM))
+    height = max(_MIN_DIM, min(int(height), _MAX_DIM))
+    fps = max(1, min(int(fps), _MAX_FPS))
+
     run = store.get_run(run_id)
     if run is None:
         raise ValueError(f"Run not found: {run_id!r}")
@@ -146,6 +181,9 @@ def build_gif(
         for f in frames
         if f.primary_metric == metric and f.epoch is not None
     ]
+    # A diverged run stores NaN/Inf; they would propagate into pixel
+    # coordinates and hang or crash the rasteriser.
+    points = [(e, v) for e, v in points if math.isfinite(e) and math.isfinite(v)]
     points.sort(key=lambda ev: ev[0])
     if len(points) < 2:
         raise ValueError("This run has too few epochs to animate.")
@@ -179,7 +217,7 @@ def build_gif(
         _font(17),
     )
     grade = run.final_grade.value if run.final_grade else "—"
-    name = run.name or run_id
+    name = _safe_label(run.name or run_id)
 
     images: list[Any] = []
     for upto in _subsample(points, _FRAME_BUDGET):

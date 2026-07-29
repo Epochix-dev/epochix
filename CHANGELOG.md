@@ -7,6 +7,48 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.5.50] — 2026-07-28
+
+### Security
+
+A training log is untrusted input. It is written by a process that, on a shared
+box or in a repo you cloned, you did not necessarily control — and the run name
+it yields then crosses into an image rasteriser, a Markdown document and an
+HTML page. This release closes the places where that name stopped being text.
+
+- **GIF export could be made to exhaust memory.** `build_gif` took `width` and
+  `height` straight from the caller with no bound. A 20000×20000 request is
+  ~1.2 GB *per frame* across dozens of frames; it never returned. Dimensions are
+  now clamped to 320–2400 and `fps` to 1–30, before anything is allocated.
+  `build_gif` is a public function and is due to become reachable over HTTP, so
+  a caller-supplied size must never decide an allocation.
+- **A run name could disguise itself in a GIF.** Control characters and Unicode
+  bidi overrides passed through to the canvas — `safe<U+202E>gnp.exe` renders as
+  `safeexe.gnp`, a label that lies about what it is. Names are now stripped of
+  the `Cc`/`Cf` categories, whitespace-collapsed and capped at 80 characters.
+- **A run name could inject markup into a Markdown export.** A name like
+  `[click](javascript:alert(1))` exported as a working link, `<script>` survived
+  into any renderer allowing inline HTML, and a bare `|` silently restructured
+  the metrics table. Names and metric keys are now escaped for the context they
+  land in — backslash escapes outside code spans, backtick removal inside them,
+  since a backslash means nothing between backticks.
+- **Non-finite metric values could hang the rasteriser.** A diverged run stores
+  NaN/Inf, which propagated into pixel coordinates. They are now filtered out.
+
+Also fixed: a 100k-character run name took 4.6 s to render. It now takes 0.58 s.
+
+Audited and found already correct, so unchanged: the HTML exporter's `<script>`
+data island (escapes `<`, `>`, `&`), the dashboard's `innerHTML` sinks (all
+`_esc`-wrapped), the SQLite layer (its only interpolated identifiers are
+hardcoded literals), and the default same-origin CORS posture.
+
+### Added
+
+- Two adversarial test files — `test_gif_export_hardening.py` and
+  `test_export_injection.py` — asserting each property above.
+
+---
+
 ## [0.5.49] — 2026-07-27
 
 ### Fixed
