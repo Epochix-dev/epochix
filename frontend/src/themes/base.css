@@ -1025,3 +1025,39 @@ body {
   line-height: 1.45;
   box-shadow: 0 18px 44px rgba(0, 0, 0, 0.46);
 }
+
+/* Race-GIF button in the comparison toolbar, and the GIF metric submenu. */
+.cmp-race {
+  margin-left: auto;
+  padding: 7px 14px;
+  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.14));
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-primary, #e8ecf8);
+  font: inherit;
+  font-size: 0.84rem;
+  cursor: pointer;
+}
+
+.cmp-race:hover:not(:disabled) {
+  border-color: var(--accent-primary, #7c6dff);
+  color: var(--accent-primary, #7c6dff);
+}
+
+.cmp-race:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.export-menu-head {
+  padding: 6px 12px 8px;
+  color: var(--text-secondary, #94a3b8);
+  font-size: 0.76rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.export-hint {
+  color: var(--text-secondary, #94a3b8);
+  font-size: 0.74rem;
+}

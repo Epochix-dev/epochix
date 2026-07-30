@@ -190,10 +190,11 @@ async function main() {
     return m ? m[1] : `${runId}.${fmt}`;
   }
 
-  async function _download(runId, fmt) {
+  async function _download(runId, fmt, params = {}) {
+    const qs = new URLSearchParams(params).toString();
     let res;
     try {
-      res = await fetch(`/api/export/${runId}/${fmt}`);
+      res = await fetch(`/api/export/${runId}/${fmt}${qs ? `?${qs}` : ''}`);
     } catch (err) {
       _toast(`Export failed: ${err.message}`);
       return;
@@ -227,6 +228,52 @@ async function main() {
     setTimeout(() => el.remove(), 6000);
   }
 
+  /** Series this run can animate. Empty on any failure — never block the export. */
+  async function _gifMetrics(runId) {
+    try {
+      const res = await fetch(`/api/export/${runId}/gif/metrics`);
+      if (!res.ok) return [];
+      return (await res.json()).metrics ?? [];
+    } catch {
+      return [];
+    }
+  }
+
+  function _metricMenu(runId, keys, anchor) {
+    const menu = document.createElement('div');
+    menu.className = 'export-menu';
+    menu.innerHTML =
+      `<div class="export-menu-head">Animate which metric?</div>` +
+      keys
+        .map(
+          (k, i) =>
+            `<button class="export-opt" data-metric="${_esc(k)}">${_esc(k)}` +
+            (i === 0 ? ' <span class="export-hint">graded</span>' : '') +
+            `</button>`,
+        )
+        .join('');
+    document.body.appendChild(menu);
+
+    const btn = anchor.getBoundingClientRect();
+    menu.style.top = `${btn.bottom + 8}px`;
+    menu.style.right = `${Math.max(8, window.innerWidth - btn.right)}px`;
+
+    menu.addEventListener('click', (e) => {
+      const key = e.target?.closest('.export-opt')?.dataset?.metric;
+      if (!key) return;
+      menu.remove();
+      _download(runId, 'gif', { metric: key });
+    });
+    setTimeout(() => {
+      document.addEventListener('click', function close(e) {
+        if (!menu.contains(e.target)) {
+          menu.remove();
+          document.removeEventListener('click', close);
+        }
+      });
+    }, 0);
+  }
+
   const EXPORT_FORMATS = [
     ['html', 'Standalone HTML'],
     ['gif', 'Animated GIF'],
@@ -238,6 +285,11 @@ async function main() {
   document.getElementById('export-btn')?.addEventListener('click', (ev) => {
     const runId = getRunId();
     if (!runId) return;
+    // Grab the element now. `currentTarget` is reset to null once dispatch
+    // finishes, and the handler below awaits — so reading it after the await
+    // threw inside _metricMenu, leaving a submenu on screen with no click
+    // listener attached: it rendered and did nothing at all.
+    const anchorEl = ev.currentTarget;
 
     document.querySelector('.export-menu')?.remove();
     const menu = document.createElement('div');
@@ -247,13 +299,27 @@ async function main() {
     ).join('');
     document.body.appendChild(menu);
 
-    const btn = ev.currentTarget.getBoundingClientRect();
+    const btn = anchorEl.getBoundingClientRect();
     menu.style.top = `${btn.bottom + 8}px`;
     menu.style.right = `${Math.max(8, window.innerWidth - btn.right)}px`;
 
-    menu.addEventListener('click', (e) => {
+    menu.addEventListener('click', async (e) => {
       const fmt = e.target?.dataset?.fmt;
       if (!fmt) return;
+
+      // A GIF animates one series, and a run records several — so ask which,
+      // rather than silently picking the primary. Skipped when the run only
+      // has one metric: a menu with a single entry is a worse experience than
+      // no menu at all.
+      if (fmt === 'gif' && !window.__EPOCHIX_VSCODE__ && window.parent === window) {
+        const keys = await _gifMetrics(runId);
+        if (keys.length > 1) {
+          menu.remove();
+          _metricMenu(runId, keys, anchorEl);
+          return;
+        }
+      }
+
       menu.remove();
       if (window.__EPOCHIX_VSCODE__) {
         // The webview cannot reach the sidecar itself; the extension host can.

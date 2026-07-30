@@ -77,6 +77,9 @@ export class CompareView {
           <input id="cmp-smooth" type="range" min="0" max="0.95" step="0.05" value="${this._smoothing}">
         </label>
         <span class="cmp-count">${this._runs.length} runs</span>
+        <button id="cmp-race" class="cmp-race" title="Animated GIF of these runs racing">
+          Download race GIF
+        </button>
       </div>
       <div class="cmp-chart-wrap"><canvas id="cmp-canvas"></canvas></div>
       <div class="cmp-legend" id="cmp-legend"></div>
@@ -84,6 +87,42 @@ export class CompareView {
 
     this._canvas = this._el.querySelector('#cmp-canvas');
     this._ctx = this._canvas.getContext('2d');
+
+    // The race GIF is the thing people put in a slide, and until now the only
+    // way to reach it was to hand-write the URL.
+    this._el.querySelector('#cmp-race')?.addEventListener('click', async (ev) => {
+      const btn = ev.currentTarget;
+      const ids = this._runs.map((r) => r.run.id).slice(0, 6);
+      if (ids.length < 2) return;
+      const label = btn.textContent;
+      btn.disabled = true;
+      btn.textContent = 'Rendering…';
+      try {
+        const url = `/api/export/compare/gif?runs=${ids.join(',')}` +
+                    `&metric=${encodeURIComponent(this._metric)}`;
+        const res = await fetch(url);
+        if (!res.ok) {
+          let detail = `HTTP ${res.status}`;
+          try { detail = (await res.json()).detail || detail; } catch { /* not JSON */ }
+          btn.textContent = label;
+          btn.disabled = false;
+          alert(detail);
+          return;
+        }
+        const blob = await res.blob();
+        const href = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = href;
+        a.download = 'comparison.gif';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(href);
+      } finally {
+        btn.textContent = label;
+        btn.disabled = false;
+      }
+    });
 
     this._el.querySelector('#cmp-metric').addEventListener('change', (e) => {
       this._metric = e.target.value;

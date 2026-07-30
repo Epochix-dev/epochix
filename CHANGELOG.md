@@ -7,6 +7,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.5.64] — 2026-07-29
+
+### Added
+
+- **The GIF options are reachable from the dashboard.** Metric choice shipped
+  in 0.5.62 and the race in 0.5.63, but nothing in the UI could call either —
+  the export menu still only fired the default single-run GIF. Both are now
+  clickable:
+
+  - Choosing **Animated GIF** asks which metric to animate, listing what the
+    run actually recorded. Skipped when there is only one — a menu with a
+    single entry is worse than no menu.
+  - The comparison view has a **Download race GIF** button that uses the runs
+    on screen and the metric already selected there.
+
+### Fixed
+
+- **A submenu that rendered and did nothing.** Found by clicking it rather
+  than by reading it: the handler passed `ev.currentTarget` to the menu
+  builder *after* an `await`, and `currentTarget` is null once dispatch
+  completes. `getBoundingClientRect()` threw after the menu was appended but
+  before its click listener was attached — so the menu appeared, looked right,
+  and swallowed every click. The element is captured before the await now.
+
+---
+
 ## [0.5.63] — 2026-07-29
 
 ### Added
