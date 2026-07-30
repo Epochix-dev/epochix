@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.5.70] — 2026-07-30
+
+### Fixed
+
+- **The default GIF export failed on real runs.** A run whose story frames
+  carry a value but no metric name — every run written before that name was
+  stored on the frame — was refused with "no metric series to animate", while
+  `?metric=` and `?chart=overlay` on the *same run* worked. The run record
+  still knows which metric it is and the events still hold the series, so the
+  default path now reads from those instead of discarding data that is plainly
+  present.
+
+  Found by walking the whole export surface against a real 25-epoch run rather
+  than a fixture: seven routes returned 200 and the most-used one returned 400.
+
+  A run that declares a primary metric it never logged still fails, but in its
+  own words. Falling through to "no series named val_loss" would answer a
+  question the caller never asked — they requested the default.
+
+---
+
 ## [0.5.69] — 2026-07-30
 
 ### Added

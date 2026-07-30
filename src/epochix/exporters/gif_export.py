@@ -244,14 +244,31 @@ def _series_for(
         for f in frames:
             if f.primary_metric and f.primary_metric_value is not None:
                 counts[f.primary_metric] = counts.get(f.primary_metric, 0) + 1
-        if not counts:
-            raise ValueError("This run has no metric series to animate.")
-        metric = max(counts, key=lambda k: counts[k])
-        points = [
-            (float(f.epoch), float(f.primary_metric_value))
-            for f in frames
-            if f.primary_metric == metric and f.epoch is not None
-        ]
+        if counts:
+            metric = max(counts, key=lambda k: counts[k])
+            points = [
+                (float(f.epoch), float(f.primary_metric_value))
+                for f in frames
+                if f.primary_metric == metric and f.epoch is not None
+            ]
+        else:
+            # Frames can carry a value without naming the metric — every run
+            # written before the name was stored on the frame does. The run
+            # record still knows which metric it is and the raw events still
+            # hold the series, so read from those rather than refuse a run
+            # whose data is plainly present. Without this the default export
+            # failed on real 25-epoch runs while `?metric=` on the same run
+            # worked.
+            run = store.get_run(run_id)
+            if not (run and run.primary_metric):
+                raise ValueError("This run has no metric series to animate.")
+            try:
+                return _series_for(run_id, store, run.primary_metric)
+            except ValueError:
+                # The run declares a primary metric it never actually logged.
+                # Reporting "no series named val_loss" would be answering a
+                # question the caller did not ask — they requested the default.
+                raise ValueError("This run has no metric series to animate.") from None
     # A diverged run stores NaN/Inf; they would propagate into pixel
     # coordinates and hang or crash the rasteriser.
     points = [(e, v) for e, v in points if math.isfinite(e) and math.isfinite(v)]

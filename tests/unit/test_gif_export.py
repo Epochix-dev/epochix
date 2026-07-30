@@ -220,3 +220,18 @@ def test_both_series_share_one_axis(tmp_path: Path) -> None:
     lo, hi = _axis_bounds([v for _, v in train + val], "val_loss")
     assert lo <= min(v for _, v in train + val)
     assert hi >= max(v for _, v in train + val)
+
+
+def test_a_frame_without_a_metric_name_still_animates(tmp_path: Path) -> None:
+    """Frames can carry a value and no metric name — every run written before
+    the name was stored on the frame does. The run record still knows and the
+    events still hold the series, so refusing would discard data that is
+    plainly there. A real 25-epoch run exported fine via ?metric= while the
+    default path returned 400."""
+    from epochix.exporters.gif_export import build_gif
+
+    run_id, store = _run(tmp_path, 12)
+    frames = store.get_story_frames(run_id)
+    for f in frames:  # simulate the older shape
+        f.primary_metric = None
+    assert build_gif(run_id=run_id, store=store), "should fall back to run.primary_metric"
