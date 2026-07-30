@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.5.67] — 2026-07-30
+
+### Fixed
+
+- **The Open in Browser button did not appear.** Shipped in 0.5.66 and invisible
+  in the Runs sidebar: the link label carried a codicon,
+  `[$(link-external) Open in Browser](command:…)`, and a `$(icon)` inside a
+  link label is not the same parse path as one in plain text. The link failed
+  to parse and was dropped without a word, while every other line rendered
+  normally.
+
+  The label is now plain text, matching the four links that always worked.
+  (`▶ Try a Demo Run` was never affected — that is a literal character, not a
+  codicon.)
+
+---
+
 ## [0.5.66] — 2026-07-30
 
 ### Added
