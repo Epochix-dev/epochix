@@ -180,3 +180,43 @@ def test_padding_never_invents_a_value_outside_the_metric_domain() -> None:
     # A metric that genuinely goes negative keeps its negative room.
     lo, _ = _axis_bounds([-3.0, -1.0, 0.5], "custom")
     assert lo < -3.0, "clamping here would crop real data"
+
+
+def test_the_overlay_needs_both_sides(tmp_path: Path) -> None:
+    """Train and validation together are the point; one side alone cannot show
+    a gap, so a run missing one is refused with what it does have."""
+    from epochix.exporters.gif_export import build_overlay_gif, overlay_pair
+
+    # The default fixture logs train_loss + val_acc, which is deliberately NOT
+    # a pair: train loss against validation accuracy on one axis is nonsense
+    # units, so it must be refused rather than drawn.
+    no_pair, store_a = _run(tmp_path / "a", 12)
+    assert overlay_pair(no_pair, store_a) is None
+
+    run_id, store = _run(tmp_path / "b", 12, key="val_loss")
+    assert overlay_pair(run_id, store) == ("train_loss", "val_loss")
+    assert build_overlay_gif(run_id=run_id, store=store)
+
+
+def test_the_overlay_marks_the_best_validation_epoch(tmp_path: Path) -> None:
+    """'It peaked at 12 and you trained to 40' is the actionable part — the
+    marker has to land on the best validation epoch, not the last one."""
+    from epochix.exporters.gif_export import _series_for
+
+    run_id, store = _run(tmp_path, 20, key="val_loss")
+    _key, val = _series_for(run_id, store, "val_loss")
+    best_i = min(range(len(val)), key=lambda i: val[i][1])
+    assert val[best_i][1] == min(v for _, v in val)
+
+
+def test_both_series_share_one_axis(tmp_path: Path) -> None:
+    """Scaling them separately would make a widening gap look constant, which
+    is the one thing this chart exists to reveal."""
+    from epochix.exporters.gif_export import _axis_bounds, _series_for
+
+    run_id, store = _run(tmp_path, 15, key="val_loss")
+    _a, train = _series_for(run_id, store, "train_loss")
+    _b, val = _series_for(run_id, store, "val_loss")
+    lo, hi = _axis_bounds([v for _, v in train + val], "val_loss")
+    assert lo <= min(v for _, v in train + val)
+    assert hi >= max(v for _, v in train + val)

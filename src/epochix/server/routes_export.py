@@ -114,17 +114,21 @@ async def export_gif(
     run_id: str,
     store: StoreDep,
     metric: Annotated[str | None, Query(max_length=128)] = None,
+    chart: Annotated[str, Query(pattern="^(curve|overlay)$")] = "curve",
 ) -> Response:
     """Render a metric curve as an animated GIF (needs the `gif` extra).
 
     ``?metric=`` picks the series; omitting it animates the run's primary
     metric. ``GET /api/export/{run_id}/gif/metrics`` lists the choices.
     """
-    from epochix.exporters.gif_export import build_gif
+    from epochix.exporters.gif_export import build_gif, build_overlay_gif
 
     _require_run(run_id, store)
     try:
-        data = build_gif(run_id=run_id, store=store, metric=metric)
+        if chart == "overlay":
+            data = build_overlay_gif(run_id=run_id, store=store)
+        else:
+            data = build_gif(run_id=run_id, store=store, metric=metric)
     except NotImplementedError as exc:
         raise HTTPException(
             status_code=status.HTTP_501_NOT_IMPLEMENTED,

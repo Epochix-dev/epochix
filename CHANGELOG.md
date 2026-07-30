@@ -7,6 +7,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.5.69] — 2026-07-30
+
+### Added
+
+- **A second chart kind: the train-vs-validation overlay.** Every GIF until now
+  was one curve, and one curve cannot show a gap — which is the thing people
+  most want a picture of.
+
+  ```
+  epochix export <run> --format gif --chart overlay
+  GET /api/export/{run_id}/gif?chart=overlay
+  ```
+
+  Three decisions, each of which could have gone the other way:
+
+  - **Both series share one axis.** Scaling them separately would make a
+    widening gap look constant, which is the one thing this chart exists to
+    reveal.
+  - **The marker sits on the best *validation* epoch**, not the last one.
+    "It peaked at 12 and you trained to 25" is the actionable part; the final
+    number is not.
+  - **A run with only one side is refused, and told what it does have.** The
+    default test fixture logs `train_loss` with `val_accuracy` — deliberately
+    not a pair, because loss against accuracy on one axis is nonsense units.
+
+  Run against a real 25-epoch run it does its job immediately: train loss
+  falls to 5.48 while validation bottoms out near epoch 12 and never improves,
+  ending at 38.40.
+
+---
+
 ## [0.5.68] — 2026-07-30
 
 ### Added

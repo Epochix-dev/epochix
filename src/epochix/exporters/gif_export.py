@@ -602,3 +602,160 @@ def build_comparison_gif(
         optimize=True,
     )
     return buf.getvalue()
+
+
+# Train/validation pairs, best first. A chart that puts these two side by side
+# answers the question people most often want a picture of — did it overfit —
+# which no single curve can show.
+_OVERLAY_PAIRS = [
+    ("train_loss", "val_loss"),
+    ("accuracy", "val_accuracy"),
+]
+
+
+def overlay_pair(run_id: str, store: RunStore) -> tuple[str, str] | None:
+    """The (train, val) pair this run can overlay, or None if it logged only one side."""
+    keys = {e.canonical_key for e in store.get_metric_events(run_id) if e.epoch is not None}
+    for train, val in _OVERLAY_PAIRS:
+        if train in keys and val in keys:
+            return (train, val)
+    return None
+
+
+def build_overlay_gif(
+    run_id: str,
+    store: RunStore,
+    *,
+    fps: int = _FPS,
+    width: int = _W,
+    height: int = _H,
+) -> bytes:
+    """Train and validation on one axis, with the best-validation epoch marked.
+
+    The gap between these two curves *is* overfitting, and a single-metric chart
+    cannot show it however carefully it is drawn. The marker sits on the best
+    validation epoch — the checkpoint worth keeping — because "it peaked at 12
+    and you trained to 40" is the actionable part, not the final number.
+
+    Both series share one axis deliberately. Scaling them separately would make
+    a widening gap look constant, which is the one thing this chart exists to
+    reveal.
+    """
+    Image, ImageDraw = _require_pillow()
+
+    width = max(_MIN_DIM, min(int(width), _MAX_DIM))
+    height = max(_MIN_DIM, min(int(height), _MAX_DIM))
+    fps = max(1, min(int(fps), _MAX_FPS))
+
+    run = store.get_run(run_id)
+    if run is None:
+        raise ValueError(f"Run not found: {run_id!r}")
+
+    pair = overlay_pair(run_id, store)
+    if pair is None:
+        raise ValueError(
+            "This run has no train/validation pair to overlay — it logged only one side. "
+            f"Available: {', '.join(available_metrics(run_id, store)) or 'none'}."
+        )
+    train_key, val_key = pair
+    _t, train_pts = _series_for(run_id, store, train_key)
+    _v, val_pts = _series_for(run_id, store, val_key)
+    if len(train_pts) < 2 or len(val_pts) < 2:
+        raise ValueError("Too few epochs to animate.")
+
+    lower_better = "loss" in val_key
+    best_i = (min if lower_better else max)(range(len(val_pts)), key=lambda i: val_pts[i][1])
+    best_epoch, best_val = val_pts[best_i]
+
+    lo, hi = _axis_bounds([v for _, v in train_pts + val_pts], val_key)
+    xs = [e for e, _ in train_pts + val_pts]
+    x0, x1 = min(xs), max(xs)
+    plot_w, plot_h = width - _PAD_L - _PAD_R, height - _PAD_T - _PAD_B
+
+    def px(e: float) -> float:
+        return _PAD_L + (e - x0) / ((x1 - x0) or 1.0) * plot_w
+
+    def py(v: float) -> float:
+        return _PAD_T + (1 - (v - lo) / ((hi - lo) or 1.0)) * plot_h
+
+    title_font, label_font, small_font = _font(34), _font(20), _font(17)
+    mark = _brand_mark(_MARK_H)
+    name = _safe_label(run.name or run_id)
+    TRAIN, VAL = (94, 174, 255), (255, 176, 59)
+
+    images: list[Any] = []
+    for cutoff in [e for e, _ in val_pts]:
+        img = Image.new("RGB", (width, height), _BG)
+        d = ImageDraw.Draw(img)
+
+        for i in range(5):
+            y = _PAD_T + i * plot_h / 4
+            d.line([(_PAD_L, y), (width - _PAD_R, y)], fill=_GRID, width=1)
+            d.text(
+                (_PAD_L - 14, y - 10),
+                f"{hi - i * (hi - lo) / 4:.3f}",
+                font=small_font,
+                fill=_MUTED,
+                anchor="ra",
+            )
+
+        d.text((_PAD_L, 42), name, font=title_font, fill=_INK)
+        d.text((_PAD_L, 86), f"{train_key} vs {val_key}", font=label_font, fill=_MUTED)
+        d.text(
+            (width - _PAD_R, 86),
+            f"epoch {int(cutoff)} of {int(x1)}",
+            font=label_font,
+            fill=_MUTED,
+            anchor="ra",
+        )
+
+        # The best-validation marker appears only once the animation reaches it,
+        # so it reads as a discovery rather than a spoiler on frame one.
+        if cutoff >= best_epoch:
+            bx = px(best_epoch)
+            d.line([(bx, _PAD_T), (bx, height - _PAD_B)], fill=(124, 109, 255), width=2)
+            d.text((bx + 8, _PAD_T + 6), f"best {val_key}", font=small_font, fill=(124, 109, 255))
+            d.ellipse([bx - 6, py(best_val) - 6, bx + 6, py(best_val) + 6], fill=(124, 109, 255))
+
+        for pts, colour in ((train_pts, TRAIN), (val_pts, VAL)):
+            drawn = [(e, v) for e, v in pts if e <= cutoff]
+            if len(drawn) >= 2:
+                d.line([(px(e), py(v)) for e, v in drawn], fill=colour, width=4, joint="curve")
+
+        legend_top = 118
+        d.rectangle(
+            [width - _PAD_R - 230, legend_top, width - _PAD_R + 6, legend_top + 2 * 26 + 8],
+            fill=_BG,
+            outline=_GRID,
+        )
+        for i, (key, colour, pts) in enumerate(
+            ((train_key, TRAIN, train_pts), (val_key, VAL, val_pts))
+        ):
+            ly = legend_top + 14 + i * 26
+            d.line([(width - _PAD_R - 220, ly), (width - _PAD_R - 196, ly)], fill=colour, width=4)
+            seen = [v for e, v in pts if e <= cutoff]
+            value = f"{seen[-1]:.4f}" if seen else "—"
+            d.text((width - _PAD_R - 188, ly - 9), key, font=small_font, fill=_INK)
+            d.text((width - _PAD_R, ly - 9), value, font=small_font, fill=_MUTED, anchor="ra")
+
+        d.line([(_PAD_L, height - _PAD_B), (width - _PAD_R, height - _PAD_B)], fill=_GRID, width=2)
+        wm_y = height - 40
+        d.text((width - _PAD_R, wm_y), "epochix.dev", font=small_font, fill=_MUTED, anchor="ra")
+        if mark is not None:
+            tw = d.textlength("epochix.dev", font=small_font)
+            img.paste(mark, (int(width - _PAD_R - tw - mark.width - 8), wm_y - 3), mark)
+
+        images.append(img)
+
+    images.extend([images[-1]] * _HOLD_FRAMES)
+    buf = io.BytesIO()
+    images[0].save(
+        buf,
+        format="GIF",
+        save_all=True,
+        append_images=images[1:],
+        duration=int(1000 / max(fps, 1)),
+        loop=0,
+        optimize=True,
+    )
+    return buf.getvalue()

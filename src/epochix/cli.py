@@ -345,6 +345,7 @@ def _cli_export(
     store: RunStore,
     outfile: Path | None = None,
     metric: str | None = None,
+    chart: str = "curve",
 ) -> None:
     outfile = outfile or Path(f"{run_id}.{fmt}")
     # Absolute: the default lands in the current directory, and "Exporting HTML
@@ -387,10 +388,13 @@ def _cli_export(
             )
             raise typer.Exit(1) from None
     elif fmt == "gif":
-        from epochix.exporters.gif_export import build_gif
+        from epochix.exporters.gif_export import build_gif, build_overlay_gif
 
         try:
-            outfile.write_bytes(build_gif(run_id=run_id, store=store, metric=metric))
+            if chart == "overlay":
+                outfile.write_bytes(build_overlay_gif(run_id=run_id, store=store))
+            else:
+                outfile.write_bytes(build_gif(run_id=run_id, store=store, metric=metric))
         except NotImplementedError as exc:
             typer.echo(f"  {exc}", err=True)
             raise typer.Exit(1) from None
@@ -505,6 +509,11 @@ def cmd_export(
         "-m",
         help="GIF only: which metric to animate (default: the run's primary metric).",
     ),
+    chart: str = typer.Option(
+        "curve",
+        "--chart",
+        help="GIF only: curve|overlay. 'overlay' draws train vs val, marking the best epoch.",
+    ),
     output: Path | None = typer.Option(None, "--output", "-o", help="Output path."),
     log_level: str = typer.Option("WARNING", "--log-level"),
 ) -> None:
@@ -515,7 +524,7 @@ def cmd_export(
     if store.get_run(run_id) is None:
         typer.echo(f"Run not found: {run_id}", err=True)
         raise typer.Exit(1)
-    _cli_export(run_id=run_id, fmt=fmt, store=store, outfile=output, metric=metric)
+    _cli_export(run_id=run_id, fmt=fmt, store=store, outfile=output, metric=metric, chart=chart)
 
 
 @app.command("race")
