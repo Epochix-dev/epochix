@@ -123,6 +123,31 @@ def _is_bounded_unit(metric: str) -> bool:
     return metric in _UNIT_METRICS
 
 
+def _axis_bounds(ys: list[float], metric: str) -> tuple[float, float]:
+    """Padded y-axis range that never implies a value the metric cannot take.
+
+    Padding is what makes a curve readable instead of glued to the frame edge,
+    but it must not invent numbers outside the metric's domain. Two guards,
+    both from real renders:
+
+    * A bounded metric got an axis topping **1.007** — no model reaches that.
+    * A loss curve got a floor of **-0.197** — no loss, error or perplexity
+      value is negative.
+
+    Both are the same fault as the 123.6% this project shipped once: a number
+    on screen that the quantity behind it cannot produce.
+    """
+    lo, hi = min(ys), max(ys)
+    span = (hi - lo) or (abs(hi) or 1.0)
+    lo -= span * 0.12
+    hi += span * 0.12
+    if _is_bounded_unit(metric):
+        lo, hi = max(lo, 0.0), min(hi, 1.0)
+    if min(ys) >= 0.0:
+        lo = max(lo, 0.0)
+    return lo, hi
+
+
 def _safe_label(text: str) -> str:
     """Make a log-derived string safe to draw.
 
@@ -174,15 +199,37 @@ def _font(size: int) -> Any:  # noqa: ANN401 - PIL font object, optional dep
     return ImageFont.load_default()
 
 
+def available_metrics(run_id: str, store: RunStore) -> list[str]:
+    """Series in this run that can be animated, best-known first.
+
+    The primary metric leads because it is what the story is graded on; the
+    rest follow alphabetically. Callers use this to offer a choice and to say
+    what went wrong when an unknown metric is asked for.
+    """
+    keys = {e.canonical_key for e in store.get_metric_events(run_id) if e.epoch is not None}
+    run = store.get_run(run_id)
+    primary = run.primary_metric if run else None
+    rest = sorted(keys - {primary})
+    return ([primary] if primary in keys else []) + rest
+
+
 def build_gif(
     run_id: str,
     store: RunStore,
     *,
+    metric: str | None = None,
     fps: int = _FPS,
     width: int = _W,
     height: int = _H,
 ) -> bytes:
-    """Render the run's primary-metric curve as an animated GIF."""
+    """Render a metric curve as an animated GIF.
+
+    *metric* selects which series to animate — any canonical key the run
+    recorded, not only the primary one. A training run logs several (loss,
+    accuracy, learning rate) and which of them is worth showing depends on the
+    point being made, so the choice belongs to the caller. Defaults to the
+    primary metric, which is what the run is graded on.
+    """
     Image, ImageDraw = _require_pillow()
 
     # Clamp before allocating anything.
@@ -194,22 +241,38 @@ def build_gif(
     if run is None:
         raise ValueError(f"Run not found: {run_id!r}")
 
-    frames = store.get_story_frames(run_id)
-    # One metric only: an early frame can predate task detection and measure
-    # something else, and joining a loss to an accuracy would be a false curve.
-    counts: dict[str, int] = {}
-    for f in frames:
-        if f.primary_metric and f.primary_metric_value is not None:
-            counts[f.primary_metric] = counts.get(f.primary_metric, 0) + 1
-    if not counts:
-        raise ValueError("This run has no metric series to animate.")
-    metric = max(counts, key=lambda k: counts[k])
-
-    points = [
-        (float(f.epoch), float(f.primary_metric_value))
-        for f in frames
-        if f.primary_metric == metric and f.epoch is not None
-    ]
+    if metric:
+        # An explicitly chosen series comes from the raw events, which hold
+        # every metric the run recorded. Story frames only ever carry the
+        # primary one, so they cannot answer for train_loss or lr.
+        points = [
+            (float(e.epoch), float(e.value))
+            for e in store.get_metric_events(run_id)
+            if e.canonical_key == metric and e.epoch is not None
+        ]
+        if not points:
+            offer = available_metrics(run_id, store)
+            raise ValueError(
+                f"No series named {metric!r} in this run. "
+                + (f"Available: {', '.join(offer)}." if offer else "This run recorded none.")
+            )
+    else:
+        frames = store.get_story_frames(run_id)
+        # One metric only: an early frame can predate task detection and
+        # measure something else, and joining a loss to an accuracy would be a
+        # false curve.
+        counts: dict[str, int] = {}
+        for f in frames:
+            if f.primary_metric and f.primary_metric_value is not None:
+                counts[f.primary_metric] = counts.get(f.primary_metric, 0) + 1
+        if not counts:
+            raise ValueError("This run has no metric series to animate.")
+        metric = max(counts, key=lambda k: counts[k])
+        points = [
+            (float(f.epoch), float(f.primary_metric_value))
+            for f in frames
+            if f.primary_metric == metric and f.epoch is not None
+        ]
     # A diverged run stores NaN/Inf; they would propagate into pixel
     # coordinates and hang or crash the rasteriser.
     points = [(e, v) for e, v in points if math.isfinite(e) and math.isfinite(v)]
@@ -219,15 +282,7 @@ def build_gif(
 
     xs = [p[0] for p in points]
     ys = [p[1] for p in points]
-    lo, hi = min(ys), max(ys)
-    span = (hi - lo) or (abs(hi) or 1.0)
-    lo -= span * 0.12
-    hi += span * 0.12
-    # Padding must not push the axis past what the metric can be. An accuracy
-    # axis topped at 1.007 shows a value no model can reach — the same class of
-    # impossible number as the 123.6% this project shipped once already.
-    if _is_bounded_unit(metric):
-        lo, hi = max(lo, 0.0), min(hi, 1.0)
+    lo, hi = _axis_bounds(ys, metric)
     x0, x1 = min(xs), max(xs)
 
     plot_w = width - _PAD_L - _PAD_R

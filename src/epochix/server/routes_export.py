@@ -3,7 +3,7 @@ from __future__ import annotations
 import re
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from fastapi.responses import HTMLResponse, Response
 
 from epochix.exporters.html_export import build_html
@@ -86,13 +86,18 @@ async def export_markdown(
 async def export_gif(
     run_id: str,
     store: StoreDep,
+    metric: Annotated[str | None, Query(max_length=128)] = None,
 ) -> Response:
-    """Render the run's learning curve as an animated GIF (needs the `gif` extra)."""
+    """Render a metric curve as an animated GIF (needs the `gif` extra).
+
+    ``?metric=`` picks the series; omitting it animates the run's primary
+    metric. ``GET /api/export/{run_id}/gif/metrics`` lists the choices.
+    """
     from epochix.exporters.gif_export import build_gif
 
     _require_run(run_id, store)
     try:
-        data = build_gif(run_id=run_id, store=store)
+        data = build_gif(run_id=run_id, store=store, metric=metric)
     except NotImplementedError as exc:
         raise HTTPException(
             status_code=status.HTTP_501_NOT_IMPLEMENTED,
@@ -103,6 +108,18 @@ async def export_gif(
         # nothing to animate. That is the caller's problem, not a server fault.
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
     return Response(content=data, media_type="image/gif", headers=_attachment(run_id, "gif"))
+
+
+@router.get("/{run_id}/gif/metrics", dependencies=[Depends(require_auth)])
+async def gif_metrics(
+    run_id: str,
+    store: StoreDep,
+) -> dict[str, list[str]]:
+    """Series this run can animate, so a picker can be built without guessing."""
+    from epochix.exporters.gif_export import available_metrics
+
+    _require_run(run_id, store)
+    return {"metrics": available_metrics(run_id, store)}
 
 
 @router.get("/{run_id}/json", dependencies=[Depends(require_auth)])

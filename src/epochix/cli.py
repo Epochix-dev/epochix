@@ -339,7 +339,13 @@ def _require_free_port(host: str, port: int) -> None:
             raise typer.Exit(1) from None
 
 
-def _cli_export(run_id: str, fmt: str, store: RunStore, outfile: Path | None = None) -> None:
+def _cli_export(
+    run_id: str,
+    fmt: str,
+    store: RunStore,
+    outfile: Path | None = None,
+    metric: str | None = None,
+) -> None:
     outfile = outfile or Path(f"{run_id}.{fmt}")
     # Absolute: the default lands in the current directory, and "Exporting HTML
     # -> 01K….html" left people hunting for a file they could not place.
@@ -384,7 +390,7 @@ def _cli_export(run_id: str, fmt: str, store: RunStore, outfile: Path | None = N
         from epochix.exporters.gif_export import build_gif
 
         try:
-            outfile.write_bytes(build_gif(run_id=run_id, store=store))
+            outfile.write_bytes(build_gif(run_id=run_id, store=store, metric=metric))
         except NotImplementedError as exc:
             typer.echo(f"  {exc}", err=True)
             raise typer.Exit(1) from None
@@ -493,6 +499,12 @@ def cmd_open(
 def cmd_export(
     run_id: str = typer.Argument(..., help="Run ID to export."),
     fmt: str = typer.Option("html", "--format", "-f", help="Format: html|pdf|md|json|gif."),
+    metric: str | None = typer.Option(
+        None,
+        "--metric",
+        "-m",
+        help="GIF only: which metric to animate (default: the run's primary metric).",
+    ),
     output: Path | None = typer.Option(None, "--output", "-o", help="Output path."),
     log_level: str = typer.Option("WARNING", "--log-level"),
 ) -> None:
@@ -503,7 +515,7 @@ def cmd_export(
     if store.get_run(run_id) is None:
         typer.echo(f"Run not found: {run_id}", err=True)
         raise typer.Exit(1)
-    _cli_export(run_id=run_id, fmt=fmt, store=store, outfile=output)
+    _cli_export(run_id=run_id, fmt=fmt, store=store, outfile=output, metric=metric)
 
 
 @app.command("prune")

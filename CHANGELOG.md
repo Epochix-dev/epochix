@@ -7,6 +7,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.5.62] — 2026-07-29
+
+### Added
+
+- **Choose which metric the GIF animates.** It could only ever show the primary
+  metric, because it read story frames — and frames carry the primary series
+  and nothing else. The demo run records five (`val_accuracy`, `accuracy`,
+  `lr`, `train_loss`, `val_loss`) and four of them were unreachable. A named
+  metric now comes from the raw events instead, so any recorded series can be
+  the subject.
+
+  - CLI: `epochix export <run> --format gif --metric train_loss`
+  - HTTP: `GET /api/export/{run_id}/gif?metric=train_loss`
+  - `GET /api/export/{run_id}/gif/metrics` lists the choices, so a picker
+    doesn't have to guess.
+
+  An unknown metric names the alternatives rather than just failing.
+
+### Fixed
+
+- **A loss axis was floored at −0.197.** Found by rendering `train_loss` and
+  looking at it. Padding is what stops a curve gluing itself to the frame
+  edge, but here it put a negative number under a quantity that is never
+  negative — the same fault as the accuracy axis that once topped 1.007, and
+  as the 123.6% before that. The bounds calculation is now its own function
+  with the rule stated and tested: padding may not leave the metric's domain.
+
+---
+
 ## [0.5.61] — 2026-07-29
 
 ### Added

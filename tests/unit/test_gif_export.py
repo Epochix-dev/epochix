@@ -141,3 +141,42 @@ def test_a_missing_brand_mark_does_not_break_the_export(
     run_id, store = _run(tmp_path, 8)
     img = Image.open(io.BytesIO(gif_export.build_gif(run_id=run_id, store=store)))
     assert img.format == "GIF"
+
+
+def test_any_recorded_metric_can_be_animated(tmp_path: Path) -> None:
+    """A run logs several series and which one is worth showing depends on the
+    point being made — the primary metric is a default, not a limit."""
+    from epochix.exporters.gif_export import available_metrics
+
+    run_id, store = _run(tmp_path, 12)
+    offer = available_metrics(run_id, store)
+    assert "train_loss" in offer, offer
+    assert offer[0] == "val_accuracy", "the graded metric should lead the list"
+
+    for key in offer:
+        assert build_gif(run_id=run_id, store=store, metric=key), key
+
+
+def test_an_unknown_metric_names_the_alternatives(tmp_path: Path) -> None:
+    run_id, store = _run(tmp_path, 6)
+    with pytest.raises(ValueError, match="No series named 'nope'.*Available:"):
+        build_gif(run_id=run_id, store=store, metric="nope")
+
+
+def test_padding_never_invents_a_value_outside_the_metric_domain() -> None:
+    """Padding makes a curve readable instead of glued to the frame edge, but
+    it must not put a number on the axis the quantity cannot produce. Both
+    cases below are from real renders: an accuracy axis that topped 1.007, and
+    a loss axis floored at -0.197."""
+    from epochix.exporters.gif_export import _axis_bounds
+
+    lo, hi = _axis_bounds([0.74, 0.9, 0.98], "val_accuracy")
+    assert lo >= 0.0 and hi <= 1.0, f"accuracy axis {lo}..{hi} leaves [0, 1]"
+
+    lo, hi = _axis_bounds([2.14, 0.5, 0.058], "train_loss")
+    assert lo >= 0.0, f"loss axis floored at {lo} — loss is never negative"
+    assert hi > 2.14, "the top still needs headroom above the data"
+
+    # A metric that genuinely goes negative keeps its negative room.
+    lo, _ = _axis_bounds([-3.0, -1.0, 0.5], "custom")
+    assert lo < -3.0, "clamping here would crop real data"
