@@ -48,7 +48,7 @@ export function buildWebviewHtml(opts: WebviewHtmlOptions): string {
     window.addEventListener('message', (e) => {
       const msg = e.data;
       if (msg && msg.type === 'export' && typeof msg.format === 'string') {
-        vscode.postMessage({ type: 'export', format: msg.format, runId: msg.runId });
+        vscode.postMessage({ type: 'export', format: msg.format, runId: msg.runId, metric: msg.metric });
       }
     });
   </script>

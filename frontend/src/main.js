@@ -262,7 +262,16 @@ async function main() {
       const key = e.target?.closest('.export-opt')?.dataset?.metric;
       if (!key) return;
       menu.remove();
-      _download(runId, 'gif', { metric: key });
+      // Same three destinations as the format menu: the standalone webview,
+      // the sidecar iframe inside it, or a plain browser. Only the last can
+      // download directly.
+      if (window.__EPOCHIX_VSCODE__) {
+        window.__EPOCHIX_VSCODE__.postMessage({ type: 'export', format: 'gif', runId, metric: key });
+      } else if (window.parent !== window) {
+        window.parent.postMessage({ type: 'export', format: 'gif', runId, metric: key }, '*');
+      } else {
+        _download(runId, 'gif', { metric: key });
+      }
     });
     setTimeout(() => {
       document.addEventListener('click', function close(e) {
@@ -311,7 +320,12 @@ async function main() {
       // rather than silently picking the primary. Skipped when the run only
       // has one metric: a menu with a single entry is a worse experience than
       // no menu at all.
-      if (fmt === 'gif' && !window.__EPOCHIX_VSCODE__ && window.parent === window) {
+      //
+      // This runs in the VS Code webview too. Only the *download* is blocked
+      // there — fetch is fine — so the picker works and the chosen metric
+      // travels out with the postMessage. Gating it on "browser only" left
+      // the extension able to export one GIF and nothing else.
+      if (fmt === 'gif') {
         const keys = await _gifMetrics(runId);
         if (keys.length > 1) {
           menu.remove();

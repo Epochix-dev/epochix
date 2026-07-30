@@ -75,6 +75,8 @@ export type WebToExt =
       type: "export";
       format: "html" | "pdf" | "md" | "json" | "gif";
       runId?: string;
+      /** GIF only: which series to animate. */
+      metric?: string;
     }
   | { type: "openExternal"; url: string }
   | { type: "installSidecar" };

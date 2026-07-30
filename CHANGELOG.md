@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.5.65] — 2026-07-30
+
+### Fixed
+
+- **The extension could still only export one GIF.** 0.5.64 added the metric
+  picker but gated it on running in a plain browser, so inside VS Code the
+  export menu went straight to the primary metric — the other series stayed
+  unreachable there.
+
+  The gate was wrong about what the webview blocks. It blocks *downloads*;
+  `fetch` works fine, which is how the picker gets its list. The picker now
+  runs in all three places the dashboard lives, and the chosen metric travels
+  out with the postMessage → through the iframe host bridge → to the extension,
+  which appends `?metric=` to the URL it opens. Without that last hop the
+  picker would have offered choices that changed nothing.
+
+  Verified in an iframe harness matching the webview's structure: all five of
+  the demo run's series are listed, and picking `val_loss` delivers
+  `{format:"gif", runId:…, metric:"val_loss"}` to the host.
+
+---
+
 ## [0.5.64] — 2026-07-29
 
 ### Added

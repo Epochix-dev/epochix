@@ -194,7 +194,7 @@ export class DashboardPanel {
         this._sendInit();
         break;
       case "export":
-        this._handleExport(msg.format, msg.runId ?? this._runId);
+        this._handleExport(msg.format, msg.runId ?? this._runId, msg.metric);
         break;
       case "openExternal":
         void vscode.env.openExternal(vscode.Uri.parse(msg.url));
@@ -216,6 +216,7 @@ export class DashboardPanel {
   private _handleExport(
     format: "html" | "pdf" | "md" | "json" | "gif",
     runId?: string,
+    metric?: string,
   ): void {
     if (!this._sidecar) {
       void vscode.window.showInformationMessage(
@@ -233,9 +234,14 @@ export class DashboardPanel {
       );
       return;
     }
+    // The chosen series has to survive the trip out. Without it the extension
+    // always exported the run's primary metric, so the picker offered choices
+    // that changed nothing.
+    const query = metric ? `?metric=${encodeURIComponent(metric)}` : "";
     void vscode.env.openExternal(
       vscode.Uri.parse(
-        `http://127.0.0.1:${this._sidecar.port}/api/export/${encodeURIComponent(runId)}/${format}`,
+        `http://127.0.0.1:${this._sidecar.port}/api/export/` +
+          `${encodeURIComponent(runId)}/${format}${query}`,
       ),
     );
   }
