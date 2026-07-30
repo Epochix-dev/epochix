@@ -518,6 +518,45 @@ def cmd_export(
     _cli_export(run_id=run_id, fmt=fmt, store=store, outfile=output, metric=metric)
 
 
+@app.command("race")
+def cmd_race(
+    run_ids: list[str] = typer.Argument(..., help="Two or more run IDs to race."),
+    metric: str | None = typer.Option(
+        None, "--metric", "-m", help="Metric to race on (default: one they share)."
+    ),
+    output: Path = typer.Option(Path("race.gif"), "--output", "-o", help="Output path."),
+    log_level: str = typer.Option("WARNING", "--log-level"),
+) -> None:
+    """Animate several runs racing on one metric — the version for a slide.
+
+    Curves align by epoch, so runs of different lengths finish at different
+    moments. That is the honest picture: reaching 0.95 in 8 epochs is not the
+    same result as reaching it in 40.
+    """
+    _configure_logging(log_level)
+    settings = get_settings()
+    store = _open_store(settings)
+
+    for rid in run_ids:
+        if store.get_run(rid) is None:
+            typer.echo(f"Run not found: {rid}", err=True)
+            raise typer.Exit(1)
+
+    from epochix.exporters.gif_export import build_comparison_gif
+
+    try:
+        data = build_comparison_gif(list(run_ids), store, metric=metric)
+    except NotImplementedError as exc:
+        typer.echo(f"  {exc}", err=True)
+        raise typer.Exit(1) from None
+    except ValueError as exc:
+        typer.echo(f"  Cannot race these runs: {exc}", err=True)
+        raise typer.Exit(1) from None
+
+    output.write_bytes(data)
+    typer.echo(f"  Race GIF -> {output}")
+
+
 @app.command("prune")
 def cmd_prune(
     older_than: str = typer.Option("30d", "--older-than", help="Delete runs older than N days."),

@@ -565,7 +565,19 @@ def build_comparison_gif(
             ly = legend_top + 14 + idx * 26
             d.line([(width - _PAD_R - 210, ly), (width - _PAD_R - 186, ly)], fill=colour, width=4)
             reached = reached_at[idx]
-            d.text((width - _PAD_R - 178, ly - 9), name[:22], font=small_font, fill=_INK)
+            # Trim to the space actually left after the value, measured rather
+            # than a fixed character count. Two real runs both named
+            # "gazenet-gazecapture-24subj" truncated to 22 characters and ran
+            # straight through their own scores — a fixed count cannot know how
+            # wide a glyph is.
+            name_x = width - _PAD_R - 178
+            room = (width - _PAD_R) - d.textlength(reached, font=small_font) - 10 - name_x
+            label = name
+            while label and d.textlength(label, font=small_font) > room:
+                label = label[:-1]
+            if label != name and len(label) > 1:
+                label = label[:-1] + "…"
+            d.text((name_x, ly - 9), label, font=small_font, fill=_INK)
             d.text((width - _PAD_R, ly - 9), reached, font=small_font, fill=_MUTED, anchor="ra")
 
         d.line([(_PAD_L, height - _PAD_B), (width - _PAD_R, height - _PAD_B)], fill=_GRID, width=2)

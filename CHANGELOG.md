@@ -7,6 +7,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.5.68] — 2026-07-30
+
+### Added
+
+- **`epochix race`** — the comparison race from a terminal, which until now
+  existed only as an HTTP route:
+
+  ```
+  epochix race <run-a> <run-b> [--metric MAE] [--output race.gif]
+  ```
+
+### Fixed
+
+- **Long run names ran through their own scores in the race legend.** The label
+  was cut at a fixed 22 characters, which cannot know how wide a glyph is —
+  two real runs both called `gazenet-gazecapture-24subj` overlapped the values
+  beside them. The label is now trimmed to the room actually left after the
+  score, measured with the font.
+
+  Found by racing two real runs from the developer's own database. The
+  synthetic fixtures used short names like `baseline` and `tuned`, which is
+  exactly the shape of input that hides this.
+
+---
+
 ## [0.5.67] — 2026-07-30
 
 ### Fixed
