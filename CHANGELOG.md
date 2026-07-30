@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.5.66] — 2026-07-30
+
+### Added
+
+- **Open in Browser**, in the Runs sidebar and the command palette. It
+  deep-links to the run currently on screen, or the run list when there is
+  none.
+
+  The webview is convenient but constrained — it blocks downloads outright,
+  and exports have to be bounced out through the extension host to land
+  anywhere. A browser has none of that, so this is both a convenience and the
+  dependable way out when the panel cannot do what you need.
+
+  Without a Python engine there is nothing to open — no HTTP server exists —
+  so it says that and offers the install instructions rather than failing
+  silently.
+
+---
+
 ## [0.5.65] — 2026-07-30
 
 ### Fixed

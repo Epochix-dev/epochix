@@ -27,6 +27,11 @@ export class DashboardPanel {
   private _engine: StandaloneEngine | null;
   /** Set once the sidecar has persisted this run — the id the export routes need. */
   private _runId: string | undefined;
+
+  /** The run currently on screen, for deep-linking out to a browser. */
+  get runId(): string | undefined {
+    return this._runId;
+  }
   private _architectureSent = false;
   private _metricsSent = 0;
 

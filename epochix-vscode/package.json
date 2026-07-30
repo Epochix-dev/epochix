@@ -3,7 +3,7 @@
   "displayName": "Epochix",
   "description": "See what your model is doing — training logs become a plain-English story with a letter grade, in a live animated dashboard. No code changes.",
   "publisher": "epochix",
-  "version": "0.5.65",
+  "version": "0.5.66",
   "license": "Apache-2.0",
   "icon": "icon.png",
   "repository": {
@@ -93,6 +93,11 @@
         "command": "epochix.tryDemo",
         "title": "Epochix: Try a Demo Run",
         "icon": "$(play)"
+      },
+      {
+        "command": "epochix.openInBrowser",
+        "title": "Epochix: Open in Browser",
+        "category": "Epochix"
       }
     ],
     "menus": {
@@ -148,7 +153,7 @@
     "viewsWelcome": [
       {
         "view": "epochixRuns",
-        "contents": "Visualise a training run as an animated dashboard.\n\n[▶ Try a Demo Run](command:epochix.tryDemo)\n\nNo setup needed — see it working on a bundled training log.\n\n[Open Dashboard](command:epochix.openDashboard)\n\n[Watch Active Terminal](command:epochix.watchTerminal)\n\n[Open Log File…](command:epochix.openLogFile)\n\nA run also opens automatically when training is detected in a terminal.\nTip: $(keyboard) Ctrl+Alt+M (⌘⌥M on macOS) opens the dashboard anywhere."
+        "contents": "Visualise a training run as an animated dashboard.\n\n[▶ Try a Demo Run](command:epochix.tryDemo)\n\nNo setup needed — see it working on a bundled training log.\n\n[Open Dashboard](command:epochix.openDashboard)\n\n[Watch Active Terminal](command:epochix.watchTerminal)\n\n[Open Log File…](command:epochix.openLogFile)\n\n[$(link-external) Open in Browser](command:epochix.openInBrowser)\n\nThe browser has no webview limits — downloads and GIF exports always work there.\n\nA run also opens automatically when training is detected in a terminal.\nTip: $(keyboard) Ctrl+Alt+M (⌘⌥M on macOS) opens the dashboard anywhere."
       }
     ],
     "walkthroughs": [

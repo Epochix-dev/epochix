@@ -10,6 +10,7 @@ import { ServerManager } from "./sidecar/ServerManager";
 import { TerminalWatcher } from "./terminal/TerminalWatcher";
 import { StatusBar } from "./statusBar";
 import { registerOpenDashboard } from "./commands/openDashboard";
+import { registerOpenInBrowser } from "./commands/openInBrowser";
 import { registerWatchTerminal } from "./commands/watchTerminal";
 import { registerOpenLogFile } from "./commands/openLogFile";
 import { registerExportRun } from "./commands/exportRun";
@@ -49,6 +50,10 @@ export async function activate(ctx: vscode.ExtensionContext): Promise<void> {
     registerCompareRuns(_sidecar),
     registerTryDemo(ctx, _sidecar),
   );
+
+  // Resolves the sidecar at call time rather than capturing it here: it can
+  // still be starting when activate() runs.
+  registerOpenInBrowser(ctx, () => _sidecar);
 
   // Show the install-sidecar hint at most ONCE (until the user acts), never
   // on every launch. It's suppressed after any interaction — and it never
