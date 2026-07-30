@@ -235,3 +235,24 @@ def test_a_frame_without_a_metric_name_still_animates(tmp_path: Path) -> None:
     for f in frames:  # simulate the older shape
         f.primary_metric = None
     assert build_gif(run_id=run_id, store=store), "should fall back to run.primary_metric"
+
+
+def test_comparison_narrative_survives_frames_without_a_metric_name() -> None:
+    """The 'why did this run win' explanation came back *empty* on real runs —
+    worse than wrong, because the feature looked absent rather than broken.
+    Frames written before the metric name was stored carry a value and no key;
+    the run record still knows what it is."""
+    from epochix.story_engine.comparison import trajectory_from_frames
+
+    class F:
+        def __init__(self, epoch: float, value: float) -> None:
+            self.epoch = epoch
+            self.primary_metric = None  # the older shape
+            self.primary_metric_value = value
+
+    frames = [F(float(i), 10.0 - i) for i in range(1, 8)]
+    assert trajectory_from_frames("a", list(frames)) is None, "no name, no hint -> refuse"
+
+    traj = trajectory_from_frames("a", list(frames), fallback_metric="MAE")
+    assert traj is not None and traj.primary_metric == "MAE"
+    assert len(traj.values) == 7

@@ -198,6 +198,7 @@ def trajectory_from_frames(
     name: str,
     frames: list[object],
     grade: str | None = None,
+    fallback_metric: str | None = None,
 ) -> RunTrajectory | None:
     """Build a trajectory from stored :class:`StoryFrame` records.
 
@@ -210,13 +211,21 @@ def trajectory_from_frames(
         key = getattr(frame, "primary_metric", None)
         if key:
             counts[key] = counts.get(key, 0) + 1
-    if not counts:
+    if counts:
+        dominant: str | None = max(counts, key=lambda k: counts[k])
+    elif fallback_metric:
+        # Frames can carry a value without naming the metric — every run
+        # written before that name was stored on the frame does. Refusing here
+        # made the comparison narrative come back *empty* rather than wrong,
+        # which is worse: the feature looked absent instead of broken. The run
+        # record still knows which metric these values are.
+        dominant = None
+    else:
         return None
-    dominant = max(counts, key=lambda k: counts[k])
 
     values: list[tuple[float, float]] = []
     for frame in frames:
-        if getattr(frame, "primary_metric", None) != dominant:
+        if dominant is not None and getattr(frame, "primary_metric", None) != dominant:
             continue
         epoch = getattr(frame, "epoch", None)
         value = getattr(frame, "primary_metric_value", None)
@@ -227,4 +236,9 @@ def trajectory_from_frames(
     if len(values) < 2:
         return None
     values.sort(key=lambda ev: ev[0])
-    return RunTrajectory(name=name, primary_metric=dominant, values=values, grade=grade)
+    return RunTrajectory(
+        name=name,
+        primary_metric=dominant or fallback_metric or "",
+        values=values,
+        grade=grade,
+    )

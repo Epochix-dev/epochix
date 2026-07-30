@@ -7,6 +7,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.5.71] — 2026-07-30
+
+### Fixed
+
+- **The comparison narrative was empty on every real run.** "Explain WHY one
+  run beat another" returned an empty string — worse than returning something
+  wrong, because the feature looked *absent* rather than broken, and an empty
+  string is exactly what the schema documents for "cannot be compared".
+
+  Same root cause as 0.5.70: `trajectory_from_frames` refuses frames that
+  carry a value without naming the metric, which is every run written before
+  that name was stored on the frame. The run record still knows, so the
+  comparison route now passes it.
+
+  On two real 25-epoch runs it now says what it was built to say: which
+  finished ahead, that one peaked at epoch 6 and ended worse, and that
+  stopping at its best would have left a gap of 0.4273 instead of 0.5432.
+
+### Known
+
+- When two runs share a name the narrative reads "X finished ahead of X".
+  Correct, but hard to follow — it needs to disambiguate.
+
+---
+
 ## [0.5.70] — 2026-07-30
 
 ### Fixed

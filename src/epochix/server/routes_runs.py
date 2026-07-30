@@ -215,6 +215,9 @@ def _compare_narrative(runs: list[CompareRun]) -> str:
             entry.run.name or entry.run.id,
             list(entry.frames),
             grade=entry.run.final_grade.value if entry.run.final_grade else None,
+            # Frames written before the metric name was stored on them carry a
+            # value and no key; the run record still knows what it is.
+            fallback_metric=entry.run.primary_metric,
         )
         if traj is not None:
             trajectories.append(traj)
