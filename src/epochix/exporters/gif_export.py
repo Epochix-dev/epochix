@@ -213,38 +213,17 @@ def available_metrics(run_id: str, store: RunStore) -> list[str]:
     return ([primary] if primary in keys else []) + rest
 
 
-def build_gif(
-    run_id: str,
-    store: RunStore,
-    *,
-    metric: str | None = None,
-    fps: int = _FPS,
-    width: int = _W,
-    height: int = _H,
-) -> bytes:
-    """Render a metric curve as an animated GIF.
+def _series_for(
+    run_id: str, store: RunStore, metric: str | None
+) -> tuple[str, list[tuple[float, float]]]:
+    """The (metric_name, points) a run should be drawn from.
 
-    *metric* selects which series to animate — any canonical key the run
-    recorded, not only the primary one. A training run logs several (loss,
-    accuracy, learning rate) and which of them is worth showing depends on the
-    point being made, so the choice belongs to the caller. Defaults to the
-    primary metric, which is what the run is graded on.
+    A named metric is read from the raw events, which hold every series the run
+    recorded. Without one, the primary metric is taken from the story frames —
+    frames carry only that series, which is exactly why a named metric cannot
+    come from them.
     """
-    Image, ImageDraw = _require_pillow()
-
-    # Clamp before allocating anything.
-    width = max(_MIN_DIM, min(int(width), _MAX_DIM))
-    height = max(_MIN_DIM, min(int(height), _MAX_DIM))
-    fps = max(1, min(int(fps), _MAX_FPS))
-
-    run = store.get_run(run_id)
-    if run is None:
-        raise ValueError(f"Run not found: {run_id!r}")
-
     if metric:
-        # An explicitly chosen series comes from the raw events, which hold
-        # every metric the run recorded. Story frames only ever carry the
-        # primary one, so they cannot answer for train_loss or lr.
         points = [
             (float(e.epoch), float(e.value))
             for e in store.get_metric_events(run_id)
@@ -277,6 +256,38 @@ def build_gif(
     # coordinates and hang or crash the rasteriser.
     points = [(e, v) for e, v in points if math.isfinite(e) and math.isfinite(v)]
     points.sort(key=lambda ev: ev[0])
+    return metric, points
+
+
+def build_gif(
+    run_id: str,
+    store: RunStore,
+    *,
+    metric: str | None = None,
+    fps: int = _FPS,
+    width: int = _W,
+    height: int = _H,
+) -> bytes:
+    """Render a metric curve as an animated GIF.
+
+    *metric* selects which series to animate — any canonical key the run
+    recorded, not only the primary one. A training run logs several (loss,
+    accuracy, learning rate) and which of them is worth showing depends on the
+    point being made, so the choice belongs to the caller. Defaults to the
+    primary metric, which is what the run is graded on.
+    """
+    Image, ImageDraw = _require_pillow()
+
+    # Clamp before allocating anything.
+    width = max(_MIN_DIM, min(int(width), _MAX_DIM))
+    height = max(_MIN_DIM, min(int(height), _MAX_DIM))
+    fps = max(1, min(int(fps), _MAX_FPS))
+
+    run = store.get_run(run_id)
+    if run is None:
+        raise ValueError(f"Run not found: {run_id!r}")
+
+    metric, points = _series_for(run_id, store, metric)
     if len(points) < 2:
         raise ValueError("This run has too few epochs to animate.")
 
@@ -372,6 +383,197 @@ def build_gif(
         if upto == len(points):
             d.text((_PAD_L, height - 74), grade, font=big_font, fill=_ACCENT)
             d.text((_PAD_L + 96, height - 44), "final grade", font=small_font, fill=_MUTED)
+
+        images.append(img)
+
+    images.extend([images[-1]] * _HOLD_FRAMES)
+
+    buf = io.BytesIO()
+    images[0].save(
+        buf,
+        format="GIF",
+        save_all=True,
+        append_images=images[1:],
+        duration=int(1000 / max(fps, 1)),
+        loop=0,
+        optimize=True,
+    )
+    return buf.getvalue()
+
+
+# Distinct at thumbnail size and after 256-colour quantisation. Ordered so the
+# first two — the common case, a baseline against one change — are furthest
+# apart, and chosen to stay distinguishable in the most common colour blindness
+# (deuteranopia): the pairs differ in lightness, not only in hue.
+_RACE_COLOURS = [
+    (94, 174, 255),  # blue
+    (255, 176, 59),  # amber
+    (124, 109, 255),  # violet
+    (46, 204, 158),  # teal
+    (244, 114, 182),  # pink
+    (163, 230, 53),  # lime
+]
+
+# Each run multiplies the render cost, and a legend stops being readable long
+# before this. Six is a comparison; twenty is a mess.
+_MAX_RACE_RUNS = 6
+
+
+def build_comparison_gif(
+    run_ids: list[str],
+    store: RunStore,
+    *,
+    metric: str | None = None,
+    fps: int = _FPS,
+    width: int = _W,
+    height: int = _H,
+) -> bytes:
+    """Animate several runs advancing together — the version for a slide.
+
+    Curves are aligned **by epoch**, not by frame index. Runs of different
+    lengths therefore finish at different moments, which is the honest picture:
+    a run that reached 0.95 in 8 epochs did not do the same thing as one that
+    took 40, and normalising the x-axis would hide precisely that.
+
+    Every run must be able to supply the same metric. Drawing one run's
+    accuracy beside another's loss would be a chart that invites exactly the
+    wrong conclusion, so a run missing the series is refused by name rather
+    than quietly dropped.
+    """
+    Image, ImageDraw = _require_pillow()
+
+    width = max(_MIN_DIM, min(int(width), _MAX_DIM))
+    height = max(_MIN_DIM, min(int(height), _MAX_DIM))
+    fps = max(1, min(int(fps), _MAX_FPS))
+
+    if len(run_ids) < 2:
+        raise ValueError("A comparison needs at least two runs.")
+    if len(run_ids) > _MAX_RACE_RUNS:
+        raise ValueError(f"At most {_MAX_RACE_RUNS} runs can race; {len(run_ids)} were given.")
+
+    runs = []
+    for rid in run_ids:
+        run = store.get_run(rid)
+        if run is None:
+            raise ValueError(f"Run not found: {rid!r}")
+        runs.append(run)
+
+    # Settle the metric before reading any series, so the failure names the
+    # disagreement rather than the first run that happens to lack the key.
+    if metric is None:
+        commons = [set(available_metrics(r.id, store)) for r in runs]
+        shared = set.intersection(*commons) if commons else set()
+        preferred = [r.primary_metric for r in runs if r.primary_metric in shared]
+        if not shared:
+            raise ValueError("These runs share no metric, so there is nothing to compare them on.")
+        metric = preferred[0] if preferred else sorted(shared)[0]
+
+    series: list[tuple[str, list[tuple[float, float]]]] = []
+    for run in runs:
+        _key, points = _series_for(run.id, store, metric)
+        if len(points) < 2:
+            raise ValueError(f"{run.name or run.id!r} has too few {metric} points to animate.")
+        series.append((_safe_label(run.name or run.id), points))
+
+    all_ys = [v for _, pts in series for _, v in pts]
+    all_xs = [e for _, pts in series for e, _ in pts]
+    lo, hi = _axis_bounds(all_ys, metric)
+    x0, x1 = min(all_xs), max(all_xs)
+
+    plot_w = width - _PAD_L - _PAD_R
+    plot_h = height - _PAD_T - _PAD_B
+
+    def px(epoch: float) -> float:
+        return _PAD_L + (epoch - x0) / ((x1 - x0) or 1.0) * plot_w
+
+    def py(value: float) -> float:
+        return _PAD_T + (1 - (value - lo) / ((hi - lo) or 1.0)) * plot_h
+
+    title_font, label_font, small_font = _font(34), _font(20), _font(17)
+    mark = _brand_mark(_MARK_H)
+
+    # Where do the curves finish? Accuracy climbs into the top-right; loss
+    # falls into the bottom-right. The legend takes the other corner.
+    finals = [pts[-1][1] for _, pts in series]
+    ends_low = (sum(finals) / len(finals)) < (lo + hi) / 2
+
+    # One frame per step along the shared epoch axis, budget-capped exactly as
+    # the single-run export is: length must not scale with the longest run.
+    epoch_stops = sorted({e for _, pts in series for e, _ in pts})
+    stops = [epoch_stops[i - 1] for i in _subsample([(e, 0.0) for e in epoch_stops], _FRAME_BUDGET)]
+
+    images: list[Any] = []
+    for cutoff in stops:
+        img = Image.new("RGB", (width, height), _BG)
+        d = ImageDraw.Draw(img)
+
+        for i in range(5):
+            y = _PAD_T + i * plot_h / 4
+            d.line([(_PAD_L, y), (width - _PAD_R, y)], fill=_GRID, width=1)
+            d.text(
+                (_PAD_L - 14, y - 10),
+                f"{hi - i * (hi - lo) / 4:.3f}",
+                font=small_font,
+                fill=_MUTED,
+                anchor="ra",
+            )
+
+        d.text((_PAD_L, 42), f"{len(series)} runs compared", font=title_font, fill=_INK)
+        d.text((_PAD_L, 86), metric, font=label_font, fill=_MUTED)
+        d.text(
+            (width - _PAD_R, 86),
+            f"epoch {int(cutoff)} of {int(x1)}",
+            font=label_font,
+            fill=_MUTED,
+            anchor="ra",
+        )
+
+        reached_at: list[str] = []
+        for idx, (_name, pts) in enumerate(series):
+            colour = _RACE_COLOURS[idx % len(_RACE_COLOURS)]
+            drawn = [(e, v) for e, v in pts if e <= cutoff]
+            if len(drawn) >= 2:
+                d.line([(px(e), py(v)) for e, v in drawn], fill=colour, width=4, joint="curve")
+            if drawn:
+                e, v = drawn[-1]
+                d.ellipse([px(e) - 6, py(v) - 6, px(e) + 6, py(v) + 6], fill=colour)
+            reached_at.append(f"{drawn[-1][1]:.4f}" if drawn else "—")
+
+        # Legend last, over an opaque panel: every part of the plot is fair
+        # game for a curve, so there is no corner where text is safe. Drawing
+        # it before the lines left one running straight through the labels.
+        #
+        # And it goes wherever the curves are not. Pinned top-right it sat on
+        # top of the endpoints of the two leading runs — hiding the finish of
+        # the very thing being compared. Rising metrics end high, falling ones
+        # end low, so the free corner is decided from the data.
+        legend_top = 118 if ends_low else height - _PAD_B - len(series) * 26 - 30
+        d.rectangle(
+            [
+                width - _PAD_R - 220,
+                legend_top,
+                width - _PAD_R + 6,
+                legend_top + len(series) * 26 + 8,
+            ],
+            fill=_BG,
+            outline=_GRID,
+        )
+        for idx, (name, _pts) in enumerate(series):
+            colour = _RACE_COLOURS[idx % len(_RACE_COLOURS)]
+            # A scoreboard, not a key: the value each run has reached *at this
+            # point in the animation*, which is what makes it a race.
+            ly = legend_top + 14 + idx * 26
+            d.line([(width - _PAD_R - 210, ly), (width - _PAD_R - 186, ly)], fill=colour, width=4)
+            reached = reached_at[idx]
+            d.text((width - _PAD_R - 178, ly - 9), name[:22], font=small_font, fill=_INK)
+            d.text((width - _PAD_R, ly - 9), reached, font=small_font, fill=_MUTED, anchor="ra")
+
+        d.line([(_PAD_L, height - _PAD_B), (width - _PAD_R, height - _PAD_B)], fill=_GRID, width=2)
+        wm_y = height - 40
+        d.text((width - _PAD_R, wm_y), "epochix.dev", font=small_font, fill=_MUTED, anchor="ra")
+        if mark is not None:
+            text_w = d.textlength("epochix.dev", font=small_font)
+            img.paste(mark, (int(width - _PAD_R - text_w - mark.width - 8), wm_y - 3), mark)
 
         images.append(img)
 

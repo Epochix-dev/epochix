@@ -103,3 +103,52 @@ def test_a_run_with_nothing_to_animate_is_a_400_not_a_500(client: TestClient) ->
 
 def test_an_unknown_run_is_404(client: TestClient) -> None:
     assert client.get("/api/export/does-not-exist/gif").status_code == 404
+
+
+def _run_with(client: TestClient, name: str, vals: list[float]) -> str:
+    run_id = client.post("/api/runs", json={"name": name, "primary_metric": "val_accuracy"}).json()[
+        "id"
+    ]
+    for i, v in enumerate(vals, start=1):
+        client.post(
+            f"/api/runs/{run_id}/event",
+            json={
+                "seq": i,
+                "epoch": i,
+                "canonical_key": "val_accuracy",
+                "raw_key": "val_acc",
+                "value": v,
+            },
+        )
+    return run_id
+
+
+def test_the_comparison_race_serves_a_real_gif(client: TestClient) -> None:
+    pytest.importorskip("PIL", reason="GIF export needs the 'gif' extra")
+
+    a = _run_with(client, "baseline", [0.6 + 0.02 * i for i in range(10)])
+    b = _run_with(client, "tuned", [0.7 + 0.02 * i for i in range(10)])
+
+    res = client.get(f"/api/export/compare/gif?runs={a},{b}")
+
+    assert res.status_code == 200, res.text
+    assert res.headers["content-type"] == "image/gif"
+    assert res.content[:6] in (b"GIF87a", b"GIF89a")
+
+
+def test_a_race_needs_more_than_one_run(client: TestClient) -> None:
+    pytest.importorskip("PIL", reason="GIF export needs the 'gif' extra")
+
+    only = _run_with(client, "solo", [0.6, 0.7, 0.8])
+    res = client.get(f"/api/export/compare/gif?runs={only}")
+
+    assert res.status_code == 400
+    assert "at least two" in res.json()["detail"]
+
+
+def test_the_compare_path_is_not_shadowed_by_a_run_id(client: TestClient) -> None:
+    """`/compare/gif` and `/{run_id}/gif` are both two segments, so declaration
+    order decides which wins. If this regresses the race route becomes a 404
+    for a run that does not exist."""
+    res = client.get("/api/export/compare/gif?runs=nope,also-nope")
+    assert res.status_code == 404, "should reject the unknown runs, not miss the route"

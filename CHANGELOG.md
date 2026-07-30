@@ -7,6 +7,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.5.63] — 2026-07-29
+
+### Added
+
+- **The multi-run comparison race** — several runs animating together on one
+  metric, which is the version that goes in a slide. Designed back in 0.5.48
+  and unbuilt until now.
+
+  `GET /api/export/compare/gif?runs=a,b,c&metric=val_accuracy`
+
+  Two decisions worth stating, because both could reasonably have gone the
+  other way:
+
+  - **Curves align by epoch, not by frame.** Runs of different lengths finish
+    at different moments, and that is the honest picture — a run that reached
+    0.95 in 8 epochs did not do what one that took 40 did. Normalising the
+    x-axis would hide exactly the thing being compared.
+  - **Every run must supply the same metric.** One run's accuracy drawn beside
+    another's loss is a chart that invites the wrong conclusion, so a run
+    missing the series is refused by name rather than quietly dropped.
+
+  Capped at six runs: each one multiplies the render cost, and a legend stops
+  being readable well before that.
+
+  The legend is a scoreboard — it shows what each run has reached *at that
+  point in the animation*, not its final value — and it is placed in whichever
+  corner the curves do not finish in. Pinned top-right it sat squarely on the
+  endpoints of the two leading runs, hiding the finish of the thing being
+  compared.
+
+---
+
 ## [0.5.62] — 2026-07-29
 
 ### Added

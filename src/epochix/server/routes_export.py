@@ -28,6 +28,33 @@ _NOT_IMPL = (
 )
 
 
+# Registered before "/{run_id}/gif" on purpose: both are two segments, and
+# FastAPI matches in declaration order, so the literal path has to come first
+# or a run called "compare" would swallow it.
+@router.get("/compare/gif", dependencies=[Depends(require_auth)])
+async def export_comparison_gif(
+    store: StoreDep,
+    runs: Annotated[str, Query(max_length=1024, description="Comma-separated run ids")],
+    metric: Annotated[str | None, Query(max_length=128)] = None,
+) -> Response:
+    """Animate several runs racing on one metric (needs the `gif` extra)."""
+    from epochix.exporters.gif_export import build_comparison_gif
+
+    run_ids = [r.strip() for r in runs.split(",") if r.strip()]
+    for rid in run_ids:
+        _require_run(rid, store)
+    try:
+        data = build_comparison_gif(run_ids, store, metric=metric)
+    except NotImplementedError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_501_NOT_IMPLEMENTED,
+            detail="GIF export needs the 'gif' extra: pip install 'epochix[gif]'",
+        ) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
+    return Response(content=data, media_type="image/gif", headers=_attachment("comparison", "gif"))
+
+
 @router.get(
     "/{run_id}/html",
     response_class=HTMLResponse,
