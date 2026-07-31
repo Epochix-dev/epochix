@@ -7,6 +7,44 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.5.72] — 2026-07-30
+
+### Fixed
+
+- **The story narrated impossible values as fact.** A `val_accuracy` of 1.1 was
+  graded **A+** and described as *"At 110.0%, the model approaches its
+  ceiling"* — an interpretation of a number that cannot exist. This is the
+  123.6% fault in a new place: #38 fixed frames carrying the *wrong metric*,
+  this was the right metric carrying an *impossible value*, with nothing
+  checking the domain before building a confident sentence on it.
+
+  A bounded metric outside [0, 1] now says what is actually known: the value,
+  that it is out of range, and that the units are worth checking. No reading is
+  given for that epoch.
+
+  Deliberately **not** rejected at ingest — logging accuracy on a 0–100 scale
+  is a common, legitimate pattern, and refusing it would break real users. The
+  lie was in the narration, so that is what was fixed.
+
+- **"X finished ahead of X"** in the comparison narrative. Two runs of the same
+  experiment usually share a name; colliding labels now take a short id suffix,
+  and only where the collision actually occurs.
+
+### Changed
+
+- `UNIT_BOUNDED_METRICS` and `is_unit_bounded()` now live in
+  `story_engine/grade.py`, which already owns metric semantics. `gif_export`
+  had its own copy of the same list — two copies of "which metrics are
+  bounded" is exactly how the parsers drifted.
+
+### Verified
+
+Two live trainings driven concurrently — 120 interleaved events, deliberately
+far-apart value ranges — showed no cross-contamination, no lock errors and no
+engine-map collisions. Each run kept its own series.
+
+---
+
 ## [0.5.71] — 2026-07-30
 
 ### Fixed

@@ -256,3 +256,43 @@ def test_comparison_narrative_survives_frames_without_a_metric_name() -> None:
     traj = trajectory_from_frames("a", list(frames), fallback_metric="MAE")
     assert traj is not None and traj.primary_metric == "MAE"
     assert len(traj.values) == 7
+
+
+def test_an_impossible_value_is_never_narrated_as_fact() -> None:
+    """A bounded metric outside [0,1] is a units mistake or corrupt data, never
+    a very good model. Narrating "at 110.0%, the model approaches its ceiling"
+    interprets a number that cannot exist — the 123.6% fault in a new place."""
+    from datetime import datetime, timezone
+
+    from epochix.models import MetricEvent
+    from epochix.story_engine import StoryEngine
+    from epochix.story_engine.grade import value_is_impossible
+
+    assert value_is_impossible("val_accuracy", 1.1)
+    assert value_is_impossible("val_accuracy", -0.2)
+    assert not value_is_impossible("val_accuracy", 0.98)
+    assert not value_is_impossible("val_loss", 38.4), "loss has no upper bound"
+    assert not value_is_impossible("MAE", 7.2), "MAE is not unit-bounded"
+
+    eng = StoryEngine(run_id="t", primary_metric="val_accuracy")
+    said = []
+    for i, v in enumerate([0.8, 0.9, 1.1], start=1):
+        res = eng.process(
+            MetricEvent(
+                run_id="t",
+                seq=i,
+                timestamp=datetime.now(tz=timezone.utc),
+                epoch=float(i),
+                canonical_key="val_accuracy",
+                raw_key="val_accuracy",
+                value=v,
+            )
+        )
+        for f in res if isinstance(res, list) else [res] if res else []:
+            f = f[0] if isinstance(f, tuple) else f
+            said.append((v, getattr(f, "narrative", "") or ""))
+
+    for v, text in said:
+        if v > 1.0:
+            assert "110" not in text and "%" not in text.split("outside")[0], text
+            assert "outside" in text, "must say the value is out of range"

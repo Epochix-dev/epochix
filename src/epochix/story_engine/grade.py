@@ -313,3 +313,47 @@ def compute_grade(
                 return grade
 
     return Grade.F
+
+
+# Metrics that live in [0, 1] by construction. A value outside that range is not
+# a very good model — it is a units mistake or corrupt data, and presenting it
+# as fact is the same fault as the 123.6% this project shipped once.
+UNIT_BOUNDED_METRICS = frozenset(
+    {
+        "accuracy",
+        "val_accuracy",
+        "train_accuracy",
+        "top5_accuracy",
+        "AUC",
+        "PR_AUC",
+        "f1",
+        "precision",
+        "recall",
+        "specificity",
+        "IoU",
+        "mIoU",
+        "Dice",
+        "pixel_accuracy",
+        "mAP",
+        "mAP50",
+        "mAP75",
+        "SSIM",
+        "R2",
+        "TAR",
+        "EER",
+        "NDCG",
+        "MRR",
+    }
+)
+
+
+def is_unit_bounded(metric: str | None) -> bool:
+    """True when *metric* cannot legitimately leave [0, 1]."""
+    return bool(metric) and metric in UNIT_BOUNDED_METRICS
+
+
+def value_is_impossible(metric: str | None, value: float | None) -> bool:
+    """True when *value* is outside what *metric* can physically take."""
+    if value is None or not is_unit_bounded(metric):
+        return False
+    return not (0.0 <= value <= 1.0)

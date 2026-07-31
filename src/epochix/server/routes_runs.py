@@ -209,10 +209,23 @@ def _compare_narrative(runs: list[CompareRun]) -> str:
     """Explain the difference; a failure here must not break the comparison."""
     from epochix.story_engine.comparison import narrate_comparison, trajectory_from_frames
 
-    trajectories = []
+    # Two runs of the same experiment usually carry the same name, and
+    # "X finished ahead of X" is correct and unreadable. Disambiguate with a
+    # short id suffix — only where it is actually needed, so the common case
+    # keeps clean names.
+    seen: dict[str, int] = {}
     for entry in runs:
+        label = entry.run.name or entry.run.id
+        seen[label] = seen.get(label, 0) + 1
+    labels: list[str] = []
+    for entry in runs:
+        label = entry.run.name or entry.run.id
+        labels.append(f"{label} ({entry.run.id[-4:]})" if seen[label] > 1 else label)
+
+    trajectories = []
+    for entry, label in zip(runs, labels, strict=True):
         traj = trajectory_from_frames(
-            entry.run.name or entry.run.id,
+            label,
             list(entry.frames),
             grade=entry.run.final_grade.value if entry.run.final_grade else None,
             # Frames written before the metric name was stored on them carry a

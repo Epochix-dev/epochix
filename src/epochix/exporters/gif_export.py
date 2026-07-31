@@ -88,39 +88,12 @@ def _subsample(points: list[tuple[float, float]], budget: int) -> list[int]:
     return idx
 
 
-# Metrics that live in [0, 1] by construction. Their axis must never imply a
-# value outside that range.
-_UNIT_METRICS = frozenset(
-    {
-        "accuracy",
-        "val_accuracy",
-        "train_accuracy",
-        "top5_accuracy",
-        "AUC",
-        "PR_AUC",
-        "f1",
-        "precision",
-        "recall",
-        "specificity",
-        "IoU",
-        "mIoU",
-        "Dice",
-        "pixel_accuracy",
-        "mAP",
-        "mAP50",
-        "mAP75",
-        "SSIM",
-        "R2",
-        "TAR",
-        "EER",
-        "NDCG",
-        "MRR",
-    }
-)
-
-
 def _is_bounded_unit(metric: str) -> bool:
-    return metric in _UNIT_METRICS
+    # One list, in grade.py, which already owns metric semantics. Two copies of
+    # "which metrics are bounded" is exactly how the parsers drifted.
+    from epochix.story_engine.grade import is_unit_bounded
+
+    return is_unit_bounded(metric)
 
 
 def _axis_bounds(ys: list[float], metric: str) -> tuple[float, float]:

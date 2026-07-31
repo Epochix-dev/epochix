@@ -12,6 +12,7 @@ from epochix.story_engine.grade import (
     grade_by_trajectory,
     is_lower_better,
     metric_lower_better,
+    value_is_impossible,
 )
 from epochix.story_engine.milestones import MilestoneTracker
 from epochix.story_engine.narrator import narrate, narrate_past_peak, narrate_stalled
@@ -350,6 +351,17 @@ class StoryEngine:
 
         # Build skill dimensions (radar data)
         skill_dims = self._build_skill_dimensions()
+
+        # A bounded metric outside [0, 1] is a units mistake or corrupt data,
+        # never a very good model. Narrating "at 110.0%, the model approaches
+        # its ceiling" interprets a number that cannot exist — the same fault
+        # as the 123.6% this project shipped once. Say what is actually known.
+        if value_is_impossible(primary_key, primary_value):
+            narrative = (
+                f"{primary_key} reported {primary_value:.4g}, which is outside the "
+                f"0–1 range this metric can take. Check whether it is being logged "
+                f"as a percentage. No reading is given for this epoch."
+            )
 
         frame = StoryFrame(
             run_id=self.run_id,
