@@ -1,0 +1,52 @@
+version: 2
+
+# Three ecosystems live in this repo and they drift independently: the Python
+# package, the dashboard bundle, and the VS Code extension. A single entry
+# would silently watch only one of them.
+updates:
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+    groups:
+      # One PR for routine patch bumps rather than a dozen; security updates
+      # still arrive on their own, immediately.
+      python-patches:
+        patterns: ["*"]
+        update-types: ["minor", "patch"]
+    ignore:
+      # Pinned exactly on purpose: `ruff format --check` is a reproducible CI
+      # gate, and a new style release must not turn it red without a
+      # deliberate bump plus a reformat commit. See pyproject.
+      - dependency-name: "ruff"
+
+  - package-ecosystem: "npm"
+    directory: "/frontend"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+    groups:
+      frontend-patches:
+        patterns: ["*"]
+        update-types: ["minor", "patch"]
+
+  - package-ecosystem: "npm"
+    directory: "/epochix-vscode"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+    groups:
+      extension-patches:
+        patterns: ["*"]
+        update-types: ["minor", "patch"]
+    ignore:
+      # @types/vscode must not run ahead of the `engines.vscode` floor in
+      # package.json, or the extension type-checks against API the minimum
+      # supported editor does not have.
+      - dependency-name: "@types/vscode"
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "monthly"

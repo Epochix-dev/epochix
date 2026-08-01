@@ -1,0 +1,51 @@
+name: CodeQL
+
+# Static security analysis for the two languages that actually ship: the
+# Python package and the TypeScript/JavaScript that runs in the dashboard and
+# the VS Code extension. The 0.5.50/0.5.51 audit was manual — this makes the
+# same class of check run on every change rather than when someone remembers.
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    # Weekly, so a newly published advisory finds the code even when the repo
+    # is quiet.
+    - cron: "27 4 * * 1"
+
+jobs:
+  analyze:
+    name: Analyze (${{ matrix.language }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      security-events: write
+      packages: read
+      actions: read
+      contents: read
+
+    strategy:
+      fail-fast: false
+      matrix:
+        language: ["python", "javascript-typescript"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          language: ${{ matrix.language }}
+          # security-extended adds the injection and path-traversal queries that
+          # matter here: this package reads untrusted log files, renders their
+          # contents into HTML, Markdown and images, and spawns ssh.
+          queries: security-extended
+
+      - name: Autobuild
+        uses: github/codeql-action/autobuild@v3
+
+      - name: Perform CodeQL analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:${{ matrix.language }}"
