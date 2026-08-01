@@ -7,6 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.5.74] — 2026-07-30
+
+### Added
+
+- **`epochix doctor`** — diagnostics to paste into a bug report: versions, which
+  optional extras resolve, whether the dashboard bundle shipped, and how many
+  runs the database holds.
+
+  It reports **only** that. Run names come from log files and file paths
+  identify people's machines; neither belongs in a public issue, and a test
+  asserts none of them appear in the output.
+
+- **Two issue templates**, split on purpose:
+
+  - *"A number or a sentence looks wrong"* — for when the product runs fine and
+    says something untrue. This is the failure mode Epochix actually has: a
+    wrong grade or a confident sentence about a NaN breaks no test and raises
+    no error, so we only learn about it when someone says so.
+  - *"Something is broken or does nothing"* — and it says explicitly that
+    "it did nothing" is a real report, because several buttons have shipped
+    that rendered correctly and were completely inert.
+
+---
+
 ## [0.5.73] — 2026-07-30
 
 ### Fixed

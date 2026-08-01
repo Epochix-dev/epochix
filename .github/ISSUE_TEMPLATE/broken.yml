@@ -1,0 +1,36 @@
+name: Something is broken or does nothing
+description: A crash, an error, or a button that has no effect
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        "It did nothing" is a real bug report and a common one here — several
+        buttons have shipped that rendered correctly and were completely inert.
+        Please say so plainly if that is what happened.
+  - type: textarea
+    id: what
+    attributes:
+      label: What did you do, and what happened?
+      placeholder: 'Clicked Export > Animated GIF. Nothing happened - no file, no error.'
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect?
+    validations:
+      required: true
+  - type: textarea
+    id: doctor
+    attributes:
+      label: Output of `epochix doctor`
+      render: shell
+    validations:
+      required: true
+  - type: textarea
+    id: errors
+    attributes:
+      label: Any error text
+      description: Terminal output, or the VS Code Developer Tools console.
+      render: shell

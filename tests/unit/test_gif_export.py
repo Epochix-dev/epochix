@@ -314,3 +314,24 @@ def test_nan_inf_and_negative_are_never_narrated_as_fact() -> None:
     assert impossible_reason("MAE", 7.2) is None
     assert impossible_reason("val_accuracy", 0.98) is None
     assert impossible_reason("R2", -0.5) is None or True  # R2 is unit-bounded here by design
+
+
+def test_doctor_reports_diagnostics_without_leaking_private_data() -> None:
+    """The output is meant to be pasted into a public issue. Run names come
+    from log files and file paths identify people's machines — neither is ours
+    to publish, so the report carries versions and counts only."""
+    from typer.testing import CliRunner
+
+    from epochix.cli import app
+
+    res = CliRunner().invoke(app, ["doctor"])
+    assert res.exit_code == 0, res.output
+    out = res.output
+
+    for expected in ("epochix", "python", "platform", "dashboard", "database", "issues/new"):
+        assert expected in out, f"missing {expected!r}"
+
+    # Never leak: a run name, a database path, or a home directory.
+    assert "runs.db" not in out
+    assert ".epochix" not in out
+    assert "gazenet" not in out.lower()

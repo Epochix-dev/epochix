@@ -1,0 +1,47 @@
+name: A number or a sentence looks wrong
+description: The dashboard runs fine but says something that is not true
+labels: ["correctness"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        This is the most valuable report we get. Epochix makes claims about your
+        training — a grade, a percentage, a sentence like "the model approaches
+        its ceiling". When one of those is *wrong* nothing crashes and no test
+        fails, so we only find out because someone tells us.
+  - type: textarea
+    id: claim
+    attributes:
+      label: What did it say?
+      description: Copy the exact sentence, number or grade.
+      placeholder: 'At 110.0%, the model approaches its ceiling.'
+    validations:
+      required: true
+  - type: textarea
+    id: truth
+    attributes:
+      label: What is actually true?
+      placeholder: 'Accuracy peaked at 0.94 on epoch 12 and then fell.'
+    validations:
+      required: true
+  - type: dropdown
+    id: surface
+    attributes:
+      label: Where?
+      options:
+        - Dashboard - story / grade
+        - Dashboard - a chart
+        - Dashboard - diagnostics
+        - GIF export
+        - Markdown / HTML / PDF export
+        - VS Code extension
+        - CLI
+    validations:
+      required: true
+  - type: textarea
+    id: doctor
+    attributes:
+      label: Output of `epochix doctor`
+      render: shell
+    validations:
+      required: true

@@ -784,6 +784,67 @@ def cmd_check(
     typer.echo("")
 
 
+@app.command("doctor")
+def cmd_doctor() -> None:
+    """Print diagnostics to paste into a bug report.
+
+    Deliberately reports only what is needed to reproduce a problem: versions,
+    which optional extras resolve, whether the dashboard bundle shipped, and
+    how many runs the database holds. No run names, no file paths, no log
+    contents — a run name comes from a log file and is not ours to publish.
+    """
+    import platform
+    import sys
+    from importlib.metadata import version as _pkg_version
+
+    lines: list[str] = ["<!-- epochix doctor -->", "```"]
+
+    try:
+        ver = _pkg_version("epochix")
+    except Exception:  # pragma: no cover - source checkout without metadata
+        ver = "unknown (source checkout)"
+    lines.append(f"epochix        {ver}")
+    lines.append(f"python         {sys.version.split()[0]} ({platform.python_implementation()})")
+    lines.append(f"platform       {platform.system()} {platform.release()} {platform.machine()}")
+
+    # Optional extras: each one is a feature that silently degrades without it,
+    # and "the GIF button did nothing" is usually this.
+    for extra, module, what in (
+        ("gif", "PIL", "animated GIF export"),
+        ("pdf", "weasyprint", "PDF export"),
+        ("llm", "httpx", "LLM fallback parser"),
+    ):
+        try:
+            __import__(module)
+            state = "installed"
+        except ImportError:
+            state = f"MISSING - {what} unavailable (pip install 'epochix[{extra}]')"
+        lines.append(f"extra {extra:<10} {state}")
+
+    # The dashboard is vendored into the wheel at release time. When it is
+    # absent every HTML export and the whole web UI 501s, which reads like a
+    # server fault and is not one.
+    dist = Path(__file__).resolve().parent / "_frontend" / "dist" / "index.html"
+    bundled = "bundled" if dist.is_file() else "MISSING (index.html not vendored)"
+    lines.append(f"dashboard      {bundled}")
+
+    settings = get_settings()
+    try:
+        store = _open_store(settings)
+        runs = store.list_runs(limit=1000)
+        total = len(runs) if isinstance(runs, list) else 0
+        lines.append(f"database       ok, {total} run(s)")
+    except Exception as exc:
+        lines.append(f"database       ERROR {type(exc).__name__}: {exc}")
+
+    lines.append("```")
+    lines.append("")
+    lines.append("Report a problem: https://github.com/Epochix-dev/epochix/issues/new")
+    lines.append("If a number or a sentence looks WRONG rather than broken, say so -")
+    lines.append("that is the kind of bug this project most wants to hear about.")
+    typer.echo("\n".join(lines))
+
+
 @app.command("config")
 def cmd_config(
     action: str = typer.Argument(..., help="show | set"),
