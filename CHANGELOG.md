@@ -7,6 +7,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.5.73] — 2026-07-30
+
+### Fixed
+
+- **NaN, infinity and negative losses were narrated as fact — with a verdict
+  attached.** 0.5.72 stopped bounded metrics claiming impossible percentages,
+  but only bounded metrics were guarded. Feeding deliberately malformed input
+  produced:
+
+  - `nan` → *"Last improvements are incremental. **nan**. Excellence within
+    reach."*
+  - `inf` → *"the metric sits at **inf**"*
+  - `-3.2` loss → *"Last improvements are incremental. **-3.2000**. Excellence
+    within reach."*
+
+  Worse than the 110% case, because each attaches a confident judgement to a
+  number that means nothing.
+
+  The domain check now covers all three: non-finite values for any metric, and
+  negatives for quantities with a hard floor at zero (losses, errors, MAE,
+  RMSE, MAPE, perplexity, distances). Each says which fault it is — a NaN
+  usually means the loss diverged, and saying so is more useful than silence.
+
+  Healthy runs are untouched, and large legitimate values still pass: a
+  `val_loss` of 38.4 and an `MAE` of 7.2 are ordinary readings, not errors.
+
+---
+
 ## [0.5.72] — 2026-07-30
 
 ### Fixed

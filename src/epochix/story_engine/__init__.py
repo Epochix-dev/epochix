@@ -10,9 +10,9 @@ from epochix.story_engine.config_loader import GradeConfig
 from epochix.story_engine.grade import (
     compute_grade,
     grade_by_trajectory,
+    impossible_reason,
     is_lower_better,
     metric_lower_better,
-    value_is_impossible,
 )
 from epochix.story_engine.milestones import MilestoneTracker
 from epochix.story_engine.narrator import narrate, narrate_past_peak, narrate_stalled
@@ -356,11 +356,12 @@ class StoryEngine:
         # never a very good model. Narrating "at 110.0%, the model approaches
         # its ceiling" interprets a number that cannot exist — the same fault
         # as the 123.6% this project shipped once. Say what is actually known.
-        if value_is_impossible(primary_key, primary_value):
+        reason = impossible_reason(primary_key, primary_value)
+        if reason is not None:
+            shown = "NaN" if primary_value is None else f"{primary_value:.4g}"
             narrative = (
-                f"{primary_key} reported {primary_value:.4g}, which is outside the "
-                f"0–1 range this metric can take. Check whether it is being logged "
-                f"as a percentage. No reading is given for this epoch."
+                f"{primary_key} reported {shown}, which {reason}. "
+                f"No reading is given for this epoch."
             )
 
         frame = StoryFrame(

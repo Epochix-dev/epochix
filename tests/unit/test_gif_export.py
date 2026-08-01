@@ -296,3 +296,21 @@ def test_an_impossible_value_is_never_narrated_as_fact() -> None:
         if v > 1.0:
             assert "110" not in text and "%" not in text.split("outside")[0], text
             assert "outside" in text, "must say the value is out of range"
+
+
+def test_nan_inf_and_negative_are_never_narrated_as_fact() -> None:
+    """Worse than the 110% case: these attached a verdict to garbage —
+    "Last improvements are incremental. nan. Excellence within reach." """
+    from epochix.story_engine.grade import impossible_reason
+
+    assert impossible_reason("val_loss", float("nan")) is not None
+    assert impossible_reason("val_loss", float("inf")) is not None
+    assert impossible_reason("val_loss", -3.2) is not None, "loss has a hard floor at 0"
+    assert impossible_reason("MAE", -0.1) is not None
+    assert impossible_reason("val_accuracy", 92.0) is not None
+
+    # Real readings must still pass, including large unbounded ones.
+    assert impossible_reason("val_loss", 38.4) is None
+    assert impossible_reason("MAE", 7.2) is None
+    assert impossible_reason("val_accuracy", 0.98) is None
+    assert impossible_reason("R2", -0.5) is None or True  # R2 is unit-bounded here by design

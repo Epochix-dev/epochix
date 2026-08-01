@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import math
+
 from epochix.enums import Grade, TaskType
 from epochix.story_engine.config_loader import GradeConfig
 
@@ -352,8 +354,39 @@ def is_unit_bounded(metric: str | None) -> bool:
     return bool(metric) and metric in UNIT_BOUNDED_METRICS
 
 
-def value_is_impossible(metric: str | None, value: float | None) -> bool:
-    """True when *value* is outside what *metric* can physically take."""
-    if value is None or not is_unit_bounded(metric):
+# Quantities with a hard floor at zero. A negative loss or error is not a very
+# good model — it is broken instrumentation.
+_NON_NEGATIVE_HINTS = ("loss", "error", "mae", "rmse", "mse", "mape", "perplexity", "distance")
+
+
+def is_non_negative(metric: str | None) -> bool:
+    """True when *metric* cannot legitimately go below zero."""
+    if not metric:
         return False
-    return not (0.0 <= value <= 1.0)
+    lowered = metric.lower()
+    return is_unit_bounded(metric) or any(h in lowered for h in _NON_NEGATIVE_HINTS)
+
+
+def impossible_reason(metric: str | None, value: float | None) -> str | None:
+    """Why *value* cannot be a real reading of *metric*, or None if it can.
+
+    Three ways a number reaches the story without meaning anything, all seen in
+    testing and all previously narrated as fact — the worst of them attaching a
+    verdict, "Excellence within reach", to a NaN.
+    """
+    if value is None:
+        return None
+    if math.isnan(value):
+        return "is not a number (NaN) — usually a diverged loss"
+    if math.isinf(value):
+        return "is infinite — usually a diverged loss"
+    if is_unit_bounded(metric) and not (0.0 <= value <= 1.0):
+        return "is outside the 0–1 range this metric can take — check whether it is a percentage"
+    if is_non_negative(metric) and value < 0:
+        return "is negative, which this metric cannot be"
+    return None
+
+
+def value_is_impossible(metric: str | None, value: float | None) -> bool:
+    """True when *value* cannot be a real reading of *metric*."""
+    return impossible_reason(metric, value) is not None
