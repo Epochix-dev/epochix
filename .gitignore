@@ -81,6 +81,16 @@ yolo_train*.log
 node_modules/
 frontend/node_modules/
 epochix-vscode/node_modules/
+# pyproject force-includes frontend/dist into the wheel, so the directory has
+# to exist for ANY build — including the editable build `uv run` does before
+# lint, typecheck and tests. Without it every uv command dies with
+# "Forced include not found", which is invisible until someone has a cold uv
+# cache: CI passed for months on a cached build of an older revision.
+#
+# `!frontend/dist/` is required and easy to miss: line 10's `dist/` excludes
+# the whole directory, and git does not descend into an excluded directory, so
+# the .gitkeep negation below never fired without it.
+!frontend/dist/
 frontend/dist/**
 !frontend/dist/.gitkeep
 frontend/coverage/
