@@ -6,14 +6,21 @@ on:
   pull_request:
     branches: [main]
 
+# Least privilege by default: every job gets a read-only token unless it
+# says otherwise. The release jobs that need to write declare it themselves
+# (a job-level block replaces this one rather than adding to it), and none
+# of them check out the repo, so read is genuinely all the rest need.
+permissions:
+  contents: read
+
 jobs:
   lint:
     runs-on: ubuntu-latest
     env:
       UV_PYTHON: "3.12" # uv run ignores `uv python install` unless pinned
     steps:
-      - uses: actions/checkout@v7
-      - uses: astral-sh/setup-uv@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78 # v7
       - run: uv run --extra dev ruff check src tests
       - run: uv run --extra dev ruff format --check src tests
       # Fails on medium and high only. The low band is dominated by asserts in
@@ -28,8 +35,8 @@ jobs:
     env:
       UV_PYTHON: "3.12"
     steps:
-      - uses: actions/checkout@v7
-      - uses: astral-sh/setup-uv@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78 # v7
       - run: uv run --extra dev mypy --strict src/epochix
 
   test:
@@ -43,8 +50,8 @@ jobs:
       # version is silently ignored.
       UV_PYTHON: ${{ matrix.python }}
     steps:
-      - uses: actions/checkout@v7
-      - uses: astral-sh/setup-uv@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78 # v7
       - run: uv python install ${{ matrix.python }}
       - run: uv run --extra dev pytest -q tests/unit tests/integration
         env:
@@ -53,8 +60,8 @@ jobs:
   test-frontend:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-node@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
           # jsdom 30 pulls undici, which calls webidl.util.markAsUncloneable —
           # absent in Node 20, so the test workers fail to start. The frontend is
@@ -72,8 +79,8 @@ jobs:
     # extension integration suite headless under a virtual X display.
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-node@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
           node-version: "20"
           cache: npm
@@ -110,8 +117,8 @@ jobs:
       UV_PYTHON: "3.12"
       EPOCHIX_REQUIRE_ALL_BROWSERS: "1"
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-node@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
           node-version: "20"
           cache: npm
@@ -121,7 +128,7 @@ jobs:
         run: |
           mkdir -p src/epochix/_frontend/dist
           cp -r frontend/dist/. src/epochix/_frontend/dist/
-      - uses: astral-sh/setup-uv@v7
+      - uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78 # v7
       - run: uv run --extra dev playwright install --with-deps chromium firefox webkit
       - name: Render on every engine
         run: |
@@ -171,8 +178,8 @@ jobs:
     env:
       UV_PYTHON: ${{ matrix.python }}
     steps:
-      - uses: actions/checkout@v7
-      - uses: astral-sh/setup-uv@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78 # v7
       - name: Add the real frameworks to the project env (CPU-only torch)
         run: |
           uv sync --extra dev
@@ -210,8 +217,8 @@ jobs:
     env:
       UV_PYTHON: "3.12"
     steps:
-      - uses: actions/checkout@v7
-      - uses: astral-sh/setup-uv@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78 # v7
       - run: uv run --extra dev pytest tests/e2e -q
 
   # ── Lighthouse CI ──────────────────────────────────────────────────────────
@@ -223,9 +230,9 @@ jobs:
     needs: test-frontend
     continue-on-error: true
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
-      - uses: actions/setup-node@v7
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
           # jsdom 30 pulls undici, which calls webidl.util.markAsUncloneable —
           # absent in Node 20, so the test workers fail to start. The frontend is
@@ -240,7 +247,7 @@ jobs:
         run: cd frontend && npm ci && npm run build
 
       - name: Run Lighthouse CI
-        uses: treosh/lighthouse-ci-action@v12
+        uses: treosh/lighthouse-ci-action@3e7e23fb74242897f95c0ba9cabad3d0227b9b18 # v12
         with:
           configPath: .lighthouserc.json
           uploadArtifacts: true

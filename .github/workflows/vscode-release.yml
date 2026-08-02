@@ -35,6 +35,13 @@ env:
   NODE_VERSION: "20"
   EXTENSION_DIR: epochix-vscode
 
+# Least privilege by default: every job gets a read-only token unless it
+# says otherwise. The release jobs that need to write declare it themselves
+# (a job-level block replaces this one rather than adding to it), and none
+# of them check out the repo, so read is genuinely all the rest need.
+permissions:
+  contents: read
+
 jobs:
   # ── 0. Detect which publish secrets are configured ─────────────────────────
   gate:
@@ -57,9 +64,9 @@ jobs:
     name: Build frontend bundle
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
-      - uses: actions/setup-node@v7
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
@@ -68,7 +75,7 @@ jobs:
       - name: Install & build frontend
         run: cd frontend && npm ci && npm run build
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: frontend-dist
           path: frontend/dist/
@@ -83,15 +90,15 @@ jobs:
       vsix-path: ${{ steps.package.outputs.vsix-path }}
       version: ${{ steps.version.outputs.version }}
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
       - name: Download frontend bundle
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           name: frontend-dist
           path: ${{ env.EXTENSION_DIR }}/webview-dist/
 
-      - uses: actions/setup-node@v7
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
@@ -137,7 +144,7 @@ jobs:
           echo "Packaged: ${VSIX}"
 
       - name: Upload .vsix artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: vsix-${{ steps.version.outputs.version }}
           path: ${{ env.EXTENSION_DIR }}/*.vsix
@@ -154,12 +161,12 @@ jobs:
       name: vscode-marketplace
       url: https://marketplace.visualstudio.com/items?itemName=epochix.epochix
     steps:
-      - uses: actions/download-artifact@v8
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           name: vsix-${{ needs.package-vsix.outputs.version }}
           path: ./vsix/
 
-      - uses: actions/setup-node@v7
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
           node-version: ${{ env.NODE_VERSION }}
 
@@ -196,12 +203,12 @@ jobs:
       name: open-vsx
       url: https://open-vsx.org/extension/epochix/epochix
     steps:
-      - uses: actions/download-artifact@v8
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           name: vsix-${{ needs.package-vsix.outputs.version }}
           path: ./vsix/
 
-      - uses: actions/setup-node@v7
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
           node-version: ${{ env.NODE_VERSION }}
 
@@ -231,13 +238,13 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/download-artifact@v8
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           name: vsix-${{ needs.package-vsix.outputs.version }}
           path: ./vsix/
 
       - name: Upload .vsix to GitHub Release
-        uses: softprops/action-gh-release@v3
+        uses: softprops/action-gh-release@3d0d9888cb7fd7b750713d6e236d1fcb99157228 # v3
         with:
           files: ./vsix/*.vsix
           fail_on_unmatched_files: true

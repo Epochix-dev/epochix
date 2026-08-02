@@ -9,6 +9,7 @@ from epochix.models import WSMessage
 from epochix.server.auth import token_ok
 from epochix.server.hub import Hub
 from epochix.server.jsonsafe import ws_json
+from epochix.server.logsafe import log_safe
 
 logger = logging.getLogger(__name__)
 
@@ -98,9 +99,9 @@ async def ws_live(
                 break
 
     except WebSocketDisconnect:
-        logger.debug("WebSocket disconnected: run_id=%s", run_id)
+        logger.debug("WebSocket disconnected: run_id=%s", log_safe(run_id))
     except Exception:  # noqa: BLE001
-        logger.exception("WebSocket error: run_id=%s", run_id)
+        logger.exception("WebSocket error: run_id=%s", log_safe(run_id))
     finally:
         heartbeat_task.cancel()
         hub.unsubscribe(run_id, queue)
