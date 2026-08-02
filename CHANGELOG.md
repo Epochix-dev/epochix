@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.5.76] — 2026-07-30
+
+### Fixed
+
+- **The prefilled bug report arrived double-encoded from VS Code.** The issue
+  body showed `%23%23%23 What looks wrong%3F` instead of `### What looks
+  wrong?`, and the `labels=correctness` was mangled badly enough that GitHub
+  ignored it and opened a blank issue instead of the template.
+
+  `vscode.Uri.parse()` treats an already percent-encoded query as literal text
+  and encodes it a second time, so `%23` became `%2523`. Decoding the query
+  once and handing the raw string to `Uri.from` leaves exactly one round of
+  encoding.
+
+  Missed because `window.open` in a browser does not re-encode, and that is
+  the only path I tested — the same one-environment mistake as 0.5.56.
+
+---
+
 ## [0.5.75] — 2026-07-30
 
 ### Added

@@ -20,6 +20,29 @@ import { persistLogFile } from "../sidecar/persistLog";
 import { StatusBar } from "../statusBar";
 import { StandaloneEngine } from "./StandaloneEngine";
 
+/**
+ * Build a Uri whose query survives `openExternal` unchanged.
+ *
+ * `vscode.Uri.parse(url)` treats an already percent-encoded query as literal
+ * text and encodes it a second time, so `%23` becomes `%2523` and the target
+ * site shows the escape rather than the character. Decoding the query once and
+ * handing the raw string to `Uri.from` leaves exactly one round of encoding.
+ */
+function _uriPreservingQuery(url: string): vscode.Uri {
+  const parsed = vscode.Uri.parse(url);
+  if (!parsed.query) {
+    return parsed;
+  }
+  return vscode.Uri.from({
+    scheme: parsed.scheme,
+    authority: parsed.authority,
+    path: parsed.path,
+    query: decodeURIComponent(parsed.query),
+    fragment: parsed.fragment,
+  });
+}
+
+
 export class DashboardPanel {
   static current: DashboardPanel | undefined;
 
@@ -202,7 +225,13 @@ export class DashboardPanel {
         this._handleExport(msg.format, msg.runId ?? this._runId, msg.metric);
         break;
       case "openExternal":
-        void vscode.env.openExternal(vscode.Uri.parse(msg.url));
+        // `Uri.parse` re-encodes an already-encoded query, so a prefilled
+        // GitHub issue arrived showing "%23%23%23 What looks wrong%3F"
+        // instead of "### What looks wrong?" — and the &labels= was mangled
+        // badly enough that GitHub ignored it. `Uri.from` with the raw query
+        // encodes exactly once. window.open in a browser never did this,
+        // which is why testing only that path missed it.
+        void vscode.env.openExternal(_uriPreservingQuery(msg.url));
         break;
       case "installSidecar":
         void vscode.env.openExternal(
