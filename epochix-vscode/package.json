@@ -289,7 +289,7 @@
     "watch": "node esbuild.config.mjs --watch",
     "vscode:prepublish": "npm run build:webview && npm run compile:prod",
     "package": "vsce package",
-    "lint": "eslint src --ext ts",
+    "lint": "eslint src",
     "typecheck": "tsc --noEmit",
     "pretest": "npm run compile && tsc -p ./tsconfig.test.json",
     "test": "node ./out/test/runTest.js"
@@ -298,14 +298,14 @@
     "@types/mocha": "^10.0.10",
     "@types/node": "^20.0.0",
     "@types/vscode": "^1.92.0",
-    "@typescript-eslint/eslint-plugin": "^8.65.0",
-    "@typescript-eslint/parser": "^8.65.0",
     "@vscode/test-electron": "^3.1.0",
     "@vscode/vsce": "^3.9.2",
     "esbuild": "^0.28.1",
-    "eslint": "^8.0.0",
+    "eslint": "^10.8.0",
     "glob": "^13.0.6",
     "mocha": "^11.7.6",
-    "typescript": "^5.5.0"
+    "typescript": "^5.5.0",
+    "@eslint/js": "^10.0.1",
+    "typescript-eslint": "^8.65.0"
   }
 }
