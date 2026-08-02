@@ -115,6 +115,18 @@ def _configure_sqlite(conn: Any, _record: Any) -> None:  # noqa: ANN401
     conn.execute("PRAGMA foreign_keys=ON")
 
 
+# Copy statement for the metric_events primary-key migration below. Written
+# out in full: column names cannot be bound as query parameters, so building
+# this string from a variable is the one shape that could turn a schema change
+# into SQL injection.
+_MIGRATE_COPY_SQL = (
+    "INSERT OR IGNORE INTO metric_events "
+    "(run_id, seq, ts, epoch, step, canonical_key, raw_key, value, unit) "
+    "SELECT run_id, seq, ts, epoch, step, canonical_key, raw_key, value, unit "
+    "FROM _metric_events_old"
+)
+
+
 class RunStore:
     def __init__(self, db_path: str = ":memory:") -> None:
         if db_path == ":memory:":
@@ -181,7 +193,6 @@ class RunStore:
             " raw_key TEXT NOT NULL, value FLOAT NOT NULL, unit TEXT,"
             " PRIMARY KEY (run_id, seq, canonical_key))"
         )
-        cols = "run_id, seq, ts, epoch, step, canonical_key, raw_key, value, unit"
 
         raw = self._engine.raw_connection()
         try:
@@ -201,10 +212,12 @@ class RunStore:
             cur.execute(new_ddl)
             cur.execute("CREATE INDEX idx_metric_run_epoch ON metric_events (run_id, epoch)")
             cur.execute("CREATE INDEX idx_metric_run_key ON metric_events (run_id, canonical_key)")
-            cur.execute(
-                f"INSERT OR IGNORE INTO metric_events ({cols}) "
-                f"SELECT {cols} FROM _metric_events_old"
-            )
+            # Spelled out rather than interpolated from a `cols` variable.
+            # Column names cannot be bound as parameters, so interpolating
+            # here would be a real injection site the moment the source of
+            # those names changed; the literal removes the question instead
+            # of answering it in a comment.
+            cur.execute(_MIGRATE_COPY_SQL)
             cur.execute("DROP TABLE _metric_events_old")
             raw.commit()
             cur.execute("PRAGMA foreign_keys=ON")

@@ -79,6 +79,26 @@ def _strip_code_fence(text: str) -> str:
     return "\n".join(lines).strip()
 
 
+_ALLOWED_LLM_SCHEMES = frozenset({"http", "https"})
+
+
+def _checked_request(url: str) -> str:
+    """Reject a configured endpoint that is not HTTP(S).
+
+    ``EPOCHIX_LLM_URL`` is user-set, and ``urlopen`` honours ``file://`` — a
+    typo or a hostile config file would otherwise turn "call my local model"
+    into "read this path off the disk and post it into a prompt".
+    """
+    from urllib.parse import urlparse
+
+    scheme = urlparse(url).scheme.lower()
+    if scheme not in _ALLOWED_LLM_SCHEMES:
+        raise ValueError(
+            f"LLM endpoint must be http or https, got {scheme or 'no'} scheme: {url!r}"
+        )
+    return url
+
+
 class LLMFallbackParser:
     """LLM-powered fallback parser (opt-in, requires Ollama or OpenAI)."""
 
@@ -190,12 +210,14 @@ class LLMFallbackParser:
         ).encode()
 
         req = urllib.request.Request(
-            url,
+            _checked_request(url),
             data=payload,
             headers={"Content-Type": "application/json"},
             method="POST",
         )
-        with urllib.request.urlopen(req, timeout=30) as resp:
+        # Scheme allow-listed in `_checked_request` where `req` is built;
+        # bandit cannot follow that across the call, hence the marker.
+        with urllib.request.urlopen(req, timeout=30) as resp:  # nosec B310
             data = json.loads(resp.read().decode())
         raw = data.get("response", "[]")
         return self._parse_response(raw)
@@ -212,7 +234,7 @@ class LLMFallbackParser:
         ).encode()
 
         req = urllib.request.Request(
-            url,
+            _checked_request(url),
             data=payload,
             headers={
                 "Content-Type": "application/json",
@@ -220,7 +242,9 @@ class LLMFallbackParser:
             },
             method="POST",
         )
-        with urllib.request.urlopen(req, timeout=30) as resp:
+        # Scheme allow-listed in `_checked_request` where `req` is built;
+        # bandit cannot follow that across the call, hence the marker.
+        with urllib.request.urlopen(req, timeout=30) as resp:  # nosec B310
             data = json.loads(resp.read().decode())
         raw = data["choices"][0]["message"]["content"]
         return self._parse_response(raw)

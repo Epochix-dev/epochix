@@ -7,6 +7,43 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.5.77] — 2026-08-02
+
+### Security
+
+- **A configured LLM endpoint could be any URL scheme, including `file://`.**
+  `EPOCHIX_LLM_URL` is user-set and `urllib.request.urlopen` honours `file:`,
+  so a typo or a hostile config file turned "call my local model" into "read
+  this path off the disk and feed it into a prompt". The endpoint is now
+  checked against an `http`/`https` allow-list before the request is built.
+
+- **A bidirectional control character sat in the source.** `gif_export.py`
+  carried a live U+202E inside the docstring explaining why bidi characters
+  are dangerous. These reorder how text *displays* without changing what the
+  interpreter runs, so a reviewer and the machine can read a diff differently.
+  It is gone, and a test now fails if any invisible format character reappears
+  anywhere under `src/epochix`.
+
+### Fixed
+
+- **`pytest` tested the installed package, not your working tree.** With a
+  released epochix in site-packages, a plain `python -m pytest` imported that
+  copy instead of `src/`, so the suite passed against code you were not
+  editing — locally the tree was 0.5.76 while the tests ran 0.5.75. Pytest now
+  puts `src` first. CI was never affected; it builds from the tree.
+
+### Changed
+
+- The `metric_events` migration no longer builds its copy statement by string
+  interpolation. Column names cannot be bound as query parameters, so that
+  shape is one schema change away from real SQL injection; the statement is
+  now a literal. Its first tests come with it — the migration rewrites
+  databases that already exist on users' machines and nothing covered it.
+
+- `bandit` runs in CI on every change, failing on medium and high findings.
+
+---
+
 ## [0.5.76] — 2026-07-30
 
 ### Fixed

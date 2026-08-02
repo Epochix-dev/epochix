@@ -125,7 +125,8 @@ def _safe_label(text: str) -> str:
     """Make a log-derived string safe to draw.
 
     Control characters and bidi overrides can reorder or hide what a reader
-    sees — a name like "safe‮gnp.exe" displays reversed. Strip the
+    sees — a name containing U+202E (RIGHT-TO-LEFT OVERRIDE) displays
+    reversed, so "safe<U+202E>gnp.exe" reads as "safeexe.png". Strip the
     formatting classes, collapse whitespace, and cap the length.
     """
     cleaned = "".join(

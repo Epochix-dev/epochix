@@ -16,6 +16,12 @@ jobs:
       - uses: astral-sh/setup-uv@v7
       - run: uv run --extra dev ruff check src tests
       - run: uv run --extra dev ruff format --check src tests
+      # Fails on medium and high only. The low band is dominated by asserts in
+      # code paths that never run under -O and by the deliberate subprocess
+      # calls in the SSH ingester; gating on it would train everyone to ignore
+      # the job. Every medium/high suppression in the tree carries a written
+      # reason next to it — if you add `# nosec`, explain it on the line above.
+      - run: uv run --extra dev bandit -r src/epochix -q -ll
 
   typecheck:
     runs-on: ubuntu-latest
