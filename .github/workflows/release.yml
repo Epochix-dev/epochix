@@ -35,7 +35,7 @@ jobs:
         with:
           name: frontend-dist
           path: frontend/dist/
-      - uses: astral-sh/setup-uv@v5
+      - uses: astral-sh/setup-uv@v7
       - run: uv build --wheel
       - name: Verify the frontend bundle is inside the wheel
         run: |
