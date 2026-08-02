@@ -1,3 +1,4 @@
+import { escapeHtml as _esc } from '../escape.js';
 /**
  * TimelineStory.js — milestone and warning cards in a scrolling timeline.
  *
@@ -102,11 +103,3 @@ export class TimelineStory {
   }
 }
 
-/** @param {string} s */
-function _esc(s) {
-  return String(s)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
-}

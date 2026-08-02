@@ -34,6 +34,7 @@ import en from './i18n/en.json';
 import fa from './i18n/fa.json';
 import fr from './i18n/fr.json';
 import { applyStaticI18n } from './i18n/apply.js';
+import { escapeHtml as _esc } from './escape.js';
 
 const LOCALES = { en, fa, fr };
 
@@ -675,12 +676,6 @@ function _wireCompareSelection(listEl) {
   });
 }
 
-function _esc(s) {
-  return String(s ?? '')
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
-}
 
 // ── kick off ──────────────────────────────────────────────────────────────────
 main().catch((err) => {

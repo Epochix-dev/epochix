@@ -6,6 +6,7 @@
  * sparkline of the whole trend.
  */
 import { emaSmooth, LOWER_IS_BETTER, metricLabel, seriesFromMetrics } from '../viz-util.js';
+import { escapeHtml as _esc } from '../escape.js';
 
 export class ConfidenceBars {
   /** @param {HTMLElement} container */
@@ -115,7 +116,4 @@ function _fmt(v) {
   if (Math.abs(v) >= 100) return v.toFixed(1);
   if (Math.abs(v) >= 1) return v.toFixed(3);
   return v.toFixed(4);
-}
-function _esc(s) {
-  return String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }

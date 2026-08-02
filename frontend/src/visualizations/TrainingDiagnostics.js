@@ -1,3 +1,4 @@
+import { escapeHtml as _esc } from '../escape.js';
 /**
  * TrainingDiagnostics.js — interpreted training-health dashboard.
  *
@@ -340,7 +341,3 @@ function _slope(pts) {
 }
 function fmtEpoch(e) { return Number.isInteger(e) ? String(e) : e.toFixed(0); }
 
-function _esc(s) {
-  return String(s ?? '')
-    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-}

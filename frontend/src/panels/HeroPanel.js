@@ -5,6 +5,7 @@
  */
 
 import { BrainCanvas } from '../visualizations/BrainCanvas.js';
+import { escapeHtml as _esc } from '../escape.js';
 
 export class HeroPanel {
   /** @param {import('../store.js').AppState} store */
@@ -111,7 +112,3 @@ function _compactLayerSequence(arch) {
   return out.join(' + ');
 }
 
-function _esc(s) {
-  return String(s ?? '')
-    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-}
