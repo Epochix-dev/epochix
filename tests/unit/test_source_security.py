@@ -15,7 +15,15 @@ import pytest
 
 from epochix.parsers.llm_fallback import _checked_request
 
-SRC = Path(__file__).resolve().parents[1] / "src" / "epochix"
+ROOT = Path(__file__).resolve().parents[2]
+SRC = ROOT / "src" / "epochix"
+
+# Bidi overrides matter wherever text is *read*, not just where it is executed.
+# README.md and CHANGELOG.md are rendered on PyPI and GitHub, and the docs are
+# published to epochix.dev — a reversed line there misleads exactly as well as
+# one in a .py file. Added after a stray U+0001 reached CHANGELOG.md through an
+# unescaped `\1` in a build script, which the source-only scan did not watch.
+_PROSE = ["README.md", "CHANGELOG.md", "SECURITY.md", "CONTRIBUTING.md"]
 
 
 def test_no_bidi_control_characters_in_source() -> None:
@@ -44,6 +52,24 @@ def test_no_bidi_control_characters_in_source() -> None:
         if bidi & set(line)
     ]
     assert not offenders, f"bidirectional control characters in source: {offenders}"
+
+
+def test_no_control_characters_in_published_prose() -> None:
+    """The files that get rendered on PyPI, GitHub and the docs site.
+
+    Same reasoning as the source scan: a bidi override reverses what a reader
+    sees. Tab and newline are the only control characters legitimately present.
+    """
+    offenders = []
+    for name in _PROSE:
+        path = ROOT / name
+        if not path.is_file():
+            continue
+        for i, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
+            for ch in line:
+                if ch != "\t" and (unicodedata.category(ch) in {"Cc", "Cf"}):
+                    offenders.append(f"{name}:{i} U+{ord(ch):04X}")
+    assert not offenders, f"control characters in published prose: {offenders}"
 
 
 def test_no_unassigned_format_characters_in_source() -> None:

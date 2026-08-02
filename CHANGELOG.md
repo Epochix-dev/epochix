@@ -34,7 +34,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **A run name containing a regex backreference crashed the HTML export.**
   `re.sub` expands backslash escapes in a *string* replacement, so a run named
-  `run` or `run\g<0>` raised `re.error` and returned a 500. Run names come
+  `run\1` or `run\g<0>` raised `re.error` and returned a 500. Run names come
   from log files. The replacement is a function now, which is inserted
   literally. The exporter's hand-rolled escaper was also replaced with
   `html.escape` — it was correct, but there is no reason to keep re-deriving
