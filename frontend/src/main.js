@@ -283,6 +283,59 @@ async function main() {
     }, 0);
   }
 
+  // Report a problem. Prefills a GitHub issue with what is on screen and the
+  // versions behind it — nothing else. A run name comes from a log file and a
+  // path identifies someone's machine; neither is ours to publish, so the
+  // report carries the *shape* of the run and not its identity.
+  document.getElementById('report-btn')?.addEventListener('click', async () => {
+    const runId = getRunId();
+    const s = store.get();
+    const frames = s.frames ?? [];
+    const last = frames[frames.length - 1] ?? {};
+    const run = s.run ?? {};
+
+    let diag = '(unavailable)';
+    try {
+      const r = await fetch('/api/version');
+      if (r.ok) diag = (await r.json()).version ?? diag;
+    } catch { /* offline export, or no server — the rest is still useful */ }
+
+    const body = [
+      '### What looks wrong?',
+      '',
+      '',
+      '### What did you expect instead?',
+      '',
+      '',
+      '---',
+      '```',
+      `epochix      ${diag}`,
+      `surface      dashboard`,
+      `metric       ${run.primary_metric ?? '(unknown)'}`,
+      `task         ${run.task_type ?? '(unknown)'}`,
+      `epochs       ${frames.length}`,
+      `last value   ${last.primary_metric_value ?? '(none)'}`,
+      `grade        ${last.grade ?? '(none)'}`,
+      `browser      ${navigator.userAgent}`,
+      '```',
+      '',
+      '_No run name, file path or log content is included._',
+    ].join('\n');
+
+    const url = 'https://github.com/Epochix-dev/epochix/issues/new'
+      + '?labels=correctness'
+      + '&title=' + encodeURIComponent('Dashboard: ')
+      + '&body=' + encodeURIComponent(body);
+
+    if (window.__EPOCHIX_VSCODE__) {
+      window.__EPOCHIX_VSCODE__.postMessage({ type: 'openExternal', url });
+    } else if (window.parent !== window) {
+      window.parent.postMessage({ type: 'openExternal', url }, '*');
+    } else {
+      window.open(url, '_blank', 'noopener');
+    }
+  });
+
   const EXPORT_FORMATS = [
     ['html', 'Standalone HTML'],
     ['gif', 'Animated GIF'],

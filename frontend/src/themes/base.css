@@ -1061,3 +1061,23 @@ body {
   color: var(--text-secondary, #94a3b8);
   font-size: 0.74rem;
 }
+
+/* Report-a-problem button. Sits beside Export because that is where a person
+   already looks when they want to do something *with* what is on screen. */
+.report-btn {
+  width: 34px;
+  height: 34px;
+  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.14));
+  border-radius: 9px;
+  background: transparent;
+  color: var(--text-secondary, #94a3b8);
+  font: inherit;
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.report-btn:hover {
+  border-color: var(--grade-d, #e0a24a);
+  color: var(--grade-d, #e0a24a);
+}

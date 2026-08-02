@@ -49,6 +49,10 @@ export function buildWebviewHtml(opts: WebviewHtmlOptions): string {
       const msg = e.data;
       if (msg && msg.type === 'export' && typeof msg.format === 'string') {
         vscode.postMessage({ type: 'export', format: msg.format, runId: msg.runId, metric: msg.metric });
+      } else if (msg && msg.type === 'openExternal' && typeof msg.url === 'string') {
+        // Report-a-problem opens github.com; the iframe cannot navigate the
+        // host, so the extension does it.
+        vscode.postMessage({ type: 'openExternal', url: msg.url });
       }
     });
   </script>

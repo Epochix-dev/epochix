@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.5.75] — 2026-07-30
+
+### Added
+
+- **Report a problem, from the dashboard.** Until now a tester had to know the
+  repo URL and navigate to GitHub themselves — `epochix doctor` and the issue
+  templates existed, but nothing connected a person looking at a wrong number
+  to the place they could say so.
+
+  The button beside Export opens a prefilled issue labelled `correctness`,
+  carrying the **shape** of the run and nothing that identifies it: version,
+  surface, metric, task, epoch count, last value, grade, browser. No run name,
+  no file path, no log content — verified by assertion, not by inspection.
+
+  In the VS Code webview it routes out through the extension host, the same
+  path the exports use.
+
+---
+
 ## [0.5.74] — 2026-07-30
 
 ### Added
