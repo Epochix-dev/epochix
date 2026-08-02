@@ -96,7 +96,8 @@ export class TerminalWatcher implements vscode.Disposable {
   private _endOfStream(): void {
     // Deliberate: a lazy require breaks the DashboardPanel <-> TerminalWatcher
     // import cycle, which a top-level import would reintroduce.
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    // typescript-eslint v8 renamed this rule from no-var-requires.
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { DashboardPanel } = require("../webview/DashboardPanel") as {
       DashboardPanel: typeof import("../webview/DashboardPanel").DashboardPanel;
     };
@@ -107,7 +108,8 @@ export class TerminalWatcher implements vscode.Disposable {
     // Lazy require to avoid circular dependency at module load time
     // Deliberate: a lazy require breaks the DashboardPanel <-> TerminalWatcher
     // import cycle, which a top-level import would reintroduce.
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    // typescript-eslint v8 renamed this rule from no-var-requires.
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { DashboardPanel } = require("../webview/DashboardPanel") as {
       DashboardPanel: typeof import("../webview/DashboardPanel").DashboardPanel;
     };
@@ -125,7 +127,8 @@ export class TerminalWatcher implements vscode.Disposable {
   private _feedDashboard(chunk: string): void {
     // Deliberate: a lazy require breaks the DashboardPanel <-> TerminalWatcher
     // import cycle, which a top-level import would reintroduce.
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    // typescript-eslint v8 renamed this rule from no-var-requires.
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { DashboardPanel } = require("../webview/DashboardPanel") as {
       DashboardPanel: typeof import("../webview/DashboardPanel").DashboardPanel;
     };
