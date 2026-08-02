@@ -38,6 +38,19 @@ export function startVscodeBridge(applyTheme) {
   if (!vscode) return false;
 
   window.addEventListener('message', (ev) => {
+    // Only the host that embedded us may drive the dashboard. Two senders are
+    // legitimate: the extension host, whose webview.postMessage arrives with a
+    // null source, and the webview page itself when we run in its iframe
+    // (sidecar mode), which is window.parent.
+    //
+    // Deliberately a source check rather than an origin check: in a webview the
+    // origin is an opaque vscode-webview://<uuid> that changes per session, so
+    // an allow-list of origins would either be wrong or be `*`. What actually
+    // needs excluding is a *different* frame — a nested iframe or an opener
+    // posting messages in to forge run data — and identity catches that
+    // regardless of scheme.
+    if (ev.source && ev.source !== window.parent && ev.source !== window) return;
+
     const msg = ev.data;
     if (!msg || !msg.type) return;
 

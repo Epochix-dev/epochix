@@ -12,6 +12,7 @@ from epochix.models import WSMessage
 from epochix.server.auth import token_ok
 from epochix.server.hub import Hub
 from epochix.server.jsonsafe import ws_json
+from epochix.server.logsafe import log_safe
 
 logger = logging.getLogger(__name__)
 
@@ -80,7 +81,7 @@ async def sse_live(
                     break
 
         except Exception:  # noqa: BLE001
-            logger.exception("SSE stream error: run_id=%s", run_id)
+            logger.exception("SSE stream error: run_id=%s", log_safe(run_id))
         finally:
             hub.unsubscribe(run_id, queue)
 
