@@ -50,6 +50,12 @@ updates:
       # runtime API that is not there. Raise this only when the editor floor
       # rises. Dependabot proposed 20 -> 26; that PR should be closed.
       - dependency-name: "@types/node"
+      # TypeScript 7 is the native rewrite, not a routine major. It changes the
+      # compiler itself, and this extension's type-checking is the only thing
+      # standing between an API mistake and a shipped bug. Move it deliberately,
+      # not because a bot proposed it.
+      - dependency-name: "typescript"
+        update-types: ["version-update:semver-major"]
 
   - package-ecosystem: "github-actions"
     directory: "/"
