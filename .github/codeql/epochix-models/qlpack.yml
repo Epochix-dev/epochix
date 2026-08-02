@@ -1,0 +1,12 @@
+name: epochix/python-models
+version: 0.0.1
+library: true
+# Teaches CodeQL about this project's own sanitisers. Without it, CodeQL
+# re-derives taint by reading the function body, and a helper it cannot model
+# (a re.sub call, say) leaves every caller flagged — which pushes people toward
+# either dismissing real findings or inlining scanner-pleasing code at every
+# call site. Declaring the helper once is the honest version of both.
+extensionTargets:
+  codeql/python-all: "*"
+dataExtensions:
+  - models/**/*.yml
