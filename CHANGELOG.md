@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.5.78] — 2026-08-02
+
+### Security
+
+- **Stored XSS via run name (CodeQL `js/incomplete-html-attribute-sanitization`,
+  11 alerts).** The dashboard had eleven copy-pasted `_esc` helpers, and every
+  one escaped `&`, `<` and `>` but not quotes. Most were used inside attribute
+  values, so a run named `x" onmouseover="alert(1)` closed the attribute and
+  installed a live event handler. Run names come from log files — a training
+  script was enough to trigger it, with no access to the machine, and it fired
+  inside the VS Code webview too.
+
+  Confirmed in a real DOM before the fix and re-checked after: the injected
+  handler was a live attribute; it no longer is. All eleven copies are gone,
+  replaced by one `escapeHtml` in `frontend/src/escape.js` that escapes both
+  quote characters, so it is safe in text and attribute position alike. A
+  `safeUrl` helper joins it for `href`/`src`, where escaping alone cannot stop
+  `javascript:`.
+
+---
+
 ## [0.5.77] — 2026-08-02
 
 ### Security

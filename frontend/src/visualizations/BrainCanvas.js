@@ -1,3 +1,4 @@
+import { escapeHtml as _escTip } from '../escape.js';
 /**
  * BrainCanvas.js — architecture-aware layered neural-network visualization.
  *
@@ -995,10 +996,6 @@ function _fmtParams(n) {
   return String(n);
 }
 
-function _escTip(s) {
-  return String(s ?? '')
-    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-}
 
 /**
  * Pick the most informative plain-English label that fits the zone's

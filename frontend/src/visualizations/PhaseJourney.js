@@ -1,3 +1,4 @@
+import { escapeHtml as _esc } from '../escape.js';
 /**
  * PhaseJourney.js — horizontal phase-timeline ribbon.
  *
@@ -103,9 +104,5 @@ function _segments(frames) {
   return out;
 }
 
-function _esc(s) {
-  return String(s ?? '')
-    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-}
 
 export { PHASE_ORDER };

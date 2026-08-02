@@ -18,6 +18,7 @@ import {
   formatPrimaryMetric,
   metricLabel,
 } from '../viz-util.js';
+import { escapeHtml as _esc } from '../escape.js';
 
 const PHASE_BG = {
   awakening:     'rgba(167,139,250,0.10)',
@@ -434,10 +435,6 @@ function _metricAt(metrics, key, epoch) {
   return best;
 }
 
-function _esc(s) {
-  return String(s ?? '')
-    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-}
 
 /** Pull metric values per-epoch from the raw events list. */
 function _buildMetricSeries(metrics, frames, key, xScale) {

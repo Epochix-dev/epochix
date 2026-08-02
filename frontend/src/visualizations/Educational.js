@@ -6,6 +6,7 @@
  * honest practice-vs-test analogy. All numbers come straight from the run.
  */
 import { seriesFromMetrics } from '../viz-util.js';
+import { escapeHtml as _esc } from '../escape.js';
 
 const PHASE_EMOJI = {
   awakening: '🌱', learning: '📈', understanding: '💡', mastering: '🎯', polishing: '✨',
@@ -143,7 +144,4 @@ function _num(v) {
   if (!Number.isFinite(v)) return '—';
   if (Math.abs(v) >= 1) return v.toFixed(3);
   return v.toFixed(4);
-}
-function _esc(s) {
-  return String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }

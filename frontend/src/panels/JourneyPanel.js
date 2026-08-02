@@ -8,6 +8,7 @@ import { TimelineStory }   from '../visualizations/TimelineStory.js';
 import { EpochScrubber }   from '../visualizations/EpochScrubber.js';
 import { GradeArcChart }   from '../visualizations/GradeArcChart.js';
 import { metricDisplayLabel, isPercentMetric } from '../viz-util.js';
+import { escapeHtml as _esc } from '../escape.js';
 
 const PHASE_ICON = {
   awakening:     '🌱',
@@ -186,12 +187,6 @@ export class JourneyPanel {
   }
 }
 
-function _esc(s) {
-  return String(s ?? '')
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
-}
 
 /** Phase label with emoji — uses i18n (already has emoji) or icon+name fallback. */
 function _phaseLabel(i18n, phase) {

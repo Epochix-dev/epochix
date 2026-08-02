@@ -8,6 +8,7 @@
 import {
   allMetricKeys, emaSmooth, LOWER_IS_BETTER, metricLabel, seriesColor, seriesFromMetrics,
 } from '../viz-util.js';
+import { escapeHtml as _esc } from '../escape.js';
 
 const _PREFERRED = ['val_accuracy', 'accuracy', 'val_loss', 'train_loss', 'mAP50'];
 
@@ -272,7 +273,4 @@ function _fmt(v) {
   if (Math.abs(v) >= 100) return v.toFixed(0);
   if (Math.abs(v) >= 1) return v.toFixed(2);
   return v.toFixed(3);
-}
-function _esc(s) {
-  return String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }

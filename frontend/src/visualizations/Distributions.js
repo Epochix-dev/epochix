@@ -8,6 +8,7 @@
  *     over the run, the honest analogue of TensorBoard's distributions.
  */
 import { LOWER_IS_BETTER, metricLabel } from '../viz-util.js';
+import { escapeHtml as _esc } from '../escape.js';
 
 const TYPE_COLOR = {
   input: '#34d399', output: '#f472b6', conv: '#818cf8', dense: '#fbbf24',
@@ -191,7 +192,4 @@ function _num(v) {
   if (Math.abs(v) >= 100) return v.toFixed(1);
   if (Math.abs(v) >= 1) return v.toFixed(3);
   return v.toFixed(4);
-}
-function _esc(s) {
-  return String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }

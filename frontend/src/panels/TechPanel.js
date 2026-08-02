@@ -6,6 +6,7 @@
  * controls: EMA smoothing, log-scale loss, and an epoch/step x-axis toggle.
  */
 import { emaSmooth, metricLabel } from '../viz-util.js';
+import { escapeHtml as _esc } from '../escape.js';
 
 export class TechPanel {
   /** @param {import('../store.js').AppState} store */
@@ -434,9 +435,6 @@ function _num(v) {
   return v.toFixed(4);
 }
 
-function _esc(s) {
-  return String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-}
 
 /**
  * Look up a metric value at a given frame's epoch from metric events.
