@@ -48,6 +48,14 @@ jobs:
           # matter here: this package reads untrusted log files, renders their
           # contents into HTML, Markdown and images, and spawns ssh.
           queries: security-extended
+          # Project-local sanitiser models, referenced by path. Keyed by
+          # language so the pack only loads for the Python run — it targets
+          # codeql/python-all and means nothing to the JS analysis.
+          # See .github/codeql/epochix-models/.
+          config: |
+            packs:
+              python:
+                - ./.github/codeql/epochix-models
 
       - name: Autobuild
         uses: github/codeql-action/autobuild@f205ea1c3313d32999d8d6a48b4f6530d4437b38 # v4.37.4

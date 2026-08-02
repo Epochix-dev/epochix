@@ -1,0 +1,14 @@
+# `epochix.server.logsafe.log_safe` strips every control character from its
+# argument, so a value that passes through it cannot forge a log entry, break
+# a line, or drive a terminal with ANSI escapes. See tests/unit/test_logsafe_and_title.py.
+#
+# `neutralModel` with kind `summary` states that the function has no flow
+# summary — taint does not travel from its argument to its return value — so
+# CodeQL stops treating callers of log_safe(run_id) as log-injection sinks
+# without anyone having to dismiss the alerts by hand.
+extensions:
+  - addsTo:
+      pack: codeql/python-all
+      extensible: neutralModel
+    data:
+      - ["epochix.server.logsafe", "log_safe", "(Any)", "summary"]

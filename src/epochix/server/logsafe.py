@@ -34,7 +34,19 @@ def log_safe(value: object) -> str:
     Control characters become ``?`` rather than being dropped, so a tampered
     value still looks tampered with instead of silently reading as clean.
     """
-    text = _CONTROL.sub("?", str(value))
+    # The two explicit replaces are redundant — `_CONTROL` already covers \n
+    # and \r — and they are here anyway, deliberately. CodeQL's log-injection
+    # query models ``str.replace`` as a sanitiser but does not model
+    # ``re.sub``, so with the regex alone every call site stays flagged and the
+    # next person has three standing alerts to wade through.
+    #
+    # The redundancy is confined to this one function on purpose. The
+    # alternative — a ``.replace()`` chain at each logger call — is what the
+    # frontend did with escaping, and it ended with twelve copies that all
+    # forgot the quotes. One shared function that is slightly belt-and-braces
+    # is the cheaper mistake.
+    text = str(value).replace("\n", "?").replace("\r", "?")
+    text = _CONTROL.sub("?", text)
     if len(text) > _MAX_LOGGED_CHARS:
         text = text[: _MAX_LOGGED_CHARS - 1] + "…"
     return text
