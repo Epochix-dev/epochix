@@ -13,7 +13,7 @@ jobs:
       UV_PYTHON: "3.12" # uv run ignores `uv python install` unless pinned
     steps:
       - uses: actions/checkout@v7
-      - uses: astral-sh/setup-uv@v5
+      - uses: astral-sh/setup-uv@v7
       - run: uv run --extra dev ruff check src tests
       - run: uv run --extra dev ruff format --check src tests
 
@@ -23,7 +23,7 @@ jobs:
       UV_PYTHON: "3.12"
     steps:
       - uses: actions/checkout@v7
-      - uses: astral-sh/setup-uv@v5
+      - uses: astral-sh/setup-uv@v7
       - run: uv run --extra dev mypy --strict src/epochix
 
   test:
@@ -38,7 +38,7 @@ jobs:
       UV_PYTHON: ${{ matrix.python }}
     steps:
       - uses: actions/checkout@v7
-      - uses: astral-sh/setup-uv@v5
+      - uses: astral-sh/setup-uv@v7
       - run: uv python install ${{ matrix.python }}
       - run: uv run --extra dev pytest -q tests/unit tests/integration
         env:
@@ -110,7 +110,7 @@ jobs:
         run: |
           mkdir -p src/epochix/_frontend/dist
           cp -r frontend/dist/. src/epochix/_frontend/dist/
-      - uses: astral-sh/setup-uv@v5
+      - uses: astral-sh/setup-uv@v7
       - run: uv run --extra dev playwright install --with-deps chromium firefox webkit
       - name: Render on every engine
         run: |
@@ -161,7 +161,7 @@ jobs:
       UV_PYTHON: ${{ matrix.python }}
     steps:
       - uses: actions/checkout@v7
-      - uses: astral-sh/setup-uv@v5
+      - uses: astral-sh/setup-uv@v7
       - name: Add the real frameworks to the project env (CPU-only torch)
         run: |
           uv sync --extra dev
@@ -200,7 +200,7 @@ jobs:
       UV_PYTHON: "3.12"
     steps:
       - uses: actions/checkout@v7
-      - uses: astral-sh/setup-uv@v5
+      - uses: astral-sh/setup-uv@v7
       - run: uv run --extra dev pytest tests/e2e -q
 
   # ── Lighthouse CI ──────────────────────────────────────────────────────────
