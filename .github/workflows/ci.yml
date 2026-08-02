@@ -50,7 +50,12 @@ jobs:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v5
         with:
-          node-version: "20"
+          # jsdom 30 pulls undici, which calls webidl.util.markAsUncloneable —
+          # absent in Node 20, so the test workers fail to start. The frontend is
+          # only built here, so this is a build-time choice. The extension jobs
+          # deliberately stay on 20: that is what VS Code 1.92 ships, and testing
+          # against a newer runtime would validate API users do not have.
+          node-version: "22"
           cache: npm
           cache-dependency-path: frontend/package-lock.json
       - run: cd frontend && npm ci
@@ -216,7 +221,12 @@ jobs:
 
       - uses: actions/setup-node@v5
         with:
-          node-version: "20"
+          # jsdom 30 pulls undici, which calls webidl.util.markAsUncloneable —
+          # absent in Node 20, so the test workers fail to start. The frontend is
+          # only built here, so this is a build-time choice. The extension jobs
+          # deliberately stay on 20: that is what VS Code 1.92 ships, and testing
+          # against a newer runtime would validate API users do not have.
+          node-version: "22"
           cache: npm
           cache-dependency-path: frontend/package-lock.json
 
