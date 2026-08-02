@@ -12,7 +12,7 @@ jobs:
     env:
       UV_PYTHON: "3.12" # uv run ignores `uv python install` unless pinned
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - uses: astral-sh/setup-uv@v5
       - run: uv run --extra dev ruff check src tests
       - run: uv run --extra dev ruff format --check src tests
@@ -22,7 +22,7 @@ jobs:
     env:
       UV_PYTHON: "3.12"
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - uses: astral-sh/setup-uv@v5
       - run: uv run --extra dev mypy --strict src/epochix
 
@@ -37,7 +37,7 @@ jobs:
       # version is silently ignored.
       UV_PYTHON: ${{ matrix.python }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - uses: astral-sh/setup-uv@v5
       - run: uv python install ${{ matrix.python }}
       - run: uv run --extra dev pytest -q tests/unit tests/integration
@@ -47,7 +47,7 @@ jobs:
   test-frontend:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - uses: actions/setup-node@v5
         with:
           node-version: "20"
@@ -61,7 +61,7 @@ jobs:
     # extension integration suite headless under a virtual X display.
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - uses: actions/setup-node@v5
         with:
           node-version: "20"
@@ -99,7 +99,7 @@ jobs:
       UV_PYTHON: "3.12"
       EPOCHIX_REQUIRE_ALL_BROWSERS: "1"
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - uses: actions/setup-node@v5
         with:
           node-version: "20"
@@ -160,7 +160,7 @@ jobs:
     env:
       UV_PYTHON: ${{ matrix.python }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - uses: astral-sh/setup-uv@v5
       - name: Add the real frameworks to the project env (CPU-only torch)
         run: |
@@ -199,7 +199,7 @@ jobs:
     env:
       UV_PYTHON: "3.12"
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - uses: astral-sh/setup-uv@v5
       - run: uv run --extra dev pytest tests/e2e -q
 
@@ -212,7 +212,7 @@ jobs:
     needs: test-frontend
     continue-on-error: true
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
 
       - uses: actions/setup-node@v5
         with:
