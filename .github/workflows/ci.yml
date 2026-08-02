@@ -48,7 +48,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-node@v5
+      - uses: actions/setup-node@v7
         with:
           # jsdom 30 pulls undici, which calls webidl.util.markAsUncloneable —
           # absent in Node 20, so the test workers fail to start. The frontend is
@@ -67,7 +67,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-node@v5
+      - uses: actions/setup-node@v7
         with:
           node-version: "20"
           cache: npm
@@ -105,7 +105,7 @@ jobs:
       EPOCHIX_REQUIRE_ALL_BROWSERS: "1"
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-node@v5
+      - uses: actions/setup-node@v7
         with:
           node-version: "20"
           cache: npm
@@ -219,7 +219,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      - uses: actions/setup-node@v5
+      - uses: actions/setup-node@v7
         with:
           # jsdom 30 pulls undici, which calls webidl.util.markAsUncloneable —
           # absent in Node 20, so the test workers fail to start. The frontend is

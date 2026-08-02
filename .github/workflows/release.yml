@@ -9,7 +9,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-node@v5
+      - uses: actions/setup-node@v7
         with:
           node-version: "20"
           cache: "npm"
@@ -119,7 +119,7 @@ jobs:
         with:
           name: frontend-dist
           path: epochix-vscode/webview-dist/
-      - uses: actions/setup-node@v5
+      - uses: actions/setup-node@v7
         with:
           node-version: "20"
       # vsce package's prepublish hook rebuilds the webview via vite in
