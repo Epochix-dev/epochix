@@ -195,7 +195,11 @@ def _ensure_server(*, port: int = 7860) -> None:
 
     for _ in range(20):
         try:
-            urllib.request.urlopen(f"http://127.0.0.1:{port}/api/health", timeout=1)
+            # Scheme is the literal "http" and the host is loopback; only the
+            # port varies, and it is an int we chose. Nothing to audit.
+            urllib.request.urlopen(  # noqa: S310  # nosec B310
+                f"http://127.0.0.1:{port}/api/health", timeout=1
+            )
             break
         except Exception:
             time.sleep(0.3)
