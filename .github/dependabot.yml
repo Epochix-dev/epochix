@@ -45,6 +45,11 @@ updates:
       # package.json, or the extension type-checks against API the minimum
       # supported editor does not have.
       - dependency-name: "@types/vscode"
+      # Same reasoning, one layer down: engines.vscode ^1.92 ships Node 20, so
+      # typing against a newer @types/node would compile happily against
+      # runtime API that is not there. Raise this only when the editor floor
+      # rises. Dependabot proposed 20 -> 26; that PR should be closed.
+      - dependency-name: "@types/node"
 
   - package-ecosystem: "github-actions"
     directory: "/"
