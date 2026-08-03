@@ -7,6 +7,52 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.5.80] — 2026-08-03
+
+### Fixed
+
+- **The GitHub Action we ship had never worked.** `action.yml` ran
+  `epochix batch <log> --json --headless` and parsed `d['id']` from stdout.
+  There is no `batch` command, `run` had no `--json`, and no command printed
+  JSON at all — every part of that step was fiction, so the Action failed for
+  every caller since it shipped. Nothing caught it because the Action is YAML
+  that CI never executes.
+
+  `tests/unit/test_action_cli_contract.py` now compares every `epochix <cmd>`
+  in `.github/actions` against the real command list, the same shape as the
+  extension/OpenAPI test that caught the `/api/parse` endpoint.
+
+- **The release SBOM listed zero dependencies.** `anchore/sbom-action` was
+  pointed at `dist/`, a directory of unbuilt archives; syft reads
+  `*.dist-info/METADATA` from *installed* packages, so it found nothing and
+  emitted a valid, empty CycloneDX document. A scanner consuming it reports
+  all-clear. Now installs the wheel into a scratch env and scans that, and the
+  job fails if the result has under 10 components.
+
+### Added
+
+- **`epochix run --json`** — one JSON document on stdout (`id`, `name`,
+  `final_grade`, `task`, `primary_metric`, `story_summary`) and nothing else,
+  so automation can pipe it straight into `json.load`. Implies `--headless`.
+
+- **A "Report a Bug" button in the VS Code sidebar**, opening a prefilled issue
+  with the environment already filled in — including the Python package version
+  answering on the sidecar, since a stale one silently degrades the whole
+  product and has been the cause more than once. No run name, file path or log
+  content is included.
+
+### Changed
+
+- The composite action moved from `setup-python` v5 to v7, matching our own
+  workflows — the shipped action is the wrong place to lag, since old action
+  runtimes get deprecated in *other people's* repos.
+
+- `upload-artifact` and `download-artifact` are ignored for semver-major in
+  Dependabot. They are a pair, `release.yml` uploads in one job and downloads
+  in another, and the working combination shipped 0.5.79.
+
+---
+
 ## [0.5.79] — 2026-08-02
 
 ### Security

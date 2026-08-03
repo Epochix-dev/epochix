@@ -11,6 +11,7 @@ import { TerminalWatcher } from "./terminal/TerminalWatcher";
 import { StatusBar } from "./statusBar";
 import { registerOpenDashboard } from "./commands/openDashboard";
 import { registerOpenInBrowser } from "./commands/openInBrowser";
+import { registerReportBug } from "./commands/reportBug";
 import { registerWatchTerminal } from "./commands/watchTerminal";
 import { registerOpenLogFile } from "./commands/openLogFile";
 import { registerExportRun } from "./commands/exportRun";
@@ -49,6 +50,9 @@ export async function activate(ctx: vscode.ExtensionContext): Promise<void> {
     registerExportRun(ctx),
     registerCompareRuns(_sidecar),
     registerTryDemo(ctx, _sidecar),
+    // Read at call time: the staleness probe that fills it in is async
+    // and may not have answered when activate() finishes.
+    registerReportBug(ctx, () => ServerManager.lastKnownSidecarVersion),
   );
 
   // Resolves the sidecar at call time rather than capturing it here: it can
