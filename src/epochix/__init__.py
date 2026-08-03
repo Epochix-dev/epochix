@@ -5,12 +5,48 @@ from epochix.models import MetricEvent, Milestone, Run, StoryFrame, Warning
 from epochix.parsers.base import BaseParser
 from epochix.parsers.registry import register_parser
 
-try:
-    from importlib.metadata import version as _pkg_version
 
-    __version__ = _pkg_version("epochix")
-except Exception:  # noqa: BLE001 — fallback when the package isn't installed
-    __version__ = "0.0.0+local"
+def _resolve_version() -> str:
+    """Version of the code that is actually running.
+
+    ``importlib.metadata.version`` reads the INSTALLED distribution's metadata,
+    which describes the installed copy — not necessarily this one. Running from
+    a source checkout on a machine that also has a release installed made
+    ``/api/version`` report the installed number: it said 0.5.75 while serving
+    0.5.80 source.
+
+    That is not cosmetic. The VS Code extension compares ``/api/version``
+    against its own version to warn about a stale Python package, so a wrong
+    answer here either raises a false alarm or hides a real one.
+
+    A ``pyproject.toml`` sitting above the package root means we are running
+    from the tree, so the tree's version is the truthful answer.
+    """
+    from pathlib import Path
+
+    # src/epochix/__init__.py -> src/epochix -> src -> repo root
+    pyproject = Path(__file__).resolve().parents[2] / "pyproject.toml"
+    if pyproject.is_file():
+        try:
+            import re
+
+            text = pyproject.read_text(encoding="utf-8")
+            # Only the [project] version, not a dependency pin further down.
+            match = re.search(r'^\s*version\s*=\s*"([^"]+)"', text, re.MULTILINE)
+            if match and 'name = "epochix"' in text:
+                return match.group(1)
+        except OSError:  # pragma: no cover - unreadable checkout
+            pass
+
+    try:
+        from importlib.metadata import version as _pkg_version
+
+        return _pkg_version("epochix")
+    except Exception:  # noqa: BLE001 — fallback when the package isn't installed
+        return "0.0.0+local"
+
+
+__version__ = _resolve_version()
 
 __all__ = [
     # Core models

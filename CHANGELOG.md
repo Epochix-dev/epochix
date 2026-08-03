@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.5.82] — 2026-08-03
+
+### Fixed
+
+- **`/api/version` reported the installed package, not the running code.**
+  `__version__` came from `importlib.metadata.version("epochix")`, which reads
+  the *installed* distribution's metadata. On a machine with a release
+  installed alongside a source checkout, running from the checkout reported the
+  installed number — it said 0.5.75 while serving 0.5.80 source.
+
+  Not cosmetic: the VS Code extension compares `/api/version` against its own
+  version to warn about a stale Python package, so a wrong answer either raises
+  a false alarm or hides a real one. A `pyproject.toml` above the package root
+  now means the tree's version is the truthful answer; installed copies keep
+  using metadata, verified against a real built wheel.
+
+---
+
 ## [0.5.81] — 2026-08-03
 
 ### Fixed
