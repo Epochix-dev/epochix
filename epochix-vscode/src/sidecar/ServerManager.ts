@@ -16,6 +16,16 @@ import * as os from "os";
 
 export class ServerManager implements vscode.Disposable {
   readonly port: number;
+
+  /**
+   * Version of the Python package answering on `port`, once known.
+   *
+   * The staleness check already fetches this; keeping it means the bug
+   * report can state it instead of asking the reporter to run `pip show`.
+   * A stale sidecar silently degrades the whole product, so it is the
+   * first thing worth knowing about a report.
+   */
+  static lastKnownSidecarVersion: string | undefined;
   private readonly _proc: ChildProcess;
 
   private constructor(proc: ChildProcess, port: number) {
@@ -234,7 +244,9 @@ export interface SidecarEvent {
  * display" — and nothing anywhere said why.
  */
 async function warnIfSidecarIsStale(port: number): Promise<void> {
+  // (populates ServerManager.lastKnownSidecarVersion as a side effect)
   const sidecar = await fetchSidecarVersion(port);
+  ServerManager.lastKnownSidecarVersion = sidecar ?? undefined;
   if (!sidecar) return;
 
   const ours = (vscode.extensions.getExtension("epochix.epochix")?.packageJSON as
