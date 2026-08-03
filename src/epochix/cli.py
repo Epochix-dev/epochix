@@ -23,6 +23,7 @@ from __future__ import annotations
 
 import asyncio
 import contextlib
+import json
 import logging
 import sys
 import webbrowser
@@ -130,6 +131,11 @@ def cmd_run(  # noqa: C901
     ),
     no_llm: bool = typer.Option(False, "--no-llm", help="Disable LLM fallback parser."),
     headless: bool = typer.Option(False, "--headless", help="Do not open the browser."),
+    json_out: bool = typer.Option(
+        False,
+        "--json",
+        help="Print the run summary as JSON on stdout (implies --headless).",
+    ),
     export_format: str | None = typer.Option(
         None,
         "--export",
@@ -202,7 +208,9 @@ def cmd_run(  # noqa: C901
             source_path=source_path,
             task=effective_task,
             port=port,
-            headless=headless,
+            # --json is for automation, which has no browser to open.
+            headless=headless or json_out,
+            json_out=json_out,
             export_format=export_format,
             export_output=output,
             ssh_target=ssh_target_host,
@@ -223,6 +231,7 @@ async def _run_batch_or_live(
     task: TaskType | None,
     port: int,
     headless: bool,
+    json_out: bool,
     export_format: str | None,
     export_output: Path | None = None,
     ssh_target: str | None = None,
@@ -276,7 +285,9 @@ async def _run_batch_or_live(
 
     if not headless:
         _open_browser(port, run_id)
-    else:
+    elif not json_out:
+        # --json owns stdout: anything else printed there would sit in front of
+        # the document and break `json.load` for the caller.
         typer.echo(f"  Run ID: {run_id}")
 
     try:
@@ -298,14 +309,32 @@ async def _run_batch_or_live(
             with contextlib.suppress(asyncio.CancelledError, Exception):
                 await server_task
 
-    # Print summary
-    typer.echo("")
-    typer.echo(f"  Run: {finished_run.name or finished_run.id}")
     grade = finished_run.final_grade
-    typer.echo(f"  Grade: {grade.value if grade else 'N/A'}")
-    typer.echo(f"  Task: {finished_run.task_type.value}")
-    if finished_run.story_summary:
-        typer.echo(f"\n  {finished_run.story_summary}\n")
+
+    if json_out:
+        # One JSON document on stdout and nothing else, so a caller can pipe
+        # this straight into `json.load`. The GitHub Action does exactly that.
+        typer.echo(
+            json.dumps(
+                {
+                    "id": finished_run.id,
+                    "name": finished_run.name,
+                    "final_grade": grade.value if grade else None,
+                    "task": finished_run.task_type.value,
+                    "primary_metric": finished_run.primary_metric,
+                    "story_summary": finished_run.story_summary,
+                },
+                ensure_ascii=False,
+            )
+        )
+    else:
+        # Print summary
+        typer.echo("")
+        typer.echo(f"  Run: {finished_run.name or finished_run.id}")
+        typer.echo(f"  Grade: {grade.value if grade else 'N/A'}")
+        typer.echo(f"  Task: {finished_run.task_type.value}")
+        if finished_run.story_summary:
+            typer.echo(f"\n  {finished_run.story_summary}\n")
 
     # Headless export
     if export_format and headless:
@@ -660,6 +689,7 @@ def cmd_demo(
         task=None,
         no_llm=True,
         headless=headless,
+        json_out=False,
         export_format=None,
         name=f"Demo · {fname}",
         log_level=log_level,
