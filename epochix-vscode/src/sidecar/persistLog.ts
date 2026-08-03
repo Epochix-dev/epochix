@@ -77,5 +77,25 @@ export async function persistLogFile(
     );
   }
 
+  // Tell the server the log is over. It cannot distinguish "no more events"
+  // from "the next one is slow", so without this the run keeps the running
+  // spinner and never gets a final grade — every run persisted from here
+  // showed up in `epochix list` as `⟳ [-] custom`, however good it was.
+  //
+  // Sent as its own zero-value event on the last seq rather than folded into
+  // the loop above: the batch is dispatched with Promise.all, so whichever
+  // request happens to finish last is not the one carrying the last metric.
+  const last = metrics[metrics.length - 1];
+  if (last) {
+    await sidecar.pushEvent(runId, {
+      seq: metrics.length,
+      epoch: last.epoch,
+      canonical_key: last.canonical_key,
+      raw_key: last.canonical_key,
+      value: last.value,
+      finished: true,
+    });
+  }
+
   return runId;
 }

@@ -7,6 +7,39 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.5.81] — 2026-08-03
+
+### Fixed
+
+- **Every run the VS Code extension saved looked ungraded and still running.**
+  Runs persisted through `POST /runs/{id}/event` kept the placeholder values
+  set at creation, so `epochix list` showed them as:
+
+  ```
+  Y  01KZ...  [-]  custom  my run
+  ```
+
+  no grade, task `custom`, running spinner forever — however good the run was.
+  The frames underneath were always correct and carried real per-epoch grades;
+  only the row a user browses was wrong, which is why nothing noticed.
+
+  The server now writes the summary back to the run row as each frame is
+  produced, so the grade is right while the run is still live rather than only
+  once something declares it over. `EventPushRequest` also gained a `finished`
+  flag: the server cannot tell "the log ended" from "the next event is slow",
+  and the extension now sets it on a final event after its batches drain.
+
+  Found by driving the extension's real persist path against a live server.
+  No test covered it because checking required listing runs after pushing some.
+
+### Added
+
+- `RunStore.update_run_summary()` — refreshes grade, task, primary metric and
+  summary **without** stamping `finished_at`, which `finish_run` does and which
+  is wrong while events are still arriving.
+
+---
+
 ## [0.5.80] — 2026-08-03
 
 ### Fixed
