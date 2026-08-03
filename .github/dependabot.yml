@@ -61,3 +61,14 @@ updates:
     directory: "/"
     schedule:
       interval: "monthly"
+    ignore:
+      # upload-artifact and download-artifact are a PAIR: release.yml uploads
+      # the wheel in one job and downloads it in another, and the two versions
+      # have to interoperate. The current combination is proven — it shipped
+      # 0.5.79 — and a bot bumping one side alone is how a release pipeline
+      # breaks at the worst possible moment. Move both together, deliberately,
+      # behind a test/ tag. (PR #21 proposed upload 4 -> 7 on its own.)
+      - dependency-name: "actions/upload-artifact"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "actions/download-artifact"
+        update-types: ["version-update:semver-major"]
