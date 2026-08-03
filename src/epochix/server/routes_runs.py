@@ -51,6 +51,11 @@ class EventPushRequest(BaseModel):
     raw_key: str = Field(max_length=256)
     value: float
     unit: str | None = Field(default=None, max_length=32)
+    # Set on the last event of a batch. The server cannot tell "the log ended"
+    # from "the next event is slow", so without this a run pushed through this
+    # endpoint stays live forever — the VS Code extension's runs all showed the
+    # running spinner indefinitely.
+    finished: bool = False
 
 
 class RunCreateRequest(BaseModel):
@@ -306,8 +311,10 @@ async def push_event(
         from epochix.story_engine import StoryEngine
 
         engine: StoryEngine = engine_map[run_id]
+        latest: Any = None
         for frame in engine.process_all(event):
             store.append_story_frame(frame)
+            latest = frame
             msg = hub.make_message(
                 msg_type="story_frame",
                 run_id=run_id,
@@ -315,6 +322,27 @@ async def push_event(
                 payload=frame.model_dump(mode="json"),
             )
             hub.publish(run_id, msg)
+
+        # Write the summary back to the run row. Only the frames carried the
+        # grade before this, so `epochix list` and the run picker showed every
+        # event-pushed run as ungraded with task `custom` — the values set at
+        # creation, never revised. The frames were always right.
+        if latest is not None:
+            store.update_run_summary(
+                run_id,
+                final_grade=latest.grade,
+                story_summary=latest.narrative,
+                task_type=engine._effective_task(),
+                primary_metric=latest.primary_metric,
+            )
+
+    if body.finished:
+        run = store.get_run(run_id)
+        store.finish_run(
+            run_id,
+            final_grade=run.final_grade if run else None,
+            story_summary=run.story_summary if run else None,
+        )
 
     return {"accepted": True, "seq": body.seq}
 

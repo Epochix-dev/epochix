@@ -231,6 +231,8 @@ export interface SidecarEvent {
   raw_key: string;
   value: number;
   unit?: string | null;
+  /** Set on the final event so the server can finalise the run's summary. */
+  finished?: boolean;
 }
 
 

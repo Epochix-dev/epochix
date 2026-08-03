@@ -278,6 +278,41 @@ class RunStore:
         with self._engine.begin() as conn:
             conn.execute(runs_table.update().where(runs_table.c.id == run_id).values(**values))
 
+    def update_run_summary(
+        self,
+        run_id: str,
+        *,
+        final_grade: Grade | None = None,
+        story_summary: str | None = None,
+        task_type: TaskType | None = None,
+        primary_metric: str | None = None,
+    ) -> None:
+        """Refresh a run's summary fields WITHOUT marking it finished.
+
+        ``finish_run`` stamps ``finished_at``, which is wrong while events are
+        still arriving. Runs pushed through ``POST /runs/{id}/event`` — the
+        path the VS Code extension uses — had no other way to write these back,
+        so every such run kept the placeholders set at creation: no grade, task
+        ``custom``, and a primary metric that was never actually sent. The
+        frames were right; the row a user browses in ``epochix list`` was not.
+
+        Called per frame, so the summary is correct as the run progresses
+        rather than only once something declares it over.
+        """
+        values: dict[str, Any] = {}
+        if final_grade is not None:
+            values["final_grade"] = final_grade.value
+        if story_summary is not None:
+            values["story_summary"] = story_summary
+        if task_type is not None:
+            values["task_type"] = task_type.value
+        if primary_metric is not None:
+            values["primary_metric"] = primary_metric
+        if not values:
+            return
+        with self._engine.begin() as conn:
+            conn.execute(runs_table.update().where(runs_table.c.id == run_id).values(**values))
+
     def get_run(self, run_id: str) -> Run | None:
         with self._engine.connect() as conn:
             row = conn.execute(runs_table.select().where(runs_table.c.id == run_id)).fetchone()
