@@ -933,6 +933,84 @@ def _open_store(settings: Settings) -> RunStore:
 # ------------------------------------------------------------------
 
 
+@app.command("import-tensorboard")
+def cmd_import_tensorboard(
+    logdir: Path = typer.Argument(..., help="TensorBoard log directory (events.out.tfevents.*)."),
+    port: int = typer.Option(7860, "--port", "-p", help="Server port."),
+    name: str | None = typer.Option(None, "--name", "-n", help="Run name.", show_default=False),
+    headless: bool = typer.Option(False, "--headless", help="Do not open the browser."),
+    log_level: str = typer.Option("WARNING", "--log-level"),
+) -> None:
+    """Turn an existing TensorBoard logdir into an epochix story.
+
+    Needs no account and no network: the scalars are read straight off disk.
+    """
+    _configure_logging(log_level)
+    if not logdir.exists():
+        typer.echo(f"Error: logdir not found: {logdir}", err=True)
+        raise typer.Exit(1)
+
+    from epochix.integrations.tensorboard_import import import_tensorboard
+
+    runs = import_tensorboard(logdir, port=port, open_browser=not headless, run_name=name)
+    if not runs:
+        typer.echo(
+            "  No scalar events found. Point this at the directory holding "
+            "events.out.tfevents.* files.",
+            err=True,
+        )
+        raise typer.Exit(1)
+    typer.echo(f"  Imported {len(runs)} run(s) from {logdir}")
+
+
+@app.command("import-wandb")
+def cmd_import_wandb(
+    run_ref: str = typer.Argument(..., help="W&B run as 'entity/project/run_id'."),
+    port: int = typer.Option(7860, "--port", "-p", help="Server port."),
+    api_key: str | None = typer.Option(
+        None,
+        "--api-key",
+        help="W&B API key. Falls back to the WANDB_API_KEY environment variable.",
+        show_default=False,
+    ),
+    headless: bool = typer.Option(False, "--headless", help="Do not open the browser."),
+    log_level: str = typer.Option("WARNING", "--log-level"),
+) -> None:
+    """Turn an existing Weights & Biases run into an epochix story.
+
+    Unlike the TensorBoard importer this one talks to the W&B API, so it needs
+    an account and a key — the history is not read from disk.
+    """
+    _configure_logging(log_level)
+    parts = run_ref.split("/")
+    if len(parts) != 3 or not all(parts):
+        typer.echo(
+            f"Error: expected 'entity/project/run_id', got {run_ref!r}.",
+            err=True,
+        )
+        raise typer.Exit(2)
+    entity, project, run_id = parts
+
+    from epochix.integrations.wandb_import import import_wandb
+
+    try:
+        imported = import_wandb(
+            entity=entity,
+            project=project,
+            run_id=run_id,
+            port=port,
+            open_browser=not headless,
+            api_key=api_key,
+        )
+    except ImportError as exc:
+        typer.echo(f"  {exc}", err=True)
+        raise typer.Exit(1) from None
+    if imported is None:
+        typer.echo(f"  No history found for {run_ref}.", err=True)
+        raise typer.Exit(1)
+    typer.echo(f"  Imported {run_ref} as {imported}")
+
+
 # Real subcommands. Anything else in first position is treated as a log file
 # and routed to the implicit ``run`` command, so both of these work:
 #   epochix train.log          (shorthand → `run train.log`)

@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "epochix"
-version = "0.5.82"
+version = "0.5.83"
 description = "Turn ML training logs into a plain-English story with a letter grade — a live animated dashboard, no code changes."
 authors = [{ name = "Epochix Team" }]
 license = "Apache-2.0"
@@ -179,7 +179,12 @@ warn_unused_configs = true
 [[tool.mypy.overrides]]
 # PIL joins them: the `gif` extra is optional, so CI's type-check
 # environment has no Pillow and mypy cannot resolve the import.
-module = ["lightning.*", "pytorch_lightning.*", "transformers.*", "PIL.*"]
+# tensorboard joins them for the OPPOSITE reason: it ships no py.typed, so
+# where it IS installed mypy reports import-untyped, and the inline
+# `type: ignore[import-not-found]` it used to carry became "unused". One
+# override is correct in both environments; an inline ignore is correct in
+# only one of them.
+module = ["lightning.*", "pytorch_lightning.*", "transformers.*", "PIL.*", "tensorboard.*"]
 ignore_missing_imports = true
 
 # IPython.display.display/IFrame are untyped, so calling them from strict code

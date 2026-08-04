@@ -151,7 +151,7 @@ def _import_one(event_dir: Path, *, name: str, port: int) -> Any:  # noqa: ANN40
 def _read_scalar_events(event_dir: Path) -> Iterator[tuple[int, str, float]]:
     """Yield (step, tag, value) for all scalar summaries in the directory."""
     try:
-        from tensorboard.backend.event_processing.event_accumulator import (  # type: ignore[import-not-found]
+        from tensorboard.backend.event_processing.event_accumulator import (
             EventAccumulator,
         )
     except ImportError:
