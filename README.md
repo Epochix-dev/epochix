@@ -161,6 +161,37 @@ trainer = pl.Trainer(callbacks=[StoryCallback()])
 
 ---
 
+## Already using Weights & Biases or TensorBoard?
+
+Keep them. Epochix answers a different question.
+
+A tracker records **what happened across many runs** so you can compare them
+later. Epochix reads **one run** and tells you what it means — where the model
+peaked, whether it is overfitting, which epoch was actually best, and a grade
+with its reasoning attached.
+
+|  | Experiment tracker | Epochix |
+|---|---|---|
+| **Setup** | Add `wandb.init()` / `wandb.log()` to your code | Nothing — it reads what you already print |
+| **Account** | Required | None. Runs locally, uploads nothing |
+| **Works on someone else's log** | No — no SDK call, no data | Yes, including logs from months ago |
+| **Answers** | "What were the numbers?" | "What do the numbers mean?" |
+| **Sweeps, registry, team dashboards** | Yes | No, and deliberately so |
+
+Point it at runs you already have:
+
+```bash
+epochix import-tensorboard runs/experiment_1
+```
+
+That one needs no account and no network. There is also
+`epochix import-wandb <entity/project/run_id>`, which talks to the W&B API and
+therefore needs `pip install wandb` and an API key.
+
+Full detail: **[Coming from W&B / TensorBoard](https://epochix.dev/existing-runs/)**
+
+---
+
 ## Security & deployment
 
 epochix is **secure-by-default**:
