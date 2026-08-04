@@ -64,6 +64,43 @@ def test_action_only_calls_real_commands(path: Path) -> None:
     )
 
 
+def test_docstrings_do_not_promise_commands_that_do_not_exist() -> None:
+    """A usage example in a docstring is a promise to the reader.
+
+    `wandb_import.py` and `tensorboard_import.py` both documented
+    `epochix import-wandb ...` / `epochix import-tensorboard ...` while neither
+    command was registered — the importers were reachable only from Python.
+    Same shape as the Action calling `epochix batch`.
+    """
+    src = Path(__file__).resolve().parents[2] / "src" / "epochix"
+    known = _real_commands()
+    offenders: list[str] = []
+    for path in src.rglob("*.py"):
+        for i, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
+            # Only shell EXAMPLES — a line that begins with the command itself,
+            # allowing the usual prose decorations. Matching `epochix <word>`
+            # anywhere would flag "from epochix import ..." and "the epochix
+            # server", which are English, not promises.
+            stripped = line.strip().lstrip("#>$ ").strip()
+            if not stripped.startswith("epochix "):
+                continue
+            parts = stripped.split()
+            token = parts[1]
+            # `epochix train.log` names a file; `run` is implicit there.
+            if "." in token or "/" in token or token.startswith("-"):
+                continue
+            # What follows separates a command from a wrapped sentence. A real
+            # example ends there or continues with a flag/argument; prose
+            # continues with another lowercase word ("epochix module is not an
+            # IPython extension" is documentation, not an invocation).
+            rest = parts[2] if len(parts) > 2 else ""
+            if rest and rest[0].islower() and rest.isalpha():
+                continue
+            if token not in known:
+                offenders.append(f"{path.relative_to(src)}:{i} -> epochix {token}")
+    assert not offenders, f"docstrings name commands that do not exist: {offenders}"
+
+
 def test_run_supports_the_flags_the_action_passes() -> None:
     """The Action needs machine-readable output; `--json` is that contract."""
     params = {

@@ -7,6 +7,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.5.83] — 2026-08-04
+
+### Fixed
+
+- **`epochix import-wandb` and `epochix import-tensorboard` were documented but
+  did not exist.** Both importer modules carry a usage example naming a CLI
+  command, and neither was registered — the only way to reach either was the
+  Python API. Same shape as the `epochix batch` call in the shipped Action.
+
+  Both are real commands now. `import-tensorboard <logdir>` needs no account
+  and no network: verified against a real `events.out.tfevents.*` file, which
+  imported as a graded run. `import-wandb <entity/project/run_id>` talks to the
+  W&B API and therefore needs a key — it does **not** read a local `wandb/`
+  directory, and it remains unverified against the live API.
+
+- **`mypy --strict` failed wherever `tensorboard` was actually installed.** The
+  import carried `# type: ignore[import-not-found]`, but an installed
+  tensorboard ships no `py.typed`, so the real error is `import-untyped` and
+  the inline ignore became "unused". CI never saw it because CI's typecheck
+  environment has no tensorboard. Moved to the `[[tool.mypy.overrides]]` block
+  beside PIL, which is correct in both environments; checked with and without.
+
+### Changed
+
+- The CLI contract test now also asserts that every `epochix <cmd>` shown as a
+  shell example in `src/` docstrings resolves to a real command, not just those
+  in `.github/actions`.
+
+---
+
 ## [0.5.82] — 2026-08-03
 
 ### Fixed
