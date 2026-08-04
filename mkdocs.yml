@@ -46,6 +46,7 @@ nav:
   - Home: index.md
   - Quickstart: quickstart.md
   - Your own training loop: training-loop.md
+  - Coming from W&B / TensorBoard: existing-runs.md
   - CLI reference: cli.md
   - Configuration: config.md
   - Parsers: parsers.md
