@@ -7,6 +7,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.5.86] — 2026-08-05
+
+### Fixed
+
+- **The comparison never told you why one run won.** `/api/compare` has
+  returned a `narrative` since 0.5.43 — the plain-English explanation that the
+  whole comparison feature exists to produce — and the compare view fetched it
+  and dropped it on the floor. For these two runs the API was returning:
+
+  > lower-lr finished ahead of baseline: 0.9020 against 0.7610 (val_accuracy).
+  > baseline peaked at 0.8450 on epoch 7 and ended worse, at 0.7610. Had it
+  > stopped at its best the gap would have been 0.0570 rather than 0.1410.
+
+  and the screen showed a chart and two coloured legend entries. Task #46 was
+  marked done; only the API half was. It now renders above the chart, escaped
+  (it is built from run names, which come from log files), and stays absent
+  when the engine declines to pick a winner — different metrics, or a gap
+  inside the runs' own noise.
+
+  Found by opening the compare view in a browser and reading the page. Nothing
+  was broken, nothing errored, everything rendered — which is why no test and
+  no scanner had anything to say about it.
+
+---
+
 ## [0.5.85] — 2026-08-05
 
 ### Fixed
