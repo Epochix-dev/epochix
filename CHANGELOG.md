@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.5.85] — 2026-08-05
+
+### Fixed
+
+- **Importing a W&B run over the API silently downsampled it.** The importer
+  called `run.history()`, which takes `samples=500` — its own docstring says
+  *"if you are ok with the history records being sampled."* Any run longer than
+  500 logged steps was imported as 500 points **presented as the run**, which
+  moves the final value, the peak, and therefore the best-epoch call and the
+  grade. Reporting a best epoch that is not the best epoch is exactly the kind
+  of false statement this project refuses to make, and the sampling was
+  invisible: the curve still looked like a curve.
+
+  Now uses `scan_history()`, which pages through every record. It also yields
+  plain dicts, so pandas is no longer implicitly required.
+
+  The API path had never been exercised at all. It now is, against a stub
+  `wandb` — everything but the network — including a 2000-step run that must
+  import 2000 points and must not call `history()`.
+
+---
+
 ## [0.5.84] — 2026-08-05
 
 ### Added
