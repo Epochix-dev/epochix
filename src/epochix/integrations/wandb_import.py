@@ -76,20 +76,29 @@ def import_wandb(
     name = wb_run.name or run_id
     logger.info("Importing W&B run '%s' (%s/%s/%s)", name, entity, project, run_id)
 
-    # Fetch history as a pandas DataFrame
-    history = wb_run.history(keys=keys, pandas=True)
-    if history.empty:
-        logger.warning("No history data found for run %s", run_id)
-        return None
-
+    # scan_history, NOT history: `history()` takes `samples=500` and returns a
+    # DOWNSAMPLE — its own docstring says "if you are ok with the history
+    # records being sampled". Importing a 2000-epoch run through it produced
+    # 500 interpolated-looking points presented as the run, which moves the
+    # final value, the peak, and the best-epoch call. Reporting the wrong best
+    # epoch is precisely the kind of false statement this project refuses to
+    # make. scan_history pages through every record.
+    #
+    # It also yields plain dicts, so pandas is no longer implicitly required.
     from epochix.sdk.live_reporter import LiveReporter
 
     reporter = LiveReporter(name=name, port=port, open_browser=False)
+    logged = 0
     with reporter:
-        for _, row in history.iterrows():
-            metrics = _row_to_metrics(row, list(history.columns))
+        for row in wb_run.scan_history(keys=keys):
+            metrics = _row_to_metrics(row, list(row))
             if metrics:
                 reporter.log(**metrics)
+                logged += 1
+
+    if logged == 0:
+        logger.warning("No history data found for run %s", run_id)
+        return None
 
     run_ms_id: str = reporter._run_id  # noqa: SLF001
 

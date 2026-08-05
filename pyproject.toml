@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "epochix"
-version = "0.5.84"
+version = "0.5.85"
 description = "Turn ML training logs into a plain-English story with a letter grade — a live animated dashboard, no code changes."
 authors = [{ name = "Epochix Team" }]
 license = "Apache-2.0"
@@ -167,6 +167,9 @@ ignore = [
 "tests/**" = ["E501", "SIM117"]
 # Drives real Lightning/HF objects, which are untyped — Any is unavoidable.
 "tests/integration/test_framework_callbacks.py" = ["ANN401"]
+# Stubs standing in for wandb's untyped public API; **kwargs must accept Any
+# for the stub to be substitutable for the real thing.
+"tests/integration/test_wandb_api_import.py" = ["ANN401"]
 
 [tool.mypy]
 python_version   = "3.10"
