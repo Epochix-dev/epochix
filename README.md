@@ -184,9 +184,14 @@ Point it at runs you already have:
 epochix import-tensorboard runs/experiment_1
 ```
 
-That one needs no account and no network. There is also
-`epochix import-wandb <entity/project/run_id>`, which talks to the W&B API and
-therefore needs `pip install wandb` and an API key.
+Or the W&B runs already sitting on your disk — also no account, no network:
+
+```bash
+epochix import-wandb wandb/
+```
+
+Pass `entity/project/run_id` instead of a path and it fetches from the W&B API,
+which does need a key. Both W&B forms need `pip install wandb`.
 
 Full detail: **[Coming from W&B / TensorBoard](https://epochix.dev/existing-runs/)**
 

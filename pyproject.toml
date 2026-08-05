@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "epochix"
-version = "0.5.83"
+version = "0.5.84"
 description = "Turn ML training logs into a plain-English story with a letter grade — a live animated dashboard, no code changes."
 authors = [{ name = "Epochix Team" }]
 license = "Apache-2.0"
@@ -184,7 +184,7 @@ warn_unused_configs = true
 # `type: ignore[import-not-found]` it used to carry became "unused". One
 # override is correct in both environments; an inline ignore is correct in
 # only one of them.
-module = ["lightning.*", "pytorch_lightning.*", "transformers.*", "PIL.*", "tensorboard.*"]
+module = ["lightning.*", "pytorch_lightning.*", "transformers.*", "PIL.*", "tensorboard.*", "wandb.*"]
 ignore_missing_imports = true
 
 # IPython.display.display/IFrame are untyped, so calling them from strict code
@@ -192,6 +192,15 @@ ignore_missing_imports = true
 [[tool.mypy.overrides]]
 module = ["epochix.integrations.jupyter"]
 disallow_untyped_calls = false
+
+# The W&B importer calls into wandb's own untyped internals (DataStore) and a
+# generated protobuf module whose attributes mypy cannot see. These only appear
+# where wandb is actually installed — CI's typecheck env has no wandb, so they
+# were invisible there while failing on any developer machine that did.
+[[tool.mypy.overrides]]
+module = ["epochix.integrations.wandb_import"]
+disallow_untyped_calls = false
+disable_error_code = ["attr-defined"]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"

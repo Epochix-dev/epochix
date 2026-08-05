@@ -965,7 +965,10 @@ def cmd_import_tensorboard(
 
 @app.command("import-wandb")
 def cmd_import_wandb(
-    run_ref: str = typer.Argument(..., help="W&B run as 'entity/project/run_id'."),
+    run_ref: str = typer.Argument(
+        ...,
+        help="A local wandb/ path (no account needed), or 'entity/project/run_id'.",
+    ),
     port: int = typer.Option(7860, "--port", "-p", help="Server port."),
     api_key: str | None = typer.Option(
         None,
@@ -978,10 +981,32 @@ def cmd_import_wandb(
 ) -> None:
     """Turn an existing Weights & Biases run into an epochix story.
 
-    Unlike the TensorBoard importer this one talks to the W&B API, so it needs
-    an account and a key — the history is not read from disk.
+    Give it a PATH — your wandb/ directory, one run directory inside it, or a
+    .wandb file — and everything is read off local disk: no account, no key,
+    no network. Give it 'entity/project/run_id' instead and it fetches from
+    the W&B API, which does need credentials.
     """
     _configure_logging(log_level)
+
+    # A path that exists is a local run: read it off disk, no credentials.
+    # This is the common case for anyone who already has a wandb/ directory,
+    # and it is checked first so the account-only path is the fallback rather
+    # than the entry price.
+    local = Path(run_ref)
+    if local.exists():
+        from epochix.integrations.wandb_import import import_wandb_dir
+
+        try:
+            ids = import_wandb_dir(local, port=port, open_browser=not headless)
+        except FileNotFoundError as exc:
+            typer.echo(f"  {exc}", err=True)
+            raise typer.Exit(1) from None
+        if not ids:
+            typer.echo(f"  No run history found under {local}.", err=True)
+            raise typer.Exit(1)
+        typer.echo(f"  Imported {len(ids)} run(s) from {local}")
+        return
+
     parts = run_ref.split("/")
     if len(parts) != 3 or not all(parts):
         typer.echo(
