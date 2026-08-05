@@ -40,6 +40,11 @@ export class CompareView {
       return;
     }
     this._runs = data.runs ?? [];
+    // The whole point of the comparison. It was fetched and dropped on the
+    // floor: /api/compare has returned this since 0.5.43 and nothing ever
+    // rendered it, so the feature that explains WHY one run won was
+    // invisible in the only place a user would look for it.
+    this._narrative = data.narrative ?? '';
     if (this._runs.length === 0) {
       this._el.innerHTML = `<div class="cmp-loading">No runs to compare. Pick runs from the
         <a href="/">runs list</a>.</div>`;
@@ -69,7 +74,15 @@ export class CompareView {
       `<option value="${_esc(k)}"${k === this._metric ? ' selected' : ''}>${_esc(metricLabel(k))}</option>`,
     ).join('');
 
+    // Empty when the runs cannot honestly be compared (different metrics) or
+    // the gap is within their own noise — say nothing rather than invent a
+    // winner.
+    const narrative = this._narrative
+      ? `<p class="cmp-narrative">${_esc(this._narrative)}</p>`
+      : '';
+
     this._el.innerHTML = `
+      ${narrative}
       <div class="cmp-controls">
         <label class="cmp-ctl">Metric
           <select id="cmp-metric">${opts}</select>
