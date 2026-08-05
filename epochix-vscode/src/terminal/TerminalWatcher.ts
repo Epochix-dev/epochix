@@ -61,6 +61,35 @@ export class TerminalWatcher implements vscode.Disposable {
     // command used to announce "Watching terminal X" and then capture nothing.
     this.attachToActiveAutomatically();
     this._activeTerminal = terminal;
+
+    // Everything here rides on shell integration: without it
+    // onDidStartTerminalShellExecution never fires and we capture nothing.
+    // Promising "watching" and then sitting silent is the same failure this
+    // command already had once for a different reason (see above) — say so
+    // instead. It activates a moment after a terminal opens, so an absent
+    // `shellIntegration` is "not yet" rather than "never"; the wording has to
+    // carry that or it becomes a false alarm on a freshly opened terminal.
+    if (terminal.shellIntegration === undefined) {
+      void vscode.window
+        .showWarningMessage(
+          `Epochix: shell integration is not active in "${terminal.name}" yet, ` +
+            "so training output cannot be read. It usually activates a second " +
+            "after the terminal opens — if it does not, your shell may not " +
+            "support it, and you can pipe instead: python train.py | epochix",
+          "How do I fix this?",
+        )
+        .then((choice) => {
+          if (choice === "How do I fix this?") {
+            void vscode.env.openExternal(
+              vscode.Uri.parse(
+                "https://code.visualstudio.com/docs/terminal/shell-integration",
+              ),
+            );
+          }
+        });
+      return;
+    }
+
     void vscode.window.showInformationMessage(
       `Epochix: Watching terminal "${terminal.name}". ` +
         "Start your training command now.",

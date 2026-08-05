@@ -7,6 +7,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.5.87] — 2026-08-05
+
+### Fixed
+
+- **"Watch Active Terminal" could promise to watch and then do nothing.** The
+  whole terminal→dashboard journey rides on VS Code shell integration: without
+  it, `onDidStartTerminalShellExecution` never fires and no output is ever
+  captured. The command announced *"Watching terminal X. Start your training
+  command now."* regardless, then sat silent forever.
+
+  It now checks `terminal.shellIntegration` and says so, with a link to the VS
+  Code docs and the pipe fallback (`python train.py | epochix`). Worded as "not
+  active yet" rather than "unsupported", because shell integration comes up a
+  moment after a terminal opens and a flat claim would be a false alarm on a
+  freshly opened one.
+
+  This command already carried a comment about the same failure from a
+  different cause. Same shape, second source.
+
+### Verified (no change needed)
+
+- Training detection was driven against all 30 real log fixtures plus the three
+  bundled demos: it fires on every one and stays silent on garbage. Fed as a
+  live trickle it fires within **1 line** for Keras, Lightning, HuggingFace,
+  fastai and key=value logs, and 5 for Ultralytics YOLO, which prints a banner
+  first. Six kinds of ordinary terminal output — pip, pytest, npm, git, docker,
+  ls — produced no false positives, so the dashboard will not ambush someone
+  who is not training.
+
+---
+
 ## [0.5.86] — 2026-08-05
 
 ### Fixed
