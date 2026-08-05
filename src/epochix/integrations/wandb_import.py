@@ -17,8 +17,10 @@ Usage::
 
 from __future__ import annotations
 
+import json
 import logging
 import math
+from pathlib import Path
 from typing import Any
 
 logger = logging.getLogger(__name__)
@@ -59,7 +61,7 @@ def import_wandb(
         The epochix run ID.
     """
     try:
-        import wandb  # type: ignore[import-not-found]
+        import wandb
     except ImportError as exc:
         raise ImportError(
             "wandb is required for W&B import. Install with: pip install wandb"
@@ -97,6 +99,113 @@ def import_wandb(
         webbrowser.open(f"http://127.0.0.1:{port}/v/{run_ms_id}")
 
     return run_ms_id
+
+
+def _scan_wandb_file(path: Path) -> tuple[str | None, list[dict[str, float]]]:
+    """(run name, history rows) from a local ``run-*.wandb`` file.
+
+    W&B stores a run's history ONLY in this binary file — there is no
+    ``wandb-summary.json`` or ``output.log`` to fall back on, which is easy to
+    assume and wrong. It is a length-prefixed record log of protobuf
+    ``Record`` messages, read here with wandb's own ``DataStore`` and protobuf
+    definitions, so no account, key or network is involved.
+
+    History items carry the metric name in ``nested_key`` (not ``key``) and the
+    value as a JSON string. ``_step``/``_timestamp``/``_runtime`` are
+    bookkeeping.
+    """
+    from wandb.proto import wandb_internal_pb2 as pb
+    from wandb.sdk.internal.datastore import DataStore
+
+    store = DataStore()
+    store.open_for_scan(str(path))
+
+    name: str | None = None
+    rows: list[dict[str, float]] = []
+    while True:
+        data = store.scan_data()
+        if data is None:
+            break
+        record = pb.Record()
+        record.ParseFromString(bytes(data))
+        kind = record.WhichOneof("record_type")
+        if kind == "run" and name is None:
+            name = record.run.display_name or record.run.run_id or None
+        elif kind == "history":
+            raw: dict[str, Any] = {}
+            for item in record.history.item:
+                key = item.nested_key[0] if item.nested_key else item.key
+                if not key:
+                    continue
+                try:
+                    raw[key] = json.loads(item.value_json)
+                except (ValueError, TypeError):
+                    continue
+            metrics = _row_to_metrics(raw, list(raw))
+            if metrics:
+                rows.append(metrics)
+    return name, rows
+
+
+def import_wandb_dir(
+    path: str | Path,
+    *,
+    port: int = 7860,
+    open_browser: bool = True,
+    run_name: str | None = None,
+) -> list[str]:
+    """Import W&B runs already on disk — no account, no key, no network.
+
+    *path* may be the ``wandb/`` directory a training script created, a single
+    ``run-*``/``offline-run-*`` directory inside it, or a ``.wandb`` file.
+
+    This is the counterpart to :func:`import_wandb`, which reaches the W&B API
+    and therefore needs credentials. Everything here comes off the local disk,
+    so a run logged with ``WANDB_MODE=offline`` — or any run whose directory
+    still exists — can be read with nothing but ``wandb`` installed.
+
+    Returns the epochix run ids created, one per W&B run found.
+    """
+    root = Path(path)
+    if not root.exists():
+        raise FileNotFoundError(f"No such path: {root}")
+
+    if root.is_file():
+        files = [root]
+    else:
+        # A run directory holds the file directly; a wandb/ directory holds
+        # one level of run directories.
+        files = sorted(root.glob("run-*.wandb")) or sorted(root.glob("*/run-*.wandb"))
+    if not files:
+        raise FileNotFoundError(
+            f"No run-*.wandb file under {root}. Point this at your wandb/ "
+            f"directory, a run directory inside it, or the .wandb file itself."
+        )
+
+    from epochix.sdk.live_reporter import LiveReporter
+
+    created: list[str] = []
+    for wandb_file in files:
+        name, rows = _scan_wandb_file(wandb_file)
+        if not rows:
+            logger.warning("No history in %s — skipping", wandb_file.name)
+            continue
+
+        reporter = LiveReporter(
+            name=run_name or name or wandb_file.stem,
+            port=port,
+            open_browser=False,
+        )
+        with reporter:
+            for row in rows:
+                reporter.log(**row)
+        created.append(reporter._run_id)  # noqa: SLF001
+
+    if created and open_browser:
+        import webbrowser
+
+        webbrowser.open(f"http://127.0.0.1:{port}/v/{created[0]}")
+    return created
 
 
 def _row_to_metrics(row: Any, columns: list[str]) -> dict[str, float]:  # noqa: ANN401

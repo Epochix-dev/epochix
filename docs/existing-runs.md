@@ -53,18 +53,37 @@ imports all of them.
 
 ## From Weights & Biases
 
+### From a run already on your disk — no account needed
+
+Every W&B run writes a directory. Point Epochix at it:
+
+```bash
+epochix import-wandb wandb/
+```
+
+That reads the run history straight off local disk — no login, no API key, no
+network. It accepts your `wandb/` directory, a single run directory inside it,
+or the `run-*.wandb` file itself, and imports every run it finds.
+
+This works for runs logged with `WANDB_MODE=offline` as well as ordinary ones,
+because the local directory is written either way.
+
+Requires `pip install wandb` — the file is a binary record log, and Epochix
+uses W&B's own reader for it rather than guessing at the format.
+
+### From the W&B servers
+
+If the run is not on this machine, fetch it by reference:
+
 ```bash
 epochix import-wandb myteam/bert-finetune/a1b2c3d4
 ```
 
-!!! note "This one needs your W&B credentials"
+!!! note "This form needs credentials"
 
-    Unlike the TensorBoard importer, this talks to the W&B API. It needs
-    `wandb` installed and an API key — set `WANDB_API_KEY`, or pass
-    `--api-key`. It reads the run's history from W&B's servers; it does **not**
-    read the local `wandb/` directory on your machine.
-
-    Requires `pip install wandb`.
+    Anything that is not an existing path is treated as
+    `entity/project/run_id` and fetched through the W&B API, which needs an
+    API key — set `WANDB_API_KEY` or pass `--api-key`.
 
 ## What you get that a tracker doesn't
 

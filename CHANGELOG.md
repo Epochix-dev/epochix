@@ -7,6 +7,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.5.84] — 2026-08-05
+
+### Added
+
+- **`epochix import-wandb <path>` — read W&B runs off local disk, no account.**
+  The importer was API-only, which put the strongest thing we can say to a W&B
+  user — *point it at the runs you already have* — behind a login and an API
+  key. Every W&B run writes a directory; this reads it. Pass your `wandb/`
+  folder, one run directory inside it, or the `run-*.wandb` file. Anything that
+  is not an existing path is still treated as `entity/project/run_id` and
+  fetched through the API.
+
+  The layout is not what it looks like from outside, so this was built against
+  a real run produced by `wandb.init()` under `WANDB_MODE=offline` rather than
+  from assumption: there is no `wandb-summary.json` and no `output.log`, the
+  history lives only in the binary `run-*.wandb` record log, and history items
+  carry their name in `nested_key` rather than `key`. That file is the test
+  fixture — a hand-written one would have encoded the wrong guesses and passed.
+
+### Fixed
+
+- **`mypy --strict` failed on any machine with `wandb` installed.** Same shape
+  as the tensorboard case in 0.5.83: calls into wandb's untyped internals and a
+  generated protobuf module whose attributes mypy cannot see. Invisible in CI,
+  whose typecheck environment has no wandb, while failing for every developer
+  who had it. Scoped to `epochix.integrations.wandb_import` and checked both
+  with and without the package present.
+
+---
+
 ## [0.5.83] — 2026-08-04
 
 ### Fixed
