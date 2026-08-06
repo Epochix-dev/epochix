@@ -93,8 +93,16 @@ def test_import_wandb_on_an_unreadable_file_says_so(tmp_path: Path) -> None:
 
     assert res.returncode != 0
     combined = res.stdout + res.stderr
+
+    # The invariant is the same either way: a sentence, never a traceback.
+    # Which sentence depends on the machine — CI installs no optional extras,
+    # so it hits "wandb is required" before it can even open the file, while a
+    # developer with wandb installed hits "Invalid header" and skips the file.
+    # Asserting only one of those made this test pass locally and fail on CI.
     assert "Traceback" not in combined, combined[:400]
-    assert "No run history found" in combined or "Skipping" in combined
+    assert any(
+        phrase in combined for phrase in ("No run history found", "Skipping", "wandb is required")
+    ), combined[:400]
 
 
 def test_import_wandb_rejects_a_malformed_reference(tmp_path: Path) -> None:
