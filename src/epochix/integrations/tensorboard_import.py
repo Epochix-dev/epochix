@@ -66,7 +66,15 @@ def import_tensorboard(
             run = _import_one(event_dir, name=name, port=port)
             if run:
                 runs.append(run)
+        except ImportError:
+            # A missing tensorboard is not a bad directory. Swallowing it here
+            # left the CLI saying "No scalar events found. Point this at the
+            # directory holding events.out.tfevents.*" — telling a user with a
+            # perfectly good logdir to go fix their logdir.
+            raise
         except Exception as exc:  # noqa: BLE001
+            # A corrupt or unreadable event dir SHOULD be skipped: one bad
+            # sub-run must not abandon the others.
             logger.warning("Skipping %s: %s", event_dir, exc)
 
     if open_browser and runs:

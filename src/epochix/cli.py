@@ -338,7 +338,13 @@ async def _run_batch_or_live(
 
     # Headless export
     if export_format and headless:
-        _cli_export(run_id=run_id, fmt=export_format, store=store, outfile=export_output)
+        _cli_export(
+            run_id=run_id,
+            fmt=export_format,
+            store=store,
+            outfile=export_output,
+            quiet=json_out,
+        )
 
 
 def _require_free_port(host: str, port: int) -> None:
@@ -375,11 +381,26 @@ def _cli_export(
     outfile: Path | None = None,
     metric: str | None = None,
     chart: str = "curve",
+    # `--json` owns stdout: one document and nothing else, or the caller's
+    # json.load fails on "Extra data". The guard added in 0.5.80 covered the
+    # line printed BEFORE the document and missed the export confirmation
+    # printed after it, so `run --json --export md` emitted invalid JSON.
+    quiet: bool = False,
 ) -> None:
     outfile = outfile or Path(f"{run_id}.{fmt}")
+
+    def say(message: str) -> None:
+        """Progress chatter — to stderr when stdout is carrying JSON.
+
+        Errors already go to stderr unconditionally; only the informational
+        lines need redirecting, and they must still be SEEN, so stderr rather
+        than silence.
+        """
+        typer.echo(message, err=quiet)
+
     # Absolute: the default lands in the current directory, and "Exporting HTML
     # -> 01K….html" left people hunting for a file they could not place.
-    typer.echo(f"  Exporting {fmt.upper()} {console_symbols()[0]} {outfile.resolve()}")
+    say(f"  Exporting {fmt.upper()} {console_symbols()[0]} {outfile.resolve()}")
 
     # `--output reports/run.md` should work without a prior mkdir.
     try:
@@ -952,7 +973,11 @@ def cmd_import_tensorboard(
 
     from epochix.integrations.tensorboard_import import import_tensorboard
 
-    runs = import_tensorboard(logdir, port=port, open_browser=not headless, run_name=name)
+    try:
+        runs = import_tensorboard(logdir, port=port, open_browser=not headless, run_name=name)
+    except ImportError as exc:
+        typer.echo(f"  {exc}", err=True)
+        raise typer.Exit(1) from None
     if not runs:
         typer.echo(
             "  No scalar events found. Point this at the directory holding "
@@ -998,7 +1023,7 @@ def cmd_import_wandb(
 
         try:
             ids = import_wandb_dir(local, port=port, open_browser=not headless)
-        except FileNotFoundError as exc:
+        except (FileNotFoundError, ImportError) as exc:
             typer.echo(f"  {exc}", err=True)
             raise typer.Exit(1) from None
         if not ids:

@@ -25,20 +25,35 @@ export function escapeHtml(s) {
     .replace(/'/g, '&#39;');
 }
 
+/** Characters a browser discards from a URL before it parses the scheme. */
+const URL_IGNORED = /[\u0000-\u0020\u007f]/g;
+
+/** The only schemes this dashboard ever means to link to. */
+const URL_SCHEMES = ['http', 'https', 'mailto'];
+
 /**
- * Escape a value used in an *unquoted* attribute or a URL-ish attribute.
+ * Escape a value that reaches `href` or `src`, where escaping is not enough:
+ * `javascript:` survives every entity substitution above.
  *
- * Prefer quoting the attribute and using `escapeHtml`. This exists for the
- * cases where the value reaches `href`/`src`, where escaping is not enough on
- * its own: `javascript:` survives every entity substitution above.
+ * The check runs against what the BROWSER will see, not what we were handed.
+ * Browsers strip tab, newline and carriage return from a URL before parsing
+ * its scheme, so `java<TAB>script:alert(1)` arrives looking harmless and then
+ * executes. A naive `/^[a-z][a-z0-9+.-]*:/` test was defeated by four such
+ * payloads in a real DOM — tab, LF, CR, and a mixed-case variant.
  */
 export function safeUrl(s) {
-  const raw = String(s ?? '').trim();
-  // Scheme-relative and absolute URLs with a scheme we did not vet are the
-  // problem; anything relative is fine.
-  if (/^[a-z][a-z0-9+.-]*:/i.test(raw)) {
-    const scheme = raw.slice(0, raw.indexOf(':')).toLowerCase();
-    if (scheme !== 'http' && scheme !== 'https' && scheme !== 'mailto') return '#';
-  }
-  return escapeHtml(raw);
+  const raw = String(s ?? '');
+
+  // Over-stripping only ever makes this refuse more, which is the safe
+  // direction for a URL.
+  const probe = raw.replace(URL_IGNORED, '').toLowerCase();
+
+  // Protocol-relative: `//evil.com` inherits the current scheme and navigates
+  // off-site. Nothing in this dashboard means to do that.
+  if (probe.startsWith('//')) return '#';
+
+  const scheme = /^([a-z][a-z0-9+.-]*):/.exec(probe);
+  if (scheme && !URL_SCHEMES.includes(scheme[1])) return '#';
+
+  return escapeHtml(raw.trim());
 }
