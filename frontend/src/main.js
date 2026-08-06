@@ -35,6 +35,7 @@ import fa from './i18n/fa.json';
 import fr from './i18n/fr.json';
 import { applyStaticI18n } from './i18n/apply.js';
 import { escapeHtml as _esc } from './escape.js';
+import { openIssue } from './report.js';
 
 const LOCALES = { en, fa, fr };
 
@@ -323,18 +324,9 @@ async function main() {
       '_No run name, file path or log content is included._',
     ].join('\n');
 
-    const url = 'https://github.com/Epochix-dev/epochix/issues/new'
-      + '?labels=correctness'
-      + '&title=' + encodeURIComponent('Dashboard: ')
-      + '&body=' + encodeURIComponent(body);
-
-    if (window.__EPOCHIX_VSCODE__) {
-      window.__EPOCHIX_VSCODE__.postMessage({ type: 'openExternal', url });
-    } else if (window.parent !== window) {
-      window.parent.postMessage({ type: 'openExternal', url }, '*');
-    } else {
-      window.open(url, '_blank', 'noopener');
-    }
+    // Same dispatch as the per-frame control — a webview discards
+    // window.open silently, so this must not be reimplemented per caller.
+    openIssue({ title: 'Dashboard: ', labels: 'correctness', body });
   });
 
   const EXPORT_FORMATS = [
