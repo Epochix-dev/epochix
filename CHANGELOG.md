@@ -7,6 +7,52 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.5.89] — 2026-08-06
+
+### Security
+
+- **`safeUrl` did not stop `javascript:`.** It tested the string it was handed,
+  but browsers strip TAB, LF and CR from a URL *before* parsing the scheme — so
+  `java<TAB>script:alert(1)` sailed past the check and then executed. Four
+  variants were confirmed live in a real DOM. It now tests what the browser
+  will see, and refuses protocol-relative `//evil.com` as well.
+
+  Nothing was exploitable: no caller had reached for it yet. That made it worse
+  rather than better — an unused guard that does not guard is a trap for
+  whoever uses it first. Eighteen cases now cover it.
+
+### Fixed
+
+- **`run --json --export md` emitted invalid JSON.** The export confirmation
+  printed to stdout *after* the document, so `json.load` died on "Extra data:
+  line 2". The 0.5.80 guard covered the line printed before it and missed the
+  one after. Informational output now goes to stderr when stdout is carrying
+  JSON — redirected, not silenced, so it is still seen.
+
+- **A missing optional dependency was reported as a bad directory.** With no
+  `tensorboard` installed, `import-tensorboard` swallowed the ImportError into
+  a per-directory warning and told the user *"No scalar events found. Point
+  this at the directory holding events.out.tfevents.*"* — advice that is simply
+  wrong for that cause. It now says which package to install. A genuinely
+  corrupt sub-directory is still skipped, so one bad run cannot abandon the
+  others.
+
+- **`import-wandb` on a local path crashed with a raw traceback** when `wandb`
+  was not installed, and again on a truncated `.wandb` file ("Invalid header").
+  Neither is exotic — a *running* job has a `.wandb` being written. Both are
+  clean messages now, and an unreadable file is skipped rather than abandoning
+  the whole directory.
+
+### Changed
+
+- The control-character scan now covers `frontend/` and `epochix-vscode/`, not
+  only `src/epochix`. It was added after a shell heredoc turned a character
+  range into LITERAL control bytes inside a regex in `escape.js` — which still
+  worked, which is exactly why nothing would have caught it. Test files are
+  exempt: a test for ANSI stripping has to contain real ESC bytes.
+
+---
+
 ## [0.5.88] — 2026-08-05
 
 ### Added

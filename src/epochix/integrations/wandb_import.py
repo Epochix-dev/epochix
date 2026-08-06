@@ -123,8 +123,17 @@ def _scan_wandb_file(path: Path) -> tuple[str | None, list[dict[str, float]]]:
     value as a JSON string. ``_step``/``_timestamp``/``_runtime`` are
     bookkeeping.
     """
-    from wandb.proto import wandb_internal_pb2 as pb
-    from wandb.sdk.internal.datastore import DataStore
+    try:
+        from wandb.proto import wandb_internal_pb2 as pb
+        from wandb.sdk.internal.datastore import DataStore
+    except ImportError:
+        # The API path has said this clearly since it was written; the offline
+        # path imported wandb bare and dumped a ModuleNotFoundError traceback
+        # at anyone who had not installed it. Reading the file needs no
+        # account, but it does need wandb's own record reader.
+        raise ImportError(
+            "wandb is required to read a local run directory. Install with: pip install wandb"
+        ) from None
 
     store = DataStore()
     store.open_for_scan(str(path))
@@ -195,7 +204,17 @@ def import_wandb_dir(
 
     created: list[str] = []
     for wandb_file in files:
-        name, rows = _scan_wandb_file(wandb_file)
+        try:
+            name, rows = _scan_wandb_file(wandb_file)
+        except ImportError:
+            raise  # missing wandb is fatal for every file, not this one
+        except Exception as exc:  # noqa: BLE001
+            # A truncated or non-wandb file raised "Invalid header" as a raw
+            # traceback. Not exotic: a RUNNING job has a .wandb being written,
+            # and a wandb/ directory may hold several runs where only one is
+            # unreadable. Skip it and keep the rest.
+            logger.warning("Skipping %s: %s", wandb_file.name, exc)
+            continue
         if not rows:
             logger.warning("No history in %s — skipping", wandb_file.name)
             continue

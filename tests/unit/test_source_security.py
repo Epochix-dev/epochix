@@ -25,6 +25,13 @@ SRC = ROOT / "src" / "epochix"
 # unescaped `\1` in a build script, which the source-only scan did not watch.
 _PROSE = ["README.md", "CHANGELOG.md", "SECURITY.md", "CONTRIBUTING.md"]
 
+# The frontend and the extension were never scanned, only src/epochix. A shell
+# heredoc turned `- ` into LITERAL control characters inside a regex
+# in frontend/src/escape.js — it still worked, which is exactly why nothing
+# would have caught it. Same failure family as the U+202E in gif_export.py.
+_JS_ROOTS = [ROOT / "frontend" / "src", ROOT / "epochix-vscode" / "src"]
+_JS_SUFFIXES = {".js", ".ts", ".mjs", ".css"}
+
 
 def test_no_bidi_control_characters_in_source() -> None:
     """No source file may contain a bidirectional override.
@@ -52,6 +59,38 @@ def test_no_bidi_control_characters_in_source() -> None:
         if bidi & set(line)
     ]
     assert not offenders, f"bidirectional control characters in source: {offenders}"
+
+
+def test_no_control_characters_in_frontend_or_extension_source() -> None:
+    """Same rule, the other half of the codebase.
+
+    Tab is allowed (real indentation); everything else below U+0020 apart from
+    the line break is a character that got there by accident and will not
+    survive review, because nobody can see it.
+    """
+    offenders: list[str] = []
+    for root in _JS_ROOTS:
+        if not root.is_dir():
+            continue
+        for path in root.rglob("*"):
+            parts = set(path.parts)
+            # Test files are exempt: a test for ANSI stripping has to contain
+            # real ESC bytes, and terminalJourney.test.ts legitimately does.
+            # The hazard is an invisible character in SHIPPED code, where no
+            # reviewer can see it.
+            if (
+                path.suffix not in _JS_SUFFIXES
+                or "node_modules" in parts
+                or {"test", "tests", "__tests__"} & parts
+                or ".test." in path.name
+                or ".spec." in path.name
+            ):
+                continue
+            for i, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
+                for ch in line:
+                    if ch != "\t" and unicodedata.category(ch) in {"Cc", "Cf"}:
+                        offenders.append(f"{path.relative_to(ROOT)}:{i} U+{ord(ch):04X}")
+    assert not offenders, f"control characters in frontend/extension source: {offenders}"
 
 
 def test_no_control_characters_in_published_prose() -> None:
