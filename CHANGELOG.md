@@ -7,6 +7,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.5.88] — 2026-08-05
+
+### Added
+
+- **"this looks wrong" on every reading (#56 complete).** The dashboard could
+  report that *something* was off; it could not report that *this number* was
+  wrong. That distinction matters here more than in most products: the
+  characteristic failure is a page that renders perfectly and states something
+  false — a grade on the wrong metric, a peak on the wrong epoch, a narrative
+  about progress that did not happen. A report saying "the dashboard looks odd"
+  cannot be acted on; one carrying the epoch, the value and the sentence
+  written about it can.
+
+  The control sits beside the narrative it disputes, quiet until hovered, and
+  opens a prefilled issue with epoch, metric, value, grade, phase, task and
+  version — and **no run name, file path or log content**, verified by test and
+  in a live browser. A bug report should not be how a project name reaches a
+  public issue tracker.
+
+### Changed
+
+- Issue dispatch moved to one `report.js` shared by the global button and the
+  per-frame control. The dashboard runs in three environments and a webview
+  discards `window.open` **silently** — the button looks like it worked. That
+  exact failure already shipped once, for export; one implementation means it
+  cannot ship twice.
+
+---
+
 ## [0.5.87] — 2026-08-05
 
 ### Fixed

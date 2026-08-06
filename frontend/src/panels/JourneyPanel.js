@@ -9,6 +9,7 @@ import { EpochScrubber }   from '../visualizations/EpochScrubber.js';
 import { GradeArcChart }   from '../visualizations/GradeArcChart.js';
 import { metricDisplayLabel, isPercentMetric } from '../viz-util.js';
 import { escapeHtml as _esc } from '../escape.js';
+import { frameReportButton, reportFrame } from '../report.js';
 
 const PHASE_ICON = {
   awakening:     '🌱',
@@ -82,7 +83,26 @@ export class JourneyPanel {
     const el = document.getElementById('narrative-text');
     if (el) {
       if (frame?.narrative) {
-        el.innerHTML = `<p class="narrative-live">${_esc(frame.narrative)}</p>`;
+        // The control sits with the sentence, not in a global toolbar: the
+        // report has to say WHICH reading is wrong, and the user is looking
+        // at it right now.
+        el.innerHTML =
+          `<p class="narrative-live">${_esc(frame.narrative)}</p>` +
+          frameReportButton(frame);
+        const btn = el.querySelector('.frame-report');
+        if (btn) {
+          btn.addEventListener('click', async () => {
+            // Version is worth having in the report and worth nothing if it
+            // costs the click: a standalone HTML export has no server, so a
+            // failed fetch must not stop the user filing.
+            let version = '(unknown)';
+            try {
+              const r = await fetch('/api/version');
+              if (r.ok) version = (await r.json()).version ?? version;
+            } catch { /* offline export, or no server */ }
+            reportFrame(frame, run, version);
+          });
+        }
       } else if (!s.live && !frame) {
         el.innerHTML = `<p class="narrative-placeholder">Waiting for training data…</p>`;
       }

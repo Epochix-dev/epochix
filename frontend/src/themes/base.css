@@ -642,6 +642,29 @@ body {
 /* ── Multi-run comparison view ───────────────────────────────────────────── */
 .panel-compare { display: flex; flex-direction: column; }
 .cmp-loading { color: var(--text-muted); font-size: 14px; padding: 24px 0; }
+/* Per-frame "this looks wrong". Quiet by default — it is an escape hatch, not
+   a call to action — and only obvious on hover/focus. */
+.frame-report {
+  display: inline-block;
+  margin-top: 6px;
+  padding: 2px 8px;
+  font: inherit;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--muted, #8a8aa8);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  cursor: pointer;
+  opacity: 0.65;
+  transition: opacity 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+.frame-report:hover,
+.frame-report:focus-visible {
+  opacity: 1;
+  color: var(--ink, #e8ecf8);
+  border-color: var(--grid, #202640);
+}
 /* The comparison narrative: the answer to "why did this one win", so it leads
    rather than sitting under the chart as a caption. */
 .cmp-narrative {
