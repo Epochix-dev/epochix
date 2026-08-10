@@ -971,6 +971,13 @@ def cmd_import_tensorboard(
         typer.echo(f"Error: logdir not found: {logdir}", err=True)
         raise typer.Exit(1)
 
+    # The importer starts its own server through LiveReporter, so a busy port
+    # is a bind failure inside a background asyncio task — surfacing as a raw
+    # uvicorn traceback and SystemExit(3). `run` has guarded this since 0.5.32;
+    # these commands were added without it, and the likeliest reason 7860 is
+    # taken is that the user already has an epochix dashboard open.
+    _require_free_port(get_settings().host, port)
+
     from epochix.integrations.tensorboard_import import import_tensorboard
 
     try:
@@ -1017,6 +1024,8 @@ def cmd_import_wandb(
     # This is the common case for anyone who already has a wandb/ directory,
     # and it is checked first so the account-only path is the fallback rather
     # than the entry price.
+    _require_free_port(get_settings().host, port)
+
     local = Path(run_ref)
     if local.exists():
         from epochix.integrations.wandb_import import import_wandb_dir
