@@ -7,6 +7,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.5.90] — 2026-08-10
+
+### Fixed
+
+- **`import-wandb` and `import-tensorboard` crashed with a traceback when the
+  port was busy.** Both start their own server through `LiveReporter`, so the
+  bind failure happened inside a background asyncio task and surfaced as a raw
+  uvicorn stack plus `SystemExit(3)`. `run` has printed *"Port 7860 is already
+  in use — try `--port 7861`"* since 0.5.32; these commands were added without
+  the guard.
+
+  Not a corner case: the likeliest reason 7860 is taken is that an epochix
+  dashboard is already open, which describes exactly the person importing runs.
+  Found by running the real command against the live W&B API rather than
+  calling the function.
+
+### Verified
+
+- **The W&B importer, against the live API** (task #28 — previously blocked on
+  an account). All three documented forms import and grade correctly: a remote
+  `entity/project/run_id`, a local `wandb/` directory, and a single
+  `run-*.wandb` file.
+
+  The 0.5.85 sampling fix is now confirmed on real data rather than a stub: an
+  800-step run returns **800 records from `scan_history()` and 500 from the old
+  sampled `history()`**. Pre-fix, that run imported as 500 points presented as
+  the whole run — moving the final value, the peak and the grade. A nonexistent
+  run raises a named `CommError`, not a traceback.
+
+---
+
 ## [0.5.89] — 2026-08-06
 
 ### Security

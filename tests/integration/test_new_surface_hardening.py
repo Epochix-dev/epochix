@@ -17,7 +17,23 @@ import pytest
 ROOT = Path(__file__).resolve().parents[2]
 
 
+def _free_port() -> int:
+    import socket
+
+    with socket.socket() as s:
+        s.bind(("127.0.0.1", 0))
+        return int(s.getsockname()[1])
+
+
 def _cli(*args: str, cwd: Path) -> subprocess.CompletedProcess[str]:
+    # Every server-starting command gets an explicitly free port. Relying on
+    # the 7860 default made these pass on CI and fail on any machine with a
+    # dashboard already open — including this one, where an orphaned
+    # `epochix serve` was holding it. A test must not depend on a port nobody
+    # promised was free.
+    if args and args[0] in {"run", "import-wandb", "import-tensorboard"} and "--port" not in args:
+        args = (*args, "--port", str(_free_port()))
+
     env = {
         "PYTHONPATH": str(ROOT / "src"),
         "PYTHONIOENCODING": "utf-8",
@@ -115,3 +131,33 @@ def test_import_tensorboard_on_a_missing_directory(tmp_path: Path) -> None:
     res = _cli("import-tensorboard", str(tmp_path / "nope"), "--headless", cwd=tmp_path)
     assert res.returncode == 1
     assert "not found" in (res.stdout + res.stderr).lower()
+
+
+def test_import_commands_report_a_busy_port_instead_of_a_traceback(tmp_path: Path) -> None:
+    """Both importers start their own server through LiveReporter.
+
+    A bind failure happens inside a background asyncio task, so it surfaced as
+    a raw uvicorn traceback and SystemExit(3) rather than a message. `run` has
+    guarded this since 0.5.32; the import commands were added without it — and
+    the likeliest reason the default port is taken is that the user already has
+    an epochix dashboard open, which is exactly who runs these.
+    """
+    import socket
+
+    with socket.socket() as held:
+        held.bind(("127.0.0.1", 0))
+        held.listen(1)
+        busy = held.getsockname()[1]
+
+        d = tmp_path / "wandb" / "run-x"
+        d.mkdir(parents=True)
+        (d / "run-x.wandb").write_bytes(b"x")
+
+        for args in (
+            ("import-wandb", str(tmp_path / "wandb")),
+            ("import-tensorboard", str(tmp_path)),
+        ):
+            res = _cli(*args, "--port", str(busy), "--headless", cwd=tmp_path)
+            combined = res.stdout + res.stderr
+            assert "Traceback" not in combined, f"{args[0]}: {combined[:300]}"
+            assert "already in use" in combined, f"{args[0]}: {combined[:300]}"
