@@ -7,6 +7,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.5.93] — 2026-08-11
+
+### Changed
+
+- **One installer. `pip install epochix` now does everything** — no extras for
+  any export format.
+
+  GIF already moved to core in 0.5.92 (pillow). PDF was the hard one: WeasyPrint
+  needs GTK system libraries, and `pip install weasyprint` *succeeds* on Windows
+  before the import dies loading `libgobject-2.0-0`. Making it a default would
+  have broken `pip install epochix` for an entire platform, so it was never an
+  option.
+
+  The PDF is rendered with **fpdf2** instead — pure Python, 3.2 MB, its
+  dependencies are wheels with no system libraries. The report keeps the same
+  shape (cover with the grade, a page per training phase, final metrics) and
+  the text stays **real selectable text**, not a rasterised page.
+
+  Verified on a clean wheel install with no extras: JSON 20 KB, Markdown 1 KB,
+  GIF 32 KB, PDF 4 KB — all four from one install.
+
+  `epochix[pdf]` and `epochix[gif]` remain as empty aliases so existing
+  commands, docs and anyone's notes keep working.
+
+### Fixed
+
+- **Em dashes became `?` in the PDF.** fpdf2's core fonts are Latin-1 and the
+  narratives are full of typographic punctuation, so a bare encode produced
+  *"63.5% accuracy ? only one direction from here"*. `console_safe` looked like
+  the fix but short-circuits when the console can encode — correct for a
+  terminal, wrong for a PDF. Split out `transliterate()`, which applies the
+  same table unconditionally, and both surfaces now share it.
+
+---
+
 ## [0.5.92] — 2026-08-11
 
 ### Changed

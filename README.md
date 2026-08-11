@@ -60,13 +60,15 @@ comparison and exports, and the extension picks it up automatically.
 pip install epochix
 ```
 
-Optional extras:
+That is the whole install — every export format (HTML, PDF, Markdown, JSON,
+animated GIF) works from it, with no extras.
+
+Optional extras exist only for the training-framework callbacks:
 
 ```bash
-pip install "epochix[pdf]"       # PDF export (also needs GTK; HTML+print works without it)
 pip install "epochix[lightning]" # PyTorch Lightning callback
 pip install "epochix[hf]"        # HuggingFace Trainer callback
-pip install "epochix[all]"       # everything above
+pip install "epochix[all]"       # both of the above
 ```
 
 ---

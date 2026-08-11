@@ -1,17 +1,21 @@
-"""Missing optional extras must instruct, not 500.
+"""Every export format works from `pip install epochix`. No extras.
 
-Found by cold-installing the published wheel — no extras — and hitting every
-export route the way a tester would. `gif` answered 501 with "pip install
-'epochix[gif]'"; `pdf` answered 500, because `build_pdf` raises `ImportError`
-while the route caught only `NotImplementedError`.
+This file used to assert the opposite — that `pdf` and `gif` returned 501 with
+the name of the package to install. Both are core now (pillow, fpdf2), so the
+invariant flipped: an export answering 501 for a missing dependency is itself
+the bug.
 
-A 500 tells a tester the product is broken. A 501 with the package name tells
-them what to do. The difference decides whether that becomes a bug report.
+The history is worth keeping, because it is why the extras went away:
+
+* `gif` was behind an extra for no reason. pillow is a clean wheel.
+* `pdf` used WeasyPrint, which needs GTK system libraries. `pip install
+  weasyprint` SUCCEEDS on Windows and the import then dies loading
+  libgobject-2.0-0 — so users who followed the instruction still could not
+  export, and got a 500 telling them to install what they had just installed.
+  fpdf2 is pure Python and renders the same report.
 """
 
 from __future__ import annotations
-
-import importlib.util
 
 import pytest
 from fastapi.testclient import TestClient
@@ -41,35 +45,24 @@ def _run_with_data(client: TestClient) -> str:
     return run_id
 
 
-@pytest.mark.parametrize(
-    ("fmt", "module", "package"),
-    [
-        ("pdf", "weasyprint", "epochix[pdf]"),
-        ("gif", "PIL", "epochix[gif]"),
-    ],
-)
-def test_missing_extra_returns_501_with_the_package_name(
-    fmt: str, module: str, package: str
-) -> None:
-    if importlib.util.find_spec(module) is not None:
-        pytest.skip(f"{module} is installed; this asserts the ABSENT path")
-
+@pytest.mark.parametrize(("fmt", "magic"), [("pdf", b"%PDF-"), ("gif", b"GIF8")])
+def test_binary_exports_work_without_any_extra(fmt: str, magic: bytes) -> None:
+    """The two that used to need an extra. Both ship in the base install now."""
     with TestClient(create_app(Settings(db=":memory:"))) as client:
         run_id = _run_with_data(client)
         resp = client.get(f"/api/export/{run_id}/{fmt}")
 
-    assert resp.status_code == 501, f"got {resp.status_code}: a 500 reads as 'broken'"
-    detail = resp.json().get("detail", "")
-    assert package.split("[")[0] in detail and "install" in detail.lower(), detail
+    assert resp.status_code == 200, f"{fmt}: {resp.status_code} — {resp.text[:200]}"
+    assert resp.content.startswith(magic), resp.content[:16]
+    assert len(resp.content) > 500
 
 
-def test_formats_that_need_no_extra_still_work() -> None:
+def test_text_exports_work_too() -> None:
     """Guard the guard: if these broke, the test above could pass vacuously.
 
-    Only json and md are unconditional. HTML embeds the built dashboard, which
-    is vendored into the wheel at release time and absent from a source
-    checkout — CI has no bundle, so 501 there is CORRECT, and asserting 200
-    made this pass locally and fail on CI.
+    HTML is the exception — it embeds the built dashboard, which is vendored
+    into the wheel at release time and absent from a source checkout, so 501
+    is correct there. It must still EXPLAIN itself rather than just fail.
     """
     with TestClient(create_app(Settings(db=":memory:"))) as client:
         run_id = _run_with_data(client)
@@ -78,8 +71,6 @@ def test_formats_that_need_no_extra_still_work() -> None:
             assert resp.status_code == 200, f"{fmt}: {resp.status_code}"
             assert len(resp.content) > 0
 
-        # HTML: either it works, or it explains that the bundle is missing.
-        # What it must never do is fail without saying why.
         resp = client.get(f"/api/export/{run_id}/html")
         assert resp.status_code in (200, 501), resp.status_code
         if resp.status_code == 501:

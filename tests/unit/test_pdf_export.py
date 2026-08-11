@@ -1,0 +1,132 @@
+"""PDF export, which now works from the base install.
+
+WeasyPrint was replaced by fpdf2 so that `pip install epochix` is the only
+install anyone needs. WeasyPrint could never be a default: on Windows
+`pip install weasyprint` SUCCEEDS and the import then dies loading GTK, so
+making it core would have broken the base install for a whole platform.
+"""
+
+from __future__ import annotations
+
+import re
+import zlib
+from datetime import datetime, timezone
+from pathlib import Path
+
+import pytest
+
+from epochix.enums import Grade, Phase, TaskType
+from epochix.exporters.pdf_export import build_pdf
+from epochix.models import MetricEvent, Run, StoryFrame
+from epochix.store.sqlite_store import RunStore
+
+
+def _store(tmp_path: Path, *, name: str) -> tuple[str, RunStore]:
+    store = RunStore(str(tmp_path / "t.db"))
+    run_id = "01PDFTESTRUN"
+    store.create_run(
+        Run(
+            id=run_id,
+            name=name,
+            task_type=TaskType.CLASSIFICATION,
+            started_at=datetime.now(tz=timezone.utc),
+            primary_metric="val_accuracy",
+            parser_used="test",
+        )
+    )
+    for i in range(1, 6):
+        store.append_metric_event(
+            MetricEvent(
+                run_id=run_id,
+                seq=i,
+                timestamp=datetime.now(tz=timezone.utc),
+                epoch=float(i),
+                canonical_key="val_accuracy",
+                raw_key="val_accuracy",
+                value=0.5 + i * 0.05,
+            )
+        )
+        store.append_story_frame(
+            StoryFrame(
+                run_id=run_id,
+                seq=i,
+                epoch=float(i),
+                phase=Phase.LEARNING if i > 1 else Phase.AWAKENING,
+                grade=Grade.B,
+                primary_metric="val_accuracy",
+                primary_metric_value=0.5 + i * 0.05,
+                narrative=f"Epoch {i}: accuracy climbs — steadily, not spectacularly.",
+                progress=i / 5,
+                confidence=0.8,
+                task_type=TaskType.CLASSIFICATION,
+            )
+        )
+    store.finish_run(run_id, final_grade=Grade.B, story_summary="A solid run.")
+    return run_id, store
+
+
+def _text_runs(pdf: bytes) -> list[str]:
+    """Every drawn string. Content streams are deflate-compressed by fpdf2."""
+    blob = ""
+    for m in re.finditer(rb"stream\r?\n(.*?)endstream", pdf, re.S):
+        try:
+            blob += zlib.decompress(m.group(1)).decode("latin-1")
+        except zlib.error:
+            continue
+    return re.findall(r"\((.*?)\)\s*Tj", blob)
+
+
+def test_pdf_export_needs_no_extra_install(tmp_path: Path) -> None:
+    run_id, store = _store(tmp_path, name="plain run")
+    pdf = build_pdf(run_id=run_id, store=store)
+
+    assert pdf.startswith(b"%PDF-")
+    assert b"%%EOF" in pdf[-2048:]
+    assert len(pdf) > 1000
+
+
+def test_the_pdf_carries_the_run(tmp_path: Path) -> None:
+    """A PDF that opens but says nothing is the failure that matters here."""
+    run_id, store = _store(tmp_path, name="plain run")
+    runs = _text_runs(build_pdf(run_id=run_id, store=store))
+
+    joined = " ".join(runs)
+    assert "plain run" in joined, runs
+    assert "B" in runs, "the grade is the headline of the cover"
+    assert "classification" in joined
+    assert "val_accuracy" in joined
+    assert any("accuracy climbs" in r for r in runs), "narrative missing"
+
+
+def test_text_is_real_text_not_a_picture(tmp_path: Path) -> None:
+    """fpdf2 draws vector text, so the report stays selectable and searchable."""
+    run_id, store = _store(tmp_path, name="plain run")
+    assert _text_runs(build_pdf(run_id=run_id, store=store)), "no drawn strings at all"
+
+
+def test_typography_is_transliterated_not_blanked(tmp_path: Path) -> None:
+    """Core fonts are Latin-1 and the narratives are full of em dashes.
+
+    A bare Latin-1 encode turned every one into "?" — "63.5% accuracy ? only
+    one direction from here". The shared table maps them instead.
+    """
+    run_id, store = _store(tmp_path, name="plain run")
+    runs = _text_runs(build_pdf(run_id=run_id, store=store))
+
+    assert not [r for r in runs if "?" in r], (
+        f"unmapped characters: {[r for r in runs if '?' in r]}"
+    )
+    assert any(" - " in r for r in runs), "em dash should have become a hyphen"
+
+
+def test_a_name_outside_latin1_still_exports(tmp_path: Path) -> None:
+    """Run names come from log files; epochix ships Farsi and French too."""
+    run_id, store = _store(tmp_path, name="آزمایش mixed 実験")
+    pdf = build_pdf(run_id=run_id, store=store)
+    assert pdf.startswith(b"%PDF-")
+
+
+def test_an_unknown_run_is_refused(tmp_path: Path) -> None:
+    _, store = _store(tmp_path, name="plain run")
+    with pytest.raises(ValueError, match="not found"):
+        build_pdf(run_id="does-not-exist", store=store)

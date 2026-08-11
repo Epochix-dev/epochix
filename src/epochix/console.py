@@ -39,6 +39,20 @@ def console_can_encode(text: str) -> bool:
     return True
 
 
+def transliterate(text: str) -> str:
+    """Replace known decorations with ASCII, ALWAYS.
+
+    ``console_safe`` applies this only when the console cannot encode the
+    text, which is right for a terminal and wrong for anything with a fixed
+    character set. The PDF exporter renders with Latin-1 core fonts, so on a
+    UTF-8 terminal every em dash reached it untouched and became "?" —
+    "63.5% accuracy ? only one direction from here".
+    """
+    for uni, plain in _ASCII_FALLBACKS.items():
+        text = text.replace(uni, plain)
+    return text
+
+
 def console_safe(text: str) -> str:
     """Make ``text`` printable on this console instead of crashing on it.
 
@@ -47,8 +61,7 @@ def console_safe(text: str) -> str:
     """
     if console_can_encode(text):
         return text
-    for uni, plain in _ASCII_FALLBACKS.items():
-        text = text.replace(uni, plain)
+    text = transliterate(text)
     encoding = getattr(sys.stdout, "encoding", None) or "ascii"
     return text.encode(encoding, errors="replace").decode(encoding, errors="replace")
 
