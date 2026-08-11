@@ -456,11 +456,13 @@ def _cli_export(
 
         try:
             outfile.write_bytes(build_pdf(run_id=run_id, store=store))
-        except (NotImplementedError, ImportError):
-            typer.echo(
-                "  PDF export needs the 'pdf' extra: pip install 'epochix[pdf]'.",
-                err=True,
-            )
+        except (NotImplementedError, ImportError, OSError) as exc:
+            # OSError included: `pip install weasyprint` succeeds on Windows and
+            # then the import dies loading GTK. Telling that user to install the
+            # extra they just installed is worse than useless, so print the
+            # exporter's own message — it names both causes and offers the
+            # no-install route (export HTML, print to PDF from the browser).
+            typer.echo(f"  {exc}", err=True)
             raise typer.Exit(1) from None
     else:
         typer.echo(f"  Unknown export format: {fmt!r}. Use html, pdf, md, or json.", err=True)

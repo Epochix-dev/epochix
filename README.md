@@ -63,7 +63,7 @@ pip install epochix
 Optional extras:
 
 ```bash
-pip install "epochix[pdf]"       # PDF export via WeasyPrint
+pip install "epochix[pdf]"       # PDF export (also needs GTK; HTML+print works without it)
 pip install "epochix[lightning]" # PyTorch Lightning callback
 pip install "epochix[hf]"        # HuggingFace Trainer callback
 pip install "epochix[all]"       # everything above

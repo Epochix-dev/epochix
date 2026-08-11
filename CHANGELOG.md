@@ -7,6 +7,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.5.92] — 2026-08-11
+
+### Changed
+
+- **GIF export needs no extra install.** Pillow is a core dependency now, so
+  `pip install epochix` gets you the animated GIF — the shareable artefact was
+  behind a second install for no good reason. Verified on a clean wheel
+  install: 32 KB valid GIF, nothing extra fetched. The `gif` extra still exists
+  as an empty alias so `pip install 'epochix[gif]'` keeps working.
+
+### Fixed
+
+- **PDF failed with a 500 even for users who installed the extra.** On Windows
+  `pip install weasyprint` **succeeds** and the import then dies loading
+  `libgobject-2.0-0`, because WeasyPrint needs GTK system libraries the wheel
+  does not carry. That is an `OSError`, which nothing caught — so the person
+  who followed our own instruction got an unhandled server error telling them
+  to install what they had just installed.
+
+  Both causes now raise `PdfUnavailable` and answer 501 with a message that is
+  actually true: the extra, the GTK requirement, **and** the route that needs
+  no install at all — export HTML and print it to PDF from the browser, since
+  the HTML is a single self-contained file.
+
+  This is also why weasyprint cannot become a core dependency the way pillow
+  did: it would make `pip install epochix` fail on Windows.
+
+---
+
 ## [0.5.91] — 2026-08-11
 
 ### Fixed

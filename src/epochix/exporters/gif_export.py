@@ -13,7 +13,8 @@ Two constraints shape the design:
 * **The last frame is the product.** Most platforms show it as the still
   preview, so it carries the grade, the metric and the run name on its own.
 
-Ships behind the ``gif`` extra: ``pip install 'epochix[gif]'``.
+Pillow is a core dependency, so this needs no extra install. The ``gif``
+extra still exists as an empty alias so older commands keep working.
 """
 
 from __future__ import annotations
@@ -68,7 +69,9 @@ def _require_pillow() -> Any:  # noqa: ANN401 - optional dep, no stubs at type-c
         from PIL import Image, ImageDraw
     except ImportError as exc:  # pragma: no cover - exercised via the CLI
         raise NotImplementedError(
-            "GIF export needs the 'gif' extra: pip install 'epochix[gif]'"
+            "GIF export needs Pillow, which epochix installs by default "
+            "— this environment is missing it. "
+            "Repair with: pip install --upgrade epochix"
         ) from exc
     return Image, ImageDraw
 

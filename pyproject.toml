@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "epochix"
-version = "0.5.91"
+version = "0.5.92"
 description = "Turn ML training logs into a plain-English story with a letter grade — a live animated dashboard, no code changes."
 authors = [{ name = "Epochix Team" }]
 license = "Apache-2.0"
@@ -36,11 +36,18 @@ dependencies = [
   "python-ulid>=3.0",
   "anyio>=4.4",
   "aiofiles>=24.1",
+  # Core, not an extra: GIF export is a headline feature and pillow is a
+  # clean wheel on every supported platform (16 MB, no system libraries).
+  # Asking for a second install to get the shareable artefact was friction
+  # for no benefit — unlike weasyprint, which genuinely cannot be core.
+  "pillow>=10.0",
 ]
 
 [project.optional-dependencies]
 pdf       = ["weasyprint>=62"]
-gif       = ["pillow>=10.0"]
+# Retained so existing `pip install 'epochix[gif]'` commands, docs and blog
+# posts keep working. pillow is a core dependency now, so this is empty.
+gif       = []
 lightning = ["pytorch-lightning>=2.3"]
 hf        = ["transformers>=4.40"]
 llm       = ["httpx>=0.27"]
@@ -180,8 +187,8 @@ warn_unused_configs = true
 # Optional training-framework deps: not installed in the typecheck env (and
 # unstubbed anyway). The integrations import them lazily and duck-type them.
 [[tool.mypy.overrides]]
-# PIL joins them: the `gif` extra is optional, so CI's type-check
-# environment has no Pillow and mypy cannot resolve the import.
+# PIL is a CORE dependency now (GIF export needs no extra), but it still
+# ships no py.typed, so it stays here for the untyped-import rule.
 # tensorboard joins them for the OPPOSITE reason: it ships no py.typed, so
 # where it IS installed mypy reports import-untyped, and the inline
 # `type: ignore[import-not-found]` it used to carry became "unused". One

@@ -8,7 +8,7 @@ from fastapi.responses import HTMLResponse, Response
 
 from epochix.exporters.html_export import build_html
 from epochix.exporters.markdown_export import build_markdown
-from epochix.exporters.pdf_export import build_pdf
+from epochix.exporters.pdf_export import PdfUnavailable, build_pdf
 from epochix.server.auth import require_auth
 from epochix.store.sqlite_store import RunStore
 
@@ -48,7 +48,11 @@ async def export_comparison_gif(
     except NotImplementedError as exc:
         raise HTTPException(
             status_code=status.HTTP_501_NOT_IMPLEMENTED,
-            detail="GIF export needs the 'gif' extra: pip install 'epochix[gif]'",
+            detail=(
+                "GIF export needs Pillow, which epochix installs by "
+                "default — this environment is missing it. "
+                "Repair with: pip install --upgrade epochix"
+            ),
         ) from exc
     except ValueError as exc:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
@@ -82,12 +86,14 @@ async def export_pdf(
     _require_run(run_id, store)
     try:
         pdf_bytes = build_pdf(run_id=run_id, store=store)
-    except ImportError as exc:
-        # WeasyPrint is an optional extra and build_pdf raises ImportError, not
-        # NotImplementedError — so this escaped as a 500 and a tester without
-        # the extra saw an unhandled server error instead of instructions. The
-        # GIF route next door has always said which package to install; the
-        # exporter's own message already reads well, so use it verbatim.
+    except (PdfUnavailable, ImportError, OSError) as exc:
+        # Three shapes, one meaning. WeasyPrint absent raises ImportError;
+        # WeasyPrint present but its GTK system libraries missing raises
+        # OSError (the normal state on Windows, where `pip install weasyprint`
+        # succeeds and the import still fails); PdfUnavailable is the wrapper
+        # the exporter raises for both. All three escaped as 500s before, and
+        # an unhandled server error reads as "broken product" when the honest
+        # answer is "this export needs one more thing — or use HTML and print".
         raise HTTPException(status_code=status.HTTP_501_NOT_IMPLEMENTED, detail=str(exc)) from exc
     except NotImplementedError as exc:
         raise HTTPException(status_code=status.HTTP_501_NOT_IMPLEMENTED, detail=_NOT_IMPL) from exc
@@ -139,7 +145,11 @@ async def export_gif(
     except NotImplementedError as exc:
         raise HTTPException(
             status_code=status.HTTP_501_NOT_IMPLEMENTED,
-            detail="GIF export needs the 'gif' extra: pip install 'epochix[gif]'",
+            detail=(
+                "GIF export needs Pillow, which epochix installs by "
+                "default — this environment is missing it. "
+                "Repair with: pip install --upgrade epochix"
+            ),
         ) from exc
     except ValueError as exc:
         # "too few epochs" / "no metric series" — the run is real, it just has
