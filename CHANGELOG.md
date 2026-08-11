@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [0.5.93] — 2026-08-11
+## [0.5.94] — 2026-08-11
 
 ### Changed
 
@@ -39,6 +39,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   the fix but short-circuits when the console can encode — correct for a
   terminal, wrong for a PDF. Split out `transliterate()`, which applies the
   same table unconditionally, and both surfaces now share it.
+
+- **`epochix doctor` reported "PDF export unavailable" while PDF worked.** It
+  kept probing `weasyprint` after the backend moved to fpdf2 — advice for a
+  package no longer used, about a feature that works. The exact class of false
+  statement this tool exists to catch, made by the tool itself. Caught by
+  running `doctor` on the published wheel rather than reading the code.
 
 ---
 
