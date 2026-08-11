@@ -64,10 +64,23 @@ def test_missing_extra_returns_501_with_the_package_name(
 
 
 def test_formats_that_need_no_extra_still_work() -> None:
-    """Guard the guard: if these broke, the test above could pass vacuously."""
+    """Guard the guard: if these broke, the test above could pass vacuously.
+
+    Only json and md are unconditional. HTML embeds the built dashboard, which
+    is vendored into the wheel at release time and absent from a source
+    checkout — CI has no bundle, so 501 there is CORRECT, and asserting 200
+    made this pass locally and fail on CI.
+    """
     with TestClient(create_app(Settings(db=":memory:"))) as client:
         run_id = _run_with_data(client)
-        for fmt in ("json", "md", "html"):
+        for fmt in ("json", "md"):
             resp = client.get(f"/api/export/{run_id}/{fmt}")
             assert resp.status_code == 200, f"{fmt}: {resp.status_code}"
             assert len(resp.content) > 0
+
+        # HTML: either it works, or it explains that the bundle is missing.
+        # What it must never do is fail without saying why.
+        resp = client.get(f"/api/export/{run_id}/html")
+        assert resp.status_code in (200, 501), resp.status_code
+        if resp.status_code == 501:
+            assert "frontend" in resp.json().get("detail", "").lower()
