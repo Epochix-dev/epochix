@@ -43,6 +43,25 @@ _PHASE_EMOJI: dict[str, str] = {
 }
 
 
+class PdfUnavailable(RuntimeError):
+    """PDF export cannot run here — the reason is in the message.
+
+    Its own type because "weasyprint is missing" and "weasyprint is installed
+    but its system libraries are not" arrive as different exceptions and mean
+    the same thing to a user: this export is unavailable, here is what to do.
+    """
+
+
+_PDF_HELP = (
+    "PDF export needs WeasyPrint, which also requires GTK system libraries "
+    "(this is why it is not installed by default). "
+    "Install: pip install 'epochix[pdf]' — on Windows you also need GTK, see "
+    "https://doc.courtbouillon.org/weasyprint/stable/first_steps.html#installation "
+    "| No install needed: export HTML instead and print it to PDF from your "
+    "browser (Ctrl+P). The HTML is a single self-contained file."
+)
+
+
 def build_pdf(run_id: str, store: RunStore) -> bytes:
     """Build a PDF slide deck for a finished run.
 
@@ -59,12 +78,16 @@ def build_pdf(run_id: str, store: RunStore) -> bytes:
     ValueError
         If the run is not found in the store.
     """
+    # OSError as well as ImportError: `pip install weasyprint` SUCCEEDS on
+    # Windows and then the import dies loading libgobject-2.0-0, because
+    # WeasyPrint needs GTK system libraries the wheel does not carry. Catching
+    # only ImportError meant a user who followed our own instruction got an
+    # unhandled OSError and a 500 — told to install the thing they had just
+    # installed. This is also why weasyprint cannot be a core dependency.
     try:
         from weasyprint import HTML  # type: ignore[import-not-found]
-    except ImportError as exc:
-        raise ImportError(
-            'WeasyPrint is required for PDF export. Install it with: pip install "epochix[pdf]"'
-        ) from exc
+    except (ImportError, OSError) as exc:
+        raise PdfUnavailable(_PDF_HELP) from exc
 
     run = store.get_run(run_id)
     if run is None:
