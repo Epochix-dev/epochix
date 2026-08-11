@@ -82,6 +82,13 @@ async def export_pdf(
     _require_run(run_id, store)
     try:
         pdf_bytes = build_pdf(run_id=run_id, store=store)
+    except ImportError as exc:
+        # WeasyPrint is an optional extra and build_pdf raises ImportError, not
+        # NotImplementedError — so this escaped as a 500 and a tester without
+        # the extra saw an unhandled server error instead of instructions. The
+        # GIF route next door has always said which package to install; the
+        # exporter's own message already reads well, so use it verbatim.
+        raise HTTPException(status_code=status.HTTP_501_NOT_IMPLEMENTED, detail=str(exc)) from exc
     except NotImplementedError as exc:
         raise HTTPException(status_code=status.HTTP_501_NOT_IMPLEMENTED, detail=_NOT_IMPL) from exc
     return Response(

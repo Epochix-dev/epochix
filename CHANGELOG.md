@@ -7,6 +7,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.5.91] — 2026-08-11
+
+### Fixed
+
+- **PDF export answered 500 instead of telling you to install the extra.**
+  `build_pdf` raises `ImportError` when WeasyPrint is absent, but the route
+  caught only `NotImplementedError`, so it escaped as an unhandled server
+  error. The GIF route beside it has always answered 501 with
+  *"pip install 'epochix[gif]'"*.
+
+  A 500 reads as "this product is broken"; a 501 naming the package reads as
+  "you need one more install". For someone trying the tool for the first time
+  that is the difference between a bug report and a `pip install`.
+
+  Found by cold-installing the published wheel from PyPI into a clean
+  environment — no extras, exactly what a new user gets — and hitting every
+  export route the way they would.
+
+### Verified (pre-tester readiness)
+
+- The published **0.5.90** wheel, installed fresh from PyPI: `epochix demo`
+  grades the bundled run, a piped training log grades A, `epochix check`
+  explains what it can and cannot read, `epochix list` shows both runs,
+  `epochix doctor` prints diagnostics plus the report link, the dashboard
+  serves on 200, and HTML / Markdown / JSON export at 165 KB / 650 B / 18 KB.
+
+---
+
 ## [0.5.90] — 2026-08-10
 
 ### Fixed
