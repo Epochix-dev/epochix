@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "epochix"
-version = "0.5.92"
+version = "0.5.93"
 description = "Turn ML training logs into a plain-English story with a letter grade — a live animated dashboard, no code changes."
 authors = [{ name = "Epochix Team" }]
 license = "Apache-2.0"
@@ -41,10 +41,17 @@ dependencies = [
   # Asking for a second install to get the shareable artefact was friction
   # for no benefit — unlike weasyprint, which genuinely cannot be core.
   "pillow>=10.0",
+  # PDF export. Pure Python (fonttools + defusedxml + pillow, all wheels),
+  # so unlike WeasyPrint it can be a default: weasyprint needs GTK system
+  # libraries and its import dies on a stock Windows machine, which would
+  # have broken `pip install epochix` for a whole platform.
+  "fpdf2>=2.7",
 ]
 
 [project.optional-dependencies]
-pdf       = ["weasyprint>=62"]
+# Empty alias: PDF works from the base install now. Kept so existing
+# `pip install 'epochix[pdf]'` commands and docs keep working.
+pdf       = []
 # Retained so existing `pip install 'epochix[gif]'` commands, docs and blog
 # posts keep working. pillow is a core dependency now, so this is empty.
 gif       = []

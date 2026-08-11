@@ -53,12 +53,8 @@ class PdfUnavailable(RuntimeError):
 
 
 _PDF_HELP = (
-    "PDF export needs WeasyPrint, which also requires GTK system libraries "
-    "(this is why it is not installed by default). "
-    "Install: pip install 'epochix[pdf]' — on Windows you also need GTK, see "
-    "https://doc.courtbouillon.org/weasyprint/stable/first_steps.html#installation "
-    "| No install needed: export HTML instead and print it to PDF from your "
-    "browser (Ctrl+P). The HTML is a single self-contained file."
+    "PDF export needs fpdf2, which epochix installs by default — this "
+    "environment is missing it. Repair with: pip install --upgrade epochix"
 )
 
 
@@ -78,15 +74,13 @@ def build_pdf(run_id: str, store: RunStore) -> bytes:
     ValueError
         If the run is not found in the store.
     """
-    # OSError as well as ImportError: `pip install weasyprint` SUCCEEDS on
-    # Windows and then the import dies loading libgobject-2.0-0, because
-    # WeasyPrint needs GTK system libraries the wheel does not carry. Catching
-    # only ImportError meant a user who followed our own instruction got an
-    # unhandled OSError and a 500 — told to install the thing they had just
-    # installed. This is also why weasyprint cannot be a core dependency.
+    # Rendered with fpdf2, which is pure Python and ships in the base install.
+    # WeasyPrint made a prettier document and could never be a default: on
+    # Windows `pip install weasyprint` succeeds and the import then dies
+    # loading GTK, so it would have broken `pip install epochix` outright.
     try:
-        from weasyprint import HTML  # type: ignore[import-not-found]
-    except (ImportError, OSError) as exc:
+        from epochix.exporters._pdf_render import render_pdf
+    except ImportError as exc:  # pragma: no cover - fpdf2 is a core dependency
         raise PdfUnavailable(_PDF_HELP) from exc
 
     run = store.get_run(run_id)
@@ -96,8 +90,7 @@ def build_pdf(run_id: str, store: RunStore) -> bytes:
     frames = store.get_story_frames(run_id)
     events = store.get_metric_events(run_id)
 
-    html_str = _build_html(run, frames, events)
-    return HTML(string=html_str).write_pdf()  # type: ignore[no-any-return]
+    return render_pdf(run, frames, events)
 
 
 # ── HTML builder ─────────────────────────────────────────────────────────────
