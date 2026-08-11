@@ -860,11 +860,14 @@ def cmd_doctor() -> None:
     lines.append(f"python         {sys.version.split()[0]} ({platform.python_implementation()})")
     lines.append(f"platform       {platform.system()} {platform.release()} {platform.machine()}")
 
-    # Optional extras: each one is a feature that silently degrades without it,
-    # and "the GIF button did nothing" is usually this.
+    # Capabilities, not extras. GIF and PDF ship in the base install now, so
+    # their libraries are listed to prove they are THERE — doctor kept probing
+    # weasyprint after PDF moved to fpdf2 and reported "PDF export unavailable"
+    # while PDF worked, which is the exact false statement this tool exists to
+    # avoid. Only `llm` is genuinely optional.
     for extra, module, what in (
         ("gif", "PIL", "animated GIF export"),
-        ("pdf", "weasyprint", "PDF export"),
+        ("pdf", "fpdf", "PDF export"),
         ("llm", "httpx", "LLM fallback parser"),
     ):
         try:
