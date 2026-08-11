@@ -872,6 +872,14 @@ def cmd_doctor() -> None:
             state = "installed"
         except ImportError:
             state = f"MISSING - {what} unavailable (pip install 'epochix[{extra}]')"
+        except Exception as exc:  # noqa: BLE001
+            # `doctor` is what you run WHEN SOMETHING IS WRONG, so it must not
+            # be the thing that breaks. weasyprint imports cleanly from pip and
+            # then raises OSError loading GTK — that took the whole command down
+            # with a traceback on exactly the machine someone would run it on.
+            # Report the broken import as a finding; that IS the diagnosis.
+            state = f"BROKEN - installed but fails to import: {type(exc).__name__}: {exc}"
+            state = console_safe(state.replace("\n", " "))[:160]
         lines.append(f"extra {extra:<10} {state}")
 
     # The dashboard is vendored into the wheel at release time. When it is

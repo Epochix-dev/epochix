@@ -34,6 +34,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   This is also why weasyprint cannot become a core dependency the way pillow
   did: it would make `pip install epochix` fail on Windows.
 
+- **`epochix doctor` crashed on a machine with a broken optional extra.** It
+  probes each extra with `__import__` and caught only `ImportError` — so
+  weasyprint's GTK `OSError` took the whole command down with a traceback. That
+  is precisely the machine someone runs `doctor` on. It now reports the broken
+  import as a **finding** (`BROKEN - installed but fails to import: …`), which
+  is the diagnosis rather than an obstacle to it.
+
+  Surfaced because making pillow core un-skipped every GIF test in CI for the
+  first time, which in turn ran `doctor` in an environment that had the broken
+  extra installed.
+
 ---
 
 ## [0.5.91] — 2026-08-11
