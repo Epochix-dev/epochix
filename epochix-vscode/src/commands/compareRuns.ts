@@ -1,5 +1,6 @@
 import * as vscode from "vscode";
 import type { ServerManager } from "../sidecar/ServerManager";
+import { openExternalUrl } from "../util/uri";
 
 /**
  * Epochix: Compare Two Runs.
@@ -27,8 +28,8 @@ export function registerCompareRuns(
         )
         .then((pick) => {
           if (pick === "Install instructions") {
-            void vscode.env.openExternal(
-              vscode.Uri.parse("https://github.com/epochix-dev/epochix#install"),
+            void openExternalUrl(
+              "https://github.com/epochix-dev/epochix#install",
             );
           }
         });
@@ -41,6 +42,6 @@ export function registerCompareRuns(
     void vscode.window.showInformationMessage(
       "Epochix: pick two or more runs and click Compare.",
     );
-    void vscode.env.openExternal(vscode.Uri.parse(url));
+    void openExternalUrl(url);
   });
 }

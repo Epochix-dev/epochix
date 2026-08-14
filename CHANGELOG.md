@@ -7,6 +7,46 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.5.95] — 2026-08-14
+
+### Fixed
+
+- **The prefilled bug report was still double-encoded.** 0.5.76 claimed to fix
+  this. It did not: a tester's report still arrived reading
+  `%23%23%23 What looks wrong%3F` instead of `### What looks wrong?`.
+
+  The earlier fix decoded the query and rebuilt the `Uri` with `Uri.from`. That
+  is a **no-op** — `Uri` stores its query already decoded, so `Uri.parse(url)`
+  and the rebuilt `Uri` are byte-identical. It could not have helped, and no
+  test compared the two.
+
+  The real cause is one branch in VS Code's own opener:
+
+  ```js
+  n = (typeof target === "string" && unchanged) ? target
+                                                : encodeURI(uri.toString(true));
+  ```
+
+  Given a `Uri`, `toString(true)` writes the query back as raw text and
+  `encodeURI` escapes `%`, so every existing escape gains a second round:
+  `%23` leaves as `%2523`. Given the original **string**, it is sent untouched.
+  Plain `Uri.toString()` is worse again — it escapes the `&` and `=`
+  separators, so the receiving site sees one nameless parameter and no `body`
+  at all.
+
+  Every external link now goes through a single `openExternalUrl(url)` that
+  keeps the string. A test asserts nothing else in the extension calls
+  `env.openExternal`, because each previous attempt failed by reintroducing it
+  somewhere new.
+
+- **Export could fetch the wrong metric.** The same defect on the export URL:
+  a metric name containing `#` or `?` arrived double-encoded, and one
+  containing `&` was truncated at it — so the export quietly returned a series
+  nobody asked for rather than failing. Spaces, `%` and non-ASCII names were
+  unaffected, which is why it went unnoticed.
+
+---
+
 ## [0.5.94] — 2026-08-11
 
 ### Changed

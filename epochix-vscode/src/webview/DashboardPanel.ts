@@ -19,7 +19,7 @@ import * as path from "path";
 import { persistLogFile } from "../sidecar/persistLog";
 import { StatusBar } from "../statusBar";
 import { StandaloneEngine } from "./StandaloneEngine";
-import { uriPreservingQuery } from "../util/uri";
+import { buildUrl, openExternalUrl } from "../util/uri";
 
 
 export class DashboardPanel {
@@ -204,20 +204,15 @@ export class DashboardPanel {
         this._handleExport(msg.format, msg.runId ?? this._runId, msg.metric);
         break;
       case "openExternal":
-        // `Uri.parse` re-encodes an already-encoded query, so a prefilled
-        // GitHub issue arrived showing "%23%23%23 What looks wrong%3F"
-        // instead of "### What looks wrong?" — and the &labels= was mangled
-        // badly enough that GitHub ignored it. `Uri.from` with the raw query
-        // encodes exactly once. window.open in a browser never did this,
-        // which is why testing only that path missed it.
-        void vscode.env.openExternal(uriPreservingQuery(msg.url));
+        // Must stay a string all the way down: opening this as a `Uri` is what
+        // sent testers a bug report reading "%23%23%23 What looks wrong%3F".
+        // See openExternalUrl — the webview builds the query, so nothing here
+        // may re-encode it. `window.open` in a browser never did, which is why
+        // testing only that path missed it.
+        void openExternalUrl(msg.url);
         break;
       case "installSidecar":
-        void vscode.env.openExternal(
-          vscode.Uri.parse(
-            "https://github.com/epochix-dev/epochix#install",
-          ),
-        );
+        void openExternalUrl("https://github.com/epochix-dev/epochix#install");
         break;
       case "scrub":
         // Standalone engine: seek to seq
@@ -250,13 +245,15 @@ export class DashboardPanel {
     // The chosen series has to survive the trip out. Without it the extension
     // always exported the run's primary metric, so the picker offered choices
     // that changed nothing.
-    const query = metric ? `?metric=${encodeURIComponent(metric)}` : "";
-    void vscode.env.openExternal(
-      vscode.Uri.parse(
-        `http://127.0.0.1:${this._sidecar.port}/api/export/` +
-          `${encodeURIComponent(runId)}/${format}${query}`,
-      ),
-    );
+    // Opened as a string, not a Uri: same defect as the bug-report link. Most
+    // metric names come through either way, which is what makes it worth
+    // guarding — a name containing `#` or `?` arrives double-encoded and one
+    // containing `&` is truncated at it, so the export quietly returns a
+    // series nobody asked for.
+    const base =
+      `http://127.0.0.1:${this._sidecar.port}/api/export/` +
+      `${encodeURIComponent(runId)}/${format}`;
+    void openExternalUrl(metric ? buildUrl(base, { metric }) : base);
   }
 
   private _sendInit(): void {

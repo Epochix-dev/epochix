@@ -10,6 +10,7 @@
  */
 import * as vscode from "vscode";
 import { TerminalFeed } from "./TerminalFeed";
+import { openExternalUrl } from "../util/uri";
 
 export class TerminalWatcher implements vscode.Disposable {
   private readonly _feed = new TerminalFeed();
@@ -80,10 +81,8 @@ export class TerminalWatcher implements vscode.Disposable {
         )
         .then((choice) => {
           if (choice === "How do I fix this?") {
-            void vscode.env.openExternal(
-              vscode.Uri.parse(
-                "https://code.visualstudio.com/docs/terminal/shell-integration",
-              ),
+            void openExternalUrl(
+              "https://code.visualstudio.com/docs/terminal/shell-integration",
             );
           }
         });
