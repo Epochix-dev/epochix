@@ -10,6 +10,7 @@ import * as vscode from "vscode";
 
 import type { ServerManager } from "../sidecar/ServerManager";
 import { DashboardPanel } from "../webview/DashboardPanel";
+import { openExternalUrl } from "../util/uri";
 
 export function registerOpenInBrowser(
   context: vscode.ExtensionContext,
@@ -25,8 +26,8 @@ export function registerOpenInBrowser(
           "Install instructions",
         );
         if (pick) {
-          void vscode.env.openExternal(
-            vscode.Uri.parse("https://github.com/epochix-dev/epochix#install"),
+          void openExternalUrl(
+            "https://github.com/epochix-dev/epochix#install",
           );
         }
         return;
@@ -36,9 +37,7 @@ export function registerOpenInBrowser(
       // list, which is a more useful landing place than an empty dashboard.
       const runId = DashboardPanel.current?.runId;
       const path = runId ? `/v/${encodeURIComponent(runId)}` : "/";
-      void vscode.env.openExternal(
-        vscode.Uri.parse(`http://127.0.0.1:${sidecar.port}${path}`),
-      );
+      void openExternalUrl(`http://127.0.0.1:${sidecar.port}${path}`);
     }),
   );
 }

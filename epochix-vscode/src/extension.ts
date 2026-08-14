@@ -17,6 +17,7 @@ import { registerOpenLogFile } from "./commands/openLogFile";
 import { registerExportRun } from "./commands/exportRun";
 import { registerCompareRuns } from "./commands/compareRuns";
 import { registerTryDemo } from "./commands/tryDemo";
+import { openExternalUrl } from "./util/uri";
 import { getConfig } from "./config";
 
 // Module-level sidecar reference — needed for deactivate()
@@ -86,9 +87,7 @@ export async function activate(ctx: vscode.ExtensionContext): Promise<void> {
       )
       .then(async (choice) => {
         if (choice === guide) {
-          void vscode.env.openExternal(
-            vscode.Uri.parse("https://epochix.dev/quickstart/"),
-          );
+          void openExternalUrl("https://epochix.dev/quickstart/");
         } else if (choice === standalone) {
           await vscode.workspace
             .getConfiguration("epochix")

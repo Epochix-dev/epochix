@@ -11,6 +11,7 @@ import { resolveEpochix } from "./which";
 import { candidateInterpreters } from "./interpreters";
 import { findFreePort } from "./PortAllocator";
 import { waitReady } from "./HealthCheck";
+import { openExternalUrl } from "../util/uri";
 import * as http from "http";
 import * as os from "os";
 
@@ -265,9 +266,7 @@ async function warnIfSidecarIsStale(port: number): Promise<void> {
     )
     .then((choice) => {
       if (choice === "How do I fix this?") {
-        void vscode.env.openExternal(
-          vscode.Uri.parse("https://epochix.dev/quickstart/"),
-        );
+        void openExternalUrl("https://epochix.dev/quickstart/");
       }
     });
 }

@@ -1,7 +1,7 @@
 import * as os from "os";
 import * as vscode from "vscode";
 
-import { uriPreservingQuery } from "../util/uri";
+import { buildUrl, openExternalUrl } from "../util/uri";
 
 const ISSUE_URL = "https://github.com/Epochix-dev/epochix/issues/new";
 
@@ -53,11 +53,8 @@ export function registerReportBug(
       "_No run name, file path or log content is included._",
     ].join("\n");
 
-    const url =
-      `${ISSUE_URL}?labels=bug` +
-      `&title=${encodeURIComponent("Extension: ")}` +
-      `&body=${encodeURIComponent(body)}`;
-
-    await vscode.env.openExternal(uriPreservingQuery(url));
+    await openExternalUrl(
+      buildUrl(ISSUE_URL, { labels: "bug", title: "Extension: ", body }),
+    );
   });
 }
