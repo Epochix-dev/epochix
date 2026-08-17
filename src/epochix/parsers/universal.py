@@ -3,6 +3,8 @@ from __future__ import annotations
 import contextlib
 import json
 import re
+from statistics import fmean
+from typing import cast
 
 from epochix.models import RawMetric
 from epochix.normalizer.canonical_keys import canonicalize_key
@@ -77,7 +79,12 @@ _VAL_WORDS = frozenset({"test", "val", "valid", "validation", "eval", "holdout"}
 # bucket, where an F1 and an R² end up on one line together. Accepted only when
 # the joined form is a name the normalizer knows, so ordinary prose ending in
 # "something: 12" is still ignored.
-_COMPOUND = re.compile(rf"\b(\w{{1,32}})[\s_]+(\w{{1,32}})\s*[:=]\s*({_NUM})")
+#
+# The first word must start with a letter. Allowing a digit let it span the
+# gap in "Epoch 1/10 train_loss=0.5", pairing "10" with "train_loss" into the
+# nonsense key "10_train_loss" — harmless only because unknown joins are
+# discarded, and it left the real metric to be picked up by a later pattern.
+_COMPOUND = re.compile(rf"\b([A-Za-z]\w{{0,31}})[\s_]+(\w{{1,32}})\s*[:=]\s*({_NUM})")
 
 # A CamelCase constructor call and everything inside its parentheses:
 #   RandomForestClassifier(n_estimators=100, max_depth=8, random_state=0)
@@ -92,6 +99,35 @@ _COMPOUND = re.compile(rf"\b(\w{{1,32}})[\s_]+(\w{{1,32}})\s*[:=]\s*({_NUM})")
 # race. The shape is the reliable signal, so the region is masked out before
 # any pattern above sees it.
 _CONSTRUCTOR = re.compile(r"\b[A-Z]\w*\((?:[^()]|\([^()]*\))*\)")
+
+# ── Cross-validation ───────────────────────────────────────────────────────
+#
+# A fold is a repeat, not a step. Charting five folds in the order they
+# finished draws a line whose slope is pure noise — shuffle the data and it
+# points the other way — and the printed mean was picked up as a sixth fold,
+# mixing a summary into the series it summarises.
+#
+# Folds are collected instead and reduced to their mean when the stream ends.
+# The spread is kept on the context so `epochix check` can report it, since the
+# spread is the entire reason to cross-validate.
+#
+# Real shapes, captured from scikit-learn rather than remembered:
+#   Fold 1: accuracy = 0.9375                                   (hand-written)
+#   [CV] END .......... score: (test=0.938) total time=   0.0s  (cross_val_score)
+#   [CV 1/3] END ......max_depth=3;, score=0.933 total time=    (GridSearchCV)
+# The boundary belongs inside each alternative: `\b` after the closing "]" of
+# "[CV]" never matches, because both sides of that position are non-word
+# characters — so every scikit-learn CV row sailed straight past this.
+_FOLD_ROW = re.compile(r"^\s*(?:\[cv(?:\s+\d+\s*/\s*\d+)?\]|fold\s+\d+\b)", re.IGNORECASE)
+
+# The score on a fold row. GridSearchCV also prints the parameter set being
+# tried ("max_depth=3"), which is configuration and not a measurement — taking
+# only the score keeps a hyperparameter from being charted as a result, the
+# same fault as an estimator repr.
+_CV_SCORE = re.compile(
+    rf"\bscore\s*[:=]\s*\(?\s*(?:test|train)?\s*=?\s*({_NUM})",
+    re.IGNORECASE,
+)
 
 _EPOCH_KEYS = frozenset({"epoch", "ep", "e"})
 _STEP_KEYS = frozenset({"step", "iter", "iteration", "batch"})
@@ -151,6 +187,10 @@ class UniversalParser:
 
     def parse_line(self, line: str, ctx: ParserContext) -> list[RawMetric]:
         if _PROGRESS_BAR.search(line):
+            return []
+
+        if _FOLD_ROW.match(line):
+            self._collect_fold(line, ctx)
             return []
         # Bare epoch header ("Epoch 1/8: …") — set the epoch/total so metrics on
         # the same line are stamped with it and the progress bar advances.
@@ -267,6 +307,10 @@ class UniversalParser:
             ):
                 continue
             seen_keys.add(key_lo)
+            # Remembered so a printed mean is not duplicated by the fold
+            # aggregate at flush time (see flush).
+            emitted: set[str] = ctx.extra.setdefault("emitted_keys", set())  # type: ignore[assignment]
+            emitted.add(key_lo)
             metrics.append(
                 RawMetric(
                     seq=ctx.seq,
@@ -280,3 +324,63 @@ class UniversalParser:
             )
 
         return metrics
+
+    def _collect_fold(self, line: str, ctx: ParserContext) -> None:
+        """Record one cross-validation fold without emitting it as a point."""
+        folds: dict[str, list[float]] = ctx.extra.setdefault("cv_folds", {})  # type: ignore[assignment]
+
+        score = _CV_SCORE.search(line)
+        if score is not None:
+            # A named score wins outright. GridSearchCV prints the candidate's
+            # parameters on the same row ("max_depth=3;, score=0.933"), and
+            # those are settings, not measurements.
+            with contextlib.suppress(ValueError):
+                folds.setdefault("score", []).append(float(score.group(1)))
+            return
+
+        # A hand-written loop names the metric instead: "Fold 1: accuracy = 0.9375".
+        for pattern in (_KV_EQ, _KV_COLON):
+            hits = 0
+            for match in pattern.finditer(line):
+                key = match.group(1)
+                key_lo = key.lower()
+                if key_lo in _SKIP_KEYS or key_lo in _EPOCH_KEYS or key_lo in _STEP_KEYS:
+                    continue
+                with contextlib.suppress(ValueError):
+                    folds.setdefault(key, []).append(float(match.group(2)))
+                    hits += 1
+            if hits:
+                return
+
+    def flush(self, ctx: ParserContext) -> list[RawMetric]:
+        """Reduce collected cross-validation folds to one value per metric.
+
+        Called once the stream ends. A fold set becomes its mean — the result
+        cross-validation actually reports — rather than a run of points whose
+        order carries no meaning.
+
+        A metric the log printed its own mean for is skipped: emitting the
+        aggregate as well would put two points on a chart that has no trend at
+        all, which is the shape this exists to avoid.
+        """
+        # ctx.extra is a dict[str, object] bag shared by every parser, so what
+        # comes back out has to be narrowed explicitly.
+        folds = cast("dict[str, list[float]]", ctx.extra.get("cv_folds") or {})
+        emitted = cast("set[str]", ctx.extra.get("emitted_keys") or set())
+
+        out: list[RawMetric] = []
+        for key, values in folds.items():
+            if len(values) < 2 or key.lower() in emitted:
+                continue
+            out.append(
+                RawMetric(
+                    seq=ctx.seq,
+                    epoch=None,
+                    step=None,
+                    key=key,
+                    value=fmean(values),
+                    parser_name=self.name,
+                    confidence=0.5,
+                )
+            )
+        return out

@@ -79,7 +79,12 @@ _PREFERRED_KEYS_FOR_TASK: dict[TaskType, tuple[str, ...]] = {
         "MAPE",
     ),
     TaskType.GENERATIVE: ("fid", "is_score", "PSNR", "SSIM", "LPIPS"),
-    TaskType.CUSTOM: ("val_loss", "train_loss"),
+    # "custom" last, so a run whose only metric has a name we do not recognise
+    # still tells a story. Without it the primary key stayed val_loss, matched
+    # no event, and a log reporting nothing but an unnamed score — scikit-learn's
+    # own `cross_val_score` verbose output is exactly that — produced no frames,
+    # no grade and no summary at all.
+    TaskType.CUSTOM: ("val_loss", "train_loss", "custom"),
 }
 
 # A run is "stalled" when, after this many epochs of the primary metric, it has
@@ -111,6 +116,12 @@ _STALL_REL_IMPROVEMENT = 0.03
 _ON_SCALE_KEYS: dict[TaskType, frozenset[str]] = {
     TaskType.REGRESSION: frozenset({"val_R2", "R2"}),
     TaskType.GAZE: frozenset({"val_MAE", "MAE"}),
+    # The classification bands ARE accuracy bands, and accuracy means the same
+    # thing whichever split it came from. Only val_accuracy was listed, so a
+    # run reporting plain `accuracy` was graded on improvement — and with a
+    # single reading (a cross-validation mean, say) that left it ungraded
+    # entirely, despite 90.5% being a perfectly gradeable number.
+    TaskType.CLASSIFICATION: frozenset({"val_accuracy", "accuracy"}),
 }
 
 _PRIMARY_KEY_FOR_TASK: dict[TaskType, str] = {
@@ -235,6 +246,44 @@ class StoryEngine:
         self._ensure_milestones()
         f = self._emit(event)
         return [f] if f is not None else []
+
+    def flush_warmup(self) -> list[StoryFrame]:
+        """Emit buffered events when the run ends before warmup completes.
+
+        The buffer exists so the task classifier has three events to work with
+        before anything is narrated. Nothing used to empty it, so a log that
+        never reached three metric events produced no frames, no grade and no
+        summary — silently, with a successful exit code. That is the ordinary
+        shape of a classical-ML script: fit once, print one or two scores.
+
+        Task detection runs here on whatever did arrive. Fewer events make it
+        less certain, not wrong: it either recognises a metric or answers
+        CUSTOM, and CUSTOM is honest where a guess would not be.
+        """
+        if self._started or not self._warmup:
+            return []
+
+        if self.task is None:
+            detected = classify_task(self._seen_keys)
+            if detected != TaskType.CUSTOM:
+                if detected == TaskType.REGRESSION:
+                    mae_hist = self._metric_history.get("val_MAE") or self._metric_history.get(
+                        "MAE"
+                    )
+                    if mae_hist:
+                        detected = refine_gaze(detected, mae_hist[-1], self._seen_raw_keys)
+                self.task = detected
+                self._task_locked = True
+
+        self._started = True
+        self._ensure_milestones()
+        frames: list[StoryFrame] = []
+        for buffered in self._warmup:
+            frame = self._emit(buffered)
+            if frame is not None:
+                frames.append(frame)
+        self._warmup = []
+        return frames
 
     def _ensure_milestones(self) -> None:
         if self._milestones is None:

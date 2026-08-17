@@ -28,7 +28,8 @@ import logging
 import sys
 import webbrowser
 from pathlib import Path
-from typing import TYPE_CHECKING
+from statistics import fmean, stdev
+from typing import TYPE_CHECKING, cast
 
 import typer
 import uvicorn
@@ -782,6 +783,25 @@ def cmd_check(
                 entry[0] += 1
                 entry[2] = event.value
 
+    # Folds are collected during the pass and reduced at the end, so `check`
+    # has to flush exactly like the pipeline does or it reports metrics the
+    # real run would have and this command would not.
+    flush = getattr(parser, "flush", None)
+    for raw in flush(ctx) if flush is not None else []:
+        try:
+            event = normalize(raw, run_id="check")
+        except ValueError:
+            continue
+        seen_keys.add(event.canonical_key)
+        entry = found.get(event.canonical_key)
+        if entry is None:
+            found[event.canonical_key] = [1, event.value, event.value]
+        else:
+            entry[0] += 1
+            entry[2] = event.value
+
+    cv_folds = cast("dict[str, list[float]]", ctx.extra.get("cv_folds") or {})
+
     task = classify_task(seen_keys)
     arch = parse_architecture(lines)
     arrow, tick, cross, _ = console_symbols()
@@ -802,6 +822,25 @@ def cmd_check(
     else:
         typer.echo("  metrics found   (none)")
     typer.echo("")
+
+    if cv_folds:
+        # The spread across folds is the reason to cross-validate at all, and
+        # it is the one thing a mean cannot tell you. Charting the folds in
+        # finishing order would imply a trend they do not have, so this is
+        # where they get reported.
+        typer.echo("  cross-validation")
+        for key in sorted(cv_folds):
+            values = cv_folds[key]
+            if len(values) < 2:
+                continue
+            spread = stdev(values)
+            typer.echo(
+                f"    {key:<16} {len(values):>4} folds    "
+                f"{fmean(values):.4g} +/- {spread:.4g}   "
+                f"(min {min(values):.4g}, max {max(values):.4g})"
+            )
+        typer.echo("    fold order carries no meaning, so no trend is charted.")
+        typer.echo("")
 
     # ── actionable gaps ──────────────────────────────────────────────────────
     problems: list[str] = []

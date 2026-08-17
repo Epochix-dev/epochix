@@ -7,6 +7,67 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.5.98] — 2026-08-17
+
+### Fixed
+
+- **Cross-validation folds are no longer charted as a trend.** Five folds were
+  drawn in the order they finished, as though the model improved across them.
+  Shuffle the data and the line points the other way — the slope is noise,
+  rendered as signal. The printed mean was then picked up as a *sixth fold*,
+  mixing a summary into the series it summarises.
+
+  Folds are collected and reduced to their mean, which is what
+  cross-validation actually reports. The spread — the entire reason to
+  cross-validate, and the one thing a mean cannot tell you — is reported by
+  `epochix check`:
+
+  ```
+  cross-validation
+    accuracy            5 folds    0.905 +/- 0.02589   (min 0.8688, max 0.9375)
+    fold order carries no meaning, so no trend is charted.
+  ```
+
+  Three real formats are read: scikit-learn's `cross_val_score(verbose=3)`,
+  `GridSearchCV(verbose=3)`, and the hand-written `Fold N: metric = value`
+  loop. A log that prints its own mean keeps it and is not given a second one.
+
+- **GridSearchCV hyperparameters were charted as metrics.** Its rows carry the
+  candidate being tried next to the score (`max_depth=3;, score=0.933`), so
+  `max_depth` was plotted as a result — the estimator-repr fault from 0.5.96 in
+  a place the shape-based guard could not see. Only the score is taken from a
+  fold row now. The `total time=` column stopped becoming a metric too.
+
+- **A run with fewer than three metric events produced no story at all** — no
+  frames, no grade, no summary, and a successful exit code. The engine buffers
+  events until the task classifier has three to work with, and nothing emptied
+  that buffer when the run ended. `echo "Test accuracy: 0.9820" > tiny.log`
+  produced `{"final_grade": null, "story_summary": null}`. That is the ordinary
+  shape of a classical-ML script, and it is what cross-validation reduces to
+  once folds are aggregated.
+
+- **A run whose only metric had an unrecognised name told no story.** The
+  CUSTOM primary key stayed `val_loss`, matched no event, and produced nothing
+  — which is precisely what scikit-learn's own `cross_val_score` verbose output
+  is, since it never names the metric it scored.
+
+- **Plain `accuracy` is graded on the accuracy scale again.** Only
+  `val_accuracy` counted as on-scale, so a run reporting the train-side or
+  cross-validated form was graded on improvement — and with a single reading
+  that left 90.5% ungraded entirely.
+
+- **A CUSTOM run reported a primary metric it never logged.** The auto-detected
+  name was only written back when a task was detected, and CUSTOM leaves that
+  unset, so the placeholder chosen at run creation survived into the summary
+  and exports.
+
+- The compound-metric-name rule spanned a number into the following word,
+  pairing `10` with `train_loss` in `Epoch 1/10 train_loss=0.5` to make the
+  nonsense key `10_train_loss`. Harmless only because unrecognised joins are
+  discarded.
+
+---
+
 ## [0.5.97] — 2026-08-17
 
 ### Fixed

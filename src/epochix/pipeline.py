@@ -512,6 +512,42 @@ async def run_pipeline(
             last_epoch = ep
 
     # --- Finalise -------------------------------------------------------
+    # Give the parser a chance to emit what it could only decide at the end.
+    # Cross-validation folds are collected rather than charted (their order
+    # carries no meaning) and reduced to a mean here.
+    flush = getattr(parser, "flush", None)
+    if flush is not None:
+        pending = flush(ctx)
+        if pending:
+            ep = _emit_metrics(
+                pending,
+                timestamp=datetime.now(tz=timezone.utc),
+                run_id=run_id,
+                engine=engine,
+                store=store,
+                hub=hub,
+            )
+            if ep is not None:
+                last_epoch = ep
+
+    # A run that ended before the engine's 3-event warmup completed still has
+    # its events buffered. Without this they are simply dropped, and a log with
+    # one or two scores — an ordinary "fit once, print the result" script —
+    # produced no frames, no grade and no summary at all.
+    for frame in engine.flush_warmup():
+        last_epoch = frame.epoch
+        store.append_story_frame(frame)
+        hub.publish(
+            run_id,
+            hub.make_message(
+                msg_type="story_frame",
+                run_id=run_id,
+                seq=frame.seq,
+                payload=frame.model_dump(mode="json"),
+            ),
+        )
+        last_seq = max(last_seq, frame.seq)
+
     final_milestones = engine.finalize(last_seq, last_epoch)
     for ms in final_milestones:
         ms_msg = hub.make_message(
@@ -537,7 +573,13 @@ async def run_pipeline(
         story_summary=story_summary,
         task_type=engine.task,
         parser_used=parser.name if parser is not None else None,
-        primary_metric=engine._effective_primary_key() if engine.task else None,
+        # Unconditionally: `engine.task` stays None whenever detection settles
+        # on CUSTOM, so this used to leave the placeholder written at run
+        # creation in place — a run driven by an unnamed score reported its
+        # primary metric as `val_loss`, which it never logged. The engine
+        # returns the same default when it has nothing better, so there is no
+        # case where skipping the write is the more truthful answer.
+        primary_metric=engine._effective_primary_key(),
     )
 
     # Signal end-of-run to all live subscribers
