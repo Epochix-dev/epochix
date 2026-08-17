@@ -74,6 +74,30 @@ def narrate_past_peak(
     )
 
 
+def narrate_single_reading(
+    primary_value: float,
+    run_id: str,
+    locale: str = "en",
+    metric: str | None = None,
+) -> str:
+    """Report a result rather than a stage of training.
+
+    The phase templates describe where a run is in its arc — "the model
+    awakens", "first patterns emerge from the noise". A script that fits once
+    and prints a score has no arc: training finished before the first line was
+    printed. Narrating it as epoch one describes a journey that never happened,
+    and says the model is "learning to see" when it has already stopped.
+    """
+    templates = _load_special(
+        "_single_reading", locale, "A single result: {metric} {value}. There is no trend to read."
+    )
+    seed = int(hashlib.md5(run_id.encode(), usedforsecurity=False).hexdigest()[:8], 16)
+    template = random.Random(seed).choice(templates)
+    return template.replace("{value}", f"{primary_value:.4f}").replace(
+        "{metric}", _display_metric(metric)
+    )
+
+
 def _load_stalled(locale: str = "en") -> list[str]:
     """Templates for a run whose metric has not meaningfully moved."""
     key = f"_stalled/{locale}"

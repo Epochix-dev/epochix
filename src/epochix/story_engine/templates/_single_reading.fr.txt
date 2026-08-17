@@ -1,0 +1,4 @@
+Un seul résultat : {metric} {value}. Une seule mesure, donc aucune courbe à lire et aucune tendance à rapporter.
+{metric} {value}, mesuré une fois. C'est un résultat, pas un entraînement — rien ici ne décrit comment le modèle y est arrivé.
+Résultat : {metric} {value}. Avec une seule mesure, il n'y a ni trajectoire, ni meilleure époque, ni surapprentissage à détecter.
+Une seule mesure : {metric} {value}. Enregistrez une valeur par époque pour obtenir l'histoire de l'apprentissage.

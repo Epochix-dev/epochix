@@ -16,7 +16,12 @@ from epochix.story_engine.grade import (
     metric_lower_better,
 )
 from epochix.story_engine.milestones import MilestoneTracker
-from epochix.story_engine.narrator import narrate, narrate_past_peak, narrate_stalled
+from epochix.story_engine.narrator import (
+    narrate,
+    narrate_past_peak,
+    narrate_single_reading,
+    narrate_stalled,
+)
 from epochix.story_engine.phases import (
     compute_phase,
     estimate_progress,
@@ -446,7 +451,19 @@ class StoryEngine:
         stalled = (
             epochs_seen >= _STALL_MIN_EPOCHS and rel is not None and rel < _STALL_REL_IMPROVEMENT
         )
-        if stalled and self._baseline is not None:
+        # A result, not a stage of training. Both conditions are needed: one
+        # reading alone also describes epoch 1 of a live run, which genuinely
+        # is the beginning of an arc. The absence of an epoch is what separates
+        # them — a script that fits once and prints a score never numbers
+        # anything, while every real training loop does.
+        if event.epoch is None and epochs_seen <= 1:
+            narrative = narrate_single_reading(
+                primary_value=primary_value,
+                run_id=self.run_id,
+                locale=self.locale,
+                metric=primary_key,
+            )
+        elif stalled and self._baseline is not None:
             narrative = narrate_stalled(
                 epoch=event.epoch,
                 primary_value=primary_value,
