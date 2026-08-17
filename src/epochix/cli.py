@@ -801,6 +801,7 @@ def cmd_check(
             entry[2] = event.value
 
     cv_folds = cast("dict[str, list[float]]", ctx.extra.get("cv_folds") or {})
+    cv_candidates = cast("dict[str, dict[str, list[float]]]", ctx.extra.get("cv_candidates") or {})
 
     task = classify_task(seen_keys)
     arch = parse_architecture(lines)
@@ -823,7 +824,29 @@ def cmd_check(
         typer.echo("  metrics found   (none)")
     typer.echo("")
 
-    if cv_folds:
+    if cv_folds and cv_candidates:
+        # A parameter search. Its candidates are separate populations, so one
+        # mean across all of them answers nothing — the search exists to pick
+        # a winner. Show every candidate so the choice is visible rather than
+        # asserted, best first.
+        folds_each = max(
+            (len(v) for metrics in cv_candidates.values() for v in metrics.values()), default=0
+        )
+        typer.echo(f"  cross-validation  ({len(cv_candidates)} candidates x {folds_each} folds)")
+        for key in sorted(cv_folds):
+            ranked = sorted(
+                ((label, m[key]) for label, m in cv_candidates.items() if key in m),
+                key=lambda pair: fmean(pair[1]),
+                reverse=True,
+            )
+            for rank, (label, values) in enumerate(ranked):
+                spread = f"+/- {stdev(values):.4g}" if len(values) > 1 else ""
+                mark = "  <- charted" if rank == 0 else ""
+                mean = f"{fmean(values):.4g}"
+                typer.echo(f"    {key:<10} {mean:<8} {spread:<14} {label}{mark}")
+        typer.echo("    only the winning candidate is charted; fold order carries no meaning.")
+        typer.echo("")
+    elif cv_folds:
         # The spread across folds is the reason to cross-validate at all, and
         # it is the one thing a mean cannot tell you. Charting the folds in
         # finishing order would imply a trend they do not have, so this is
@@ -833,10 +856,9 @@ def cmd_check(
             values = cv_folds[key]
             if len(values) < 2:
                 continue
-            spread = stdev(values)
             typer.echo(
                 f"    {key:<16} {len(values):>4} folds    "
-                f"{fmean(values):.4g} +/- {spread:.4g}   "
+                f"{fmean(values):.4g} +/- {stdev(values):.4g}   "
                 f"(min {min(values):.4g}, max {max(values):.4g})"
             )
         typer.echo("    fold order carries no meaning, so no trend is charted.")
