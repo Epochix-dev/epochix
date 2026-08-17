@@ -324,7 +324,16 @@ async def _run_batch_or_live(
                     "primary_metric": finished_run.primary_metric,
                     "story_summary": finished_run.story_summary,
                 },
-                ensure_ascii=False,
+                # ASCII escapes, not raw characters. typer.echo hands the string
+                # to stdout, which encodes with the process locale — cp1252 on
+                # Windows, where the em dash the narratives are full of becomes
+                # the single byte 0x97. JSON is defined as UTF-8, so piping this
+                # into json.load died with "invalid start byte". It was
+                # intermittent, because the template is chosen from a hash of
+                # the run id: the same log emitted valid output one run and
+                # undecodable output the next. \\uXXXX is valid under every
+                # encoding and json.load restores the character.
+                ensure_ascii=True,
             )
         )
     else:
@@ -811,6 +820,15 @@ def cmd_check(
             "      task quality. Log one to get a real grade, e.g.\n"
             '        print(f"Epoch {epoch}/{total} train_loss={loss:.4f} '
             'val_accuracy={acc:.4f}")'
+        )
+    elif task is TaskType.REGRESSION and not (seen_keys & {"R2", "val_R2"}):
+        problems.append(
+            "No R2, so the grade reflects how much the error IMPROVED, not how\n"
+            "      good the model is. MAE and RMSE are in your target's units - an\n"
+            "      MAE of 9.8 is excellent for house prices and terrible for a\n"
+            "      probability - so they cannot be scored on an absolute scale.\n"
+            "      R2 can: log it for a grade that means something.\n"
+            '        print(f"R2: {r2_score(y_true, y_pred):.4f}")'
         )
 
     if not epochs:

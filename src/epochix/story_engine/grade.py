@@ -309,11 +309,50 @@ def _dict_to_thresholds(
     return sorted(result, key=lambda x: x[1], reverse=reverse)
 
 
+# ── Bands that belong to a METRIC rather than a task ───────────────────────
+#
+# The task tables above assume every task has one natural scale. Regression
+# does not: its bands are MAE bands, and MAE means nothing without knowing what
+# the target is measured in. A real Ridge model scoring R² 0.996 was graded F
+# because its targets ran into the hundreds — confidently wrong, which is worse
+# than the dataset-blindness we already disclose.
+#
+# R² is the one regression metric that carries its own scale: it is the
+# fraction of variance explained, 1.0 is perfect, and below 0 means the model
+# is worse than predicting the mean. That makes it gradeable on its own terms
+# the way accuracy is. It remains domain-dependent — 0.6 is strong in social
+# science and poor in physics — but it is no longer *unit*-dependent, which is
+# the fault being fixed.
+_METRIC_THRESHOLDS: dict[str, list[tuple[Grade, float]]] = {
+    "R2": [
+        (Grade.A_PLUS, 0.95),
+        (Grade.A, 0.90),
+        (Grade.A_MINUS, 0.85),
+        (Grade.B_PLUS, 0.80),
+        (Grade.B, 0.70),
+        (Grade.B_MINUS, 0.60),
+        (Grade.C_PLUS, 0.50),
+        (Grade.C, 0.40),
+        (Grade.C_MINUS, 0.30),
+        (Grade.D, 0.10),
+        # Below zero the model loses to the mean predictor.
+        (Grade.F, float("-inf")),
+    ],
+}
+_METRIC_THRESHOLDS["val_R2"] = _METRIC_THRESHOLDS["R2"]
+
+
+def has_absolute_scale(metric: str | None) -> bool:
+    """Whether *metric* can be graded without knowing the dataset's units."""
+    return bool(metric) and metric in _METRIC_THRESHOLDS
+
+
 def compute_grade(
     task: TaskType,
     primary_value: float,
     custom_thresholds: dict[str, float] | None = None,
     config: GradeConfig | None = None,
+    metric: str | None = None,
 ) -> Grade:
     """Return the letter grade for the current primary metric value.
 
@@ -321,11 +360,14 @@ def compute_grade(
 
     1. *custom_thresholds* — explicit dict passed by the caller.
     2. *config* — :class:`GradeConfig` loaded from ``.epochix.yaml``.
-    3. Built-in *_DEFAULT_THRESHOLDS*.
+    3. *_METRIC_THRESHOLDS* — bands belonging to *metric* itself.
+    4. Built-in *_DEFAULT_THRESHOLDS* for the task.
 
     The lower-better direction is taken from *config.get_lower_better(task)*
     when a config is supplied, falling back to the built-in ``_LOWER_BETTER``
-    set.
+    set — except where the metric brings its own bands, which carry their own
+    direction. Regression is a lower-is-better task, so grading R² by the task
+    direction scores a perfect fit as F.
     """
     thresholds = _DEFAULT_THRESHOLDS.get(task, _DEFAULT_THRESHOLDS[TaskType.CLASSIFICATION])
 
@@ -335,6 +377,13 @@ def compute_grade(
         lower_better = lb_override if lb_override is not None else task in _LOWER_BETTER
     else:
         lower_better = task in _LOWER_BETTER
+
+    metric_bands = _METRIC_THRESHOLDS.get(metric or "")
+    if metric_bands is not None:
+        thresholds = metric_bands
+        name_dir = metric_lower_better(metric)
+        if name_dir is not None:
+            lower_better = name_dir
 
     if custom_thresholds:
         thresholds = _dict_to_thresholds(custom_thresholds, lower_better=lower_better)

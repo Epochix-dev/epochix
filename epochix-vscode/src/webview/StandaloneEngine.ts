@@ -102,7 +102,9 @@ const PREFERRED_KEYS: Partial<Record<TaskType, string[]>> = {
   nlp: ["perplexity", "WER", "CER", "BPC"],
   biometric: ["EER"],
   gaze: ["MAE", "RMSE"],
-  regression: ["MAE", "RMSE", "R2", "MAPE"],
+  // R² first: it is the only one of these that means anything without knowing
+  // the target's units. See METRIC_THRESHOLDS in story/grader.ts.
+  regression: ["R2", "MAE", "RMSE", "MAPE"],
   classification: ["val_accuracy", "accuracy", "AUC", "PR_AUC", "top5_accuracy"],
   generative: ["fid", "PSNR", "SSIM", "LPIPS"],
 };
@@ -447,7 +449,7 @@ export class StandaloneEngine {
 
     const progress = estimateProgress(epoch, totalEpochs);
     const phase: Phase = computePhase(progress, value, this._baseline, 1.0);
-    const grade: Grade = computeGrade(this._task, value);
+    const grade: Grade = computeGrade(this._task, value, this._primaryMetric);
 
     const narrative = narrate({
       task: this._task,

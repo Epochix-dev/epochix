@@ -86,10 +86,42 @@ const DEFAULT_THRESHOLDS: Record<TaskType, Threshold[]> = {
 
 const LOWER_BETTER = new Set<TaskType>(["nlp", "biometric", "gaze", "regression"]);
 
+/**
+ * Bands belonging to a METRIC rather than a task — mirrors _METRIC_THRESHOLDS
+ * in story_engine/grade.py.
+ *
+ * The regression row above is an MAE band set, and MAE carries the target's
+ * units, so it graded a model with R² 0.996 as F purely because the targets
+ * were large. R² is the one regression metric with a scale of its own.
+ */
+const METRIC_THRESHOLDS: Record<string, Threshold[]> = {
+  R2: [
+    ["A+", 0.95], ["A", 0.90], ["A-", 0.85],
+    ["B+", 0.80], ["B", 0.70], ["B-", 0.60],
+    ["C+", 0.50], ["C", 0.40], ["C-", 0.30],
+    ["D", 0.10], ["F", -Infinity],
+  ],
+};
+METRIC_THRESHOLDS["val_R2"] = METRIC_THRESHOLDS["R2"];
+
+/** Whether a metric can be graded without knowing the dataset's units. */
+export function hasAbsoluteScale(metric: string | undefined): boolean {
+  return metric !== undefined && metric in METRIC_THRESHOLDS;
+}
+
 /** Return the letter grade for the current primary metric value. */
-export function computeGrade(task: TaskType, primaryValue: number): Grade {
-  const thresholds = DEFAULT_THRESHOLDS[task] ?? DEFAULT_THRESHOLDS.classification;
-  const lowerBetter = LOWER_BETTER.has(task);
+export function computeGrade(
+  task: TaskType,
+  primaryValue: number,
+  metric?: string,
+): Grade {
+  const metricBands = metric === undefined ? undefined : METRIC_THRESHOLDS[metric];
+  const thresholds =
+    metricBands ?? DEFAULT_THRESHOLDS[task] ?? DEFAULT_THRESHOLDS.classification;
+  // A metric with its own bands brings its own direction too: regression is a
+  // lower-is-better task, so grading R² by the task direction scores a perfect
+  // fit as F.
+  const lowerBetter = metricBands ? false : LOWER_BETTER.has(task);
 
   for (const [grade, threshold] of thresholds) {
     if (lowerBetter) {
