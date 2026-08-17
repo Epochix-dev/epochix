@@ -1,0 +1,4 @@
+A single result: {metric} {value}. One measurement, so there is no curve to read and no trend to report.
+{metric} {value}, measured once. This is a result rather than a training run — nothing here describes how the model got there.
+Result: {metric} {value}. With one reading there is no trajectory, no best epoch and no sign of overfitting to find.
+One measurement only: {metric} {value}. Log a value per epoch to get a story about how the model learned.

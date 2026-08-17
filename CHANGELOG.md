@@ -7,6 +7,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.5.99] — 2026-08-17
+
+### Fixed
+
+- **A result is no longer narrated as a stage of training.** A script that fits
+  once and prints a score has no arc — training finished before the first line
+  was printed — but the phase templates describe where a run sits in one. A
+  finished 98.2% model was told it was *"learning to see"*, and a
+  cross-validated accuracy read as though it were epoch one of something.
+
+  These runs now report what they are:
+
+  > Result: validation accuracy 0.9820. With one reading there is no
+  > trajectory, no best epoch and no sign of overfitting to find.
+
+  The distinction had to survive a live run's **first epoch**, which also has
+  exactly one reading and genuinely *is* the start of an arc — calling that a
+  finished result would be its own falsehood. What separates them is the epoch
+  axis: every training loop numbers its passes and a single fit numbers
+  nothing, so both conditions are required. Confirmed by removing the epoch
+  half of the guard and watching a real run's opening epoch collapse into
+  "measured once".
+
+  Available in English, French and Farsi, following the same phase-independent
+  template pattern as the past-peak and stalled narratives.
+
+- `epochix check` now says so directly when every metric was measured once,
+  rather than only complaining that no epoch numbers were found.
+
+---
+
 ## [0.5.98] — 2026-08-17
 
 ### Fixed

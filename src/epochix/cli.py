@@ -870,7 +870,14 @@ def cmd_check(
             '        print(f"R2: {r2_score(y_true, y_pred):.4f}")'
         )
 
-    if not epochs:
+    if found and not epochs and all(entry[0] == 1 for entry in found.values()):
+        problems.append(
+            "Every metric was measured once, so this is a result rather than a\n"
+            "      training run - there is no curve, no best epoch and no overfitting\n"
+            "      to detect. The grade still reflects the numbers. To get a story\n"
+            "      about how the model learned, log a value per epoch."
+        )
+    elif not epochs:
         problems.append(
             "No epoch numbers were found, so the progress bar cannot advance.\n"
             '      Include the epoch on the metric line: "Epoch 3/20 ..." or "epoch=3".'
