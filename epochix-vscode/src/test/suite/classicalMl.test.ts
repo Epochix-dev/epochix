@@ -13,6 +13,7 @@
  */
 import * as assert from "assert";
 
+import { computeGrade, hasAbsoluteScale } from "../../story/grader";
 import { isTraining, sniff } from "../../terminal/TrainingDetector";
 
 const XGBOOST = [
@@ -84,5 +85,44 @@ suite("Classical ML is recognised as training", () => {
   test("a bracketed number alone is not enough", () => {
     // Shell job control and log timestamps both start lines with brackets.
     assert.ok(!isTraining("[1] 12345\n[2] 12346\n[3] 12347"));
+  });
+});
+
+suite("Regression grading does not depend on the target's units", () => {
+  // The standalone engine grades without Python, so it has its own copy of the
+  // thresholds. When the Python side learned that regression bands are MAE
+  // bands — and that MAE carries the target's units — this copy had to learn it
+  // too, or the same log gets one grade with the sidecar and another without.
+
+  test("an excellent fit is not an F", () => {
+    // A real Ridge run: R² 0.9960, graded F because its targets ran into the
+    // hundreds and the bands were written for normalised ones.
+    assert.strictEqual(computeGrade("regression", 0.996, "R2"), "A+");
+  });
+
+  test("the scale runs the right way", () => {
+    // regression is a lower-is-better task, so without metric-aware bands R²
+    // was scored upside down as well as against the wrong ruler.
+    assert.strictEqual(computeGrade("regression", 0.91, "R2"), "A");
+    assert.strictEqual(computeGrade("regression", 0.45, "R2"), "C");
+    assert.strictEqual(computeGrade("regression", -3.0, "R2"), "F");
+  });
+
+  test("only R2 claims an absolute scale", () => {
+    assert.ok(hasAbsoluteScale("R2"));
+    assert.ok(hasAbsoluteScale("val_R2"));
+    assert.ok(!hasAbsoluteScale("MAE"));
+    assert.ok(!hasAbsoluteScale("val_RMSE"));
+  });
+
+  test("gaze keeps its absolute bands", () => {
+    // Not every MAE is unit-less: gaze MAE is an angle in degrees.
+    assert.strictEqual(computeGrade("gaze", 0.4), "A+");
+    assert.strictEqual(computeGrade("gaze", 25.0), "F");
+  });
+
+  test("classification is untouched", () => {
+    assert.strictEqual(computeGrade("classification", 0.96), "A+");
+    assert.strictEqual(computeGrade("classification", 0.61), "C");
   });
 });

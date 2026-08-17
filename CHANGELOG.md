@@ -7,6 +7,60 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.5.97] — 2026-08-17
+
+### Fixed
+
+- **A regression grade no longer depends on the target's units.** A real
+  scikit-learn Ridge model — **R² 0.9960**, an excellent fit — was graded **F**,
+  purely because its targets ran into the hundreds.
+
+  The regression bands are MAE bands (A+ at 0.01, F above 2.5), and MAE carries
+  whatever units the target has. An MAE of 9.8 is excellent for house prices
+  and terrible for a probability, so those numbers only mean anything when the
+  target is normalised. This was worse than the dataset-blindness the project
+  already discloses: blind would be declining to judge; this judged confidently
+  and wrongly.
+
+  Grade bands now belong to a **metric** as well as a task. **R²** is the one
+  regression metric with a scale of its own — the fraction of variance
+  explained, 1.0 perfect, below 0 worse than predicting the mean — so it gets
+  real bands and is preferred as the regression primary metric. MAE, RMSE and
+  MSE are graded on **improvement** instead, the only honest reading of an
+  error whose units are unknown. Gaze keeps its absolute MAE bands, because
+  gaze MAE is an angle: 0.5° is excellent and 20° poor whatever the dataset.
+
+  `epochix check` now says so when a regression log has no R².
+
+- **A single measurement is no longer given a verdict.** With one reading of a
+  unit-bearing metric there is no scale to place it on and no movement to score
+  it by, so the run is marked **I** (incomplete) — the grade the enum has always
+  carried and both surfaces already colour — instead of being scored against
+  bands built for someone else's data.
+
+- **The story no longer contradicts the grade.** A run's phase is inferred from
+  how far its metric has moved, and one reading cannot move, so every run began
+  in *awakening*: a single fit scoring R² 0.996 was narrated *"Random
+  predictions define epoch ?"* directly beneath its A+. For a bounded
+  higher-is-better metric the first reading is now placed by where it sits on
+  its own scale. That same sklearn run now reads *"Excellence achieved."*
+
+- **`run --json` emitted invalid UTF-8 on Windows.** The document was written
+  with `ensure_ascii=False` and then encoded with the process locale — cp1252,
+  where the em dash the narratives are full of becomes the single byte `0x97`.
+  JSON is defined as UTF-8, so piping the output into `json.load` failed with
+  *"invalid start byte"*. It was intermittent: the narrative template is chosen
+  from a hash of the run id, so the same log produced valid output one run and
+  undecodable output the next. The documented GitHub Action pipes this output
+  directly and would have hit it on a Windows runner.
+
+- The VS Code extension's **standalone** grader — a separate implementation used
+  when Python is absent — carried the same MAE bands, so the same log could be
+  graded one way with the sidecar and another without. It now mirrors the
+  metric-aware rules, with tests on both sides.
+
+---
+
 ## [0.5.96] — 2026-08-14
 
 ### Added

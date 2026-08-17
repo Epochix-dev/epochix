@@ -10,6 +10,7 @@ from epochix.story_engine.config_loader import GradeConfig
 from epochix.story_engine.grade import (
     compute_grade,
     grade_by_trajectory,
+    has_absolute_scale,
     impossible_reason,
     is_lower_better,
     metric_lower_better,
@@ -60,19 +61,21 @@ _PREFERRED_KEYS_FOR_TASK: dict[TaskType, tuple[str, ...]] = {
     TaskType.BIOMETRIC: ("EER", "TAR"),
     TaskType.GAZE: ("val_MAE", "val_RMSE", "MAE", "RMSE"),
     TaskType.SEGMENTATION: ("mIoU", "IoU", "Dice", "pixel_accuracy"),
-    # Validation first, then train. Boosting prints both, and grading a run on
-    # its TRAINING error rewards exactly the overfitting the story is meant to
-    # call out.
+    # R² first, because it is the only one of these that means anything on its
+    # own: MAE and RMSE are in the target's units, so "MAE 9.83" is excellent
+    # for house prices and terrible for a probability. Then validation before
+    # train — boosting prints both, and grading a run on its TRAINING error
+    # rewards exactly the overfitting the story is meant to call out.
     TaskType.REGRESSION: (
+        "val_R2",
+        "R2",
         "val_MAE",
         "val_RMSE",
         "val_MSE",
-        "val_R2",
         "val_MAPE",
         "MAE",
         "RMSE",
         "MSE",
-        "R2",
         "MAPE",
     ),
     TaskType.GENERATIVE: ("fid", "is_score", "PSNR", "SSIM", "LPIPS"),
@@ -94,12 +97,19 @@ _STALL_REL_IMPROVEMENT = 0.03
 # Keys the task's ABSOLUTE grade bands were written for. Everything else is
 # graded on improvement instead (see the off_scale branch below).
 #
-# Defaults to just the first preferred key. Regression and gaze list two,
-# because the bands are MAE bands and MAE means the same thing whether it came
-# from the training or the validation split — only one of them can be first,
-# and reordering the preferences must not knock the other off its own scale.
+# Defaults to just the first preferred key.
+#
+# Regression lists only the R² forms. Its task bands are MAE bands, and MAE
+# carries the target's units, so they graded a model with R² 0.996 as F purely
+# because its targets were large. R² brings its own scale (see
+# _METRIC_THRESHOLDS); MAE and RMSE are now graded on improvement, which is the
+# only honest reading of an error whose units are unknown.
+#
+# Gaze keeps MAE, and the difference is not arbitrary: gaze MAE is an angle in
+# degrees. 0.5° is genuinely excellent and 20° genuinely poor whatever the
+# dataset, so those bands mean something a generic MAE band cannot.
 _ON_SCALE_KEYS: dict[TaskType, frozenset[str]] = {
-    TaskType.REGRESSION: frozenset({"val_MAE", "MAE"}),
+    TaskType.REGRESSION: frozenset({"val_R2", "R2"}),
     TaskType.GAZE: frozenset({"val_MAE", "MAE"}),
 }
 
@@ -280,10 +290,28 @@ class StoryEngine:
         else:
             lower_better = is_lower_better(task, self.grade_config)
 
+        # The phase is inferred from how far the metric has MOVED, which needs
+        # at least two readings. With one, the baseline is the value itself, so
+        # improvement is zero by construction and every run — however good the
+        # model — was placed in AWAKENING and narrated as "random predictions"
+        # or "first patterns emerge from the noise". A single sklearn fit reads
+        # R² 0.996 and got exactly that, next to an A+.
+        #
+        # For a bounded higher-is-better metric there is another honest reading:
+        # where the value sits on its own scale. Only for the first reading —
+        # once there are two, real movement is the better signal.
+        phase_baseline = self._baseline
+        if (
+            len(self._metric_history.get(primary_key, ())) < 2
+            and not lower_better
+            and 0.0 <= primary_value <= 1.0
+        ):
+            phase_baseline = 0.0
+
         phase = compute_phase(
             progress=progress,
             primary_value=primary_value,
-            baseline=self._baseline,
+            baseline=phase_baseline,
             lower_better=lower_better,
         )
 
@@ -319,14 +347,26 @@ class StoryEngine:
         preferred = _PREFERRED_KEYS_FOR_TASK.get(task, ())
         on_scale = _ON_SCALE_KEYS.get(task) or (preferred[:1] and frozenset(preferred[:1]))
         off_scale = bool(preferred) and primary_key not in on_scale
-        if (task is TaskType.CUSTOM or off_scale) and self._baseline is not None:
-            grade = grade_by_trajectory(self._baseline, primary_value, lower_better)
-        else:
+        needs_trajectory = task is TaskType.CUSTOM or off_scale
+
+        if not needs_trajectory or has_absolute_scale(primary_key):
             grade = compute_grade(
                 task=task,
                 primary_value=primary_value,
                 config=self.grade_config,
+                metric=primary_key,
             )
+        elif self._baseline is not None and len(self._metric_history.get(primary_key, ())) >= 2:
+            grade = grade_by_trajectory(self._baseline, primary_value, lower_better)
+        else:
+            # No scale to measure against and no movement to measure: one
+            # reading of a metric whose units we do not know. Anything else
+            # here is a guess dressed as a verdict — a single MAE used to be
+            # graded against bands built for normalised targets, so an
+            # excellent model came out F. "I" is what the enum has always had
+            # for this, and both the dashboard and the extension already
+            # colour it.
+            grade = Grade.INCOMPLETE
 
         delta = primary_value - self._prev_primary if self._prev_primary is not None else 0.0
 
