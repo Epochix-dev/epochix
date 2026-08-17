@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "epochix"
-version = "0.5.95"
+version = "0.5.96"
 description = "Turn ML training logs into a plain-English story with a letter grade — a live animated dashboard, no code changes."
 authors = [{ name = "Epochix Team" }]
 license = "Apache-2.0"
@@ -108,6 +108,7 @@ huggingface       = "epochix.parsers.huggingface:HFParser"
 ultralytics_yolo  = "epochix.parsers.ultralytics_yolo:YOLOParser"
 fastai            = "epochix.parsers.fastai:FastAIParser"
 accelerate        = "epochix.parsers.accelerate:AccelerateParser"
+boosting          = "epochix.parsers.boosting:BoostingParser"
 universal         = "epochix.parsers.universal:UniversalParser"
 
 # Metaphor packs: entry point value = path to a YAML file

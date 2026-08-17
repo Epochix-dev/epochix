@@ -1,2 +1,2 @@
-MAE = {value} — le modèle maîtrise l'estimation précise. Prédictions très exactes.
-À l'époque {epoch}, MAE atteint {value}. La compétence en régression culmine.
+{metric} = {value} — le modèle maîtrise l'estimation précise. Prédictions très exactes.
+À l'époque {epoch}, {metric} atteint {value}. La compétence en régression culmine.

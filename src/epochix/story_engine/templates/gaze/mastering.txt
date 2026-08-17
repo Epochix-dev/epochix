@@ -1,4 +1,4 @@
-Accurate fixation prediction. MAE {value}° at epoch {epoch} — the model tracks gaze under mild variation.
-Sub-degree improvements per step. MAE {value}°, delta {delta}.
-Epoch {epoch}: the model handles glasses, makeup, and partial occlusion. MAE {value}°.
-Near-calibration accuracy. MAE {value}°. Strong performance without a calibration step.
+Accurate fixation prediction. {metric} {value}° at epoch {epoch} — the model tracks gaze under mild variation.
+Sub-degree improvements per step. {metric} {value}°, delta {delta}.
+Epoch {epoch}: the model handles glasses, makeup, and partial occlusion. {metric} {value}°.
+Near-calibration accuracy. {metric} {value}°. Strong performance without a calibration step.

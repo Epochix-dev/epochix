@@ -192,6 +192,38 @@ _DIRECTION_BY_KEY: dict[str, bool] = {
     "bpc": True,
     "lpips": True,
     "nll": True,
+    # Classical-ML metrics the substring hints do NOT reach: none of "brier",
+    # "huber", "rmsle", "mcc", "kappa", "explained_variance" or "silhouette"
+    # contains a hint fragment, so each returned None and fell back to the
+    # task's direction. For a regression task that means "lower is better", so
+    # a rising explained_variance — the model improving — was read as decline.
+    # The rest are pinned rather than left to substring luck: "rmsle" missing
+    # while "rmse" matches is precisely the kind of near-miss that inverts a
+    # grade silently.
+    "log_loss": True,
+    "val_log_loss": True,
+    "error_rate": True,
+    "val_error_rate": True,
+    # Every val_ form is pinned rather than left to the substring hints. This
+    # is not defensive tidying: "val_mape" contains "map", a higher-is-better
+    # hint, so a run whose percentage error was FALLING graded F while a
+    # worsening one graded A+. Plain "mape" was already pinned for exactly this
+    # reason; adding the split form without its pin reopened the hole.
+    "val_mae": True,
+    "val_rmse": True,
+    "val_mse": True,
+    "val_mape": True,
+    "val_medae": True,
+    "val_rmsle": True,
+    "val_r2": False,
+    "val_auc": False,
+    "val_f1": False,
+    "val_accuracy": False,
+    "brier": True,
+    "huber": True,
+    "quantile_loss": True,
+    "medae": True,
+    "rmsle": True,
     # higher is better
     "ndcg": False,
     "mrr": False,
@@ -199,6 +231,11 @@ _DIRECTION_BY_KEY: dict[str, bool] = {
     "sensitivity": False,
     "pixel_accuracy": False,
     "top5_accuracy": False,
+    "balanced_accuracy": False,
+    "mcc": False,
+    "kappa": False,
+    "explained_variance": False,
+    "silhouette": False,
 }
 
 

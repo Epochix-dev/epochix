@@ -33,13 +33,48 @@ _PREFERRED_KEYS_FOR_TASK: dict[TaskType, tuple[str, ...]] = {
     # A metric only reaches the story if it is listed here. Recognising an
     # alias is not enough: MAPE parsed correctly yet the run still graded on
     # train_loss, so an improving and a worsening run scored the same.
-    TaskType.CLASSIFICATION: ("val_accuracy", "accuracy", "AUC", "PR_AUC", "f1", "top5_accuracy"),
+    TaskType.CLASSIFICATION: (
+        "val_accuracy",
+        "accuracy",
+        "AUC",
+        "val_AUC",
+        "PR_AUC",
+        "f1",
+        "val_f1",
+        "top5_accuracy",
+        "balanced_accuracy",
+        "MCC",
+        # Last resorts. Gradient boosting classifiers print their objective and
+        # nothing else by default, so without these the task was detected as
+        # classification and then no preferred key had ever been logged — the
+        # primary metric fell back to val_accuracy, matched no event, and the
+        # run produced no story at all. They are off-scale (see below) and so
+        # grade on improvement, not against accuracy bands.
+        "val_log_loss",
+        "log_loss",
+        "val_error_rate",
+        "error_rate",
+    ),
     TaskType.DETECTION: ("mAP50", "mAP", "mAP75"),
     TaskType.NLP: ("perplexity", "bleu", "rouge", "WER", "CER", "BPC"),
     TaskType.BIOMETRIC: ("EER", "TAR"),
-    TaskType.GAZE: ("MAE", "RMSE"),
+    TaskType.GAZE: ("val_MAE", "val_RMSE", "MAE", "RMSE"),
     TaskType.SEGMENTATION: ("mIoU", "IoU", "Dice", "pixel_accuracy"),
-    TaskType.REGRESSION: ("MAE", "RMSE", "MSE", "R2", "MAPE"),
+    # Validation first, then train. Boosting prints both, and grading a run on
+    # its TRAINING error rewards exactly the overfitting the story is meant to
+    # call out.
+    TaskType.REGRESSION: (
+        "val_MAE",
+        "val_RMSE",
+        "val_MSE",
+        "val_R2",
+        "val_MAPE",
+        "MAE",
+        "RMSE",
+        "MSE",
+        "R2",
+        "MAPE",
+    ),
     TaskType.GENERATIVE: ("fid", "is_score", "PSNR", "SSIM", "LPIPS"),
     TaskType.CUSTOM: ("val_loss", "train_loss"),
 }
@@ -56,6 +91,18 @@ _PAST_PEAK_REL_DROP = 0.01
 _STALL_MIN_EPOCHS = 3
 _STALL_REL_IMPROVEMENT = 0.03
 
+# Keys the task's ABSOLUTE grade bands were written for. Everything else is
+# graded on improvement instead (see the off_scale branch below).
+#
+# Defaults to just the first preferred key. Regression and gaze list two,
+# because the bands are MAE bands and MAE means the same thing whether it came
+# from the training or the validation split — only one of them can be first,
+# and reordering the preferences must not knock the other off its own scale.
+_ON_SCALE_KEYS: dict[TaskType, frozenset[str]] = {
+    TaskType.REGRESSION: frozenset({"val_MAE", "MAE"}),
+    TaskType.GAZE: frozenset({"val_MAE", "MAE"}),
+}
+
 _PRIMARY_KEY_FOR_TASK: dict[TaskType, str] = {
     task: keys[0] for task, keys in _PREFERRED_KEYS_FOR_TASK.items()
 }
@@ -71,6 +118,9 @@ class StoryEngine:
     grade_config: GradeConfig | None = None  # loaded from .epochix.yaml
 
     _seen_keys: set[str] = field(default_factory=set, init=False)
+    # Canonicalising throws away exactly what tells a gaze run apart: both
+    # `gaze_mae` and a plain `mae` arrive as MAE. Keep the originals.
+    _seen_raw_keys: set[str] = field(default_factory=set, init=False)
     _events_count: int = field(default=0, init=False)
     _task_locked: bool = field(default=False, init=False)
     _baseline: float | None = field(default=None, init=False)
@@ -127,6 +177,8 @@ class StoryEngine:
         """
         self._events_count += 1
         self._seen_keys.add(event.canonical_key)
+        if event.raw_key:
+            self._seen_raw_keys.add(event.raw_key)
 
         # Accumulate metric history
         hist = self._metric_history.setdefault(event.canonical_key, [])
@@ -141,9 +193,13 @@ class StoryEngine:
             detected = classify_task(self._seen_keys)
             if detected != TaskType.CUSTOM:
                 if detected == TaskType.REGRESSION:
-                    mae_hist = self._metric_history.get("MAE")
+                    # val_MAE too: a boosting run reports only its validation
+                    # error, so keying on "MAE" alone never refined those.
+                    mae_hist = self._metric_history.get("val_MAE") or self._metric_history.get(
+                        "MAE"
+                    )
                     if mae_hist:
-                        detected = refine_gaze(detected, mae_hist[-1])
+                        detected = refine_gaze(detected, mae_hist[-1], self._seen_raw_keys)
                 self.task = detected
                 self._task_locked = True
                 self._milestones = MilestoneTracker(run_id=self.run_id, task=self.task)
@@ -260,8 +316,9 @@ class StoryEngine:
         # worse. And R2 inside "regression" was graded as if lower were better,
         # so an improving run scored WORSE than a worsening one. Where the
         # scale does not apply, grade on improvement from baseline instead.
-        canonical_key = _PREFERRED_KEYS_FOR_TASK.get(task, ())
-        off_scale = bool(canonical_key) and primary_key != canonical_key[0]
+        preferred = _PREFERRED_KEYS_FOR_TASK.get(task, ())
+        on_scale = _ON_SCALE_KEYS.get(task) or (preferred[:1] and frozenset(preferred[:1]))
+        off_scale = bool(preferred) and primary_key not in on_scale
         if (task is TaskType.CUSTOM or off_scale) and self._baseline is not None:
             grade = grade_by_trajectory(self._baseline, primary_value, lower_better)
         else:
@@ -327,6 +384,7 @@ class StoryEngine:
                 delta=delta,
                 run_id=self.run_id,
                 locale=self.locale,
+                metric=primary_key,
             )
 
         milestones = self._milestones.check(

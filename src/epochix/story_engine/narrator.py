@@ -126,8 +126,15 @@ def narrate(
     delta: float,
     run_id: str,
     locale: str = "en",
+    metric: str | None = None,
 ) -> str:
-    """Select and fill a narrative template deterministically for this run + epoch."""
+    """Select and fill a narrative template deterministically for this run + epoch.
+
+    ``metric`` names the series the numbers came from. The regression and gaze
+    templates used to write "MAE" into the sentence regardless, so an XGBoost
+    run graded on RMSE was narrated as "MAE 68.0337" — a number correctly read
+    and then labelled as a metric the run never logged.
+    """
     templates = _load_templates(task, phase, locale)
 
     # Deterministic variant selection: same run_id always gives same story.
@@ -144,4 +151,19 @@ def narrate(
         .replace("{value}", f"{primary_value:.4f}")
         .replace("{delta}", delta_str)
         .replace("{value_pct}", f"{primary_value * 100:.1f}%")
+        .replace("{metric}", _display_metric(metric))
     )
+
+
+# Canonical keys are stored in a machine form ("val_RMSE"); the story is a
+# sentence, so it says "validation RMSE".
+_METRIC_PREFIXES = (("val_", "validation "), ("train_", "training "))
+
+
+def _display_metric(metric: str | None) -> str:
+    if not metric:
+        return "error"
+    for prefix, spoken in _METRIC_PREFIXES:
+        if metric.startswith(prefix):
+            return spoken + metric[len(prefix) :].replace("_", " ")
+    return metric.replace("_", " ")

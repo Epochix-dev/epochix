@@ -67,14 +67,25 @@ class TestNormalize:
 # metrics because val_mae_cm fell through to 'custom') ─────────────────────────
 
 
-def test_canonicalize_strips_val_prefix_and_unit_suffix() -> None:
-    from epochix.normalizer.canonical_keys import canonicalize_key
-
-    assert canonicalize_key("val_mae_cm") == "MAE"
-    assert canonicalize_key("val_mae") == "MAE"
+def test_canonicalize_strips_unit_suffix() -> None:
     assert canonicalize_key("mae_cm") == "MAE"
     assert canonicalize_key("train_mae") == "MAE"
-    assert canonicalize_key("val_rmse_deg") == "RMSE"
+    assert canonicalize_key("val_mae_cm") == "val_MAE"
+    assert canonicalize_key("val_rmse_deg") == "val_RMSE"
+
+
+def test_regression_metrics_keep_their_split() -> None:
+    """`val_mae` used to be stripped to plain `MAE`, same as `train_mae`.
+
+    Both splits then shared one canonical key and were charted as a single
+    line that jumped between them. Gradient boosting reports both by default
+    and the distance between them IS the overfitting signal, so collapsing
+    them hid the thing worth seeing.
+    """
+    assert canonicalize_key("mae") == "MAE"
+    assert canonicalize_key("val_mae") == "val_MAE"
+    assert canonicalize_key("rmse") != canonicalize_key("val_rmse")
+    assert canonicalize_key("r2") != canonicalize_key("val_r2")
 
 
 def test_canonicalize_does_not_regress_split_metrics() -> None:

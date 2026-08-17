@@ -95,6 +95,36 @@ python train.py 2>&1 | epochix --live
 epochix training.log    # any subcommand can be omitted — it's the default
 ```
 
+### Classical ML, not just deep learning
+
+XGBoost, LightGBM and CatBoost are read round by round, with the training and
+validation curves kept apart — the gap between them is the overfitting signal:
+
+```bash
+python train_xgb.py 2>&1 | epochix --live
+```
+
+```
+[0]  validation_0-logloss:0.51987  validation_1-logloss:0.52369
+[1]  validation_0-logloss:0.40326  validation_1-logloss:0.41045
+```
+↓
+> **Epoch 39: 0.0804, below the best of 0.0781 at epoch 32. The model has
+> passed its peak — the earlier checkpoint is the better one.**
+
+scikit-learn works too. A loop printing whatever you already print is enough —
+no delimiter required, and the estimator's own `repr()` is not mistaken for
+results:
+
+```
+iter 18 rmse 12.2614 r2 0.9960
+Train accuracy: 1.0000
+Test accuracy: 0.9820
+```
+
+Train and test are kept as separate series, so two measurements of two
+different sets are never drawn as one declining line.
+
 ### Stream a remote log over SSH
 
 Training on a GPU box / cluster node, dashboard on your laptop:
@@ -150,7 +180,7 @@ trainer = pl.Trainer(callbacks=[StoryCallback()])
 
 | | |
 |---|---|
-| **7 log parsers** | PyTorch Lightning · Keras/TF · HuggingFace · YOLO · FastAI · Accelerate · Universal — plus an opt-in **LLM fallback** (Ollama/OpenAI) for formats none of them recognise |
+| **8 log parsers** | PyTorch Lightning · Keras/TF · HuggingFace · YOLO · FastAI · Accelerate · **Gradient boosting** (XGBoost/LightGBM/CatBoost) · Universal — plus an opt-in **LLM fallback** (Ollama/OpenAI) for formats none of them recognise |
 | **7 task types** | Classification · Detection · Regression · Biometric · Gaze · NLP · Generative |
 | **5 training phases** | Awakening → Learning → Understanding → Mastering → Polishing |
 | **11 letter grades** | A+ through F, task-specific thresholds, configurable via `.epochix.yaml` |

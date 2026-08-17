@@ -1,4 +1,4 @@
-Predictions shadow reality. MAE {value} at epoch {epoch} — the model grasps the underlying mapping.
-Fine-grained patterns emerge. MAE {value}. The model interpolates with confidence.
-Epoch {epoch}: residuals shrink. MAE {value} — nonlinear structure is captured.
-The function approximator finds its shape. MAE {value}, delta {delta}.
+Predictions shadow reality. {metric} {value} at epoch {epoch} — the model grasps the underlying mapping.
+Fine-grained patterns emerge. {metric} {value}. The model interpolates with confidence.
+Epoch {epoch}: residuals shrink. {metric} {value} — nonlinear structure is captured.
+The function approximator finds its shape. {metric} {value}, delta {delta}.

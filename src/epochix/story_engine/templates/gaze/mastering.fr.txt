@@ -1,2 +1,2 @@
-MAE regard {value}° — le modèle maîtrise le suivi oculaire. Précision très élevée.
-À l'époque {epoch}, MAE = {value}°. Le système de suivi du regard atteint son efficacité maximale.
+{metric} regard {value}° — le modèle maîtrise le suivi oculaire. Précision très élevée.
+À l'époque {epoch}, {metric} = {value}°. Le système de suivi du regard atteint son efficacité maximale.
