@@ -1,4 +1,4 @@
-Gaze direction emerges. MAE {value}° at epoch {epoch} — the model follows coarse head orientation.
-Rough vectors form. MAE {value}°, delta {delta}. The model learns left from right.
-Epoch {epoch}: horizontal gaze is captured first. MAE {value}°.
-The eye model finds its footing. MAE {value}° and falling toward clinical accuracy.
+Gaze direction emerges. {metric} {value}° at epoch {epoch} — the model follows coarse head orientation.
+Rough vectors form. {metric} {value}°, delta {delta}. The model learns left from right.
+Epoch {epoch}: horizontal gaze is captured first. {metric} {value}°.
+The eye model finds its footing. {metric} {value}° and falling toward clinical accuracy.

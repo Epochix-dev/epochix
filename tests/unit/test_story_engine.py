@@ -183,7 +183,7 @@ class TestDelayedTaskSignal:
     first 3 events must still classify the task (was locked to CUSTOM at
     exactly event 3, so gaze/regression runs showed no task-aware panels)."""
 
-    def test_mae_after_noise_still_detects_gaze(self) -> None:
+    def test_mae_after_noise_still_detects_the_task(self) -> None:
         eng = StoryEngine(run_id="r")
         seq = 0
         # Epoch 1: a 'custom' param count, then losses, THEN mae (event 4).
@@ -200,7 +200,15 @@ class TestDelayedTaskSignal:
             seq += 1
             eng.process(_event("MAE", mae, epoch=ep, seq=seq))
 
-        assert eng.task == TaskType.GAZE  # MAE < 10 → gaze (not stuck on CUSTOM)
+        # The point of this test is that a late signal metric still classifies
+        # the run instead of leaving it stuck on CUSTOM.
+        #
+        # It used to assert GAZE, because any MAE below 10 was promoted to
+        # gaze. Nothing here is about eye tracking — that promotion fired on
+        # ordinary regression too, relabelling the task and printing the value
+        # in degrees. Gaze now needs a gaze-shaped metric name, so plain
+        # regression stays regression.
+        assert eng.task == TaskType.REGRESSION
         assert eng._effective_primary_key() == "MAE"
 
 
@@ -211,15 +219,31 @@ class TestRawPrimaryMetricName:
     or `event.canonical_key != primary_key` is always true → zero frames."""
 
     def test_raw_primary_metric_still_emits_frames(self) -> None:
+        # `val_mae_cm` now canonicalises to val_MAE rather than MAE, because
+        # the validation and training error are separate series. The events a
+        # run produces go through the same function, so the two still agree —
+        # which is what this test exists to check.
         eng = StoryEngine(run_id="r", task=TaskType.GAZE, primary_metric="val_mae_cm")
-        assert eng._effective_primary_key() == "MAE"
+        assert eng._effective_primary_key() == "val_MAE"
         frames = []
         for seq, mae in enumerate([9.8, 9.2, 8.9, 8.6, 8.4, 7.9], start=1):
             # events arrive already canonicalised (as the normalizer produces them)
-            f = eng.process(_event("MAE", mae, epoch=float(seq), seq=seq))
+            f = eng.process(_event("val_MAE", mae, epoch=float(seq), seq=seq))
             if f:
                 frames.append(f)
         assert len(frames) > 0  # was 0 before the canonicalisation fix
+
+    def test_an_unprefixed_raw_primary_metric_also_matches(self) -> None:
+        """The other half of the same agreement: a run logging plain `mae_cm`
+        must not have its primary key invented into the validation split."""
+        eng = StoryEngine(run_id="r", task=TaskType.REGRESSION, primary_metric="mae_cm")
+        assert eng._effective_primary_key() == "MAE"
+        frames = [
+            f
+            for seq, mae in enumerate([9.8, 9.2, 8.9, 8.6, 8.4, 7.9], start=1)
+            if (f := eng.process(_event("MAE", mae, epoch=float(seq), seq=seq)))
+        ]
+        assert len(frames) > 0
 
 
 class TestPrimaryMetricFallback:

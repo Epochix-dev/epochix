@@ -1,2 +1,2 @@
-Optimisation finale. MAE = {value} — le modèle atteint une haute précision.
-Époque {epoch} : MAE {value}. Chaque epoch apporte une amélioration minime mais significative.
+Optimisation finale. {metric} = {value} — le modèle atteint une haute précision.
+Époque {epoch} : {metric} {value}. Chaque epoch apporte une amélioration minime mais significative.

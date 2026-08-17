@@ -16,6 +16,18 @@ const STRONG_PATTERNS: RegExp[] = [
   /\bepoch\b.*\bloss\b/i,                        // generic "epoch … loss"
   /Training epoch/i,
   /Step\s+\d+.*loss=/i,
+  // Gradient boosting — XGBoost, LightGBM, CatBoost. A bracketed round number
+  // followed by a "name:value" pair. Classical ML scored 0.15 here, below the
+  // threshold, so an XGBoost run in the terminal never opened the dashboard
+  // even though the Python side reads these logs fine.
+  /^\s*\[\d+\]\s*\S+[-'\s]?\w*\s*:\s*[\d.]/m,
+  /^\s*\d+:\s*learn:\s*[\d.]/m,                  // CatBoost
+  // A counter and a named metric on the same line — "iter 18 rmse 12.26 r2
+  // 0.99". Structurally the same claim as "epoch … loss", which is already
+  // strong here; it was only regression and iteration-counted loops that had
+  // no way to reach the threshold. Both halves are required, so an "iter 5"
+  // in ordinary build output is not enough.
+  /^\s*(?:iter|iteration|round)\s+\d+\b.*\b(?:loss|rmse|mae|mape|r2|acc|accuracy|auc|f1)\b/im,
 ];
 
 // Supporting signals — need several of these
@@ -28,6 +40,13 @@ const SOFT_PATTERNS: RegExp[] = [
   /mAP|precision|recall/i,
   /perplexity/i,
   /EER|equal.error/i,
+  // Regression, which had no signal here at all: a loop reporting RMSE and R²
+  // scored zero and the dashboard never opened, though the parser reads it.
+  /\b(rmse|mae|mape|r2|r_squared)\s*[=:\s]\s*[-\d.]/i,
+  // An iteration counter, for code with no epochs (sklearn partial_fit loops,
+  // hand-rolled solvers). Weak on its own — "iter 5" appears in plenty of
+  // output — so it still needs two other signals to open anything.
+  /^\s*(iter|iteration|round)\s+\d+\b/im,
 ];
 
 /** Strip ANSI colour codes from terminal output. */

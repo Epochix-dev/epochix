@@ -7,6 +7,86 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.5.96] — 2026-08-14
+
+### Added
+
+- **Classical ML is supported properly** — XGBoost, LightGBM, CatBoost and
+  scikit-learn, not just deep learning.
+
+  A new `boosting` parser reads round-by-round evaluation rows and keeps the
+  **training and validation curves apart**. They used to collapse: the key
+  pattern stopped at the `-` in `validation_0-logloss`, so both eval sets were
+  read as `logloss` and the second was dropped as a duplicate. One curve was
+  charted and called the whole story — while the distance between the two IS
+  the overfitting signal. A real XGBoost run now reports it:
+
+  > Epoch 39: 0.0804, below the best of 0.0781 at epoch 32. The model has
+  > passed its peak — the earlier checkpoint is the better one.
+
+  LightGBM's `valid_0's l2` (apostrophe and space inside the metric name) and
+  CatBoost's `learn:`/`test:` columns are read too, and the boosting round
+  becomes the x-axis.
+
+- **The VS Code extension opens on classical ML.** The detector only knew
+  neural-network shapes, so an XGBoost run scored 0.15 against a 0.45
+  threshold and the dashboard never appeared. Regression had no signal at all.
+
+- **The metric vocabulary covers classical ML**: `logloss`, `mlogloss`,
+  LightGBM's `l1`/`l2`, `merror`, `matthews_corrcoef`, `balanced_accuracy`,
+  `explained_variance` and others. Each of these previously fell through to
+  the shared `custom` bucket, where unrelated metrics are drawn as one series.
+
+### Fixed
+
+- **A hand-written training loop produced no metrics at all.**
+  `epoch 1 loss 0.680 acc 0.535` — no `=`, no `:` — parsed to nothing, because
+  every pattern required a delimiter. The extension's detector scored that
+  same line 0.90 and opened the dashboard, so the most common beginner print
+  format got a dashboard that opened itself and then sat empty.
+
+  Whitespace-separated pairs are now read, but only on a line that opens with
+  a counter and only for names the normalizer recognises: a bare "word number"
+  is also every sentence containing a number, and inventing a metric is worse
+  than missing one.
+
+- **Hyperparameters were charted as results.** `RandomForestClassifier(
+  n_estimators=100, max_depth=8)` put `100` and `8` on the same `custom`
+  series as a real F1 score. The torch version of this was fixed in 0.5.x by
+  listing every torch kwarg by name; scikit-learn, XGBoost and LightGBM each
+  have their own vocabulary, so the *shape* is matched instead — a CamelCase
+  constructor call and its parentheses are configuration, never measurement.
+
+- **Train and test scores were drawn as a trend.** `Train accuracy: 1.0000`
+  and `Test accuracy: 0.9820` were both captured as `accuracy` and charted as
+  a two-point series running 1.0 → 0.982 — a decline the model never had.
+  They measure different data and are now separate series. Likewise
+  `val_rmse`/`val_mae`/`val_r2`, which were stripped to their training form
+  and collapsed into one zig-zagging line.
+
+- **"F1 score: 0.98" was recorded as a metric called `score`**, and joined the
+  custom bucket alongside anything else unnamed.
+
+- **Ordinary regression was relabelled a gaze model.** Any run whose MAE was
+  below 10 got promoted to eye-tracking: a plain Ridge model reporting MAE
+  9.83 was narrated as *"the model sees the face but not the gaze"* with the
+  value printed in **degrees**. The task, the story and the unit were all
+  inferred from one number's magnitude. Gaze now requires a gaze-shaped metric
+  name.
+
+- **The regression story named the wrong metric.** The templates wrote "MAE"
+  into every sentence regardless, so a run graded on RMSE read *"MAE
+  68.0337"* — the number read correctly and then labelled as a metric the run
+  never logged. All 40 regression and gaze templates (en/fa/fr) now name the
+  series the value came from.
+
+- **MAPE graded backwards on the validation split.** `val_mape` contains
+  `map`, a higher-is-better hint, so a run whose percentage error was falling
+  graded F while a worsening one graded A+. Plain `mape` had been pinned for
+  exactly this reason; every split form is now pinned too.
+
+---
+
 ## [0.5.95] — 2026-08-14
 
 ### Fixed

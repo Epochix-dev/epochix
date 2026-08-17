@@ -12,6 +12,7 @@ __all__ = [
 # Eagerly register built-in parsers in priority order
 from epochix.parsers import (  # noqa: E402, F401
     accelerate,
+    boosting,
     fastai,
     huggingface,
     keras_tensorflow,
