@@ -7,6 +7,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.6.0] — 2026-08-17
+
+### Fixed
+
+- **A parameter search now reports the setting it chose.** 0.5.98 stopped
+  charting folds as a trend, but averaged every fold result together — and a
+  `GridSearchCV` runs several *different* candidates. Those are separate
+  populations, so one mean across them describes no configuration the search
+  actually tried, and hides the single thing a search exists to find.
+
+  Fold results are grouped by the parameter set printed on each row, the
+  winning candidate is what reaches the chart, and `epochix check` shows every
+  candidate so the choice is visible rather than asserted:
+
+  ```
+  cross-validation  (4 candidates x 3 folds)
+    score      0.9567   +/- 0.01756    criterion=gini, max_depth=8  <- charted
+    score      0.95     +/- 0.015      criterion=entropy, max_depth=8
+    score      0.94     +/- 0.01732    criterion=gini, max_depth=3
+    score      0.93     +/- 0.005      criterion=entropy, max_depth=3
+  ```
+
+  Handles `GridSearchCV` and `RandomizedSearchCV`, single and multiple varying
+  parameters. `cross_val_score` prints no parameter set and is unaffected —
+  it tries one configuration, so its folds are one population.
+
+- **Multi-metric search rows leaked hyperparameters back in.** With
+  `scoring=["accuracy", "f1"]` scikit-learn names each column
+  (`accuracy: (test=0.923) f1: (test=0.924)`) instead of calling it `score`, so
+  those rows missed the score pattern entirely and fell through to the ordinary
+  `key=value` scan — which took `max_depth` from the parameter set and recorded
+  `test` twice, merging two different metrics under one meaningless key.
+
+---
+
 ## [0.5.99] — 2026-08-17
 
 ### Fixed

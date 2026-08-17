@@ -129,6 +129,29 @@ _CV_SCORE = re.compile(
     re.IGNORECASE,
 )
 
+# Multi-metric search names each column: "accuracy: (test=0.923) f1: (test=0.924)".
+# Without this the row fell through to the ordinary key=value scan, which took
+# `max_depth` from the parameter set and `test` twice — the parameters charted
+# as results, and two different metrics merged under one meaningless key.
+_CV_NAMED_SCORE = re.compile(
+    rf"(\w{{1,32}})\s*:\s*\(\s*(?:test|train)\s*=\s*({_NUM})\s*\)",
+    re.IGNORECASE,
+)
+
+# The candidate a search row belongs to. GridSearchCV and RandomizedSearchCV
+# print the parameter set between "END" and the first ";", dot-padded to a
+# fixed width:
+#     [CV 1/3] END .......criterion=gini, max_depth=3;, score=0.920 total time=
+#     [CV 1/2] END max_depth=3; accuracy: (test=0.923) f1: (test=0.924) total…
+#
+# Folds of DIFFERENT candidates are not one population. Averaging across them
+# answers a question nobody asked: a search exists to find the best setting,
+# and the mean over every setting tried hides exactly that.
+#
+# `cross_val_score` has no candidates and no ";" — it does not match, which is
+# the correct answer for a plain cross-validation.
+_CV_PARAMS = re.compile(r"^\s*\[cv[^\]]*\]\s+END\s+\.*(.*?);", re.IGNORECASE)
+
 _EPOCH_KEYS = frozenset({"epoch", "ep", "e"})
 _STEP_KEYS = frozenset({"step", "iter", "iteration", "batch"})
 # Never charted as metrics. Beyond obvious run metadata these cover the keyword
@@ -327,30 +350,53 @@ class UniversalParser:
 
     def _collect_fold(self, line: str, ctx: ParserContext) -> None:
         """Record one cross-validation fold without emitting it as a point."""
-        folds: dict[str, list[float]] = ctx.extra.setdefault("cv_folds", {})  # type: ignore[assignment]
+        folds = cast("dict[str, list[float]]", ctx.extra.setdefault("cv_folds", {}))
+        readings = self._fold_readings(line)
+        if not readings:
+            return
+
+        for key, value in readings:
+            folds.setdefault(key, []).append(value)
+
+        # Group by candidate when this row belongs to a parameter search.
+        params = _CV_PARAMS.match(line)
+        label = params.group(1).strip().rstrip(",").strip() if params else ""
+        if not label:
+            return
+        candidates = cast(
+            "dict[str, dict[str, list[float]]]", ctx.extra.setdefault("cv_candidates", {})
+        )
+        for key, value in readings:
+            candidates.setdefault(label, {}).setdefault(key, []).append(value)
+
+    def _fold_readings(self, line: str) -> list[tuple[str, float]]:
+        """The measurements on one fold row — never the settings beside them."""
+        named = _CV_NAMED_SCORE.findall(line)
+        if named:
+            out: list[tuple[str, float]] = []
+            for key, raw in named:
+                with contextlib.suppress(ValueError):
+                    out.append((key, float(raw)))
+            return out
 
         score = _CV_SCORE.search(line)
         if score is not None:
-            # A named score wins outright. GridSearchCV prints the candidate's
-            # parameters on the same row ("max_depth=3;, score=0.933"), and
-            # those are settings, not measurements.
             with contextlib.suppress(ValueError):
-                folds.setdefault("score", []).append(float(score.group(1)))
-            return
+                return [("score", float(score.group(1)))]
+            return []
 
         # A hand-written loop names the metric instead: "Fold 1: accuracy = 0.9375".
         for pattern in (_KV_EQ, _KV_COLON):
-            hits = 0
+            hits: list[tuple[str, float]] = []
             for match in pattern.finditer(line):
-                key = match.group(1)
-                key_lo = key.lower()
+                key_lo = match.group(1).lower()
                 if key_lo in _SKIP_KEYS or key_lo in _EPOCH_KEYS or key_lo in _STEP_KEYS:
                     continue
                 with contextlib.suppress(ValueError):
-                    folds.setdefault(key, []).append(float(match.group(2)))
-                    hits += 1
+                    hits.append((match.group(1), float(match.group(2))))
             if hits:
-                return
+                return hits
+        return []
 
     def flush(self, ctx: ParserContext) -> list[RawMetric]:
         """Reduce collected cross-validation folds to one value per metric.
@@ -367,11 +413,28 @@ class UniversalParser:
         # comes back out has to be narrowed explicitly.
         folds = cast("dict[str, list[float]]", ctx.extra.get("cv_folds") or {})
         emitted = cast("set[str]", ctx.extra.get("emitted_keys") or set())
+        candidates = cast("dict[str, dict[str, list[float]]]", ctx.extra.get("cv_candidates") or {})
 
         out: list[RawMetric] = []
-        for key, values in folds.items():
-            if len(values) < 2 or key.lower() in emitted:
+        for key, all_folds in folds.items():
+            # Two readings before anything is called a fold set — one stray
+            # number is not a cross-validation. The count is taken BEFORE
+            # picking a winner: a search may well try a candidate that only got
+            # one fold, and that candidate is still a real measurement.
+            if len(all_folds) < 2 or key.lower() in emitted:
                 continue
+
+            values = all_folds
+            # A parameter search reports the setting it CHOSE, not the average
+            # of every setting it tried — that average describes no candidate
+            # the search actually ran, and it hides the one thing a search
+            # exists to find. scikit-learn scorers are higher-is-better by
+            # construction (losses arrive negated, as neg_mean_squared_error),
+            # so the winner is the highest mean.
+            if len(candidates) > 1:
+                scored = [c[key] for c in candidates.values() if key in c]
+                if scored:
+                    values = max(scored, key=fmean)
             out.append(
                 RawMetric(
                     seq=ctx.seq,
