@@ -22,7 +22,7 @@
   "devDependencies": {
     "@vitest/coverage-v8": "^4.1.10",
     "jsdom": "^30.0.1",
-    "vite": "^8.1.5",
+    "vite": "^8.2.1",
     "vite-plugin-singlefile": "^2.0.2",
     "vitest": "^4.1.10"
   }
