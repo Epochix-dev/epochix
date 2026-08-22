@@ -56,6 +56,12 @@ logger = logging.getLogger(__name__)
 # ------------------------------------------------------------------
 
 
+# Backends nobody has run activation capture on. Not "unsupported" - the code
+# path is identical to the verified ones - but untested is not the same as
+# working, and saying either without evidence would be a guess.
+_UNVERIFIED_BACKENDS = frozenset({"mps", "rocm", "xpu"})
+
+
 def _configure_logging(log_level: str) -> None:
     logging.basicConfig(
         level=getattr(logging, log_level.upper(), logging.INFO),
@@ -971,6 +977,8 @@ def cmd_doctor() -> None:
             state = console_safe(state.replace("\n", " "))[:160]
         lines.append(f"extra {extra:<10} {state}")
 
+    lines.extend(_accelerator_report())
+
     # The dashboard is vendored into the wheel at release time. When it is
     # absent every HTML export and the whole web UI 501s, which reads like a
     # server fault and is not one.
@@ -993,6 +1001,79 @@ def cmd_doctor() -> None:
     lines.append("If a number or a sentence looks WRONG rather than broken, say so -")
     lines.append("that is the kind of bug this project most wants to hear about.")
     typer.echo("\n".join(lines))
+
+
+def _accelerator_report() -> list[str]:
+    """Which accelerator is active, and does activation capture work on it?
+
+    Activation capture uses PyTorch/Keras forward hooks. Those are part of the
+    framework, not a vendor API, so nothing in it is CUDA-specific and there is
+    no device gating anywhere in the SDK. It should therefore work on Apple MPS
+    and AMD ROCm exactly as it does on CUDA.
+
+    "Should" is the problem. Nobody has run it on those backends, and an
+    untested path is not a supported one. Rather than guess in either
+    direction, this runs the real capturer on a two-layer model on whatever
+    device is actually present and reports what came back. On an unverified
+    backend it also asks for the result, because that report is the only thing
+    standing between "should work" and "known to work".
+    """
+    out: list[str] = []
+    try:
+        import torch
+    except ImportError:
+        out.append("accelerator    n/a (PyTorch not installed)")
+        return out
+    except Exception as exc:  # noqa: BLE001
+        out.append(f"accelerator    ERROR importing torch: {type(exc).__name__}: {exc}")
+        return out
+
+    backend = "cpu"
+    detail = ""
+    try:
+        if torch.cuda.is_available() and torch.cuda.device_count():
+            # ROCm builds report themselves through the cuda namespace, so the
+            # version string is what tells the two apart.
+            backend = "rocm" if getattr(torch.version, "hip", None) else "cuda"
+            detail = torch.cuda.get_device_name(0)
+        elif getattr(torch.backends, "mps", None) is not None and torch.backends.mps.is_available():
+            backend = "mps"
+            detail = "Apple Silicon"
+        elif getattr(torch, "xpu", None) is not None and torch.xpu.is_available():
+            backend = "xpu"
+            detail = "Intel"
+    except Exception as exc:  # noqa: BLE001 - detection must never be the fault
+        detail = f"(detection failed: {type(exc).__name__})"
+
+    out.append(f"torch          {torch.__version__}")
+    out.append(f"accelerator    {backend}{'  ' + detail if detail else ''}")
+
+    try:
+        from epochix.sdk.activations import ActivationCapturer
+
+        model = torch.nn.Sequential(torch.nn.Linear(8, 8), torch.nn.ReLU(), torch.nn.Linear(8, 2))
+        device = torch.device(backend if backend in {"cuda", "mps", "xpu"} else "cpu")
+        model.to(device)
+        cap = ActivationCapturer(model, hz=1000.0, gradients=True)
+        model(torch.randn(4, 8, device=device)).pow(2).mean().backward()
+        captured = sum(1 for v in cap.snapshot().values() if v.get("mag", 0.0) > 0.0)
+        cap.remove()
+    except Exception as exc:  # noqa: BLE001
+        out.append(f"activations    ERROR {type(exc).__name__}: {console_safe(str(exc))[:100]}")
+        captured = -1
+
+    if captured > 0:
+        out.append(f"activations    working ({captured} of 2 layers captured)")
+    elif captured == 0:
+        out.append("activations    NO LAYERS CAPTURED - the Network panel will not animate")
+
+    if backend in _UNVERIFIED_BACKENDS:
+        # Unconditional, including after an error. Gating this on success hid
+        # the invitation in exactly the case worth hearing about: capture
+        # failing on a backend nobody has tried.
+        out.append(f"               {backend} is not verified by us - please report the line above")
+
+    return out
 
 
 @app.command("config")
