@@ -229,6 +229,33 @@ Full detail: **[Coming from W&B / TensorBoard](https://epochix.dev/existing-runs
 
 ---
 
+## Hardware — and a gap you can help close
+
+Nothing in epochix talks to a GPU vendor API. Reading a log needs no
+accelerator at all, and **live activation capture** — the per-layer activity in
+the Network State panel — uses PyTorch and Keras *forward hooks*, which are
+framework APIs, not CUDA ones. There is no device check anywhere in the SDK.
+
+So it should work the same on Apple Silicon (MPS) and AMD (ROCm) as it does on
+NVIDIA. "Should" is doing real work in that sentence: we have run it on **CUDA
+and CPU** and nowhere else, and an untested path is not a supported one.
+
+`epochix doctor` runs the real capturer on whatever device you have and prints
+what came back:
+
+```
+torch          2.11.0+cu128
+accelerator    cuda  NVIDIA GeForce RTX 5080 Laptop GPU
+activations    working (2 of 2 layers captured)
+```
+
+**If you are on an M-series Mac or an AMD card, that output is the single most
+useful thing you can send us** — working or broken, it settles the question.
+Paste it into an issue:
+<https://github.com/Epochix-dev/epochix/issues/new>
+
+---
+
 ## Security & deployment
 
 epochix is **secure-by-default**:

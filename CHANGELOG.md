@@ -7,6 +7,39 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.6.1] — 2026-08-20
+
+### Added
+
+- **`epochix doctor` now reports the accelerator, and proves what it says.** It
+  runs the real activation capturer on a two-layer model on whatever device is
+  actually present, and prints the result:
+
+  ```
+  torch          2.11.0+cu128
+  accelerator    cuda  NVIDIA GeForce RTX 5080 Laptop GPU
+  activations    working (2 of 2 layers captured)
+  ```
+
+  On a backend nobody has verified — Apple MPS, AMD ROCm, Intel XPU — it also
+  asks for that line to be reported, including when capture *fails*, which is
+  the case most worth hearing about.
+
+### Changed
+
+- **Corrected an internal belief that activation capture is NVIDIA-only.** It
+  is not. Capture uses PyTorch and Keras *forward hooks* — framework APIs, not
+  CUDA ones — and there is no device gating anywhere in the SDK; a search of
+  the entire source finds no reference to NVIDIA, NVML, CUDA, ROCm or Metal.
+  Verified by running the capturer with every accelerator hidden: it returned
+  real per-layer magnitudes, gradients and dead fractions on CPU.
+
+  So MPS and ROCm should behave exactly as CUDA does. "Should" is the honest
+  word — the path has been run on CUDA and CPU and nowhere else, and untested
+  is not the same as working. The README now says precisely that, rather than
+  claiming a limitation that does not exist or a support level nobody has
+  checked.
+
 ## [0.6.0] — 2026-08-17
 
 ### Fixed
