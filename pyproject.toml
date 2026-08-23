@@ -202,7 +202,7 @@ warn_unused_configs = true
 # `type: ignore[import-not-found]` it used to carry became "unused". One
 # override is correct in both environments; an inline ignore is correct in
 # only one of them.
-module = ["lightning.*", "pytorch_lightning.*", "transformers.*", "PIL.*", "tensorboard.*", "wandb.*"]
+module = ["lightning.*", "pytorch_lightning.*", "transformers.*", "PIL.*", "tensorboard.*", "wandb.*", "torch.*"]
 ignore_missing_imports = true
 
 # IPython.display.display/IFrame are untyped, so calling them from strict code

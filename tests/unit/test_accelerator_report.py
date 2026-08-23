@@ -79,9 +79,7 @@ class TestOnAnUnverifiedBackend:
         assert "not verified by us" in out
         assert "please report" in out
 
-    def test_it_is_requested_even_when_capture_fails(
-        self, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
+    def test_it_is_requested_even_when_capture_fails(self, monkeypatch: pytest.MonkeyPatch) -> None:
         """On this machine `.to("mps")` raises, which is the failure case.
 
         Gating the invitation on success hid it in exactly the situation worth
