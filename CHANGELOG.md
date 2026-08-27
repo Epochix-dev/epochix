@@ -7,6 +7,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.6.2] — 2026-08-27
+
+### Fixed
+
+- **Every parser was registered twice.** A published install reported **16
+  parsers for the 8 that exist**, and format detection sniffed each one twice
+  on every run.
+
+  Built-ins are registered eagerly, when `epochix.parsers` imports each module
+  and its `@register_parser` decorator runs — and then again by the entry-point
+  loader, where those same built-ins are declared. The guard against that,
+  `if instance not in _registry`, compared a freshly constructed object against
+  the list; parsers define no `__eq__`, so it was an identity check against a
+  brand-new object and could never match.
+
+  Dedup is by class now, which still admits a third-party plugin that was never
+  eagerly imported. Parsing results were never wrong — the best sniff score won
+  either way — but `get_registry()` is public API and it was lying about its
+  own contents.
+
+### Changed
+
+- README corrections found while auditing its claims against the code:
+  **Segmentation** was missing from the task-type list (it is fully supported —
+  grade bands, templates, task signals, canonical keys), so the count read 7
+  where it is 8; and the Exports row omitted **animated GIF** while the Install
+  section two screens above lists it.
+- Two changelog dates were wrong: 0.6.1 was dated the 20th and shipped on the
+  22nd, 0.5.96 was dated the 14th and shipped on the 17th. Every entry has now
+  been checked against its tag.
+
 ## [0.6.1] — 2026-08-22
 
 ### Added
