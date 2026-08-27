@@ -181,11 +181,11 @@ trainer = pl.Trainer(callbacks=[StoryCallback()])
 | | |
 |---|---|
 | **8 log parsers** | PyTorch Lightning · Keras/TF · HuggingFace · YOLO · FastAI · Accelerate · **Gradient boosting** (XGBoost/LightGBM/CatBoost) · Universal — plus an opt-in **LLM fallback** (Ollama/OpenAI) for formats none of them recognise |
-| **7 task types** | Classification · Detection · Regression · Biometric · Gaze · NLP · Generative |
+| **8 task types** | Classification · Detection · **Segmentation** · Regression · Biometric · Gaze · NLP · Generative |
 | **5 training phases** | Awakening → Learning → Understanding → Mastering → Polishing |
 | **11 letter grades** | A+ through F, task-specific thresholds, configurable via `.epochix.yaml` |
 | **Live streaming** | WebSocket + SSE with ring-buffer replay on reconnect |
-| **Exports** | JSON · Markdown · HTML (self-contained < 2 MB) · PDF |
+| **Exports** | JSON · Markdown · HTML (self-contained < 2 MB) · PDF · animated GIF |
 | **i18n** | English · Farsi (RTL) · French — UI *and* story narratives |
 | **VS Code** | Activity-bar panel · one-click demo · terminal auto-detect · run compare · `Ctrl+Alt+M` |
 | **Integrations** | PyTorch Lightning · HuggingFace · Keras · Jupyter magics · TensorBoard · W&B |

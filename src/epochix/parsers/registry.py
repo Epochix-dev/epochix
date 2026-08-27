@@ -36,9 +36,16 @@ def _load_plugins() -> None:
     for ep in eps:
         try:
             cls = ep.load()
-            instance = cls()
-            if instance not in _registry:
-                _registry.append(instance)
+            # Compare CLASSES, not instances. Every built-in parser is also
+            # declared as an entry point, so this loop re-loads the same class
+            # the eager imports already registered — and `instance not in
+            # _registry` asks whether a freshly built object equals one of the
+            # existing ones. Parsers define no __eq__, so that is an identity
+            # check against a brand-new object: never true. Every parser was
+            # registered twice, so detection sniffed each one twice per run and
+            # get_registry() reported 16 parsers where there are 8.
+            if not any(type(existing) is cls for existing in _registry):
+                _registry.append(cls())
         except Exception as exc:  # noqa: BLE001
             logger.warning("Failed to load parser plugin %r: %s", ep.name, exc)
     _registry.sort(key=lambda p: -p.priority)
