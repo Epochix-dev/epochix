@@ -16,6 +16,7 @@ grade, one page per training phase, milestones, and a final-metrics appendix.
 
 from __future__ import annotations
 
+from itertools import pairwise
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
@@ -81,6 +82,186 @@ def _ascii(value: object) -> str:
     return transliterate(str(value)).encode("latin-1", "replace").decode("latin-1")
 
 
+# Series colours, in the order they are assigned. Training and validation of
+# the same family sit next to each other so a reader can tell the pair apart at
+# a glance without reading the legend.
+_SERIES_RGB: tuple[tuple[int, int, int], ...] = (
+    (86, 156, 214),  # blue   - first series (usually train)
+    (214, 108, 46),  # orange - second series (usually validation)
+    (34, 160, 96),  # green
+    (146, 108, 214),  # purple
+)
+
+_GRID = (232, 236, 245)
+
+# Which canonical keys belong on which chart. A loss and an accuracy share no
+# scale, so drawing them on one axis would make the smaller one a flat line
+# along the bottom and imply it never moved.
+_LOSS_KEYS = ("train_loss", "val_loss", "log_loss", "val_log_loss", "MSE", "val_MSE")
+_QUALITY_KEYS = (
+    "accuracy",
+    "val_accuracy",
+    "f1",
+    "val_f1",
+    "AUC",
+    "val_AUC",
+    "mAP",
+    "mAP50",
+    "IoU",
+    "mIoU",
+    "Dice",
+    "R2",
+    "val_R2",
+)
+_ERROR_KEYS = ("MAE", "val_MAE", "RMSE", "val_RMSE", "MAPE", "val_MAPE")
+
+
+def _series(
+    events: Sequence[MetricEvent], keys: Sequence[str]
+) -> list[tuple[str, list[tuple[float, float]]]]:
+    """Collect (label, [(x, y)]) for the requested keys, in the given order.
+
+    The x axis is the epoch when the run has one and the event index when it
+    does not — a boosting round or a bare `iter` counter is still a real
+    ordering, whereas inventing epoch numbers would not be.
+    """
+    grouped: dict[str, list[tuple[float, float]]] = {}
+    for i, event in enumerate(events):
+        if event.value is None or event.canonical_key not in keys:
+            continue
+        x = event.epoch if event.epoch is not None else float(i)
+        grouped.setdefault(event.canonical_key, []).append((x, float(event.value)))
+    out: list[tuple[str, list[tuple[float, float]]]] = []
+    for key in keys:
+        points = grouped.get(key)
+        if points:
+            out.append((key, sorted(points)))
+    return out
+
+
+def _line_chart(
+    doc: Any,  # noqa: ANN401
+    x: float,
+    y: float,
+    w: float,
+    h: float,
+    series: list[tuple[str, list[tuple[float, float]]]],
+    title: str,
+) -> None:
+    """Draw one line chart. Nothing is drawn for an empty or flat-x series.
+
+    The whole point of this product is the shape of a curve, and the PDF had
+    none: a 20-epoch run exported five pages of four text lines each and not a
+    single graphic. Every number needed was already loaded.
+    """
+    if not series:
+        return
+
+    xs = [px for _, pts in series for px, _ in pts]
+    ys = [py for _, pts in series for _, py in pts]
+    if not xs or not ys:
+        return
+    x_lo, x_hi = min(xs), max(xs)
+    y_lo, y_hi = min(ys), max(ys)
+    if y_hi - y_lo < 1e-12:
+        # A perfectly flat series still deserves to be shown, but a zero-height
+        # span would divide by zero and put the line at an arbitrary height.
+        y_lo, y_hi = y_lo - 1.0, y_hi + 1.0
+    x_span = (x_hi - x_lo) or 1.0
+    y_span = y_hi - y_lo
+
+    _text(doc, 11, _INK, "B")
+    doc.set_xy(x, y)
+    doc.cell(w, 6, _ascii(title))
+
+    top = y + 8.0
+    plot_h = h - 8.0
+
+    def px(vx: float) -> float:
+        return x + (vx - x_lo) / x_span * w
+
+    def py(vy: float) -> float:
+        return top + plot_h - (vy - y_lo) / y_span * plot_h
+
+    # Gridlines with their real values, so the axis is readable rather than
+    # decorative.
+    doc.set_line_width(0.15)
+    _text(doc, 7, _MUTED)
+    for i in range(4):
+        gy = top + plot_h * i / 3.0
+        doc.set_draw_color(*_GRID)
+        doc.line(x, gy, x + w, gy)
+        doc.set_xy(x + w + 1.0, gy - 2.0)
+        doc.cell(16, 4, _ascii(f"{y_hi - y_span * i / 3.0:.4g}"))
+
+    for index, (label, points) in enumerate(series):
+        colour = _SERIES_RGB[index % len(_SERIES_RGB)]
+        doc.set_draw_color(*colour)
+        doc.set_line_width(0.6)
+        if len(points) == 1:
+            # One reading is a point, not a line. Drawing a segment would
+            # invent a trend the run never had.
+            only_x, only_y = points[0]
+            doc.set_fill_color(*colour)
+            doc.circle(px(only_x) - 0.8, py(only_y) - 0.8, 1.6, style="F")
+        else:
+            for (ax, ay), (bx, by) in pairwise(points):
+                doc.line(px(ax), py(ay), px(bx), py(by))
+
+        # Legend swatch, on the line's own colour.
+        lx = x + index * 42.0
+        ly = top + plot_h + 4.0
+        doc.set_line_width(1.2)
+        doc.line(lx, ly + 1.5, lx + 5.0, ly + 1.5)
+        _text(doc, 8, _MUTED)
+        doc.set_xy(lx + 6.5, ly - 0.5)
+        doc.cell(34, 4, _ascii(label))
+
+    # x axis extent, so "epoch 1 to 20" is stated rather than assumed.
+    _text(doc, 7, _MUTED)
+    doc.set_xy(x, top + plot_h + 0.5)
+    doc.cell(20, 4, _ascii(f"{x_lo:g}"))
+    doc.set_xy(x + w - 20.0, top + plot_h + 0.5)
+    doc.cell(20, 4, _ascii(f"{x_hi:g}"), align="R")
+    doc.set_line_width(0.2)
+
+
+def _charts_page(doc: Any, events: Sequence[MetricEvent]) -> None:  # noqa: ANN401
+    """A page of curves — the thing a training report exists to show."""
+    panels = [
+        ("Loss", _series(events, _LOSS_KEYS)),
+        ("Quality", _series(events, _QUALITY_KEYS)),
+        ("Error", _series(events, _ERROR_KEYS)),
+    ]
+    panels = [(t, s) for t, s in panels if s]
+    if not panels:
+        return
+
+    doc.add_page()
+    _text(doc, 22, _INK, "B")
+    doc.cell(0, 12, "How the run moved", new_x="LMARGIN", new_y="NEXT")
+
+    # Two panels per row, and the row height grows when there is only one row.
+    # Fixed-height panels left two thirds of a landscape page blank, which is
+    # the emptiness this whole change is about.
+    # A single panel spans the width rather than sitting in a half-empty page;
+    # a boosting run logs only a loss and was leaving the right half blank.
+    per_row = 1 if len(panels) == 1 else 2
+    chart_w = (_W - _MARGIN * 2 - 26.0) / per_row
+    chart_h = 128.0 if len(panels) <= 2 else 62.0
+    for i, (title, series) in enumerate(panels):
+        col, row = i % per_row, i // per_row
+        _line_chart(
+            doc,
+            _MARGIN + col * (chart_w + 20.0),
+            32.0 + row * (chart_h + 18.0),
+            chart_w,
+            chart_h,
+            series,
+            title,
+        )
+
+
 def render_pdf(
     run: Run,
     frames: Sequence[StoryFrame],
@@ -115,6 +296,8 @@ def render_pdf(
         doc.set_x(_MARGIN * 2)
         _text(doc, 13, _INK)
         doc.multi_cell(_W - _MARGIN * 4, 7, _ascii(run.story_summary), align="C")
+
+    _charts_page(doc, events)
 
     # ── One page per phase, in the order the run moved through them ──────
     seen: set[str] = set()

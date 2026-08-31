@@ -7,6 +7,39 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.6.3] — 2026-08-31
+
+### Added
+
+- **The PDF export draws the curves.** A 20-epoch run used to export five pages
+  carrying four lines of text each and not one graphic — roughly 85% of every
+  landscape page blank — while 44 metric events across four series sat unused
+  in the store. For a product whose claim is that the *shape* of a run is the
+  story, a report with no shape in it was the wrong artifact.
+
+  There is now a **How the run moved** page: a loss panel, a quality panel and
+  an error panel, each with real axis values, gridlines and a legend. Loss and
+  accuracy are kept on separate axes — they share no scale, and putting them
+  together flattens one against the axis and implies it never moved.
+
+  On a gradient-boosting run this is the first time the train/validation gap is
+  visible rather than described: training log-loss falls to 0.011 while
+  validation flattens near 0.08, on one chart.
+
+  Drawn with fpdf2's own line primitives, so it costs no new dependency. Runs
+  with no epochs (boosting rounds, bare `iter` counters) chart against their
+  real ordering; a single reading is drawn as a point rather than a segment,
+  because one measurement cannot describe a direction; a run with nothing
+  chartable gets no chart page at all.
+
+### Changed
+
+- Added **ROADMAP.md**, recording the rest of the PDF work, the dashboard's
+  single-screen layout constraint (`document.scrollHeight === innerHeight`,
+  measured live), three visualisation modules that appear unreachable, and the
+  feature ideas worth weighing — each with what is wrong and how it was
+  measured.
+
 ## [0.6.2] — 2026-08-27
 
 ### Fixed
