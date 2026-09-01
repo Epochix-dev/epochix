@@ -7,7 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [0.7.0] — 2026-09-01
+## [0.7.1] — 2026-09-01
+
+**0.7.0 shipped with a broken `epochix demo`.** Upgrade past it.
 
 ### Fixed
 
@@ -27,6 +29,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - The published-prose scanner did not cover **ROADMAP.md**, which renders on
   GitHub like every other file it does check.
+
+- **`epochix demo` failed the same way when called as a function.** Fixing the
+  call site was not enough: the e2e suite invokes `cmd_demo()` directly, so
+  `demo`'s *own* `locale` parameter was an `OptionInfo` too. Typer fills
+  defaults at invocation, so any command called as a plain function gets
+  descriptors for everything omitted. Both commands now unwrap them.
+
+## [0.7.0] — 2026-09-01
 
 ### Added
 
