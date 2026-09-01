@@ -7,6 +7,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.6.6] — 2026-09-01
+
+### Fixed
+
+- **A non-Latin run name no longer renders as `??????`.** fpdf2's core fonts
+  are Latin-1, so a Farsi or Japanese title came out as replacement characters
+  — which reads as corruption rather than a limitation. The cover now keeps
+  whatever survives (`آزمایش mixed 実験` keeps `mixed`, `café résumé` keeps
+  itself) and falls back to the run id when nothing legible does, because a
+  real identifier beats a row of question marks.
+
+- **The true name now travels in the PDF metadata.** It is UTF-16 and needs no
+  embedded font, so the viewer's title bar and the file properties show
+  `آزمایش 実験 café` correctly whatever the page itself can draw. Costs nothing.
+
+- **Truncating a long name crashed the export.** The truncation marker was
+  `U+2026`, which is outside Latin-1, so fpdf2 raised
+  `FPDFUnicodeEncodingException` on every name over 56 characters — a crash
+  introduced by the truncation added one release earlier. ASCII dots now.
+
+### Changed
+
+- Recorded the **Unicode font decision** in ROADMAP.md rather than leaving it
+  open: embedding is rejected for now on measured grounds — DejaVuSans does not
+  cover Arabic and so would not help the locale this project ships, Farsi also
+  needs `uharfbuzz` for shaping (a new runtime dependency against the
+  one-installer promise), and CJK is ~10 MB against a 3.2 MB dependency.
+- Added an **Internationalisation** audit to ROADMAP.md: narratives are
+  complete (54/54 template groups in en/fa/fr) and the dashboard UI is complete
+  (60/60 keys), but **no exporter takes a locale**, so every report heading is
+  hardcoded English regardless of the run's language.
+
 ## [0.6.5] — 2026-09-01
 
 ### Fixed

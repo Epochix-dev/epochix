@@ -150,10 +150,48 @@ def test_latin1_accents_survive_but_other_scripts_do_not(tmp_path: Path) -> None
     run_id, store = _store(tmp_path / "farsi", name="آزمایش")
     rendered = " ".join(_text_runs(build_pdf(run_id=run_id, store=store)))
     assert "آزمایش" not in rendered
-    assert "?" in rendered
+    # It used to render as "??????". The page now falls back to the run id
+    # rather than printing replacement characters, and the real name travels
+    # in the document metadata instead — see the metadata test below.
+    assert "?" not in rendered
+    assert run_id in rendered
 
 
 def test_an_unknown_run_is_refused(tmp_path: Path) -> None:
     _, store = _store(tmp_path, name="plain run")
     with pytest.raises(ValueError, match="not found"):
         build_pdf(run_id="does-not-exist", store=store)
+
+
+def _meta_title(pdf: bytes) -> str:
+    import io
+
+    import pypdfium2 as pdfium
+
+    return pdfium.PdfDocument(io.BytesIO(pdf)).get_metadata_value("Title") or ""
+
+
+def test_an_unrenderable_name_does_not_become_question_marks(tmp_path: Path) -> None:
+    """A Farsi title used to render as "??????" — corruption, not a limitation.
+
+    Whatever survives Latin-1 is kept; when nothing legible does, the run id is
+    used, because a real identifier beats a row of replacement characters.
+    """
+    run_id, store = _store(tmp_path / "mixed", name="آزمایش mixed 実験")
+    assert "mixed" in " ".join(_text_runs(build_pdf(run_id=run_id, store=store)))
+
+    run_id, store = _store(tmp_path / "farsi", name="آزمایش")
+    rendered = " ".join(_text_runs(build_pdf(run_id=run_id, store=store)))
+    assert "?" not in rendered
+    assert run_id in rendered
+
+
+def test_the_real_name_survives_in_the_metadata(tmp_path: Path) -> None:
+    """PDF metadata is UTF-16 and needs no embedded font, so the true name
+    reaches the viewer's title bar whatever the page can draw."""
+    pytest.importorskip("pypdfium2")
+    # Subdirectories are numbered, not named after the run: a Windows path
+    # segment cannot end in a space and "plain ascii"[:6] does.
+    for i, name in enumerate(("آزمایش 実験 café", "café résumé", "plain ascii")):
+        run_id, store = _store(tmp_path / f"run{i}", name=name)
+        assert _meta_title(build_pdf(run_id=run_id, store=store)) == name

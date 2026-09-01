@@ -405,6 +405,32 @@ def _epoch_table(doc: Any, frames: Sequence[StoryFrame], run: Run) -> None:  # n
         )
 
 
+def _display_title(run: Run) -> str:
+    """A cover title that is readable, even when the name is not renderable.
+
+    fpdf2's core fonts are Latin-1, so a Farsi or CJK name comes back from
+    `_ascii` as a row of question marks: "??????" told a reader nothing and
+    looked like corruption rather than a limitation. Whatever survives is kept
+    ("آزمایش mixed 実験" keeps "mixed", "café" keeps itself); when nothing
+    legible survives the run id is used, which is at least a real identifier.
+
+    The untouched name still reaches the document metadata, which is UTF-16 and
+    needs no font — so the viewer's title bar and the file properties show it
+    correctly whatever the page can draw.
+    """
+    name = run.name or run.id
+    rendered = _ascii(name).replace("?", " ").strip()
+    rendered = " ".join(rendered.split())
+    if sum(ch.isalnum() for ch in rendered) < 2:
+        return run.id
+    if len(rendered) > 56:
+        # ASCII dots, not U+2026. This function exists to hand the core fonts
+        # something they can encode, and an ellipsis is outside Latin-1 — it
+        # raised FPDFUnicodeEncodingException on every over-long name.
+        rendered = rendered[:53] + "..."
+    return rendered
+
+
 def render_pdf(
     run: Run,
     frames: Sequence[StoryFrame],
@@ -412,6 +438,10 @@ def render_pdf(
 ) -> bytes:
     """The run as a PDF: cover, one page per phase, milestones, metrics."""
     doc = _pdf()
+    # PDF metadata is UTF-16 and needs no embedded font, so the true name
+    # survives here even when the page can only draw Latin-1.
+    doc.set_title(run.name or run.id)
+    doc.set_subject(f"epochix training report - {run.task_type.value if run.task_type else 'run'}")
 
     grade = run.final_grade.value if run.final_grade else "—"
     grade_rgb = _GRADE_RGB.get(grade, (122, 132, 160))
@@ -422,12 +452,7 @@ def render_pdf(
     _text(doc, 72, grade_rgb, "B")
     doc.cell(0, 26, _ascii(grade), align="C", new_x="LMARGIN", new_y="NEXT")
     _text(doc, 26, _INK, "B")
-    # Truncated: a 120-character name ran off both edges of the page. The
-    # cover is a title, not the place to reproduce an arbitrary string.
-    title = run.name or run.id
-    if len(title) > 56:
-        title = title[:55] + "…"
-    doc.cell(0, 14, _ascii(title), align="C", new_x="LMARGIN", new_y="NEXT")
+    doc.cell(0, 14, _display_title(run), align="C", new_x="LMARGIN", new_y="NEXT")
     _text(doc, 13, _MUTED)
     task = run.task_type.value if run.task_type else "custom"
     when = run.finished_at.strftime("%Y-%m-%d") if run.finished_at else ""

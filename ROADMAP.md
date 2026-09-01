@@ -37,19 +37,45 @@ Still open:
   engine computes them for every frame and the dashboard shows them.
 - **Phase pages are still four lines each.** With the epoch table carrying the
   numbers, these pages should either say more about the phase or go away.
-- **A non-Latin run name becomes `??????` on the cover.** fpdf2's core fonts
-  are Latin-1, so `_ascii()` transliterates and then replaces whatever is left:
-  a Farsi or Japanese run name renders as question marks. `café` survives,
-  `آزمایش 実験` does not. This is a deliberate tradeoff (losing a glyph beats
-  losing the document) but the project ships a Farsi UI, so a title of
-  `??????` is worse than useless. The fix is embedding a Unicode font —
-  DejaVuSans is ~700 KB against a 3.2 MB dependency — which is a size decision
-  worth making openly rather than sneaking in.
+- **Non-Latin text still cannot be drawn on the page — decided, not open.**
+  fpdf2's core fonts are Latin-1. Embedding a Unicode font was considered and
+  rejected for now, on measured grounds: DejaVuSans does not cover Arabic, so
+  it would not help the locale this project actually ships; Farsi additionally
+  needs `uharfbuzz` for contextual shaping, a new runtime dependency that
+  contradicts the one-installer promise; and CJK coverage is ~10 MB against a
+  3.2 MB dependency. Half-doing it (Latin Extended + Cyrillic) fixes languages
+  we do not ship and not the one we do.
+
+  Mitigated instead, at no cost: the real name travels in the PDF metadata
+  (UTF-16, no font needed) so viewers and file properties show it correctly,
+  and the cover keeps whatever survives Latin-1 rather than printing
+  `??????` — falling back to the run id when nothing legible does.
+
+  Revisit if someone asks for it, or if a Farsi-covering font under a
+  permissive licence can be subset small enough to carry.
+
 - **A GridSearchCV run charts nothing.** Its score canonicalises to `custom`,
   which is in none of the chart key groups, so the one number the search
   produced never reaches a curve.
 - **No architecture section.** `parse_architecture` reads the model summary out
   of the log and the Network panel draws it; the PDF ignores it entirely.
+
+## Internationalisation
+
+Audited: **narratives are complete** — all 54 template groups exist in English,
+Farsi and French — and the **dashboard UI is complete**, 60 of 60 keys in all
+three (the five French strings identical to English are words French shares:
+Phase, Classification, Diagnostics, Distributions).
+
+The gap is exports:
+
+- **No exporter takes a locale.** `build_pdf`, `build_markdown`, `build_html`
+  and `build_json_payload` all take `(run_id, store)` and nothing else, so
+  every heading a report prints — "Final metrics", "Every epoch", "How the run
+  moved" — is hardcoded English. A Farsi run's stored narratives come out in
+  Farsi while the structure around them stays English.
+- **The PDF cannot draw non-Latin script at all** (see above), so a Farsi
+  report is doubly affected: English headings around unrenderable body text.
 
 ## Dashboard
 
