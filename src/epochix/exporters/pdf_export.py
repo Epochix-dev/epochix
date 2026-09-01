@@ -90,7 +90,9 @@ def build_pdf(run_id: str, store: RunStore) -> bytes:
     frames = store.get_story_frames(run_id)
     events = store.get_metric_events(run_id)
 
-    return render_pdf(run, frames, events)
+    # The language the run was narrated in, recorded at creation.
+    locale = str(run.config.get("locale", "en")) if run.config else "en"
+    return render_pdf(run, frames, events, locale)
 
 
 # ── HTML builder ─────────────────────────────────────────────────────────────

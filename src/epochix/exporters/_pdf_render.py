@@ -19,6 +19,7 @@ from __future__ import annotations
 from itertools import pairwise
 from typing import TYPE_CHECKING, Any
 
+from epochix.i18n import t
 from epochix.story_engine.grade import metric_lower_better
 
 if TYPE_CHECKING:
@@ -228,12 +229,16 @@ def _line_chart(
     doc.set_line_width(0.2)
 
 
-def _charts_page(doc: Any, events: Sequence[MetricEvent]) -> None:  # noqa: ANN401
+def _charts_page(
+    doc: Any,  # noqa: ANN401
+    events: Sequence[MetricEvent],
+    locale: str = "en",
+) -> None:
     """A page of curves — the thing a training report exists to show."""
     panels = [
-        ("Loss", _series(events, _LOSS_KEYS)),
-        ("Quality", _series(events, _QUALITY_KEYS)),
-        ("Error", _series(events, _ERROR_KEYS)),
+        (t("pdf.chart.loss", locale), _series(events, _LOSS_KEYS)),
+        (t("pdf.chart.quality", locale), _series(events, _QUALITY_KEYS)),
+        (t("pdf.chart.error", locale), _series(events, _ERROR_KEYS)),
     ]
     panels = [(t, s) for t, s in panels if s]
     if not panels:
@@ -241,7 +246,7 @@ def _charts_page(doc: Any, events: Sequence[MetricEvent]) -> None:  # noqa: ANN4
 
     doc.add_page()
     _text(doc, 22, _INK, "B")
-    doc.cell(0, 12, "How the run moved", new_x="LMARGIN", new_y="NEXT")
+    doc.cell(0, 12, _ascii(t("pdf.charts", locale)), new_x="LMARGIN", new_y="NEXT")
 
     # Two panels per row, and the row height grows when there is only one row.
     # Fixed-height panels left two thirds of a landscape page blank, which is
@@ -285,6 +290,7 @@ def _cover_facts(
     run: Run,
     frames: Sequence[StoryFrame],
     events: Sequence[MetricEvent],
+    locale: str = "en",
 ) -> None:
     """The evidence behind the grade, on the page that states it.
 
@@ -300,10 +306,10 @@ def _cover_facts(
     rows: list[tuple[str, str]] = []
 
     if final is not None:
-        rows.append((f"final {metric}", _fmt(final.primary_metric_value)))
+        rows.append((f"{t('cover.final', locale)} {metric}", _fmt(final.primary_metric_value)))
     if best is not None and final is not None:
-        at = f" (epoch {best.epoch:g})" if best.epoch is not None else ""
-        rows.append((f"best {metric}", _fmt(best.primary_metric_value) + at))
+        at = f" ({t('cover.epoch_n', locale)} {best.epoch:g})" if best.epoch is not None else ""
+        rows.append((f"{t('cover.best', locale)} {metric}", _fmt(best.primary_metric_value) + at))
         # The gap between best and final is the "should I have stopped
         # earlier?" answer, and it was nowhere in the document.
         if best.epoch is not None and final.epoch is not None and best.epoch != final.epoch:
@@ -314,9 +320,9 @@ def _cover_facts(
             worse = (drift > 0) if lower_better else (drift < 0)
             rows.append(("since best", f"{_fmt(abs(drift))} {'worse' if worse else 'better'}"))
     if epochs:
-        rows.append(("epochs", f"{epochs[0]:g} to {epochs[-1]:g} ({len(epochs)})"))
+        rows.append((t("cover.epochs", locale), f"{epochs[0]:g} - {epochs[-1]:g} ({len(epochs)})"))
     if run.parser_used:
-        rows.append(("read by", run.parser_used))
+        rows.append((t("cover.read_by", locale), run.parser_used))
 
     if not rows:
         return
@@ -332,7 +338,12 @@ def _cover_facts(
         doc.cell(54, 6, _ascii(value), new_x="LMARGIN", new_y="NEXT")
 
 
-def _epoch_table(doc: Any, frames: Sequence[StoryFrame], run: Run) -> None:  # noqa: ANN401
+def _epoch_table(
+    doc: Any,  # noqa: ANN401
+    frames: Sequence[StoryFrame],
+    run: Run,
+    locale: str = "en",
+) -> None:
     """Every epoch, not only the three that changed phase.
 
     One page per phase rendered 3 pages for an 11-frame run: eight readings
@@ -347,10 +358,10 @@ def _epoch_table(doc: Any, frames: Sequence[StoryFrame], run: Run) -> None:  # n
     best, _ = _best_and_final(rows, lower_better)
 
     columns = (
-        ("epoch", 22.0),
-        (metric or "value", 34.0),
-        ("change", 26.0),
-        ("phase", 34.0),
+        (t("col.epoch", locale), 22.0),
+        (metric or t("col.value", locale), 34.0),
+        (t("col.change", locale), 26.0),
+        (t("col.phase", locale), 34.0),
     )
 
     def start_page(*, first: bool) -> None:
@@ -365,7 +376,7 @@ def _epoch_table(doc: Any, frames: Sequence[StoryFrame], run: Run) -> None:  # n
         doc.cell(
             0,
             12,
-            "Every epoch" if first else "Every epoch (continued)",
+            _ascii(t("pdf.epochs" if first else "pdf.epochs_continued", locale)),
             new_x="LMARGIN",
             new_y="NEXT",
         )
@@ -373,7 +384,7 @@ def _epoch_table(doc: Any, frames: Sequence[StoryFrame], run: Run) -> None:  # n
         _text(doc, 9, _MUTED)
         for header, width in columns:
             doc.cell(width, 6, _ascii(header))
-        doc.cell(0, 6, "grade", new_x="LMARGIN", new_y="NEXT")
+        doc.cell(0, 6, _ascii(t("col.grade", locale)), new_x="LMARGIN", new_y="NEXT")
         doc.set_draw_color(*_RULE)
         doc.line(_MARGIN, doc.get_y(), _W - _MARGIN, doc.get_y())
         doc.ln(1)
@@ -403,6 +414,24 @@ def _epoch_table(doc: Any, frames: Sequence[StoryFrame], run: Run) -> None:  # n
             new_x="LMARGIN",
             new_y="NEXT",
         )
+
+
+def _drawable_locale(locale: str) -> bool:
+    """Whether a locale's own words survive Latin-1.
+
+    English and French do. Farsi does not: every heading, label and narrative
+    came out as a row of question marks, so localising the PDF made a Farsi
+    report *less* readable than an English one — the structure stopped being
+    navigable too.
+    """
+    probe = t("pdf.epochs", locale) + t("cover.best", locale)
+    return _ascii(probe).count("?") == probe.count("?")
+
+
+_UNRENDERABLE_NOTE = (
+    "This report is in English. The PDF fonts cannot draw this run's language; "
+    "the HTML and Markdown exports can."
+)
 
 
 def _display_title(run: Run) -> str:
@@ -435,9 +464,18 @@ def render_pdf(
     run: Run,
     frames: Sequence[StoryFrame],
     events: Sequence[MetricEvent],
+    locale: str = "en",
 ) -> bytes:
     """The run as a PDF: cover, one page per phase, milestones, metrics."""
     doc = _pdf()
+    # Decide once whether this locale can be drawn at all. When it cannot the
+    # chrome falls back to English so the document stays navigable, and the
+    # cover says why instead of leaving the reader with "??? ???????".
+    drawable = _drawable_locale(locale)
+    note = "" if drawable else _UNRENDERABLE_NOTE
+    if not drawable:
+        locale = "en"
+
     # PDF metadata is UTF-16 and needs no embedded font, so the true name
     # survives here even when the page can only draw Latin-1.
     doc.set_title(run.name or run.id)
@@ -464,16 +502,17 @@ def render_pdf(
         new_x="LMARGIN",
         new_y="NEXT",
     )
-    if run.story_summary:
+    summary = run.story_summary if drawable else note
+    if summary:
         doc.ln(6)
         doc.set_x(_MARGIN * 2)
-        _text(doc, 13, _INK)
-        doc.multi_cell(_W - _MARGIN * 4, 7, _ascii(run.story_summary), align="C")
+        _text(doc, 13, _INK if drawable else _MUTED)
+        doc.multi_cell(_W - _MARGIN * 4, 7, _ascii(summary), align="C")
 
-    _cover_facts(doc, run, frames, events)
+    _cover_facts(doc, run, frames, events, locale)
 
-    _charts_page(doc, events)
-    _epoch_table(doc, frames, run)
+    _charts_page(doc, events, locale)
+    _epoch_table(doc, frames, run, locale)
 
     # ── One page per phase, in the order the run moved through them ──────
     seen: set[str] = set()
@@ -496,7 +535,7 @@ def render_pdf(
             metric = frame.primary_metric or run.primary_metric or ""
             doc.cell(0, 12, _ascii(f"{metric}  {value:.4f}"), new_x="LMARGIN", new_y="NEXT")
 
-        if frame.narrative:
+        if frame.narrative and drawable:
             doc.ln(4)
             _text(doc, 14, _INK)
             doc.multi_cell(_W - _MARGIN * 2, 8, _ascii(frame.narrative))
@@ -509,7 +548,7 @@ def render_pdf(
     if latest:
         doc.add_page()
         _text(doc, 22, _INK, "B")
-        doc.cell(0, 14, "Final metrics", new_x="LMARGIN", new_y="NEXT")
+        doc.cell(0, 14, _ascii(t("pdf.final_metrics", locale)), new_x="LMARGIN", new_y="NEXT")
         doc.ln(2)
         for key, value in sorted(latest.items()):
             _text(doc, 12, _MUTED)

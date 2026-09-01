@@ -298,6 +298,10 @@ async def run_pipeline(
         started_at=started_at,
         primary_metric=primary_metric or "val_loss",
         parser_used="unknown",
+        # Recorded so an export can be written in the language the run was
+        # narrated in. Without it the story came out in Farsi and every heading
+        # around it in English, because nothing downstream knew.
+        config={"locale": locale},
     )
     store.create_run(run)
 

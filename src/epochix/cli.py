@@ -37,6 +37,7 @@ import uvicorn
 from epochix.config import Settings, get_settings
 from epochix.console import console_safe, console_symbols, harden_streams
 from epochix.enums import TaskType
+from epochix.i18n import SUPPORTED_LOCALES
 
 if TYPE_CHECKING:
     from epochix.store.sqlite_store import RunStore
@@ -157,6 +158,12 @@ def cmd_run(  # noqa: C901
         show_default=False,
     ),
     name: str | None = typer.Option(None, "--name", "-n", help="Run name.", show_default=False),
+    locale: str = typer.Option(
+        "en",
+        "--locale",
+        "-L",
+        help="Language for the story and exports (en, fa, fr).",
+    ),
     log_level: str = typer.Option("INFO", "--log-level", help="Logging level."),
 ) -> None:
     """Parse a training log and visualize it in the browser (the default action)."""
@@ -166,6 +173,15 @@ def cmd_run(  # noqa: C901
         settings = Settings(**{**settings.model_dump(), "llm_enabled": False})
 
     effective_task = _task_from_str(task)
+
+    if locale not in SUPPORTED_LOCALES:
+        # Refuse rather than silently narrating in English: a user who asked
+        # for Farsi and got English has been told nothing about why.
+        typer.echo(
+            f"Error: unknown locale {locale!r}. Available: {', '.join(SUPPORTED_LOCALES)}",
+            err=True,
+        )
+        raise typer.Exit(2)
 
     ssh_target_host: str | None = None
     ssh_remote_path: str | None = None
@@ -216,6 +232,7 @@ def cmd_run(  # noqa: C901
             # run list, and in every export. The filename is what the person
             # actually calls this run.
             run_name=name or (log_file.stem if log_file is not None else None),
+            locale=locale,
             source=source,
             source_path=source_path,
             task=effective_task,
@@ -238,7 +255,8 @@ async def _run_batch_or_live(
     settings: Settings,
     run_id: str,
     run_name: str | None,
-    source: str,
+    locale: str = "en",
+    source: str = "file",
     source_path: str | None,
     task: TaskType | None,
     port: int,
@@ -309,6 +327,7 @@ async def _run_batch_or_live(
             store=store,
             hub=hub,
             run_name=run_name,
+            locale=locale,
             task=task,
         )
     finally:
