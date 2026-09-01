@@ -259,6 +259,14 @@ class TestALongRunStaysReadable:
     def test_a_long_name_is_truncated(self, tmp_path: Path) -> None:
         """120 characters ran off both edges of the cover."""
         run_id, store = _store(tmp_path, {"val_accuracy": [0.3, 0.6]}, name="y" * 120)
-        text = _pdf_text(build_pdf(run_id=run_id, store=store))
+        pdf = build_pdf(run_id=run_id, store=store)
+        text = _pdf_text(pdf)
         assert "y" * 120 not in text
         assert "y" * 40 in text  # the name is still recognisable
+
+    def test_truncation_uses_characters_the_font_has(self, tmp_path: Path) -> None:
+        """The marker must be Latin-1. A U+2026 ellipsis raised
+        FPDFUnicodeEncodingException and took the whole export down — a crash
+        on every over-long name, introduced by the truncation itself."""
+        run_id, store = _store(tmp_path, {"val_accuracy": [0.3, 0.6]}, name="z" * 200)
+        assert build_pdf(run_id=run_id, store=store).startswith(b"%PDF-")
