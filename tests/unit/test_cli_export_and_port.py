@@ -15,6 +15,7 @@ from __future__ import annotations
 import socket
 import subprocess
 import sys
+from pathlib import Path
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -52,7 +53,17 @@ def _run_cli(*args: str, cwd: Path, db: Path) -> subprocess.CompletedProcess[str
         text=True,
         timeout=300,
         cwd=str(cwd),
-        env={**os.environ, "EPOCHIX_DB": str(db)},
+        # Point the CHILD at the working tree. pytest's `pythonpath = ["src"]`
+        # only affects imports in this process; a subprocess resolves `epochix`
+        # from site-packages, so these tests were exercising whatever release
+        # happened to be installed rather than the code under change. A broken
+        # `epochix demo` passed here and failed in CI, which has no stale
+        # install to fall back on.
+        env={
+            **os.environ,
+            "EPOCHIX_DB": str(db),
+            "PYTHONPATH": str(Path(__file__).resolve().parents[2] / "src"),
+        },
         check=False,
     )
 

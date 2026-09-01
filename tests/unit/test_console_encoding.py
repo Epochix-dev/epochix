@@ -11,6 +11,7 @@ user data, so no amount of transliterating *our* decorations can save them.
 from __future__ import annotations
 
 import os
+import pathlib
 import socket
 import subprocess
 import sys
@@ -42,7 +43,14 @@ def _cli(*args: str, db: Path, encoding: str = "cp1252") -> subprocess.Completed
         # parent's locale — otherwise a UTF-8 child looks like mojibake here.
         encoding=encoding,
         timeout=300,
-        env={**os.environ, "EPOCHIX_DB": str(db), "PYTHONIOENCODING": encoding},
+        env={
+            **os.environ,
+            "EPOCHIX_DB": str(db),
+            "PYTHONIOENCODING": encoding,
+            # See test_cli_export_and_port: a subprocess resolves
+            # `epochix` from site-packages, not the working tree.
+            "PYTHONPATH": str(pathlib.Path(__file__).resolve().parents[2] / "src"),
+        },
         check=False,
     )
 

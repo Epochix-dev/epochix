@@ -25,7 +25,7 @@ SRC = ROOT / "src" / "epochix"
 # published to epochix.dev — a reversed line there misleads exactly as well as
 # one in a .py file. Added after a stray U+0001 reached CHANGELOG.md through an
 # unescaped `\1` in a build script, which the source-only scan did not watch.
-_PROSE = ["README.md", "CHANGELOG.md", "SECURITY.md", "CONTRIBUTING.md"]
+_PROSE = ["README.md", "CHANGELOG.md", "SECURITY.md", "CONTRIBUTING.md", "ROADMAP.md"]
 
 # The frontend and the extension were never scanned, only src/epochix. A shell
 # heredoc turned `- ` into LITERAL control characters inside a regex
@@ -95,11 +95,20 @@ def test_no_control_characters_in_frontend_or_extension_source() -> None:
     assert not offenders, f"control characters in frontend/extension source: {offenders}"
 
 
+# Tab, plus the joiners Persian orthography requires. Not the bidi overrides
+# and isolates, which stay banned everywhere.
+_PROSE_ALLOWED = {chr(0x09), chr(0x200C), chr(0x200D)}  # tab, ZWNJ, ZWJ
+
+
 def test_no_control_characters_in_published_prose() -> None:
     """The files that get rendered on PyPI, GitHub and the docs site.
 
     Same reasoning as the source scan: a bidi override reverses what a reader
-    sees. Tab and newline are the only control characters legitimately present.
+    Tab is the only control character legitimately present, plus the two
+    joiners: this project documents itself in Persian, and the word for
+    "epochs" needs a ZERO WIDTH NON-JOINER or its letters join and it is
+    misspelled. A joiner cannot reorder anything; the overrides and
+    isolates that make Trojan Source work stay banned.
     """
     offenders = []
     for name in _PROSE:
@@ -108,7 +117,7 @@ def test_no_control_characters_in_published_prose() -> None:
             continue
         for i, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
             for ch in line:
-                if ch != "\t" and (unicodedata.category(ch) in {"Cc", "Cf"}):
+                if ch not in _PROSE_ALLOWED and unicodedata.category(ch) in {"Cc", "Cf"}:
                     offenders.append(f"{name}:{i} U+{ord(ch):04X}")
     assert not offenders, f"control characters in published prose: {offenders}"
 

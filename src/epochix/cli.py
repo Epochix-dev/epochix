@@ -702,6 +702,9 @@ def cmd_demo(
     ),
     port: int = typer.Option(7860, "--port", "-p", help="Server port."),
     headless: bool = typer.Option(False, "--headless", help="Do not open the browser."),
+    locale: str = typer.Option(
+        "en", "--locale", "-L", help="Language for the story and exports (en, fa, fr)."
+    ),
     log_level: str = typer.Option("INFO", "--log-level"),
 ) -> None:
     """Visualise a bundled demo log — no training of your own needed.
@@ -754,7 +757,15 @@ def cmd_demo(
         headless=headless,
         json_out=False,
         export_format=None,
+        # Every argument is passed explicitly. Calling a Typer command as a
+        # plain function means any omitted parameter arrives as the OptionInfo
+        # *descriptor* rather than its default value — `--locale` validation
+        # then rejected `<typer.models.OptionInfo object>` and broke
+        # `epochix demo` outright. `output` was already omitted and only
+        # harmless because export_format is None here.
+        output=None,
         name=f"Demo · {fname}",
+        locale=locale,
         log_level=log_level,
     )
 
