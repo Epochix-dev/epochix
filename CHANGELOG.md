@@ -7,6 +7,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.6.4] — 2026-09-01
+
+### Added
+
+- **The PDF cover carries the evidence for its own grade.** It used to show a
+  letter, a run id, a task, a date and one sentence — nothing a reader could
+  check the grade against. It now states the final value, the best value and
+  the epoch it happened on, how far the run has drifted since that best, the
+  epoch span, and which parser read the log.
+
+  The drift says which *way*: `since best  0.00233 worse`. The sign alone is
+  ambiguous — on a log-loss, +0.002 is the model getting worse — and nobody
+  should need to know a metric's direction to read their own report.
+
+- **An "Every epoch" table.** One page per phase rendered three pages for an
+  11-frame run, so eight readings were absent from the report entirely,
+  including whichever one was the best. Every epoch now appears with its value,
+  its change from the previous epoch, its phase and its grade, with the best
+  row marked.
+
+### Fixed
+
+- **Runs are named after their log file.** With no `--name` every run was
+  titled by its ULID, so a PDF report opened with
+  `01M1CY50EAPJFA7S5DVNJH77XD` where a person expects
+  `keras_image_classifier`. Fixed at the source, so the dashboard, the run list
+  and every export get the name — not just the PDF.
+
 ## [0.6.3] — 2026-08-31
 
 ### Added

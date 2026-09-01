@@ -210,7 +210,12 @@ def cmd_run(  # noqa: C901
         _run_batch_or_live(
             settings=settings,
             run_id=run_id,
-            run_name=name,
+            # Name the run after the log when the caller did not name it.
+            # Without this every unnamed run is titled by its ULID —
+            # `01M1CY50EAPJFA7S5DVNJH77XD` at the top of a PDF report, in the
+            # run list, and in every export. The filename is what the person
+            # actually calls this run.
+            run_name=name or (log_file.stem if log_file is not None else None),
             source=source,
             source_path=source_path,
             task=effective_task,
