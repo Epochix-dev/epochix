@@ -63,6 +63,18 @@ logger = logging.getLogger(__name__)
 _UNVERIFIED_BACKENDS = frozenset({"mps", "rocm", "xpu"})
 
 
+def _plain(value: object, default: str) -> str:
+    """Unwrap a Typer default when a command is called as a plain function.
+
+    Typer fills defaults at *invocation* time. Call `cmd_demo(...)` directly —
+    as the e2e suite does, and as `demo` itself calls `run` — and every
+    parameter you omit arrives as the `OptionInfo` descriptor rather than its
+    value. Validating that rejected `<typer.models.OptionInfo object>` and took
+    down `epochix demo`, the one command the onboarding flow depends on.
+    """
+    return value if isinstance(value, str) else default
+
+
 def _configure_logging(log_level: str) -> None:
     logging.basicConfig(
         level=getattr(logging, log_level.upper(), logging.INFO),
@@ -174,6 +186,7 @@ def cmd_run(  # noqa: C901
 
     effective_task = _task_from_str(task)
 
+    locale = _plain(locale, "en")
     if locale not in SUPPORTED_LOCALES:
         # Refuse rather than silently narrating in English: a user who asked
         # for Farsi and got English has been told nothing about why.
@@ -765,7 +778,7 @@ def cmd_demo(
         # harmless because export_format is None here.
         output=None,
         name=f"Demo · {fname}",
-        locale=locale,
+        locale=_plain(locale, "en"),
         log_level=log_level,
     )
 
