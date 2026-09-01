@@ -7,6 +7,48 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.7.0] — 2026-09-01
+
+### Added
+
+- **`epochix --locale en|fa|fr`.** The Farsi and French narratives have existed
+  since early on, and the CLI — the primary interface — had **no way to ask for
+  them**. Only the SDK and the server API could. An unknown locale is refused
+  with the list of available ones rather than silently narrating in English.
+
+- **The locale is recorded on the run**, so everything downstream knows what
+  language the story was told in. Nothing stored it before, which is why no
+  export could be written in the right language even in principle.
+
+- **Exports are localised.** `build_markdown` and `build_pdf` now read the run's
+  locale. A Farsi run's Markdown report is Farsi throughout — headings, table
+  columns, field labels — where before its sentences were Farsi and every
+  heading around them English.
+
+  New `epochix.i18n` module holds the strings, with full key parity across the
+  three locales enforced by a test. An unknown locale falls back to English and
+  an unknown key returns itself, so a partial translation degrades instead of
+  crashing an export.
+
+### Fixed
+
+- **The PDF no longer produces an unreadable Farsi document.** Its core fonts
+  are Latin-1, so localising it turned every heading, label and narrative into
+  question marks — worse than English, because even the structure stopped being
+  navigable. It now detects an undrawable locale, keeps English chrome so the
+  document still works, and states on the cover that the fonts cannot draw the
+  run's language and that HTML and Markdown can. Zero question marks in a Farsi
+  export, down from the entire document.
+
+- **The source-security rule now understands Persian.** It banned every Unicode
+  format character on the grounds that code has no legitimate use for one —
+  true of code, false of Persian text: `دوره‌ها` needs a ZERO WIDTH NON-JOINER
+  or its letters join and the word is misspelled. The ban is now enforced on
+  code and relaxed only for that joiner and ZWJ inside string literals. Bidi
+  overrides and isolates stay banned everywhere, literals included — verified
+  by planting a U+202E inside a string literal and confirming it is still
+  caught.
+
 ## [0.6.6] — 2026-09-01
 
 ### Fixed

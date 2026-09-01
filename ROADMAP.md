@@ -62,20 +62,24 @@ Still open:
 
 ## Internationalisation
 
-Audited: **narratives are complete** — all 54 template groups exist in English,
-Farsi and French — and the **dashboard UI is complete**, 60 of 60 keys in all
-three (the five French strings identical to English are words French shares:
-Phase, Classification, Diagnostics, Distributions).
+Complete for the three locales the project ships. Narratives (54/54 template
+groups), dashboard UI (60/60 keys), the CLI, and the exports all speak English,
+Farsi and French.
 
-The gap is exports:
+What was wrong and is now fixed: the CLI had **no `--locale` flag at all**, so
+the translations existed and the primary interface could not reach them; the
+locale was **never stored on the run**, so nothing downstream could know what
+language a report should be in; and **no exporter took a locale**, so a Farsi
+run's sentences came out Farsi with every heading around them in English.
 
-- **No exporter takes a locale.** `build_pdf`, `build_markdown`, `build_html`
-  and `build_json_payload` all take `(run_id, store)` and nothing else, so
-  every heading a report prints — "Final metrics", "Every epoch", "How the run
-  moved" — is hardcoded English. A Farsi run's stored narratives come out in
-  Farsi while the structure around them stays English.
-- **The PDF cannot draw non-Latin script at all** (see above), so a Farsi
-  report is doubly affected: English headings around unrenderable body text.
+One limitation remains, and it is stated rather than hidden:
+
+- **The PDF cannot draw Persian.** fpdf2's core fonts are Latin-1. Localising
+  the PDF initially made Farsi *worse* — headings, labels and narrative all
+  became question marks, so even the structure stopped being navigable. It now
+  detects an undrawable locale, falls back to English chrome, and says so on
+  the cover, pointing at the HTML and Markdown exports, which carry Farsi
+  perfectly. Embedding a font remains rejected on the grounds recorded below.
 
 ## Dashboard
 

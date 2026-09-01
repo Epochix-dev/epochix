@@ -8,6 +8,8 @@ appearing, or reappearing.
 
 from __future__ import annotations
 
+import io
+import tokenize
 import unicodedata
 from pathlib import Path
 
@@ -114,15 +116,39 @@ def test_no_control_characters_in_published_prose() -> None:
 def test_no_unassigned_format_characters_in_source() -> None:
     """Catch the wider class, not just the nine codepoints named above.
 
-    Any Cf (format) character is invisible and can hide or reorder text. The
-    only ones a Python source file has a legitimate reason to contain are none.
+    Any Cf (format) character is invisible and can hide or reorder text. Code
+    has no reason to contain one — but *Persian* does: `دوره‌ها` needs a ZERO
+    WIDTH NON-JOINER between its letters or they join and the word is
+    misspelled. The i18n table is full of them.
+
+    So the ban is enforced on code and relaxed for string literals, and only
+    for the two joiners. A joiner cannot reorder anything; the bidi overrides
+    and isolates that make Trojan Source work stay banned everywhere, literals
+    included.
     """
-    offenders = [
-        f"{path.relative_to(SRC)}:{i}"
-        for path in SRC.rglob("*.py")
-        for i, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1)
-        if any(unicodedata.category(ch) == "Cf" for ch in line)
-    ]
+    allowed_in_literals = {"‌", "‍"}  # ZWNJ, ZWJ — Persian orthography
+
+    offenders: list[str] = []
+    for path in SRC.rglob("*.py"):
+        source = path.read_text(encoding="utf-8")
+        literal_spans: set[tuple[int, int]] = set()
+        try:
+            for tok in tokenize.generate_tokens(io.StringIO(source).readline):
+                if tok.type == tokenize.STRING:
+                    for row in range(tok.start[0], tok.end[0] + 1):
+                        literal_spans.add((row, tok.start[1] if row == tok.start[0] else 0))
+        except (tokenize.TokenError, IndentationError):  # pragma: no cover
+            literal_spans = set()
+
+        literal_rows = {row for row, _ in literal_spans}
+        for i, line in enumerate(source.splitlines(), 1):
+            for ch in line:
+                if unicodedata.category(ch) != "Cf":
+                    continue
+                if ch in allowed_in_literals and i in literal_rows:
+                    continue
+                offenders.append(f"{path.relative_to(SRC)}:{i} U+{ord(ch):04X}")
+
     assert not offenders, f"invisible format characters in source: {offenders}"
 
 

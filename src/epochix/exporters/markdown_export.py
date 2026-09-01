@@ -5,6 +5,8 @@ from __future__ import annotations
 import re
 from typing import TYPE_CHECKING
 
+from epochix.i18n import t
+
 if TYPE_CHECKING:
     from epochix.store.sqlite_store import RunStore
 
@@ -92,6 +94,9 @@ def build_markdown(run_id: str, store: RunStore) -> str:
 
     # ── Title & metadata ──────────────────────────────────────────────────
     title = _md_escape(run.name or run.id)
+    # The language the run was narrated in, recorded at creation. Markdown is
+    # UTF-8, so unlike the PDF it can carry every locale we ship.
+    locale = str(run.config.get("locale", "en")) if run.config else "en"
     lines.append(f"# {title}")
     lines.append("")
 
@@ -103,23 +108,27 @@ def build_markdown(run_id: str, store: RunStore) -> str:
         last_phase = frames[-1].phase
         phase_str = _PHASE_LABEL.get(last_phase.value if last_phase else "", "")
 
-    lines.append("| Field | Value |")
+    lines.append(f"| {t('md.field', locale)} | {t('md.value', locale)} |")
     lines.append("|-------|-------|")
-    lines.append(f"| **Grade** | {grade_emoji} **{grade_str}** |")
-    lines.append(f"| **Task** | {task_str} |")
-    lines.append(f"| **Final phase** | {phase_str or '—'} |")
-    lines.append(f"| **Primary metric** | {_md_escape(str(run.primary_metric))} |")
+    lines.append(f"| **{t('md.grade', locale)}** | {grade_emoji} **{grade_str}** |")
+    lines.append(f"| **{t('md.task', locale)}** | {task_str} |")
+    lines.append(f"| **{t('md.final_phase', locale)}** | {phase_str or '—'} |")
+    lines.append(
+        f"| **{t('md.primary_metric', locale)}** | {_md_escape(str(run.primary_metric))} |"
+    )
     if run.total_epochs_est:
-        lines.append(f"| **Epochs** | {run.total_epochs_est} |")
+        lines.append(f"| **{t('md.epochs', locale)}** | {run.total_epochs_est} |")
     if run.framework_detected:
-        lines.append(f"| **Framework** | {run.framework_detected} |")
+        lines.append(f"| **{t('md.framework', locale)}** | {run.framework_detected} |")
     if run.finished_at:
-        lines.append(f"| **Finished** | {run.finished_at.strftime('%Y-%m-%d %H:%M')} |")
+        lines.append(
+            f"| **{t('md.finished', locale)}** | {run.finished_at.strftime('%Y-%m-%d %H:%M')} |"
+        )
     lines.append("")
 
     # ── Story summary ─────────────────────────────────────────────────────
     if run.story_summary:
-        lines.append("## Summary")
+        lines.append(f"## {t('md.summary', locale)}")
         lines.append("")
         lines.append(run.story_summary)
         lines.append("")
@@ -128,7 +137,7 @@ def build_markdown(run_id: str, store: RunStore) -> str:
     if frames:
         last = frames[-1]
         if last.narrative:
-            lines.append("## Final State")
+            lines.append(f"## {t('md.final_state', locale)}")
             lines.append("")
             lines.append(f"*{last.narrative}*")
             lines.append("")
@@ -140,9 +149,9 @@ def build_markdown(run_id: str, store: RunStore) -> str:
         for ev in events:
             latest[ev.canonical_key] = ev.value
 
-        lines.append("## Key Metrics")
+        lines.append(f"## {t('md.key_metrics', locale)}")
         lines.append("")
-        lines.append("| Metric | Final Value |")
+        lines.append(f"| {t('md.metric', locale)} | {t('md.final_value', locale)} |")
         lines.append("|--------|-------------|")
         for key, val in sorted(latest.items()):
             lines.append(f"| `{_code_safe(key)}` | `{val:.4f}` |")
@@ -151,7 +160,7 @@ def build_markdown(run_id: str, store: RunStore) -> str:
     # ── Milestones ────────────────────────────────────────────────────────
     milestone_frames = [f for f in frames if f.milestones]
     if milestone_frames:
-        lines.append("## Milestones")
+        lines.append(f"## {t('md.milestones', locale)}")
         lines.append("")
         for frame in milestone_frames:
             for m in frame.milestones:
@@ -164,7 +173,7 @@ def build_markdown(run_id: str, store: RunStore) -> str:
     # ── Warnings ─────────────────────────────────────────────────────────
     warning_frames = [f for f in frames if f.warnings]
     if warning_frames:
-        lines.append("## Warnings")
+        lines.append(f"## {t('md.warnings', locale)}")
         lines.append("")
         seen: set[str] = set()
         for frame in warning_frames:
