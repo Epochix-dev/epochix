@@ -22,6 +22,9 @@ from epochix.store.sqlite_store import RunStore
 
 
 def _store(tmp_path: Path, *, name: str) -> tuple[str, RunStore]:
+    # Each call gets its own directory: the run id is fixed, so two stores
+    # sharing a path collide on the primary key.
+    tmp_path.mkdir(parents=True, exist_ok=True)
     store = RunStore(str(tmp_path / "t.db"))
     run_id = "01PDFTESTRUN"
     store.create_run(
@@ -120,10 +123,34 @@ def test_typography_is_transliterated_not_blanked(tmp_path: Path) -> None:
 
 
 def test_a_name_outside_latin1_still_exports(tmp_path: Path) -> None:
-    """Run names come from log files; epochix ships Farsi and French too."""
+    """A run name is a filename, so it can hold anything the filesystem allows.
+
+    The justification used to be "epochix ships Farsi and French too", which
+    the data did not match — the Japanese in it serves no shipped locale. The
+    real reason is narrower and does not depend on locales at all: fpdf2's core
+    fonts are Latin-1, and whatever cannot be encoded must degrade rather than
+    raise. Farsi and CJK are here because they are the ranges that cannot.
+    """
     run_id, store = _store(tmp_path, name="آزمایش mixed 実験")
     pdf = build_pdf(run_id=run_id, store=store)
     assert pdf.startswith(b"%PDF-")
+
+
+def test_latin1_accents_survive_but_other_scripts_do_not(tmp_path: Path) -> None:
+    """The line between "kept" and "lost", pinned so it cannot move silently.
+
+    French accents round-trip through Latin-1; Farsi and CJK become "?". That
+    is a real limitation of core fonts, disclosed in ROADMAP.md, and a reader
+    of a Farsi-named run gets a title of question marks. If embedding a Unicode
+    font ever changes this, it should change this test with it.
+    """
+    run_id, store = _store(tmp_path / "accents", name="café résumé")
+    assert "café résumé" in " ".join(_text_runs(build_pdf(run_id=run_id, store=store)))
+
+    run_id, store = _store(tmp_path / "farsi", name="آزمایش")
+    rendered = " ".join(_text_runs(build_pdf(run_id=run_id, store=store)))
+    assert "آزمایش" not in rendered
+    assert "?" in rendered
 
 
 def test_an_unknown_run_is_refused(tmp_path: Path) -> None:
