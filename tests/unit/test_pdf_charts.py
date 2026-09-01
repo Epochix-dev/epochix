@@ -25,7 +25,11 @@ CHART_TITLE = "How the run moved"
 
 
 def _store(
-    tmp_path: Path, series: dict[str, list[float]], *, epochs: bool = True
+    tmp_path: Path,
+    series: dict[str, list[float]],
+    *,
+    epochs: bool = True,
+    name: str = "chart run",
 ) -> tuple[str, RunStore]:
     tmp_path.mkdir(parents=True, exist_ok=True)
     store = RunStore(str(tmp_path / "c.db"))
@@ -33,7 +37,7 @@ def _store(
     store.create_run(
         Run(
             id=run_id,
-            name="chart run",
+            name=name,
             task_type=TaskType.CLASSIFICATION,
             started_at=datetime.now(tz=timezone.utc),
             primary_metric="val_accuracy",
@@ -229,3 +233,32 @@ class TestEveryEpochIsListed:
         """Two rows is the minimum for a table to say anything."""
         run_id, store = _store(tmp_path, {"val_accuracy": [0.98]})
         assert "Every epoch" not in _pdf_text(build_pdf(run_id=run_id, store=store))
+
+
+class TestALongRunStaysReadable:
+    """A 40-round boosting run overflows one page.
+
+    The continuation used to open on a bare data row — five unlabelled columns
+    of numbers, with the title and headers left behind on the previous sheet.
+    """
+
+    def test_the_header_repeats_after_a_page_break(self, tmp_path: Path) -> None:
+        values = [1.0 - i * 0.02 for i in range(45)]
+        run_id, store = _store(tmp_path, {"val_accuracy": values})
+        text = _pdf_text(build_pdf(run_id=run_id, store=store))
+        # Parentheses are backslash-escaped inside a PDF string literal, so
+        # match the word rather than the exact phrase.
+        assert "continued" in text
+        # The column headers appear once per page, so more than once overall.
+        assert text.count("change") >= 2, text.count("change")
+
+    def test_a_short_run_has_no_continuation(self, tmp_path: Path) -> None:
+        run_id, store = _store(tmp_path, {"val_accuracy": [0.3, 0.5, 0.7]})
+        assert "continued" not in _pdf_text(build_pdf(run_id=run_id, store=store))
+
+    def test_a_long_name_is_truncated(self, tmp_path: Path) -> None:
+        """120 characters ran off both edges of the cover."""
+        run_id, store = _store(tmp_path, {"val_accuracy": [0.3, 0.6]}, name="y" * 120)
+        text = _pdf_text(build_pdf(run_id=run_id, store=store))
+        assert "y" * 120 not in text
+        assert "y" * 40 in text  # the name is still recognisable
