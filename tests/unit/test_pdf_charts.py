@@ -66,7 +66,7 @@ def _store(
                 phase=Phase.LEARNING,
                 grade=Grade.B,
                 primary_metric="val_accuracy",
-                primary_metric_value=series.get("val_accuracy", [0.5])[min(i, 0)],
+                primary_metric_value=_frame_value(series, i),
                 narrative=f"Epoch {i + 1}.",
                 progress=0.5,
                 confidence=0.8,
@@ -75,6 +75,17 @@ def _store(
         )
     store.finish_run(run_id, final_grade=Grade.B, story_summary="Done.")
     return run_id, store
+
+
+def _frame_value(series: dict[str, list[float]], i: int) -> float:
+    """The i-th reading of the frame's own metric.
+
+    This used to be `[min(i, 0)]`, which is always index 0 — every frame in the
+    fixture carried the FIRST value, so any assertion about a run changing over
+    time passed against a flat series that never moved.
+    """
+    values = series.get("val_accuracy") or next(iter(series.values()))
+    return values[min(i, len(values) - 1)]
 
 
 def _pdf_text(pdf: bytes) -> str:
@@ -165,3 +176,56 @@ class TestItDoesNotInventShape:
     def test_a_flat_series_does_not_divide_by_zero(self, tmp_path: Path) -> None:
         run_id, store = _store(tmp_path, {"accuracy": [0.5, 0.5, 0.5, 0.5]})
         assert build_pdf(run_id=run_id, store=store).startswith(b"%PDF-")
+
+
+class TestTheCoverSupportsItsGrade:
+    """A grade is the loudest claim in the document and had nothing behind it.
+
+    The cover carried a letter, a run id, a task, a date and one sentence — no
+    best epoch, no final value, no epoch count, nothing a reader could check
+    the letter against.
+    """
+
+    def test_best_and_final_are_both_stated(self, tmp_path: Path) -> None:
+        run_id, store = _store(tmp_path, {"val_accuracy": [0.30, 0.55, 0.80, 0.72]})
+        text = _pdf_text(build_pdf(run_id=run_id, store=store))
+        assert "final val_accuracy" in text
+        assert "best val_accuracy" in text
+
+    def test_drift_from_best_says_which_way(self, tmp_path: Path) -> None:
+        """A run that peaked and fell back. The sign alone is ambiguous: on a
+        loss, +0.002 is the model getting worse."""
+        run_id, store = _store(tmp_path, {"val_accuracy": [0.30, 0.55, 0.80, 0.72]})
+        text = _pdf_text(build_pdf(run_id=run_id, store=store))
+        assert "since best" in text
+        assert "worse" in text
+
+    def test_a_run_still_at_its_best_reports_no_drift(self, tmp_path: Path) -> None:
+        run_id, store = _store(tmp_path, {"val_accuracy": [0.30, 0.55, 0.72, 0.80]})
+        assert "since best" not in _pdf_text(build_pdf(run_id=run_id, store=store))
+
+    def test_the_epoch_span_is_stated(self, tmp_path: Path) -> None:
+        run_id, store = _store(tmp_path, {"val_accuracy": [0.3, 0.5, 0.7]})
+        assert "epochs" in _pdf_text(build_pdf(run_id=run_id, store=store))
+
+
+class TestEveryEpochIsListed:
+    """One page per phase rendered 3 pages for an 11-frame run — eight
+    readings absent from the report, including whichever was the best."""
+
+    def test_all_epochs_appear(self, tmp_path: Path) -> None:
+        values = [0.30, 0.42, 0.55, 0.61, 0.68, 0.72]
+        run_id, store = _store(tmp_path, {"val_accuracy": values})
+        text = _pdf_text(build_pdf(run_id=run_id, store=store))
+        assert "Every epoch" in text
+        for v in values:
+            assert f"{v:.4g}" in text, v
+
+    def test_the_best_row_is_marked(self, tmp_path: Path) -> None:
+        run_id, store = _store(tmp_path, {"val_accuracy": [0.30, 0.80, 0.55]})
+        assert "best" in _pdf_text(build_pdf(run_id=run_id, store=store))
+
+    def test_a_single_reading_gets_no_table(self, tmp_path: Path) -> None:
+        """Two rows is the minimum for a table to say anything."""
+        run_id, store = _store(tmp_path, {"val_accuracy": [0.98]})
+        assert "Every epoch" not in _pdf_text(build_pdf(run_id=run_id, store=store))

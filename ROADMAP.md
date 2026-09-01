@@ -23,24 +23,22 @@ Closed items live in [CHANGELOG.md](CHANGELOG.md).
 
 ## PDF export — keep going
 
-The charts landed (loss / quality / error curves, drawn with fpdf2 primitives,
-no new dependency). The rest of the report is still thin: a 20-epoch run
-exported five pages of four text lines each before this work, and most of that
-emptiness is still there on the non-chart pages.
+Landed so far: the curves (loss / quality / error panels), a cover that carries
+its own evidence, a per-epoch table, and runs named after their log instead of
+their ULID. A 20-epoch export went from 5 pages of four text lines to 7 pages
+with charts and a full epoch listing.
 
-- **A cover that justifies its own grade.** It currently shows a letter, the
-  run id, task, date and one sentence. It should carry best epoch vs final
-  epoch, epochs seen, duration, the metric the grade was computed from, and the
-  dataset-blind caveat — the grade is the headline claim and nothing on the
-  page supports it.
-- **Do not title a report with a ULID.** With no run name the cover reads
-  `01M1CY50EAPJFA7S5DVNJH77XD`. Fall back to the log's filename.
-- **One page per phase discards most of the run.** An 11-frame run renders 3
-  pages. Either a compact per-epoch table or milestone-driven page selection.
-- **Final metrics is a bare list.** No best-vs-final, no direction, no units —
-  four rows of numbers with nothing to compare them against.
+Still open:
+
+- **Final metrics is a bare list.** Four rows of numbers with nothing to
+  compare them against — no best-vs-final per series, no direction, no units.
+  The cover now does this for the primary metric only.
 - **Skill dimensions and metaphor cards never reach the PDF** although the
   engine computes them for every frame and the dashboard shows them.
+- **Phase pages are still four lines each.** With the epoch table carrying the
+  numbers, these pages should either say more about the phase or go away.
+- **No architecture section.** `parse_architecture` reads the model summary out
+  of the log and the Network panel draws it; the PDF ignores it entirely.
 
 ## Dashboard
 

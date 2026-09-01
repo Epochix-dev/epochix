@@ -19,6 +19,8 @@ from __future__ import annotations
 from itertools import pairwise
 from typing import TYPE_CHECKING, Any
 
+from epochix.story_engine.grade import metric_lower_better
+
 if TYPE_CHECKING:
     from collections.abc import Sequence
 
@@ -262,6 +264,128 @@ def _charts_page(doc: Any, events: Sequence[MetricEvent]) -> None:  # noqa: ANN4
         )
 
 
+def _fmt(value: float) -> str:
+    """Four significant figures, without trailing noise on round numbers."""
+    return f"{value:.4g}"
+
+
+def _best_and_final(
+    frames: Sequence[StoryFrame], lower_better: bool
+) -> tuple[StoryFrame | None, StoryFrame | None]:
+    """The run's best frame and its last, by the primary metric."""
+    scored = [f for f in frames if f.primary_metric_value is not None]
+    if not scored:
+        return None, None
+    best = (min if lower_better else max)(scored, key=lambda f: f.primary_metric_value)
+    return best, scored[-1]
+
+
+def _cover_facts(
+    doc: Any,  # noqa: ANN401
+    run: Run,
+    frames: Sequence[StoryFrame],
+    events: Sequence[MetricEvent],
+) -> None:
+    """The evidence behind the grade, on the page that states it.
+
+    The cover used to carry a letter, an id, a task, a date and one sentence —
+    nothing that showed why the letter was that letter. A grade is the loudest
+    claim this product makes and it was the least supported thing on the page.
+    """
+    metric = run.primary_metric or ""
+    lower_better = metric_lower_better(metric) or False
+    best, final = _best_and_final(frames, lower_better)
+
+    epochs = sorted({e.epoch for e in events if e.epoch is not None})
+    rows: list[tuple[str, str]] = []
+
+    if final is not None:
+        rows.append((f"final {metric}", _fmt(final.primary_metric_value)))
+    if best is not None and final is not None:
+        at = f" (epoch {best.epoch:g})" if best.epoch is not None else ""
+        rows.append((f"best {metric}", _fmt(best.primary_metric_value) + at))
+        # The gap between best and final is the "should I have stopped
+        # earlier?" answer, and it was nowhere in the document.
+        if best.epoch is not None and final.epoch is not None and best.epoch != final.epoch:
+            drift = final.primary_metric_value - best.primary_metric_value
+            # Say which way. The sign alone is ambiguous: +0.002 on a log-loss
+            # is the model getting WORSE, and a reader should not have to know
+            # the metric's direction to read its own report.
+            worse = (drift > 0) if lower_better else (drift < 0)
+            rows.append(("since best", f"{_fmt(abs(drift))} {'worse' if worse else 'better'}"))
+    if epochs:
+        rows.append(("epochs", f"{epochs[0]:g} to {epochs[-1]:g} ({len(epochs)})"))
+    if run.parser_used:
+        rows.append(("read by", run.parser_used))
+
+    if not rows:
+        return
+
+    doc.ln(4)
+    width = 92.0
+    left = (_W - width) / 2.0
+    for label, value in rows:
+        doc.set_x(left)
+        _text(doc, 10, _MUTED)
+        doc.cell(38, 6, _ascii(label))
+        _text(doc, 10, _INK, "B")
+        doc.cell(54, 6, _ascii(value), new_x="LMARGIN", new_y="NEXT")
+
+
+def _epoch_table(doc: Any, frames: Sequence[StoryFrame], run: Run) -> None:  # noqa: ANN401
+    """Every epoch, not only the three that changed phase.
+
+    One page per phase rendered 3 pages for an 11-frame run: eight readings
+    were simply absent from the report, including whichever one was the best.
+    """
+    rows = [f for f in frames if f.primary_metric_value is not None]
+    if len(rows) < 2:
+        return
+
+    metric = run.primary_metric or ""
+    lower_better = metric_lower_better(metric) or False
+    best, _ = _best_and_final(rows, lower_better)
+
+    doc.add_page()
+    _text(doc, 22, _INK, "B")
+    doc.cell(0, 12, "Every epoch", new_x="LMARGIN", new_y="NEXT")
+    doc.ln(2)
+
+    _text(doc, 9, _MUTED)
+    for header, w in (
+        ("epoch", 22.0),
+        (metric or "value", 34.0),
+        ("change", 26.0),
+        ("phase", 34.0),
+    ):
+        doc.cell(w, 6, _ascii(header))
+    doc.cell(0, 6, "grade", new_x="LMARGIN", new_y="NEXT")
+    doc.set_draw_color(*_RULE)
+    doc.line(_MARGIN, doc.get_y(), _W - _MARGIN, doc.get_y())
+    doc.ln(1)
+
+    previous: float | None = None
+    for frame in rows:
+        value = frame.primary_metric_value
+        delta = "" if previous is None else f"{value - previous:+.4g}"
+        previous = value
+        is_best = best is not None and frame is best
+
+        _text(doc, 9, _INK, "B" if is_best else "")
+        doc.cell(22.0, 5.5, _ascii(f"{frame.epoch:g}" if frame.epoch is not None else "-"))
+        doc.cell(34.0, 5.5, _ascii(_fmt(value)))
+        doc.cell(26.0, 5.5, _ascii(delta))
+        doc.cell(34.0, 5.5, _ascii(frame.phase.value.title() if frame.phase else ""))
+        label = frame.grade.value if frame.grade else ""
+        doc.cell(
+            0,
+            5.5,
+            _ascii(f"{label}   <- best" if is_best else label),
+            new_x="LMARGIN",
+            new_y="NEXT",
+        )
+
+
 def render_pdf(
     run: Run,
     frames: Sequence[StoryFrame],
@@ -297,7 +421,10 @@ def render_pdf(
         _text(doc, 13, _INK)
         doc.multi_cell(_W - _MARGIN * 4, 7, _ascii(run.story_summary), align="C")
 
+    _cover_facts(doc, run, frames, events)
+
     _charts_page(doc, events)
+    _epoch_table(doc, frames, run)
 
     # ── One page per phase, in the order the run moved through them ──────
     seen: set[str] = set()
