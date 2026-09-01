@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.6.5] — 2026-09-01
+
+### Fixed
+
+- **A long run's epoch table lost its headers.** A 40-round boosting run
+  overflows one page, and the continuation opened on a bare data row: five
+  unlabelled columns of numbers, with the title and column headers left behind
+  on the previous sheet. Every page now carries its own header and says
+  *Every epoch (continued)*.
+- **A long run name ran off both edges of the cover.** Names are truncated to
+  fit; a cover is a title, not the place to reproduce an arbitrary string.
+
+Both were found by exporting all sixteen log shapes from the published wheel
+and reading what came out, rather than re-running the case that was already
+known to work.
+
 ## [0.6.4] — 2026-09-01
 
 ### Added

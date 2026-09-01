@@ -346,26 +346,45 @@ def _epoch_table(doc: Any, frames: Sequence[StoryFrame], run: Run) -> None:  # n
     lower_better = metric_lower_better(metric) or False
     best, _ = _best_and_final(rows, lower_better)
 
-    doc.add_page()
-    _text(doc, 22, _INK, "B")
-    doc.cell(0, 12, "Every epoch", new_x="LMARGIN", new_y="NEXT")
-    doc.ln(2)
-
-    _text(doc, 9, _MUTED)
-    for header, w in (
+    columns = (
         ("epoch", 22.0),
         (metric or "value", 34.0),
         ("change", 26.0),
         ("phase", 34.0),
-    ):
-        doc.cell(w, 6, _ascii(header))
-    doc.cell(0, 6, "grade", new_x="LMARGIN", new_y="NEXT")
-    doc.set_draw_color(*_RULE)
-    doc.line(_MARGIN, doc.get_y(), _W - _MARGIN, doc.get_y())
-    doc.ln(1)
+    )
 
+    def start_page(*, first: bool) -> None:
+        """Title and column headers. Repeated on every continuation page.
+
+        A 40-round run overflows one page, and the second page used to open on
+        a bare data row: five unlabelled columns of numbers with no title and
+        no header anywhere on the sheet.
+        """
+        doc.add_page()
+        _text(doc, 22, _INK, "B")
+        doc.cell(
+            0,
+            12,
+            "Every epoch" if first else "Every epoch (continued)",
+            new_x="LMARGIN",
+            new_y="NEXT",
+        )
+        doc.ln(2)
+        _text(doc, 9, _MUTED)
+        for header, width in columns:
+            doc.cell(width, 6, _ascii(header))
+        doc.cell(0, 6, "grade", new_x="LMARGIN", new_y="NEXT")
+        doc.set_draw_color(*_RULE)
+        doc.line(_MARGIN, doc.get_y(), _W - _MARGIN, doc.get_y())
+        doc.ln(1)
+
+    start_page(first=True)
+
+    row_h = 5.5
     previous: float | None = None
     for frame in rows:
+        if doc.get_y() + row_h > _H - _MARGIN:
+            start_page(first=False)
         value = frame.primary_metric_value
         delta = "" if previous is None else f"{value - previous:+.4g}"
         previous = value
@@ -403,7 +422,12 @@ def render_pdf(
     _text(doc, 72, grade_rgb, "B")
     doc.cell(0, 26, _ascii(grade), align="C", new_x="LMARGIN", new_y="NEXT")
     _text(doc, 26, _INK, "B")
-    doc.cell(0, 14, _ascii(run.name or run.id), align="C", new_x="LMARGIN", new_y="NEXT")
+    # Truncated: a 120-character name ran off both edges of the page. The
+    # cover is a title, not the place to reproduce an arbitrary string.
+    title = run.name or run.id
+    if len(title) > 56:
+        title = title[:55] + "…"
+    doc.cell(0, 14, _ascii(title), align="C", new_x="LMARGIN", new_y="NEXT")
     _text(doc, 13, _MUTED)
     task = run.task_type.value if run.task_type else "custom"
     when = run.finished_at.strftime("%Y-%m-%d") if run.finished_at else ""

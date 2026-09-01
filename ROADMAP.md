@@ -37,6 +37,17 @@ Still open:
   engine computes them for every frame and the dashboard shows them.
 - **Phase pages are still four lines each.** With the epoch table carrying the
   numbers, these pages should either say more about the phase or go away.
+- **A non-Latin run name becomes `??????` on the cover.** fpdf2's core fonts
+  are Latin-1, so `_ascii()` transliterates and then replaces whatever is left:
+  a Farsi or Japanese run name renders as question marks. `café` survives,
+  `آزمایش 実験` does not. This is a deliberate tradeoff (losing a glyph beats
+  losing the document) but the project ships a Farsi UI, so a title of
+  `??????` is worse than useless. The fix is embedding a Unicode font —
+  DejaVuSans is ~700 KB against a 3.2 MB dependency — which is a size decision
+  worth making openly rather than sneaking in.
+- **A GridSearchCV run charts nothing.** Its score canonicalises to `custom`,
+  which is in none of the chart key groups, so the one number the search
+  produced never reaches a curve.
 - **No architecture section.** `parse_architecture` reads the model summary out
   of the log and the Network panel draws it; the PDF ignores it entirely.
 
