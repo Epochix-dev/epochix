@@ -9,6 +9,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.7.0] — 2026-09-01
 
+### Fixed
+
+- **`epochix demo` was broken by the new `--locale` flag.** `demo` calls the
+  `run` command as a plain Python function, so any parameter it does not pass
+  explicitly arrives as Typer's `OptionInfo` *descriptor* rather than the
+  default value — the new validation then rejected
+  `<typer.models.OptionInfo object>` and the headline onboarding command failed
+  outright. Every argument is passed explicitly now, and `demo` gained its own
+  `--locale`.
+
+- **CLI subprocess tests were exercising the installed package, not the working
+  tree.** `pythonpath = ["src"]` applies to pytest's own imports; a subprocess
+  resolves `epochix` from site-packages. A broken `epochix demo` passed locally
+  and failed in CI, which has no stale install to fall back on. Those tests now
+  point the child at `src/`.
+
+- The published-prose scanner did not cover **ROADMAP.md**, which renders on
+  GitHub like every other file it does check.
+
 ### Added
 
 - **`epochix --locale en|fa|fr`.** The Farsi and French narratives have existed
