@@ -7,6 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.7.2] — 2026-09-01
+
+### Fixed
+
+- **A standalone HTML export ignored the run's language.** The locale was read
+  from `?locale=` or `localStorage` and nowhere else — and a file opened from
+  disk has neither, so *every* export fell back to English. A Farsi report
+  rendered with `lang="en"`, left-to-right, and all 21 UI labels in English
+  ("Overview", "Explain", "Network"), with only the stored narratives in Farsi.
+  The run data embedded in that same file said `"locale": "fa"` the whole time.
+
+  The page now reads the locale the run recorded. An explicit `?locale=` still
+  wins, so a reader can override, and it is preferred over a stale
+  `localStorage` value left by a different run.
+
+  Verified in a real browser rather than by reading the markup: a Farsi export
+  now reports `lang="fa"`, `dir="rtl"` and Farsi navigation, and a French one
+  `lang="fr"`, ltr, French navigation.
+
+  This also made 0.7.1's PDF fallback note half untrue — it tells the reader
+  that "the HTML and Markdown exports can" show their language, which was only
+  true of Markdown.
+
 ## [0.7.1] — 2026-09-01
 
 **0.7.0 shipped with a broken `epochix demo`.** Upgrade past it.

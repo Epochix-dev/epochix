@@ -72,6 +72,12 @@ locale was **never stored on the run**, so nothing downstream could know what
 language a report should be in; and **no exporter took a locale**, so a Farsi
 run's sentences came out Farsi with every heading around them in English.
 
+Verified end to end across all three locales and every export format: a
+standalone HTML export now opens with `lang`, `dir` and its UI in the run's
+language (this was broken — the locale was read only from `?locale=` and
+localStorage, neither of which a file on disk has, so every export fell back
+to English chrome around Farsi sentences).
+
 One limitation remains, and it is stated rather than hidden:
 
 - **The PDF cannot draw Persian.** fpdf2's core fonts are Latin-1. Localising
