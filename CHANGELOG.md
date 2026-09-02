@@ -7,6 +7,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.7.4] — 2026-09-02
+
+### Fixed
+
+- **A GridSearchCV run charted nothing.** Its score canonicalises to `custom`,
+  which belonged to no chart group — so the only number the search produced
+  never reached a curve, on a page titled *How the run moved*. It has its own
+  panel now, on its own axis, because it shares a scale with nothing else.
+
+- **A deep model was truncated in the layer table.** It listed layers to the
+  page edge and stopped, reporting the remainder as "(+N more)". A 60-layer
+  model now continues onto further pages and lists every layer.
+
+### Changed
+
+- **Dependabot groups the `codeql-action` sub-actions.** They must all run at
+  the same version: bumping `analyze` to 4.37.9 while `autobuild` sat at 4.37.4
+  failed with *"Loaded a configuration file for version '4.37.9', but running
+  version '4.37.4'"*. Dependabot opened init, autobuild and analyze as three
+  separate PRs, and merging them one at a time left main red in between. They
+  travel as one PR now, and the remaining action bumps are grouped too.
+
+- Workflow action versions: `setup-uv` 9.0.0 → 10.0.1, `codeql-action` 4.37.4 →
+  4.37.9 (all three sub-actions), `action-gh-release` 3.0.2 → 3.0.3.
+
 ## [0.7.3] — 2026-09-02
 
 ### Added

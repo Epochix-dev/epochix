@@ -23,22 +23,11 @@ Closed items live in [CHANGELOG.md](CHANGELOG.md).
 
 ## PDF export
 
-Done. What was a five-page leaflet of four text lines per page is now a report:
-curves (loss / quality / error), a cover carrying the evidence for its grade,
-an epoch table with per-epoch change and the best row marked, a final-metrics
-table with best-and-change per series, the skill bars, the model's layers with
-a parameter total, and phase pages that state the span they cover and what the
-metric did across it. Localised, and it degrades honestly where the fonts
-cannot draw a language.
-
-Remaining, small:
-
-- **A GridSearchCV run charts nothing.** Its score canonicalises to `custom`,
-  which is in none of the chart key groups, so the one number the search
-  produced never reaches a curve.
-- **A model longer than one page is truncated in the layer table.** The
-  parameter total counts every layer and the row list says "(+N more)", but
-  there is no continuation page as the epoch table has.
+Done, including the last two gaps: a run whose only series canonicalises to
+`custom` — a GridSearchCV score, typically — now gets its own panel instead of
+reaching no curve at all, and a model deeper than one page continues onto
+another rather than stopping at the page edge with the rest reported as a
+count.
 
 ## Internationalisation
 

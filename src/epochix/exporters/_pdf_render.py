@@ -118,6 +118,12 @@ _QUALITY_KEYS = (
 )
 _ERROR_KEYS = ("MAE", "val_MAE", "RMSE", "val_RMSE", "MAPE", "val_MAPE")
 
+# A search or a boosting run whose objective we do not recognise reports it
+# under "custom". It is still a real series with a real shape, and it was the
+# only thing a GridSearchCV run produced — charted on its own axis, since it
+# shares a scale with nothing else.
+_CUSTOM_KEYS = ("custom",)
+
 
 def _series(
     events: Sequence[MetricEvent], keys: Sequence[str]
@@ -239,6 +245,7 @@ def _charts_page(
         (t("pdf.chart.loss", locale), _series(events, _LOSS_KEYS)),
         (t("pdf.chart.quality", locale), _series(events, _QUALITY_KEYS)),
         (t("pdf.chart.error", locale), _series(events, _ERROR_KEYS)),
+        (t("col.metric", locale), _series(events, _CUSTOM_KEYS)),
     ]
     panels = [(t, s) for t, s in panels if s]
     if not panels:
@@ -591,12 +598,43 @@ def _skills_and_model(
             for layer in layers
             if isinstance(layer, dict) and isinstance(layer.get("params"), (int, float))
         )
+
+        def layer_header() -> None:
+            _text(doc, 9, _MUTED)
+            for header, width in zip(
+                (
+                    t("col.layer", locale),
+                    t("col.type", locale),
+                    t("col.params", locale),
+                    t("col.does", locale),
+                ),
+                (44.0, 34.0, 30.0, 60.0),
+                strict=True,
+            ):
+                doc.cell(width, 6, _ascii(header))
+            doc.ln(6)
+            doc.set_draw_color(*_RULE)
+            doc.line(_MARGIN, doc.get_y(), _W - _MARGIN, doc.get_y())
+            doc.ln(1)
+
         shown = 0
         for layer in layers:
             if not isinstance(layer, dict):
                 continue
+            # Continue onto another page rather than truncating. A deep model
+            # was listed down to the page edge and simply stopped, with the
+            # rows that did not fit reported only as a count.
             if doc.get_y() + 5.5 > _H - _MARGIN:
-                break
+                doc.add_page()
+                _text(doc, 16, _INK, "B")
+                doc.cell(
+                    0,
+                    10,
+                    _ascii(f"{t('pdf.architecture', locale)} ({t('pdf.continued', locale)})"),
+                    new_x="LMARGIN",
+                    new_y="NEXT",
+                )
+                layer_header()
             shown += 1
             params = layer.get("params")
             _text(doc, 9, _INK)

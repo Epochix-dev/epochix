@@ -160,7 +160,14 @@ class TestTheCurveIsDrawn:
 
 class TestItDoesNotInventShape:
     def test_a_run_with_no_chartable_metric_gets_no_chart_page(self, tmp_path: Path) -> None:
-        run_id, store = _store(tmp_path, {"custom": [1.0, 2.0, 3.0]})
+        """`lr` is a real metric that belongs to no chart group.
+
+        This used to use `custom`, which was the right example until `custom`
+        was deliberately given its own panel — a GridSearchCV score
+        canonicalises to it and was reaching no curve at all. A learning rate
+        is the honest remaining case: charted nowhere, and not a mistake.
+        """
+        run_id, store = _store(tmp_path, {"lr": [0.01, 0.005, 0.001]})
         assert CHART_TITLE not in _pdf_text(build_pdf(run_id=run_id, store=store))
 
     def test_a_single_reading_is_a_point_not_a_trend(self, tmp_path: Path) -> None:
@@ -370,3 +377,40 @@ class TestPhasePagesCoverTheirSpan:
         run_id, store = _store(tmp_path, {"val_accuracy": [0.30, 0.45, 0.60, 0.72]})
         text = _pdf_text(build_pdf(run_id=run_id, store=store))
         assert "->" in text
+
+
+class TestTheLastTwoGaps:
+    """The two items the PDF roadmap still carried."""
+
+    def test_an_unrecognised_series_still_gets_a_curve(self, tmp_path: Path) -> None:
+        """A GridSearchCV score canonicalises to `custom`, which belonged to no
+        chart group — so the only number the search produced never reached a
+        curve, on a page titled "How the run moved"."""
+        run_id, store = _store(tmp_path, {"custom": [0.92, 0.94, 0.95, 0.96]})
+        assert CHART_TITLE in _pdf_text(build_pdf(run_id=run_id, store=store))
+
+    def test_a_deep_model_lists_every_layer(self, tmp_path: Path) -> None:
+        """The layer table ran to the page edge and stopped, reporting the rest
+        as a count. A model is not described by its first twenty layers."""
+        run_id, store = _store(
+            tmp_path, {"val_accuracy": [0.3, 0.6, 0.8]}, skills={"Accuracy": 0.8}
+        )
+        store.update_run_config(
+            run_id,
+            {
+                "architecture": [
+                    {
+                        "name": f"layer_{i}",
+                        "layer_type": "Dense",
+                        "params": 100 + i,
+                        "params_str": str(100 + i),
+                        "plain_label": "Decision maker",
+                    }
+                    for i in range(60)
+                ]
+            },
+        )
+        text = _pdf_text(build_pdf(run_id=run_id, store=store))
+        assert "layer_0" in text
+        assert "layer_59" in text, "the deepest layers were dropped at the page edge"
+        assert "continued" in text
