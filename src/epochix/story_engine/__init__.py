@@ -448,8 +448,23 @@ class StoryEngine:
             past_peak = drop > _PAST_PEAK_REL_DROP
 
         epochs_seen = len(self._metric_history.get(event.canonical_key, ()))
+        # `rel` is the fraction of achievable improvement realised, so a run
+        # that got WORSE scores at or below zero and clears this threshold as
+        # easily as a genuinely flat one. Because this branch is tested before
+        # `past_peak`, a metric that fell 0.79 -> 0.60 was narrated as "the
+        # metric has barely moved ... the model is not learning yet" — on the
+        # same screen as the overfitting warning it had just triggered. Not
+        # merely a poor phrasing: a 24% decline is not "barely moved", and the
+        # advice that follows (check the learning rate, then the data
+        # pipeline) sends you after a setup bug that is not there.
+        #
+        # Stalled means flat. If the metric has actually slipped from its best,
+        # `past_peak` is the honest description and it already says so.
         stalled = (
-            epochs_seen >= _STALL_MIN_EPOCHS and rel is not None and rel < _STALL_REL_IMPROVEMENT
+            epochs_seen >= _STALL_MIN_EPOCHS
+            and rel is not None
+            and rel < _STALL_REL_IMPROVEMENT
+            and not past_peak
         )
         # A result, not a stage of training. Both conditions are needed: one
         # reading alone also describes epoch 1 of a live run, which genuinely

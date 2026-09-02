@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.7.6] — 2026-09-02
+
+### Fixed
+
+- **An overfitting run was told it was "not learning yet".** A model whose
+  validation accuracy fell from 0.79 to 0.60 — a textbook overfit, and one the
+  dashboard was flagging as such in the warning strip directly above — was
+  narrated *"the metric has barely moved ... the model is not learning yet
+  — check the learning rate first, then the data pipeline."*
+
+  The stalled check runs before the past-peak check and tests whether the
+  fraction of achievable improvement realised is under 3%. A run that got
+  *worse* scores at or below zero, so it cleared that bar exactly as a flat run
+  does and claimed the narrative first. A 24% decline is not "barely moved",
+  and the advice that followed sent the reader after a setup bug that was not
+  there. Stalled now means flat; a metric that has slipped from its best is
+  reported as past its peak, with both real numbers.
+
+---
+
 ## [0.7.5] — 2026-09-02
 
 ### Fixed
