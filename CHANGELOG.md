@@ -7,6 +7,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.7.3] — 2026-09-02
+
+### Added
+
+- **A final-metrics table instead of a bare list.** It printed four numbers with
+  nothing to compare them against. Every series now shows its final value, its
+  best and the epoch that happened on, and how far it moved — with *best*
+  meaning lowest for a loss and highest for an accuracy, so the worst epoch is
+  never labelled the best one. A single reading shows no change at all, because
+  one measurement has not changed by zero.
+
+- **The skill bars and the model reach the document.** The engine scores four
+  dimensions for every frame and the log's model summary is parsed into real
+  layers; neither had ever left the dashboard. The layer table lists name, type,
+  parameters and what each layer does, with a parameter total counted over
+  *every* layer — a model longer than the page stops being listed and says
+  "(+N more)" rather than quietly understating itself.
+
+- **Phase pages cover their span.** A phase page showed the first frame of the
+  phase and nothing else: four lines, with no sign that one phase lasted four
+  epochs and another six. Each now states the epochs it covered and what the
+  primary metric did across them (`0.4567 -> 0.6234 (+0.1667)`).
+
+All of it localised, and all of it in the three languages the project ships.
+
 ## [0.7.2] — 2026-09-01
 
 ### Fixed

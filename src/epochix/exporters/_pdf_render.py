@@ -460,6 +460,163 @@ def _display_title(run: Run) -> str:
     return rendered
 
 
+def _final_metrics_table(
+    doc: Any,  # noqa: ANN401
+    events: Sequence[MetricEvent],
+    locale: str,
+) -> None:
+    """Every series with its final value, its best, and how far it moved.
+
+    This was a bare list of numbers with nothing to compare them against — no
+    best, no direction, no sense of whether 0.6012 was where the run started or
+    where it got to.
+    """
+    series: dict[str, list[tuple[float | None, float]]] = {}
+    for event in events:
+        if event.value is not None:
+            series.setdefault(event.canonical_key, []).append((event.epoch, float(event.value)))
+    if not series:
+        return
+
+    doc.add_page()
+    _text(doc, 22, _INK, "B")
+    doc.cell(0, 14, _ascii(t("pdf.final_metrics", locale)), new_x="LMARGIN", new_y="NEXT")
+    doc.ln(2)
+
+    widths = (52.0, 32.0, 46.0, 32.0)
+    _text(doc, 9, _MUTED)
+    for header, width in zip(
+        (
+            t("col.metric", locale),
+            t("col.final", locale),
+            t("cover.best", locale),
+            t("col.change", locale),
+        ),
+        widths,
+        strict=True,
+    ):
+        doc.cell(width, 6, _ascii(header))
+    doc.ln(6)
+    doc.set_draw_color(*_RULE)
+    doc.line(_MARGIN, doc.get_y(), _W - _MARGIN, doc.get_y())
+    doc.ln(1)
+
+    for key in sorted(series):
+        points = series[key]
+        first, final = points[0][1], points[-1][1]
+        lower_better = metric_lower_better(key) or False
+        best_epoch, best = (
+            min(points, key=lambda pt: pt[1]) if lower_better else max(points, key=lambda pt: pt[1])
+        )
+        at = f" ({t('cover.epoch_n', locale)} {best_epoch:g})" if best_epoch is not None else ""
+
+        _text(doc, 9, _INK)
+        doc.cell(widths[0], 5.5, _ascii(key))
+        doc.cell(widths[1], 5.5, _ascii(_fmt(final)))
+        doc.cell(widths[2], 5.5, _ascii(_fmt(best) + at))
+        # Signed, and only when there is more than one reading: a single
+        # measurement has not changed by zero, it has not changed at all.
+        doc.cell(
+            widths[3],
+            5.5,
+            _ascii(f"{final - first:+.4g}" if len(points) > 1 else ""),
+            new_x="LMARGIN",
+            new_y="NEXT",
+        )
+
+
+def _skills_and_model(
+    doc: Any,  # noqa: ANN401
+    run: Run,
+    frames: Sequence[StoryFrame],
+    locale: str,
+) -> None:
+    """The skill bars and the architecture, both already on the dashboard.
+
+    The engine scores four dimensions for every frame and the log's model
+    summary is parsed into real layers; neither had ever reached the document.
+    """
+    skills = frames[-1].skill_dimensions if frames else {}
+    layers = (run.config or {}).get("architecture")
+    layers = layers if isinstance(layers, list) else []
+    if not skills and not layers:
+        return
+
+    doc.add_page()
+
+    if skills:
+        _text(doc, 22, _INK, "B")
+        doc.cell(0, 14, _ascii(t("pdf.skills", locale)), new_x="LMARGIN", new_y="NEXT")
+        doc.ln(1)
+        bar_w = 96.0
+        for name, value in skills.items():
+            share = max(0.0, min(1.0, float(value)))
+            y = doc.get_y()
+            _text(doc, 10, _MUTED)
+            doc.cell(46.0, 7, _ascii(str(name)))
+            doc.set_fill_color(*_RULE)
+            doc.rect(_MARGIN + 46.0, y + 1.6, bar_w, 3.6, style="F")
+            doc.set_fill_color(86, 156, 214)
+            doc.rect(_MARGIN + 46.0, y + 1.6, bar_w * share, 3.6, style="F")
+            doc.set_xy(_MARGIN + 46.0 + bar_w + 3.0, y)
+            _text(doc, 10, _INK, "B")
+            doc.cell(20.0, 7, _ascii(f"{share:.2f}"), new_x="LMARGIN", new_y="NEXT")
+        doc.ln(4)
+
+    if layers:
+        _text(doc, 16, _INK, "B")
+        doc.cell(0, 10, _ascii(t("pdf.architecture", locale)), new_x="LMARGIN", new_y="NEXT")
+        _text(doc, 9, _MUTED)
+        for header, width in zip(
+            (
+                t("col.layer", locale),
+                t("col.type", locale),
+                t("col.params", locale),
+                t("col.does", locale),
+            ),
+            (44.0, 34.0, 30.0, 60.0),
+            strict=True,
+        ):
+            doc.cell(width, 6, _ascii(header))
+        doc.ln(6)
+        doc.set_draw_color(*_RULE)
+        doc.line(_MARGIN, doc.get_y(), _W - _MARGIN, doc.get_y())
+        doc.ln(1)
+
+        # Total over every layer, counted before drawing: a model longer than
+        # the page stops being *listed* at the break, and a total that stopped
+        # there with it would understate the model it claims to describe.
+        total = sum(
+            int(layer["params"])
+            for layer in layers
+            if isinstance(layer, dict) and isinstance(layer.get("params"), (int, float))
+        )
+        shown = 0
+        for layer in layers:
+            if not isinstance(layer, dict):
+                continue
+            if doc.get_y() + 5.5 > _H - _MARGIN:
+                break
+            shown += 1
+            params = layer.get("params")
+            _text(doc, 9, _INK)
+            doc.cell(44.0, 5.5, _ascii(str(layer.get("name", ""))[:24]))
+            doc.cell(34.0, 5.5, _ascii(str(layer.get("layer_type", ""))[:18]))
+            doc.cell(30.0, 5.5, _ascii(str(layer.get("params_str", params or ""))))
+            doc.cell(
+                60.0,
+                5.5,
+                _ascii(str(layer.get("plain_label", ""))[:34]),
+                new_x="LMARGIN",
+                new_y="NEXT",
+            )
+        doc.ln(1)
+        _text(doc, 10, _MUTED)
+        omitted = len(layers) - shown
+        suffix = f"  (+{omitted} more)" if omitted > 0 else ""
+        doc.cell(0, 6, _ascii(f"{total:,} {t('pdf.total_params', locale)}{suffix}"))
+
+
 def render_pdf(
     run: Run,
     frames: Sequence[StoryFrame],
@@ -515,47 +672,65 @@ def render_pdf(
     _epoch_table(doc, frames, run, locale)
 
     # ── One page per phase, in the order the run moved through them ──────
-    seen: set[str] = set()
+    #
+    # A phase page used to show the FIRST frame of the phase and nothing else:
+    # four lines on a landscape sheet, and no indication that "learning" lasted
+    # four epochs while "understanding" lasted six. The phase is a span, so the
+    # page now says which epochs it covered and what the metric did across it.
+    ordered: list[str] = []
+    grouped: dict[str, list[StoryFrame]] = {}
     for frame in frames:
         phase = frame.phase.value if frame.phase else ""
-        if not phase or phase in seen:
+        if not phase:
             continue
-        seen.add(phase)
+        if phase not in grouped:
+            grouped[phase] = []
+            ordered.append(phase)
+        grouped[phase].append(frame)
 
+    for phase in ordered:
+        block = grouped[phase]
+        first, last = block[0], block[-1]
         doc.add_page()
+
+        epochs = [f.epoch for f in block if f.epoch is not None]
         _text(doc, 11, _MUTED)
-        epoch = f"Epoch {frame.epoch:g}" if frame.epoch is not None else ""
-        doc.cell(0, 6, _ascii(epoch), new_x="LMARGIN", new_y="NEXT")
+        if epochs:
+            span = (
+                f"{t('cover.epoch_n', locale)} {epochs[0]:g}"
+                if epochs[0] == epochs[-1]
+                else f"{t('phase.covers', locale)} {epochs[0]:g} - {epochs[-1]:g}"
+            )
+        else:
+            span = ""
+        doc.cell(0, 6, _ascii(span), new_x="LMARGIN", new_y="NEXT")
+
         _text(doc, 30, _INK, "B")
         doc.cell(0, 16, _ascii(phase.title()), new_x="LMARGIN", new_y="NEXT")
 
-        value = frame.primary_metric_value
+        value = last.primary_metric_value
         if value is not None:
             _text(doc, 20, grade_rgb, "B")
-            metric = frame.primary_metric or run.primary_metric or ""
+            metric = last.primary_metric or run.primary_metric or ""
             doc.cell(0, 12, _ascii(f"{metric}  {value:.4f}"), new_x="LMARGIN", new_y="NEXT")
+            # What the phase actually did, rather than a single snapshot of it.
+            if first.primary_metric_value is not None and len(block) > 1:
+                moved = value - first.primary_metric_value
+                _text(doc, 11, _MUTED)
+                doc.cell(
+                    0,
+                    6,
+                    _ascii(f"{first.primary_metric_value:.4f} -> {value:.4f}  ({moved:+.4g})"),
+                    new_x="LMARGIN",
+                    new_y="NEXT",
+                )
 
-        if frame.narrative and drawable:
+        if last.narrative and drawable:
             doc.ln(4)
             _text(doc, 14, _INK)
-            doc.multi_cell(_W - _MARGIN * 2, 8, _ascii(frame.narrative))
+            doc.multi_cell(_W - _MARGIN * 2, 8, _ascii(last.narrative))
 
-    # ── Final metrics ────────────────────────────────────────────────────
-    latest: dict[str, float] = {}
-    for event in events:
-        if event.value is not None:
-            latest[event.canonical_key] = event.value
-    if latest:
-        doc.add_page()
-        _text(doc, 22, _INK, "B")
-        doc.cell(0, 14, _ascii(t("pdf.final_metrics", locale)), new_x="LMARGIN", new_y="NEXT")
-        doc.ln(2)
-        for key, value in sorted(latest.items()):
-            _text(doc, 12, _MUTED)
-            doc.cell(90, 8, _ascii(key))
-            _text(doc, 12, _INK, "B")
-            doc.cell(0, 8, f"{value:.4f}", new_x="LMARGIN", new_y="NEXT")
-            doc.set_draw_color(*_RULE)
-            doc.line(_MARGIN, doc.get_y(), _W - _MARGIN, doc.get_y())
+    _final_metrics_table(doc, events, locale)
+    _skills_and_model(doc, run, frames, locale)
 
     return bytes(doc.output())

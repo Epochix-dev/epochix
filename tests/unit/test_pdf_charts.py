@@ -30,6 +30,7 @@ def _store(
     *,
     epochs: bool = True,
     name: str = "chart run",
+    skills: dict[str, float] | None = None,
 ) -> tuple[str, RunStore]:
     tmp_path.mkdir(parents=True, exist_ok=True)
     store = RunStore(str(tmp_path / "c.db"))
@@ -75,6 +76,7 @@ def _store(
                 progress=0.5,
                 confidence=0.8,
                 task_type=TaskType.CLASSIFICATION,
+                skill_dimensions=skills or {},
             )
         )
     store.finish_run(run_id, final_grade=Grade.B, story_summary="Done.")
@@ -270,3 +272,101 @@ class TestALongRunStaysReadable:
         on every over-long name, introduced by the truncation itself."""
         run_id, store = _store(tmp_path, {"val_accuracy": [0.3, 0.6]}, name="z" * 200)
         assert build_pdf(run_id=run_id, store=store).startswith(b"%PDF-")
+
+
+class TestTheFinalMetricsTable:
+    """It was a bare list: four numbers with nothing to compare them against."""
+
+    def test_every_series_gets_a_best_and_a_change(self, tmp_path: Path) -> None:
+        run_id, store = _store(
+            tmp_path,
+            {"val_accuracy": [0.30, 0.55, 0.80], "train_loss": [1.8, 1.1, 0.7]},
+        )
+        text = _pdf_text(build_pdf(run_id=run_id, store=store))
+        assert "val_accuracy" in text and "train_loss" in text
+        assert "+0.5" in text  # accuracy climbed
+        assert "-1.1" in text  # loss fell
+
+    def test_best_respects_the_metric_direction(self, tmp_path: Path) -> None:
+        """A loss is at its best when lowest. Reporting its maximum would call
+        the worst epoch the best one.
+
+        The whole cell is asserted, not just the number: "0.4" also appears in
+        the epoch table, so a substring check passed whichever direction the
+        code used and proved nothing.
+        """
+        run_id, store = _store(tmp_path, {"train_loss": [1.8, 0.4321, 0.9]})
+        text = _pdf_text(build_pdf(run_id=run_id, store=store))
+        # Parentheses are backslash-escaped inside a PDF string literal.
+        assert r"0.4321 \(epoch 2\)" in text, "best should be the lowest loss"
+        assert r"1.8 \(epoch 1\)" not in text.split("Final metrics")[-1]
+
+    def test_a_single_reading_shows_no_change(self, tmp_path: Path) -> None:
+        """One measurement has not changed by zero — it has not changed."""
+        run_id, store = _store(tmp_path, {"val_accuracy": [0.98]})
+        assert "+0" not in _pdf_text(build_pdf(run_id=run_id, store=store))
+
+
+class TestSkillsAndModelReachTheDocument:
+    """The engine scores four dimensions per frame and the log's model summary
+    is parsed into real layers. Neither had ever left the dashboard."""
+
+    def test_skill_bars_are_drawn(self, tmp_path: Path) -> None:
+        run_id, store = _store(
+            tmp_path,
+            {"val_accuracy": [0.3, 0.6, 0.8]},
+            skills={"Accuracy": 0.79, "Generalisation": 0.92},
+        )
+        text = _pdf_text(build_pdf(run_id=run_id, store=store))
+        assert "Skills" in text
+        assert "Generalisation" in text
+
+    def test_a_run_without_skills_omits_the_section(self, tmp_path: Path) -> None:
+        run_id, store = _store(tmp_path, {"val_accuracy": [0.3, 0.6]})
+        assert "Skills" not in _pdf_text(build_pdf(run_id=run_id, store=store))
+
+    def test_the_architecture_is_listed_with_its_total(self, tmp_path: Path) -> None:
+        run_id, store = _store(tmp_path, {"val_accuracy": [0.3, 0.6]})
+        store.update_run_config(
+            run_id,
+            {
+                "architecture": [
+                    {
+                        "name": "conv2d",
+                        "layer_type": "Conv2D",
+                        "params": 896,
+                        "params_str": "896",
+                        "plain_label": "Spatial patterns",
+                    },
+                    {
+                        "name": "dense",
+                        "layer_type": "Dense",
+                        "params": 650,
+                        "params_str": "650",
+                        "plain_label": "Decision maker",
+                    },
+                ]
+            },
+        )
+        text = _pdf_text(build_pdf(run_id=run_id, store=store))
+        assert "conv2d" in text and "Conv2D" in text
+        assert "1,546" in text  # 896 + 650, counted over every layer
+
+    def test_a_run_without_an_architecture_omits_the_section(self, tmp_path: Path) -> None:
+        run_id, store = _store(tmp_path, {"val_accuracy": [0.3, 0.6]})
+        assert "The model" not in _pdf_text(build_pdf(run_id=run_id, store=store))
+
+
+class TestPhasePagesCoverTheirSpan:
+    """A phase page showed the first frame and nothing else — four lines, with
+    no sign that one phase lasted four epochs and another six."""
+
+    def test_a_multi_epoch_phase_reports_its_range(self, tmp_path: Path) -> None:
+        run_id, store = _store(tmp_path, {"val_accuracy": [0.30, 0.45, 0.60, 0.72]})
+        text = _pdf_text(build_pdf(run_id=run_id, store=store))
+        assert "epochs" in text
+
+    def test_it_reports_what_the_metric_did(self, tmp_path: Path) -> None:
+        run_id, store = _store(tmp_path, {"val_accuracy": [0.30, 0.45, 0.60, 0.72]})
+        text = _pdf_text(build_pdf(run_id=run_id, store=store))
+        assert "->" in text

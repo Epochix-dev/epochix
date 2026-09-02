@@ -21,44 +21,24 @@ Closed items live in [CHANGELOG.md](CHANGELOG.md).
 
 ---
 
-## PDF export — keep going
+## PDF export
 
-Landed so far: the curves (loss / quality / error panels), a cover that carries
-its own evidence, a per-epoch table, and runs named after their log instead of
-their ULID. A 20-epoch export went from 5 pages of four text lines to 7 pages
-with charts and a full epoch listing.
+Done. What was a five-page leaflet of four text lines per page is now a report:
+curves (loss / quality / error), a cover carrying the evidence for its grade,
+an epoch table with per-epoch change and the best row marked, a final-metrics
+table with best-and-change per series, the skill bars, the model's layers with
+a parameter total, and phase pages that state the span they cover and what the
+metric did across it. Localised, and it degrades honestly where the fonts
+cannot draw a language.
 
-Still open:
-
-- **Final metrics is a bare list.** Four rows of numbers with nothing to
-  compare them against — no best-vs-final per series, no direction, no units.
-  The cover now does this for the primary metric only.
-- **Skill dimensions and metaphor cards never reach the PDF** although the
-  engine computes them for every frame and the dashboard shows them.
-- **Phase pages are still four lines each.** With the epoch table carrying the
-  numbers, these pages should either say more about the phase or go away.
-- **Non-Latin text still cannot be drawn on the page — decided, not open.**
-  fpdf2's core fonts are Latin-1. Embedding a Unicode font was considered and
-  rejected for now, on measured grounds: DejaVuSans does not cover Arabic, so
-  it would not help the locale this project actually ships; Farsi additionally
-  needs `uharfbuzz` for contextual shaping, a new runtime dependency that
-  contradicts the one-installer promise; and CJK coverage is ~10 MB against a
-  3.2 MB dependency. Half-doing it (Latin Extended + Cyrillic) fixes languages
-  we do not ship and not the one we do.
-
-  Mitigated instead, at no cost: the real name travels in the PDF metadata
-  (UTF-16, no font needed) so viewers and file properties show it correctly,
-  and the cover keeps whatever survives Latin-1 rather than printing
-  `??????` — falling back to the run id when nothing legible does.
-
-  Revisit if someone asks for it, or if a Farsi-covering font under a
-  permissive licence can be subset small enough to carry.
+Remaining, small:
 
 - **A GridSearchCV run charts nothing.** Its score canonicalises to `custom`,
   which is in none of the chart key groups, so the one number the search
   produced never reaches a curve.
-- **No architecture section.** `parse_architecture` reads the model summary out
-  of the log and the Network panel draws it; the PDF ignores it entirely.
+- **A model longer than one page is truncated in the layer table.** The
+  parameter total counts every layer and the row list says "(+N more)", but
+  there is no continuation page as the epoch table has.
 
 ## Internationalisation
 
