@@ -22,6 +22,16 @@ from __future__ import annotations
 RTL_LOCALES = frozenset({"fa"})
 
 _EN: dict[str, str] = {
+    "pdf.skills": "Skills",
+    "pdf.architecture": "The model",
+    "pdf.total_params": "total parameters",
+    "col.metric": "metric",
+    "col.final": "final",
+    "col.layer": "layer",
+    "col.type": "type",
+    "col.params": "parameters",
+    "col.does": "what it does",
+    "phase.covers": "epochs",
     # PDF section titles
     "pdf.charts": "How the run moved",
     "pdf.epochs": "Every epoch",
@@ -66,6 +76,16 @@ _EN: dict[str, str] = {
 }
 
 _FA: dict[str, str] = {
+    "pdf.skills": "مهارت‌ها",
+    "pdf.architecture": "مدل",
+    "pdf.total_params": "مجموع پارامترها",
+    "col.metric": "معیار",
+    "col.final": "نهایی",
+    "col.layer": "لایه",
+    "col.type": "نوع",
+    "col.params": "پارامترها",
+    "col.does": "کارکرد",
+    "phase.covers": "دوره‌ها",
     "pdf.charts": "روند اجرا",
     "pdf.epochs": "همه دوره‌ها",
     "pdf.epochs_continued": "همه دوره‌ها (ادامه)",
@@ -106,6 +126,16 @@ _FA: dict[str, str] = {
 }
 
 _FR: dict[str, str] = {
+    "pdf.skills": "Compétences",
+    "pdf.architecture": "Le modèle",
+    "pdf.total_params": "paramètres au total",
+    "col.metric": "métrique",
+    "col.final": "final",
+    "col.layer": "couche",
+    "col.type": "type",
+    "col.params": "paramètres",
+    "col.does": "rôle",
+    "phase.covers": "époques",
     "pdf.charts": "L'évolution du run",
     "pdf.epochs": "Chaque époque",
     "pdf.epochs_continued": "Chaque époque (suite)",
