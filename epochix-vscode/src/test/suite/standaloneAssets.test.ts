@@ -54,7 +54,7 @@ async function standaloneHtml(): Promise<{ html: string; root: string }> {
 }
 
 suite("Standalone webview assets", () => {
-  test("the vendored bundle really is hash-named, not main.js", async () => {
+  test("the vendored bundle really is hash-named, not main.js", () => {
     const ext = vscode.extensions.getExtension(EXT_ID);
     assert.ok(ext);
     const root = path.join(ext.extensionPath, "webview-dist");
