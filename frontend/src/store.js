@@ -74,7 +74,27 @@ export function pushFrame(frame) {
   if (frame?.seq != null && s.frames.some((f) => f.seq === frame.seq)) return;
   const frames = [...s.frames, frame];
   const currentFrame = s.scrubEpoch === -1 ? frame : s.currentFrame;
-  store.set({ frames, currentFrame });
+
+  // Warnings ride ON the frame. They were only ever read from the live
+  // `warning` SSE message, so opening a finished run — or any HTML export —
+  // showed none of them: the engine had detected the overfitting, stored it on
+  // the frame, and the dashboard displayed nothing. Taking them from the frame
+  // covers the snapshot, the export and the live stream in one place.
+  const seen = new Set(s.warnings);
+  const added = [];
+  for (const w of frame?.warnings ?? []) {
+    const message = typeof w === 'string' ? w : w?.message;
+    if (message && !seen.has(message)) {
+      seen.add(message);
+      added.push(message);
+    }
+  }
+
+  store.set({
+    frames,
+    currentFrame,
+    ...(added.length ? { warnings: [...s.warnings, ...added] } : {}),
+  });
 }
 
 /**

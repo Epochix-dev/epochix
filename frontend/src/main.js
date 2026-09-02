@@ -36,6 +36,7 @@ import fr from './i18n/fr.json';
 import { applyStaticI18n } from './i18n/apply.js';
 import { escapeHtml as _esc } from './escape.js';
 import { openIssue } from './report.js';
+import { WarningStrip } from './visualizations/WarningStrip.js';
 
 const LOCALES = { en, fa, fr };
 
@@ -154,6 +155,9 @@ async function main() {
   const journey = new JourneyPanel(store, i18n);
   const skills  = new SkillsPanel(store);
   const tech    = new TechPanel(store);
+
+  const warnings = new WarningStrip(document.getElementById('warning-strip'));
+  warnings.mount(store);
 
   hero.mount();
   journey.mount();
