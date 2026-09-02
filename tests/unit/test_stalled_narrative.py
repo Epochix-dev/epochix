@@ -101,3 +101,57 @@ def test_every_stalled_variant_is_actionable() -> None:
         assert "learning rate" in low or "setup problem" in low, (
             f"stalled variant offers nothing to check: {variant!r}"
         )
+
+
+# "Stalled" and "past peak" are different diagnoses with different fixes, and
+# the stalled test ran first. `rel` is the fraction of achievable improvement
+# realised, so a run that got WORSE scores below zero and satisfies "less than
+# 3% improvement" just as a flat run does. A classic overfit — val_accuracy
+# 0.79 -> 0.60 while train loss kept falling — was therefore narrated "the
+# metric has barely moved ... the model is not learning yet", on the same
+# screen as the overfitting warning it had triggered, and sent the reader after
+# a learning-rate or data-pipeline bug that was not there.
+
+_DECLINE_PHRASES = re.compile(
+    r"passed its peak|past its best|slipped from|not improving on it",
+    re.IGNORECASE,
+)
+
+
+def _overfitting_lines() -> list[str]:
+    """Train loss falls, validation accuracy falls with it — textbook overfit."""
+    rows = [(1, 0.9000, 0.7920), (2, 0.7000, 0.7600), (3, 0.5200, 0.7100)]
+    rows += [(4, 0.3600, 0.6700), (5, 0.2400, 0.6300), (6, 0.1500, 0.6000)]
+    return ["device=cpu epochs=6"] + [
+        f"Epoch {e}/6 train_loss={tr:.4f} val_accuracy={va:.4f}" for e, tr, va in rows
+    ]
+
+
+def test_a_falling_metric_is_not_called_barely_moved(tmp_path: Path) -> None:
+    last = _narratives(tmp_path, _overfitting_lines())[-1]
+    assert not _STALL_PHRASES.search(last), (
+        f"a 0.79 -> 0.60 decline was narrated as a stall: {last!r}"
+    )
+
+
+def test_a_falling_metric_is_named_as_a_decline(tmp_path: Path) -> None:
+    last = _narratives(tmp_path, _overfitting_lines())[-1]
+    assert _DECLINE_PHRASES.search(last), f"never said the run fell: {last!r}"
+
+
+def test_the_decline_narrative_carries_the_real_numbers(tmp_path: Path) -> None:
+    """No fabricated figures: both the peak and the current value must appear."""
+    last = _narratives(tmp_path, _overfitting_lines())[-1]
+    assert "0.7920" in last, f"peak value missing: {last!r}"
+    assert "0.6000" in last, f"current value missing: {last!r}"
+
+
+def test_a_genuinely_flat_run_is_still_called_stalled(tmp_path: Path) -> None:
+    """The guard must not swallow the stalled diagnosis it is narrowing.
+
+    Noise around a fixed level dips below its own best, so an unguarded
+    "any drop from peak wins" would have turned every stuck run into a
+    past-peak report and lost the actionable advice entirely.
+    """
+    last = _narratives(tmp_path, _stuck_lines())[-1]
+    assert _STALL_PHRASES.search(last), f"flat run lost its stalled message: {last!r}"

@@ -77,6 +77,12 @@ What was real:
   211 lines of dead module, one of them referenced only in a comment. Deleted.
 - **Warnings were computed and never shown.** Fixed — see the changelog.
 
+- **The headline story contradicted the warning beside it.** The same
+  overfitting run that triggered the memorisation warning was narrated as
+  "not learning yet — check the learning rate". Found by reading the rendered
+  page, not the tests: both statements were on screen at once. Fixed — see
+  the changelog.
+
 ## Features worth considering
 
 - **Run comparison in exports.** `CompareView` exists on screen and no export
