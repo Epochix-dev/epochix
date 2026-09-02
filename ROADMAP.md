@@ -58,15 +58,24 @@ One limitation remains, and it is stated rather than hidden:
 
 ## Dashboard
 
-- **The layout is locked to one screen.** Measured live:
-  `document.scrollHeight === window.innerHeight` (720 = 720). Fifteen
-  visualisation modules compete for a single viewport, which is why charts are
-  190px tall and the whole thing reads as thinner than it is. Letting the page
-  scroll would give the existing panels room without building anything new.
-- **Three modules appear unreachable** — `ImprovementWaterfall`,
-  `ParticleField`, and the milestone/warning surfaces returned no DOM match on
-  a real run. Either mount them or delete them; a dead panel is worse than no
-  panel.
+Two of the three items here were **wrong**, and are corrected rather than
+quietly dropped:
+
+- *"The layout is locked to one screen."* It is not. `#app` is a fixed-height
+  shell and `.app-body` scrolls inside it (`overflow-y: auto`) — measured live
+  at **3510px of content in a 720px region**, about five screens. The original
+  claim came from reading `document.scrollHeight === innerHeight`, which is
+  simply how an app shell behaves, in a browser pane that was reporting a
+  viewport of 0x0 at the time.
+- *"Milestone surfaces are unreachable."* Milestones are rendered by
+  `TimelineStory`, mounted through `JourneyPanel`. The run I probed had zero
+  milestones, so the DOM was empty for a legitimate reason.
+
+What was real:
+
+- `ImprovementWaterfall` and `ParticleField` had **no importer at all** —
+  211 lines of dead module, one of them referenced only in a comment. Deleted.
+- **Warnings were computed and never shown.** Fixed — see the changelog.
 
 ## Features worth considering
 

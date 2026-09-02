@@ -1117,3 +1117,16 @@ body {
   border-color: var(--grade-d, #e0a24a);
   color: var(--grade-d, #e0a24a);
 }
+
+/* Warnings the engine computed and nobody could see. Quiet when empty: an
+   always-present panel is one people learn to ignore. */
+.warning-strip { display: flex; flex-direction: column; gap: 6px; margin: 0 0 12px; }
+.warning-strip[hidden] { display: none; }
+.warn-item {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 12px; border-radius: var(--radius-md, 8px);
+  background: color-mix(in srgb, #f59e0b 14%, transparent);
+  border-left: 3px solid #f59e0b;
+  color: var(--text-primary); font-size: 13.5px; line-height: 1.4;
+}
+.warn-ico { flex: none; color: #f59e0b; font-size: 15px; }

@@ -75,25 +75,35 @@ export function buildWebviewHtml(opts: WebviewHtmlOptions): string {
     return buildMissingBundleHtml(theme, locale);
   }
 
-  const scriptUri = webview
-    .asWebviewUri(vscode.Uri.joinPath(distUri, "main.js"))
-    .toString();
-  const styleUri = webview
-    .asWebviewUri(vscode.Uri.joinPath(distUri, "main.css"))
-    .toString();
-
   // Point the document at the resolved theme/locale.
   html = html.replace(
     /<html[^>]*>/,
     `<html lang="${locale}" data-theme="${theme}">`,
   );
 
-  // Rewrite the built relative asset refs to webview-resource URIs, dropping
-  // the `crossorigin` attribute (not meaningful for vscode-resource URIs).
+  // Rewrite the built asset refs to webview-resource URIs, dropping the
+  // `crossorigin` attribute (not meaningful for vscode-resource URIs).
+  //
+  // Vite emits content-hashed names — `assets/index-B7xK2p.js` — and a new
+  // hash on every content change. Matching literal `main.js`/`main.css` (which
+  // this build has never produced) silently rewrote nothing, leaving the
+  // root-absolute `/assets/...` paths Vite writes. Those resolve against the
+  // webview origin, not the extension folder, so the panel loaded no script
+  // and no stylesheet at all. Match the shape instead of a fixed name.
   html = html
     .replace(/\s*crossorigin/g, "")
-    .replace(/(?:\.\/)?main\.js/g, scriptUri)
-    .replace(/(?:\.\/)?main\.css/g, styleUri);
+    .replace(
+      /(src|href)="\/?((?:assets\/)?[A-Za-z0-9._-]+\.(?:js|css))"/g,
+      (_m, attr: string, rel: string) =>
+        `${attr}="${webview
+          .asWebviewUri(vscode.Uri.joinPath(distUri, ...rel.split("/")))
+          .toString()}"`,
+    );
+
+  // The dashboard's home links are root-relative. A webview has no server at
+  // `/`, and VS Code blocks the top-level navigation they attempt, so they are
+  // dead controls here rather than a route back to an overview.
+  html = html.replace(/href="\/"/g, 'href="#"');
 
   // Add the nonce to the module entry script so the CSP admits it.
   html = html.replace(
@@ -132,14 +142,6 @@ code{background:#1e293b;padding:2px 6px;border-radius:4px}</style></head>
   <p><code>cd frontend &amp;&amp; npm run build:webview</code></p>
 </body>
 </html>`;
-}
-
-/** Resolve the asset file path relative to webview-dist/. */
-export function resolveAsset(
-  extensionUri: vscode.Uri,
-  ...segments: string[]
-): string {
-  return path.join(extensionUri.fsPath, "webview-dist", ...segments);
 }
 
 function getNonce(): string {

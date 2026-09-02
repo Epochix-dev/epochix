@@ -50,10 +50,9 @@ if [ "$PYTHON_ONLY" = false ]; then
   echo "▶  Vendoring into VS Code extension ($VSCODE_DIST)..."
   rm -rf "$VSCODE_DIST"
   cp -r "$BUILT" "$VSCODE_DIST"
-  # Flatten assets/ into webview-dist/ root for simpler CSP paths
-  if [ -d "$VSCODE_DIST/assets" ]; then
-    cp "$VSCODE_DIST/assets/"* "$VSCODE_DIST/" 2>/dev/null || true
-  fi
+  # No flattening: the webview rewrites Vite's hashed `assets/<name>` refs to
+  # webview URIs directly. Copying them to the root as well shipped every
+  # bundle twice, for no consumer.
   echo "   Done: $(find "$VSCODE_DIST" -type f | wc -l) files"
 fi
 

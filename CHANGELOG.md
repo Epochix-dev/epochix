@@ -7,6 +7,53 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.7.5] — 2026-09-02
+
+### Fixed
+
+- **The dashboard never showed a single warning.** The engine detects
+  overfitting, plateaus, divergence and learning-rate drops; the server sent
+  them; the browser stored them in `store.warnings` — and nothing on the page
+  ever read that field. A run that was visibly memorising its training set
+  said so in the API payload and nowhere a person would look. There is a
+  warning strip above the overview now.
+
+  Two distinct faults, both needed: no component rendered the list, *and*
+  warnings were only collected from the live `warning` event. Warnings also
+  ride on each frame, which is the only path a finished run or an HTML export
+  has — so opening a completed overfitting run showed nothing even once the
+  strip existed.
+
+- **The extension's standalone dashboard loaded no code at all.** Without the
+  Python sidecar the panel renders the vendored bundle itself, rewriting the
+  built asset paths to webview URIs first — a webview cannot fetch a
+  root-absolute path off disk. The rewrite looked for `main.js` and
+  `main.css`, names this Vite build has never emitted: it emits content-hashed
+  `assets/index-<hash>.js`. So it matched nothing, silently, and the panel
+  kept `src="/assets/index-<hash>.js"` — no script, no stylesheet, blank
+  panel. It matches the shape of the name now, not a fixed string.
+
+  This is the path a user who has not installed the Python package takes, and
+  the one `_degradeToStandalone` falls back to when the sidecar dies mid-run.
+
+- The dashboard's root-relative home links (`href="/"`) are neutralised in the
+  webview, where there is no server at `/` and VS Code blocks the navigation
+  they attempt.
+
+### Removed
+
+- `ImprovementWaterfall` and `ParticleField` (211 lines) had no importer.
+  One was referenced solely in a comment.
+
+- `resolveAsset` in the extension had no callers.
+
+- The extension no longer ships every webview bundle twice. Vendoring copied
+  `assets/` and then copied its contents to the root as well, for the
+  `main.js` rewrite that never worked; nothing consumed the duplicates.
+  `webview-dist/` halves.
+
+---
+
 ## [0.7.4] — 2026-09-02
 
 ### Fixed
