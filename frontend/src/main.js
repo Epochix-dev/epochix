@@ -136,7 +136,15 @@ function openLiveStream(runId, lastSeq) {
 async function main() {
   initTheme();
 
-  const locale = getParam('locale') ?? localStorage.getItem('ms-locale') ?? 'en';
+  // A standalone HTML export has no query string and no localStorage, so this
+  // used to fall back to English for every run: a Farsi report opened with
+  // English chrome, ltr direction and lang="en", with only the stored
+  // narratives in Farsi. The run itself records the language it was told in —
+  // read it. An explicit ?locale= still wins, so a reader can override.
+  const exported = readInlineRunData();
+  const runLocale = exported?.run?.config?.locale ?? null;
+  const locale =
+    getParam('locale') ?? runLocale ?? localStorage.getItem('ms-locale') ?? 'en';
   const i18n   = loadI18n(locale);
   store.set({ locale });
   applyStaticI18n(i18n, locale);  // localise chrome + set text direction (RTL for fa)
