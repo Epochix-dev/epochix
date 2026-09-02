@@ -61,6 +61,21 @@ updates:
     directory: "/"
     schedule:
       interval: "monthly"
+    groups:
+      # codeql-action's sub-actions must all run at the SAME version. Bumping
+      # analyze to 4.37.9 while autobuild sat at 4.37.4 failed with "Loaded a
+      # configuration file for version '4.37.9', but running version '4.37.4'".
+      # Dependabot opened init, autobuild and analyze as three separate PRs and
+      # merging them one at a time left main red in between (2026-09-02). They
+      # travel together now. Listed first: a dependency joins the first group
+      # it matches, and the catch-all below would otherwise swallow them.
+      codeql-action:
+        patterns: ["github/codeql-action*"]
+      # The rest are rarely interesting alone, and one PR is easier to review
+      # than six.
+      actions-patches:
+        patterns: ["*"]
+        update-types: ["minor", "patch"]
     ignore:
       # upload-artifact and download-artifact are a PAIR: release.yml uploads
       # the wheel in one job and downloads it in another, and the two versions
