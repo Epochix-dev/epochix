@@ -86,6 +86,20 @@ jobs:
           cache: npm
           cache-dependency-path: epochix-vscode/package-lock.json
       - run: cd epochix-vscode && npm ci
+
+      # The extension SHIPS this bundle and renders it itself whenever the
+      # Python sidecar is absent. CI never built it, so every standalone-mode
+      # test ran against a missing bundle and took the "not built yet"
+      # fallback branch — which is how a rewrite that matched no asset name at
+      # all survived: the panel it produced was blank in exactly the case no
+      # test could see.
+      - name: Build and vendor the webview bundle
+        run: |
+          cd frontend && npm ci && npm run build && cd ..
+          rm -rf epochix-vscode/webview-dist
+          cp -r frontend/dist epochix-vscode/webview-dist
+          test -f epochix-vscode/webview-dist/index.html
+
       - name: Lint the extension
         run: npm run lint
         working-directory: epochix-vscode
