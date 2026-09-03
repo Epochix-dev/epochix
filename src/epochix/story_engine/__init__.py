@@ -50,6 +50,10 @@ _PREFERRED_KEYS_FOR_TASK: dict[TaskType, tuple[str, ...]] = {
         "top5_accuracy",
         "balanced_accuracy",
         "MCC",
+        # Detected the task, so it must be able to tell its story: a key
+        # that classifies a run and is then unreadable leaves the run with
+        # no frames, no grade and exit 0.
+        "kappa",
         # Last resorts. Gradient boosting classifiers print their objective and
         # nothing else by default, so without these the task was detected as
         # classification and then no preferred key had ever been logged — the
@@ -61,11 +65,80 @@ _PREFERRED_KEYS_FOR_TASK: dict[TaskType, tuple[str, ...]] = {
         "val_error_rate",
         "error_rate",
     ),
-    TaskType.DETECTION: ("mAP50", "mAP", "mAP75"),
-    TaskType.NLP: ("perplexity", "bleu", "rouge", "WER", "CER", "BPC"),
-    TaskType.BIOMETRIC: ("EER", "TAR"),
+    TaskType.DETECTION: (
+        "mAP50",
+        "mAP",
+        "mAP75",
+        # Detected the task, so it must be able to tell its story: a key
+        # that classifies a run and is then unreadable leaves the run with
+        # no frames, no grade and exit 0.
+        "box_loss",
+        "cls_loss",
+        # Last resorts, exactly as classification carries them. The task is chosen
+        # from the metric NAMES in the log, and several of those names are losses
+        # or appear long before the headline metric is first computed — YOLO prints
+        # box_loss and cls_loss every epoch and mAP only at validation. Without a
+        # fallback the primary key never arrived, so the run produced no frames, no
+        # grade and no summary: "Grade: N/A" and exit 0. Off-scale, so they grade
+        # on improvement rather than against the task's bands.
+        "val_loss",
+        "loss",
+        "train_loss",
+    ),
+    TaskType.NLP: (
+        "perplexity",
+        "bleu",
+        "rouge",
+        "WER",
+        "CER",
+        "BPC",
+        # Last resorts, exactly as classification carries them. The task is chosen
+        # from the metric NAMES in the log, and several of those names are losses
+        # or appear long before the headline metric is first computed — YOLO prints
+        # box_loss and cls_loss every epoch and mAP only at validation. Without a
+        # fallback the primary key never arrived, so the run produced no frames, no
+        # grade and no summary: "Grade: N/A" and exit 0. Off-scale, so they grade
+        # on improvement rather than against the task's bands.
+        "val_loss",
+        "loss",
+        "train_loss",
+    ),
+    TaskType.BIOMETRIC: (
+        "EER",
+        "TAR",
+        # Detected the task, so it must be able to tell its story: a key
+        # that classifies a run and is then unreadable leaves the run with
+        # no frames, no grade and exit 0.
+        "TAR_at_FAR_0_001",
+        "FAR",
+        # Last resorts, exactly as classification carries them. The task is chosen
+        # from the metric NAMES in the log, and several of those names are losses
+        # or appear long before the headline metric is first computed — YOLO prints
+        # box_loss and cls_loss every epoch and mAP only at validation. Without a
+        # fallback the primary key never arrived, so the run produced no frames, no
+        # grade and no summary: "Grade: N/A" and exit 0. Off-scale, so they grade
+        # on improvement rather than against the task's bands.
+        "val_loss",
+        "loss",
+        "train_loss",
+    ),
     TaskType.GAZE: ("val_MAE", "val_RMSE", "MAE", "RMSE"),
-    TaskType.SEGMENTATION: ("mIoU", "IoU", "Dice", "pixel_accuracy"),
+    TaskType.SEGMENTATION: (
+        "mIoU",
+        "IoU",
+        "Dice",
+        "pixel_accuracy",
+        # Last resorts, exactly as classification carries them. The task is chosen
+        # from the metric NAMES in the log, and several of those names are losses
+        # or appear long before the headline metric is first computed — YOLO prints
+        # box_loss and cls_loss every epoch and mAP only at validation. Without a
+        # fallback the primary key never arrived, so the run produced no frames, no
+        # grade and no summary: "Grade: N/A" and exit 0. Off-scale, so they grade
+        # on improvement rather than against the task's bands.
+        "val_loss",
+        "loss",
+        "train_loss",
+    ),
     # R² first, because it is the only one of these that means anything on its
     # own: MAE and RMSE are in the target's units, so "MAE 9.83" is excellent
     # for house prices and terrible for a probability. Then validation before
@@ -82,8 +155,30 @@ _PREFERRED_KEYS_FOR_TASK: dict[TaskType, tuple[str, ...]] = {
         "RMSE",
         "MSE",
         "MAPE",
+        # Detected the task, so it must be able to tell its story: a key
+        # that classifies a run and is then unreadable leaves the run with
+        # no frames, no grade and exit 0.
+        "MedAE",
+        "RMSLE",
+        "explained_variance",
     ),
-    TaskType.GENERATIVE: ("fid", "is_score", "PSNR", "SSIM", "LPIPS"),
+    TaskType.GENERATIVE: (
+        "fid",
+        "is_score",
+        "PSNR",
+        "SSIM",
+        "LPIPS",
+        # Last resorts, exactly as classification carries them. The task is chosen
+        # from the metric NAMES in the log, and several of those names are losses
+        # or appear long before the headline metric is first computed — YOLO prints
+        # box_loss and cls_loss every epoch and mAP only at validation. Without a
+        # fallback the primary key never arrived, so the run produced no frames, no
+        # grade and no summary: "Grade: N/A" and exit 0. Off-scale, so they grade
+        # on improvement rather than against the task's bands.
+        "val_loss",
+        "loss",
+        "train_loss",
+    ),
     # "custom" last, so a run whose only metric has a name we do not recognise
     # still tells a story. Without it the primary key stayed val_loss, matched
     # no event, and a log reporting nothing but an unnamed score — scikit-learn's

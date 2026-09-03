@@ -7,6 +7,69 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.7.7] — 2026-09-02
+
+An audit of the week's changes, run by putting eight real log shapes through
+every export and reading what came out. Everything below was a statement the
+data did not support.
+
+### Fixed
+
+- **A log loss was narrated as an accuracy.** XGBoost prints its objective and
+  nothing else, so the task is classification and the primary metric is
+  ``val_log_loss`` — and the classification templates say "Accuracy
+  {value_pct}". A log loss of 0.418 was reported as *"At 41.8%, it understands
+  the task."*
+
+  The same fault ran through five more template sets: a segmentation run
+  logging ``Dice`` was narrated "IoU 0.8900" (different metrics, Dice is always
+  larger), and a summariser logging ROUGE was told *"Perplexity falls to
+  0.5000"* while its ROUGE was **rising**. Prose with a directional verb cannot
+  be repaired by substituting a name, so a task whose templates name a metric
+  the run never logged now tells its story with the metric-neutral set.
+
+- **Three metrics were graded backwards.** ``rouge``, ``TAR`` and ``fid``
+  matched no direction hint and inherited their task's default: ROUGE and TAR
+  are higher-is-better under a lower-is-better default, FID is a distance under
+  a higher-is-better one. A summariser whose ROUGE climbed 0.23 → 0.50 was
+  graded **F** and told it was *"past its best ... stopping earlier would have
+  been better"*. FID is the first preferred key for generative runs, so the
+  standard metric of that whole task type was inverted.
+
+- **Eight metric names could classify a run and then produce no story.** A
+  YOLO log of ``box_loss``/``cls_loss`` — what YOLO prints every epoch, long
+  before mAP is first computed — was detected as a detection run and then had
+  no readable metric: no frames, no grade, no summary, printed as "Grade: N/A"
+  with exit code 0. Also ``FAR``, ``TAR_at_FAR_0_001``, ``kappa``, ``MedAE``,
+  ``RMSLE`` and ``explained_variance``. A key good enough to detect a task is
+  now always good enough to narrate it, and a test enforces that.
+
+- **"Below the best" was false for every loss.** *"Epoch 20: 1.7300, below the
+  best of 0.6878"* — 1.73 is not below 0.6878. For a loss the current value is
+  worse by being larger. The variant is picked by a hash of the run id, so
+  about a third of past-peak loss runs got it. Now "worse than", true in both
+  directions.
+
+- **A diverging run reported nothing.** Divergence was only detected as a
+  single 10x jump between consecutive epochs or a NaN, so a loss growing 2.6x
+  *every* epoch — 3.59 to 2881, an 800-fold rise — tripped neither. The NaN
+  branch could not cover it either: the parser's number pattern requires a
+  digit, so a literal ``loss: nan`` is never read and never reaches the
+  detector. Divergence is now measured against the best loss seen.
+
+  ``WarningDetector`` had **no tests at all**; nothing rendered its output
+  until 0.7.5, so it could have been silently broken throughout. It has 13 now,
+  including that a healthy run trips none of them.
+
+- **Past-peak diagnosed a cause it could not know.** The diverging run above
+  was told *"That is usually overfitting rather than progress"* — on the same
+  screen as a divergence warning telling it to lower the learning rate.
+  Overfitting and divergence need different fixes. The overfit warning names
+  that cause when it has the evidence (validation loss rising while training
+  loss falls); the narrative now reports what the numbers show.
+
+---
+
 ## [0.7.6] — 2026-09-02
 
 ### Fixed

@@ -1,3 +1,3 @@
-Époque {epoch} : {value}, en dessous du meilleur score de {best} à l'époque {best_epoch}. Le modèle a dépassé son pic — le point de contrôle antérieur est le meilleur.
+Époque {epoch} : {value}, moins bon que le meilleur score de {best} à l'époque {best_epoch}. Le modèle a dépassé son pic — le point de contrôle antérieur est le meilleur.
 Au-delà de son maximum : {best} à l'époque {best_epoch}, maintenant {value}. Les époques suivantes ne l'améliorent pas ; arrêter plus tôt aurait été préférable.
-Époque {epoch} : la performance est passée de {best} (époque {best_epoch}) à {value}. C'est généralement du surapprentissage, pas du progrès.
+Époque {epoch} : la performance est passée de {best} (époque {best_epoch}) à {value}. Les époques suivantes s'éloignent du meilleur résultat au lieu de s'en rapprocher.

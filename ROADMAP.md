@@ -83,6 +83,21 @@ What was real:
   page, not the tests: both statements were on screen at once. Fixed — see
   the changelog.
 
+## Audit of the week's changes (2026-09-02)
+
+Eight real log shapes × five export formats × three locales, 114 artefacts,
+read rather than merely produced. Six defects, every one of the same shape:
+renders fine, exits 0, states something the data denies. See the 0.7.7
+changelog. The two that generalise:
+
+- A task is chosen from the metric NAMES in a log; the primary metric is the
+  first PREFERRED key actually seen. Those two disagree routinely, and every
+  template set that names its metric in the prose was wrong whenever they did.
+- A metric whose direction is not pinned inherits its task's default, and the
+  failure is silent — the grade simply comes out inverted. Tests now assert
+  the direction of every preferred key, and that no key can classify a run it
+  cannot then narrate.
+
 ## Features worth considering
 
 - **Run comparison in exports.** `CompareView` exists on screen and no export
