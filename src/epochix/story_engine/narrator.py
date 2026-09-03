@@ -142,6 +142,51 @@ def narrate_stalled(
     )
 
 
+# Most task template sets name their metric in the prose — "Accuracy
+# {value_pct}", "mAP50 {value_pct}", "Perplexity {value}", "IoU {value}",
+# "EER {value_pct}", "FID {value}". That sentence is only true when the run's
+# primary metric IS that metric, and often it is not: a task is chosen from the
+# metric NAMES a log contains, while the primary metric is the first PREFERRED
+# key actually seen. The two disagree routinely.
+#
+# Observed, all from real log shapes:
+#   * XGBoost prints its objective and nothing else. Task classification,
+#     primary val_log_loss, narrated "Accuracy 41.8%" — a log loss of 0.418
+#     relabelled as an accuracy and multiplied by 100.
+#   * A segmentation run logging Dice was narrated "IoU 0.8900". Dice and IoU
+#     are different numbers; Dice is always the larger.
+#   * A summariser logging ROUGE was narrated "Perplexity falls to 0.5000"
+#     while its ROUGE was RISING — wrong metric AND wrong direction.
+#
+# Prose with a directional verb ("falls to", "climbs to", "and rising") cannot
+# be repaired by substituting a name, because the direction belongs to the
+# metric too. So when the primary metric is not one a task's prose was written
+# for, tell the story with the metric-neutral CUSTOM set instead, which names
+# the series and claims nothing about what it measures.
+_PROSE_ASSUMES: dict[TaskType, frozenset[str]] = {
+    TaskType.CLASSIFICATION: frozenset({"accuracy", "val_accuracy"}),
+    TaskType.DETECTION: frozenset({"mAP50", "val_mAP50"}),
+    TaskType.SEGMENTATION: frozenset({"IoU", "mIoU", "val_IoU", "val_mIoU"}),
+    TaskType.NLP: frozenset({"perplexity", "val_perplexity"}),
+    TaskType.BIOMETRIC: frozenset({"EER", "val_EER"}),
+    TaskType.GENERATIVE: frozenset({"fid", "FID", "val_fid", "val_FID"}),
+    # REGRESSION and GAZE templates already say "{metric}", so they are honest
+    # for whichever series they are handed. CUSTOM names no metric at all.
+}
+
+
+def _prose_fits_metric(task: TaskType, metric: str | None) -> bool:
+    """Whether *task*'s templates can honestly describe *metric*."""
+    assumed = _PROSE_ASSUMES.get(task)
+    if assumed is None:
+        return True
+    if not metric:
+        # No named series: the task's own metric is the only reading it could
+        # be, which is what the templates already assume.
+        return True
+    return metric in assumed
+
+
 def narrate(
     task: TaskType,
     phase: Phase,
@@ -159,7 +204,8 @@ def narrate(
     run graded on RMSE was narrated as "MAE 68.0337" — a number correctly read
     and then labelled as a metric the run never logged.
     """
-    templates = _load_templates(task, phase, locale)
+    prose_task = task if _prose_fits_metric(task, metric) else TaskType.CUSTOM
+    templates = _load_templates(prose_task, phase, locale)
 
     # Deterministic variant selection: same run_id always gives same story.
     # MD5 here is a non-cryptographic seed only (not a security primitive).

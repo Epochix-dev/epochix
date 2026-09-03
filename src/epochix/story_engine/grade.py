@@ -202,6 +202,46 @@ _DIRECTION_BY_KEY: dict[str, bool] = {
     # grade silently.
     "log_loss": True,
     "val_log_loss": True,
+    # Reachable as a PRIMARY key (each is listed in _PREFERRED_KEYS_FOR_TASK)
+    # and matched by no substring hint, so each fell back to its task's default
+    # direction and inverted:
+    #
+    #   rouge — NLP defaults to lower-is-better for perplexity, so a summariser
+    #     whose ROUGE climbed 0.23 -> 0.50 was graded F and narrated "past its
+    #     best ... stopping earlier would have been better".
+    #   TAR — a true-accept rate, higher-is-better, under BIOMETRIC's
+    #     lower-is-better default (which belongs to EER).
+    #   FID — a distance, LOWER-is-better, under GENERATIVE's higher-is-better
+    #     default. It is the first preferred key for the task, so the standard
+    #     generative metric was graded backwards.
+    #
+    # "bleu" is already covered by a substring hint; the rest are pinned here
+    # rather than left to hint luck.
+    "rouge": False,
+    "val_rouge": False,
+    "rouge1": False,
+    "rouge2": False,
+    "rougel": False,
+    "meteor": False,
+    "val_meteor": False,
+    "tar": False,
+    "val_tar": False,
+    # A false-accept rate is an error (lower better); a true-accept rate at a
+    # fixed FAR is a hit rate (higher better). Both classify a run as
+    # BIOMETRIC, whose default is lower-is-better — correct for FAR by luck,
+    # backwards for TAR_at_FAR_0_001.
+    "far": True,
+    "val_far": True,
+    "tar_at_far_0_001": False,
+    "val_tar_at_far_0_001": False,
+    "fid": True,
+    "val_fid": True,
+    "kid": True,
+    "val_kid": True,
+    "is_score": False,
+    "inception_score": False,
+    "spearman": False,
+    "pearson": False,
     "error_rate": True,
     "val_error_rate": True,
     # Every val_ form is pinned rather than left to the substring hints. This
