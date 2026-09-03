@@ -25,6 +25,7 @@ from typing import TYPE_CHECKING
 from epochix.enums import TaskType
 from epochix.models import RawMetric, Run
 from epochix.normalizer import normalize
+from epochix.normalizer.canonical_keys import canonicalize_key
 from epochix.parsers.base import ParserContext
 from epochix.parsers.registry import SNIFF_SAMPLE_LINES, detect_parser
 from epochix.story_engine import StoryEngine
@@ -78,6 +79,25 @@ IDLE_SNIFF_SECS = 1.5
 # anything bigger gets truncated with a warning rather than an hour of calls.
 _LLM_MAX_LINES = 400
 
+# A metric explicitly assigned a non-numeric value: `loss: nan`, `val_loss=inf`.
+#
+# Deliberately NOT folded into the parsers' shared `_NUM` pattern. That one is
+# used by half a dozen patterns, several of which match bare `key value` pairs,
+# so teaching it to accept `nan`/`inf` would start reading words out of ordinary
+# prose ("Namespace(...)", "info", "Training on inf batches") and invent metrics
+# that were never logged. This requires an explicit `:` or `=`, which prose does
+# not have.
+#
+# It exists because a diverged reading cannot travel as a MetricEvent at all:
+# `MetricEvent.value` is a FiniteFloat, which is what keeps `--json` and the
+# embedded HTML run data valid JSON. Without this the parser never matched the
+# line, `normalize()` never saw it, and a run whose loss went to NaN at epoch 4
+# was reported as "Grade: B+, the model makes steady progress".
+_NON_FINITE_ASSIGNMENT = re.compile(
+    r"\b([A-Za-z_]\w{0,63})\s*[:=]\s*[-+]?(?:nan|inf(?:inity)?)\b",
+    re.IGNORECASE,
+)
+
 
 def _emit_line(
     *,
@@ -95,6 +115,11 @@ def _emit_line(
     Returns the epoch from the last frame emitted (or None if no frame).
     """
     raw_metrics = parser.parse_line(text, ctx)
+
+    # No parser can return this as a metric, so look for it on the raw line.
+    non_finite = _NON_FINITE_ASSIGNMENT.search(text)
+    if non_finite is not None:
+        engine.note_non_finite(canonicalize_key(non_finite.group(1)), ctx.current_epoch)
 
     # Keep the story engine's total-epochs hint in sync with whatever the
     # parser has discovered (e.g. "Epoch 30/30" → total_epochs=30). Without
@@ -551,6 +576,24 @@ async def run_pipeline(
             ),
         )
         last_seq = max(last_seq, frame.seq)
+
+    # A run that ended with a NaN metric has, until here, a story that simply
+    # stops at the last finite epoch and keeps the grade it earned before it blew
+    # up. `final_grade` and `story_summary` are read from the LAST frame below, so
+    # the correction has to be a frame.
+    diverged = engine.flush_divergence(last_seq)
+    if diverged is not None:
+        store.append_story_frame(diverged)
+        hub.publish(
+            run_id,
+            hub.make_message(
+                msg_type="story_frame",
+                run_id=run_id,
+                seq=diverged.seq,
+                payload=diverged.model_dump(mode="json"),
+            ),
+        )
+        last_seq = max(last_seq, diverged.seq)
 
     final_milestones = engine.finalize(last_seq, last_epoch)
     for ms in final_milestones:

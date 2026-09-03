@@ -7,6 +7,47 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.7.8] — 2026-09-02
+
+### Fixed
+
+- **A run whose loss became NaN was reported as a healthy run.** `loss: nan` is
+  the plainest failure signal a training log has, and it was invisible end to
+  end: a model that diverged at epoch 4 was reported as **Grade: B+**, *"the
+  model makes steady progress"*, with no warning and a story that simply
+  stopped at epoch 3.
+
+  Two silent layers. The parsers' shared number pattern requires a digit, so
+  the token `nan` matched nothing and no metric was produced for those lines.
+  And `MetricEvent.value` is a `FiniteFloat` — deliberately, since that is what
+  keeps `--json` and the embedded HTML run data valid, `NaN` being illegal JSON
+  — so even a non-finite reading would have been dropped by `normalize()` inside
+  a bare `except ValueError: continue`. The engine has had the vocabulary for
+  this all along (`impossible_reason` answers "is not a number (NaN) — usually
+  a diverged loss"); none of it was reachable from a parsed log.
+
+  The pipeline now recognises an explicit `key: nan` / `key=inf` assignment on
+  the raw line and reports it to the engine, which closes the run with a
+  divergence frame: grade F, a warning, and a narrative naming the epoch it
+  broke at and the last usable reading. The sentinel is deliberately *not* part
+  of the shared number pattern — that one feeds bare `key value` matching, so
+  teaching it `nan`/`inf` would read words out of ordinary prose
+  (`Namespace(infer=True)`, `info:`, "inf batches") and invent metrics that were
+  never logged. It requires a `:` or `=`, which prose does not have.
+
+  The frame carries the last *real* epoch and value. Dating it to the NaN epoch
+  would assert a measurement that does not exist and draw a flat segment on the
+  chart to prove it.
+
+- **A stale grade card sat beside the new one.** The dashboard rendered
+  metaphor cards under `if (frame?.metaphor_cards?.length)`, so a frame with an
+  empty list skipped the block and left the previous frame's cards in the DOM.
+  The diverged run above showed "Grade B+" next to the "Grade F" the same
+  screen had just given it. An empty list now clears the container, and the
+  divergence frame carries its own cards.
+
+---
+
 ## [0.7.7] — 2026-09-02
 
 An audit of the week's changes, run by putting eight real log shapes through

@@ -1,0 +1,3 @@
+Epoch {epoch}: {metric} became undefined (NaN). The run diverged — the last usable reading was {value} at epoch {last_epoch}. Lower the learning rate and check for exploding gradients.
+{metric} stopped being a number at epoch {epoch}. Training diverged; the last real value was {value} at epoch {last_epoch}. A smaller learning rate or gradient clipping is the usual fix.
+The run diverged at epoch {epoch}: {metric} is no longer a number. Nothing after epoch {last_epoch} ({value}) can be read. Check the learning rate first.
