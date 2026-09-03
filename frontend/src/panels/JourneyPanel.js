@@ -154,7 +154,13 @@ export class JourneyPanel {
     // ── Metaphor cards  ─────────────────────────────────────────────────────
     // Model uses { title, body, icon } — render all three.
     const mc = document.getElementById('metaphor-cards');
-    if (mc && frame?.metaphor_cards?.length) {
+    // An empty list means this frame HAS no cards, not "keep the previous
+    // frame's". Skipping the whole block on a falsy length left the last
+    // frame's cards in the DOM — a run that ended with a divergence frame
+    // showed a stale "Grade B+" card next to the F it had just been given.
+    if (mc && !frame?.metaphor_cards?.length) {
+      mc.innerHTML = '';
+    } else if (mc) {
       mc.innerHTML = frame.metaphor_cards
         .slice(0, 4)
         .map((c) => {

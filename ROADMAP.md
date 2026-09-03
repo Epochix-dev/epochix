@@ -98,6 +98,12 @@ changelog. The two that generalise:
   the direction of every preferred key, and that no key can classify a run it
   cannot then narrate.
 
+Follow-up (0.7.8): the abrupt-NaN case the audit left open is closed. A run
+whose loss jumps straight to `nan` now ends with a divergence frame instead of
+keeping the grade it earned before it blew up. Fixing it surfaced a second
+defect one layer up — a frame with no metaphor cards left the previous frame's
+cards on screen, so the diverged run displayed "Grade B+" beside its "Grade F".
+
 ## Features worth considering
 
 - **Run comparison in exports.** `CompareView` exists on screen and no export

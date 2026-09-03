@@ -1,0 +1,3 @@
+Époque {epoch} : {metric} est devenu indéfini (NaN). L'entraînement a divergé — la dernière valeur exploitable était {value} à l'époque {last_epoch}. Réduisez le taux d'apprentissage et vérifiez les gradients explosifs.
+{metric} n'est plus un nombre à l'époque {epoch}. L'entraînement a divergé ; la dernière valeur réelle était {value} à l'époque {last_epoch}. Un taux d'apprentissage plus faible ou un écrêtage des gradients corrige généralement cela.
+L'entraînement a divergé à l'époque {epoch} : {metric} n'est plus un nombre. Rien après l'époque {last_epoch} ({value}) n'est lisible. Vérifiez d'abord le taux d'apprentissage.

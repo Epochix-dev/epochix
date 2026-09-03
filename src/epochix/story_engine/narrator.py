@@ -142,6 +142,50 @@ def narrate_stalled(
     )
 
 
+def _load_diverged(locale: str = "en") -> list[str]:
+    """Templates for a run whose metric stopped being a number."""
+    key = f"_diverged/{locale}"
+    if key in _template_cache:
+        return _template_cache[key]
+    for suffix in (f".{locale}.txt", ".txt"):
+        path = _TEMPLATES_DIR / f"_diverged{suffix}"
+        if path.exists():
+            lines = [
+                ln.strip() for ln in path.read_text(encoding="utf-8").splitlines() if ln.strip()
+            ]
+            _template_cache[key] = lines or ["The run diverged."]
+            return _template_cache[key]
+    fallback = ["The run diverged — the metric stopped being a number."]
+    _template_cache[key] = fallback
+    return fallback
+
+
+def narrate_diverged(
+    epoch: float | None,
+    metric: str | None,
+    last_value: float | None,
+    last_epoch: float | None,
+    run_id: str,
+    locale: str = "en",
+) -> str:
+    """Narrate a run that ended with a NaN/infinite metric.
+
+    A log that prints `loss: nan` is the plainest failure signal there is, and
+    it was invisible: the parser cannot read a non-numeric value, so the story
+    simply stopped at the last finite epoch and the run kept the grade it had
+    earned before it blew up.
+    """
+    templates = _load_diverged(locale)
+    seed = int(hashlib.md5(run_id.encode(), usedforsecurity=False).hexdigest()[:8], 16)
+    template = random.Random(seed).choice(templates)
+    return (
+        template.replace("{epoch}", str(int(epoch)) if epoch is not None else "?")
+        .replace("{last_epoch}", str(int(last_epoch)) if last_epoch is not None else "?")
+        .replace("{value}", "?" if last_value is None else f"{last_value:.4f}")
+        .replace("{metric}", _display_metric(metric))
+    )
+
+
 # Most task template sets name their metric in the prose — "Accuracy
 # {value_pct}", "mAP50 {value_pct}", "Perplexity {value}", "IoU {value}",
 # "EER {value_pct}", "FID {value}". That sentence is only true when the run's

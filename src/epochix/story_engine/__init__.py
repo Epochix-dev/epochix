@@ -4,7 +4,7 @@ import math
 from dataclasses import dataclass, field
 
 from epochix.enums import Grade, Phase, TaskType
-from epochix.models import MetaphorCard, MetricEvent, Milestone, StoryFrame
+from epochix.models import MetaphorCard, MetricEvent, Milestone, StoryFrame, Warning
 from epochix.normalizer.canonical_keys import canonicalize_key
 from epochix.story_engine.config_loader import GradeConfig
 from epochix.story_engine.grade import (
@@ -18,6 +18,7 @@ from epochix.story_engine.grade import (
 from epochix.story_engine.milestones import MilestoneTracker
 from epochix.story_engine.narrator import (
     narrate,
+    narrate_diverged,
     narrate_past_peak,
     narrate_single_reading,
     narrate_stalled,
@@ -258,6 +259,10 @@ class StoryEngine:
     # silently dropped from the story (grade-arc chart / stat chip).
     _warmup: list[MetricEvent] = field(default_factory=list, init=False)
     _started: bool = field(default=False, init=False)
+    # (metric key, epoch) of the first non-numeric reading the log reported.
+    # A MetricEvent's value is a FiniteFloat, so a NaN can never travel as one
+    # — the pipeline hands it over here instead.
+    _non_finite: tuple[str, float | None] | None = field(default=None, init=False)
 
     def _effective_task(self) -> TaskType:
         return self.task or TaskType.CUSTOM
@@ -384,6 +389,82 @@ class StoryEngine:
                 frames.append(frame)
         self._warmup = []
         return frames
+
+    def note_non_finite(self, key: str, epoch: float | None) -> None:
+        """Record that the log reported a non-numeric value (NaN/inf) for *key*.
+
+        `MetricEvent.value` is a ``FiniteFloat`` on purpose — it is what keeps
+        `--json` and the embedded HTML run data valid, since ``NaN`` is not
+        legal JSON. So a diverged reading cannot reach the engine as an event,
+        and the pipeline reports it through here instead. Only the FIRST one is
+        kept: the epoch it broke at is the useful fact, and a diverged run
+        usually prints hundreds of them afterwards.
+        """
+        if self._non_finite is None:
+            self._non_finite = (key, epoch)
+
+    def flush_divergence(self, last_seq: int) -> StoryFrame | None:
+        """Terminal frame for a run whose metric stopped being a number.
+
+        Without it the story stopped at the last finite epoch and the run kept
+        the grade it had earned before it blew up: a model whose loss went to
+        NaN at epoch 4 was reported as "Grade: B+, the model makes steady
+        progress", with no warning anywhere. `loss: nan` is the plainest
+        failure signal a training log has.
+
+        The frame carries the last REAL epoch and the last REAL value, because
+        `StoryFrame` has nowhere to put "no reading" — `primary_metric_value`
+        is a required finite float. Dating this frame to the NaN epoch instead
+        would assert a measurement that does not exist and draw a flat segment
+        on the chart to prove it. The narrative names the epoch it broke at.
+        """
+        if self._non_finite is None:
+            return None
+        prev = self._prev_frame
+        if prev is None:
+            # Nothing finite was ever read, so there is no story to correct and
+            # no honest number to put on a frame.
+            return None
+
+        key, epoch = self._non_finite
+        narrative = narrate_diverged(
+            epoch=epoch,
+            metric=key,
+            last_value=prev.primary_metric_value,
+            last_epoch=prev.epoch,
+            run_id=self.run_id,
+            locale=self.locale,
+        )
+        frame = StoryFrame(
+            run_id=self.run_id,
+            seq=last_seq + 1,
+            epoch=prev.epoch,
+            # The run did not get further along by failing.
+            progress=prev.progress,
+            phase=prev.phase,
+            grade=Grade.F,
+            primary_metric_value=prev.primary_metric_value,
+            primary_metric=prev.primary_metric,
+            confidence=prev.confidence,
+            narrative=narrative,
+            # Its own cards, not none: the panel renders the last frame's
+            # cards, so an empty list left a stale "Grade B+" card sitting
+            # beside the F this frame reports.
+            metaphor_cards=self._build_metaphor_cards(prev.phase, Grade.F),
+            skill_dimensions=prev.skill_dimensions,
+            milestones=[],
+            warnings=[
+                Warning(
+                    kind="divergence",
+                    epoch=epoch,
+                    message="Something went wrong — the loss became undefined. "
+                    "The teacher may need to lower the learning rate.",
+                )
+            ],
+            task_type=self._effective_task(),
+        )
+        self._prev_frame = frame
+        return frame
 
     def _ensure_milestones(self) -> None:
         if self._milestones is None:
