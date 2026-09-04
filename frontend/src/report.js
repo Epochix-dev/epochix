@@ -72,10 +72,24 @@ export function reportFrame(frame, run, version = '(unknown)') {
 
   return openIssue({
     title: `Wrong reading at epoch ${frame?.epoch ?? '?'}: `,
-    labels: 'correctness',
+    labels: REPORT_LABELS,
     body,
   });
 }
+
+/** Labels every dashboard report carries.
+ *
+ * `bug` first and deliberately: GitHub silently DROPS unknown labels from an
+ * `/issues/new?labels=` link, and this asked for `correctness` alone — which
+ * did not exist in the repo. Every dashboard report therefore arrived with no
+ * label at all and no error anywhere, while the extension's own report command
+ * (which asks for `bug`) labelled fine. Issue #35 came in unlabelled for
+ * exactly this reason.
+ *
+ * `bug` is a label GitHub creates with every repository, so pairing them keeps
+ * a report triageable even if `correctness` is renamed or deleted again.
+ */
+export const REPORT_LABELS = 'bug,correctness';
 
 /** The control itself — small, quiet, and next to the sentence it disputes. */
 export function frameReportButton(frame) {
