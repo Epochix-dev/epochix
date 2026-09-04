@@ -51,7 +51,11 @@ describe('reportFrame', () => {
     const url = new URL(open.mock.calls[0][0]);
     const body = url.searchParams.get('body');
     expect(url.searchParams.get('title')).toContain('epoch 14');
-    expect(url.searchParams.get('labels')).toBe('correctness');
+    // Includes rather than equals: `bug` rides along because GitHub drops
+    // unknown labels silently, and `correctness` had gone missing once.
+    const labels = url.searchParams.get('labels').split(',');
+    expect(labels).toContain('correctness');
+    expect(labels).toContain('bug');
     expect(body).toContain('epoch        14');
     expect(body).toContain('val_accuracy');
     expect(body).toContain('0.5.88');

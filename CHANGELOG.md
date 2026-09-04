@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.7.10] — 2026-09-04
+
+### Fixed
+
+- **Every dashboard bug report arrived unlabelled.** The report button asked
+  GitHub for a `correctness` label that did not exist in the repository, and
+  GitHub silently drops unknown labels from an `/issues/new?labels=` link — no
+  error, on either side. The extension's own report command asks for `bug` and
+  labelled fine, so exactly one of the two paths worked, and the broken one was
+  the one users reach from the dashboard.
+
+  Found while triaging [#35], which came in with no label on it. Reports now
+  carry `bug,correctness` from a single shared constant, so the two call sites
+  cannot drift apart, and a report stays triageable even if the custom label is
+  renamed or deleted again — `bug` is one GitHub creates with every repository.
+
+[#35]: https://github.com/Epochix-dev/epochix/issues/35
+
+---
+
 ## [0.7.9] — 2026-09-03
 
 ### Fixed

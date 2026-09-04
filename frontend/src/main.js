@@ -35,7 +35,7 @@ import fa from './i18n/fa.json';
 import fr from './i18n/fr.json';
 import { applyStaticI18n } from './i18n/apply.js';
 import { escapeHtml as _esc } from './escape.js';
-import { openIssue } from './report.js';
+import { REPORT_LABELS, openIssue } from './report.js';
 import { WarningStrip } from './visualizations/WarningStrip.js';
 
 const LOCALES = { en, fa, fr };
@@ -352,7 +352,7 @@ async function main() {
 
     // Same dispatch as the per-frame control — a webview discards
     // window.open silently, so this must not be reimplemented per caller.
-    openIssue({ title: 'Dashboard: ', labels: 'correctness', body });
+    openIssue({ title: 'Dashboard: ', labels: REPORT_LABELS, body });
   });
 
   const EXPORT_FORMATS = [
