@@ -9,7 +9,10 @@ The divergence case in particular: a loss that doubles every epoch never
 exceeds the single-step "10x the previous epoch" rule, so a run going
 3.59 -> 2881 over eight epochs reported nothing at all. The `nan` branch could
 not cover it either — the log parser's number pattern requires a digit, so a
-literal `loss: nan` is never read and never reaches this class.
+literal `loss: nan` is never read and never reaches this class. Nor does the
+SDK route around that: `LiveReporter.log` formats its kwargs into a text line
+and feeds it to the same parsers. A NaN in a log is handled upstream, by the
+pipeline sentinel in `tests/unit/test_diverged_nan.py`.
 """
 
 from __future__ import annotations
@@ -40,7 +43,16 @@ class TestDivergence:
         assert "divergence" in fired
 
     def test_a_nan_loss_is_reported(self) -> None:
-        """Reachable through the SDK, which passes real floats."""
+        """Only reachable by calling this class directly.
+
+        Nothing in the product hands it a non-finite float. `LiveReporter.log`
+        formats its kwargs into a text line and pushes that through the same
+        parsers as a log file, and `MetricEvent.value` is a `FiniteFloat`, so a
+        NaN never travels as a metric. A `loss: nan` line is caught earlier, by
+        the pipeline's `_NON_FINITE_ASSIGNMENT` sentinel (see
+        `tests/unit/test_diverged_nan.py`). Kept because the branch exists and
+        an embedder calling the detector directly is entitled to it.
+        """
         det = WarningDetector()
         det.update(epoch=1, train_loss=0.5)
         fired = _kinds(det.update(epoch=2, train_loss=float("nan")))

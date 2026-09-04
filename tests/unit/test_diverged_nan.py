@@ -178,3 +178,25 @@ class TestTheSentinelDoesNotMisreadProse:
         assert run.final_grade != Grade.F, "a healthy run was marked diverged"
         kinds = {w.kind for f in frames for w in f.warnings}
         assert "divergence" not in kinds, kinds
+
+
+class TestTheSdkTakesTheSamePath:
+    """`LiveReporter.log(**metrics)` does not hand the engine floats.
+
+    It renders each kwarg as ``f"{k}={v}"`` and pushes the resulting line
+    through the very same parsers a log file goes through. So the divergence
+    sentinel is what covers the SDK too — and it only does so because
+    ``str(float("nan"))`` is exactly ``"nan"``. If that formatting ever changed
+    (to ``"NaN"``, or to dropping the key), the SDK would go quiet again.
+    """
+
+    def test_a_nan_metric_renders_in_a_form_the_sentinel_catches(self) -> None:
+        for value in (float("nan"), float("inf"), float("-inf")):
+            line = "  ".join(f"{k}={v}" for k, v in {"train_loss": value}.items())
+            assert _NON_FINITE_ASSIGNMENT.search(line), (
+                f"LiveReporter would emit {line!r}, which the sentinel misses"
+            )
+
+    def test_a_finite_metric_does_not_trip_it(self) -> None:
+        line = "  ".join(f"{k}={v}" for k, v in {"epoch": 4, "train_loss": 0.5}.items())
+        assert not _NON_FINITE_ASSIGNMENT.search(line), line
