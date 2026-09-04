@@ -7,6 +7,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.7.9] — 2026-09-03
+
+### Fixed
+
+- **A bug report could not say which version it came from.** The dashboard's
+  "report a problem" button asked the running server for a version — and only
+  one of the three surfaces has a server. A VS Code webview in standalone mode
+  and a standalone HTML export both failed that request and filed
+  `epochix (unavailable)`, which is the first thing you need in order to tell
+  whether a report is already fixed.
+
+  Found because a real report arrived that way ([#35]), from a VS Code webview,
+  naming no version at all. An export now carries the version that wrote it
+  (`epochix_version` in the embedded payload) and the extension publishes its
+  own to the webview, so a report says e.g. `0.7.9 (html export)` or
+  `0.7.9 (vs code extension)` and names which surface it came from.
+
+- **`epochs 0` in a report was ambiguous** — it could mean no run was ever
+  opened, or a run that produced nothing, which are different bugs. Reports now
+  carry a `run loaded` line.
+
+[#35]: https://github.com/Epochix-dev/epochix/issues/35
+
+---
+
 ## [0.7.8] — 2026-09-02
 
 ### Fixed

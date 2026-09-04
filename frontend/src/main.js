@@ -308,11 +308,24 @@ async function main() {
     const last = frames[frames.length - 1] ?? {};
     const run = s.run ?? {};
 
+    // Which epochix produced this page. Three surfaces, three sources, and
+    // only the first has a server: a VS Code webview and a standalone HTML
+    // export both failed the fetch and reported "(unavailable)", so a report
+    // filed from either could not be matched against a release. Issue #35 is
+    // one of those — a real report that named no version at all.
     let diag = '(unavailable)';
     try {
       const r = await fetch('/api/version');
       if (r.ok) diag = (await r.json()).version ?? diag;
-    } catch { /* offline export, or no server — the rest is still useful */ }
+    } catch { /* offline export, or no server — fall through to the others */ }
+    if (diag === '(unavailable)') {
+      const exportedVersion = readInlineRunData()?.epochix_version;
+      if (exportedVersion) {
+        diag = `${exportedVersion} (html export)`;
+      } else if (window.__EPOCHIX_EXT_VERSION__) {
+        diag = `${window.__EPOCHIX_EXT_VERSION__} (vs code extension)`;
+      }
+    }
 
     const body = [
       '### What looks wrong?',
@@ -327,6 +340,7 @@ async function main() {
       `surface      dashboard`,
       `metric       ${run.primary_metric ?? '(unknown)'}`,
       `task         ${run.task_type ?? '(unknown)'}`,
+      `run loaded   ${runId ? 'yes' : 'no'}`,
       `epochs       ${frames.length}`,
       `last value   ${last.primary_metric_value ?? '(none)'}`,
       `grade        ${last.grade ?? '(none)'}`,

@@ -10,6 +10,8 @@ from __future__ import annotations
 import json
 from typing import TYPE_CHECKING, Any
 
+from epochix import __version__
+
 if TYPE_CHECKING:
     from epochix.store.sqlite_store import RunStore
 
@@ -26,6 +28,11 @@ def build_json_payload(run_id: str, store: RunStore) -> dict[str, Any]:
     if run is None:
         raise ValueError(f"Run not found: {run_id!r}")
     return {
+        # Which epochix wrote this. An HTML export has no server, so the
+        # dashboard's "report a problem" button could not answer `/api/version`
+        # and every report from an exported page said "epochix (unavailable)" —
+        # the one field that decides whether a bug is already fixed.
+        "epochix_version": __version__,
         "run": run.model_dump(mode="json"),
         "frames": [f.model_dump(mode="json") for f in store.get_story_frames(run_id)],
         "events": [e.model_dump(mode="json") for e in store.get_metric_events(run_id)],

@@ -101,6 +101,29 @@ suite("Standalone webview assets", () => {
     }
   });
 
+
+  test("the webview is told which extension version rendered it", async () => {
+    // Standalone mode has no sidecar, so the dashboard's report button cannot
+    // ask `/api/version` and filed "epochix (unavailable)" every time. Issue
+    // #35 is one of those reports: a real one, with no version on it.
+    const { html } = await standaloneHtml();
+    const ext = vscode.extensions.getExtension(EXT_ID);
+    assert.ok(ext);
+    const version = String(ext.packageJSON.version);
+    assert.ok(
+      html.includes("__EPOCHIX_EXT_VERSION__"),
+      "the webview bridge never sets __EPOCHIX_EXT_VERSION__",
+    );
+    assert.ok(
+      html.includes(JSON.stringify(version)),
+      `the bridge does not carry the real version ${version}`,
+    );
+    assert.ok(
+      !html.includes('"unknown"'),
+      "the version fell back to 'unknown' — package.json was not readable",
+    );
+  });
+
   test("the warning strip ships in the standalone bundle", async () => {
     const { html, root } = await standaloneHtml();
     assert.ok(
