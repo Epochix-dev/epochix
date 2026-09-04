@@ -120,6 +120,7 @@ export function buildWebviewHtml(opts: WebviewHtmlOptions): string {
     window.__EPOCHIX_VSCODE__ = vscode;
     window.__EPOCHIX_THEME__ = ${JSON.stringify(theme)};
     window.__EPOCHIX_LOCALE__ = ${JSON.stringify(locale)};
+    window.__EPOCHIX_EXT_VERSION__ = ${JSON.stringify(extensionVersion(extensionUri))};
   </script>`;
   html = html.replace(/<\/head>/, `${csp}\n${bridge}\n</head>`);
 
@@ -142,6 +143,31 @@ code{background:#1e293b;padding:2px 6px;border-radius:4px}</style></head>
   <p><code>cd frontend &amp;&amp; npm run build:webview</code></p>
 </body>
 </html>`;
+}
+
+/** This extension's version, read once from its own package.json.
+ *
+ * Standalone mode has no sidecar, so the dashboard's "report a problem" button
+ * cannot answer `/api/version` and every report from a webview arrived saying
+ * "epochix (unavailable)" — leaving no way to tell whether the bug was already
+ * fixed. Issue #35 is exactly that: a report with no version on it.
+ */
+let _cachedVersion: string | undefined;
+
+function extensionVersion(extensionUri: vscode.Uri): string {
+  if (_cachedVersion !== undefined) return _cachedVersion;
+  try {
+    const raw = fs.readFileSync(
+      path.join(extensionUri.fsPath, "package.json"),
+      "utf-8",
+    );
+    const manifest = JSON.parse(raw) as { version?: unknown };
+    _cachedVersion =
+      typeof manifest.version === "string" ? manifest.version : "unknown";
+  } catch {
+    _cachedVersion = "unknown";
+  }
+  return _cachedVersion;
 }
 
 function getNonce(): string {
