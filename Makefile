@@ -1,4 +1,4 @@
-.PHONY: install dev test lint typecheck build clean fmt bench e2e
+.PHONY: install dev test lint typecheck build clean fmt bench e2e bump
 
 install:
 	pip install -e ".[dev]"
@@ -25,6 +25,16 @@ bench:
 
 e2e:
 	playwright test tests/e2e
+
+# Set the release version in pyproject, the extension manifest and uv.lock.
+#
+#   make bump VERSION=0.7.11
+#
+# uv.lock records the project version and only refreshes when uv next resolves,
+# so bumping pyproject by hand left it a release behind every time. Does not
+# touch CHANGELOG.md — see the script.
+bump:
+	python scripts/bump_version.py $(VERSION)
 
 build-frontend:
 	cd frontend && npm ci && npm run build
