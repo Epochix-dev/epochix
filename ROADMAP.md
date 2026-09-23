@@ -114,6 +114,21 @@ packages `build:webview` output.** Two builds, one tested, the other shipped.
 Now CI builds what the release builds and packages the `.vsix` itself. When a
 release step rebuilds something (`vscode:prepublish`), test the rebuild.
 
+## Dependabot on the Contributors list (2026-09-23)
+
+GitHub builds the Contributors list from commit authors on `main`, and a squash
+merge in the GitHub UI keeps `dependabot[bot]` as the author (plus
+`Co-authored-by` / `Signed-off-by` trailers). 31 merged Dependabot PRs put it on
+the list. There is no repository setting that changes a squash merge's author.
+
+**Land Dependabot PRs with `make land PR=<n>`, never the GitHub merge button.**
+It commits the same change as the maintainer and closes the PR, and it refuses
+any PR whose CI did not run on a base containing current `main` — `main` is not
+branch-protected, so that check is the only gate a direct push has.
+
+Removing the 31 existing bot-authored commits means rewriting `main`'s history
+(force push); that is a separate, deliberate decision.
+
 ## Features worth considering
 
 - **Run comparison in exports.** `CompareView` exists on screen and no export

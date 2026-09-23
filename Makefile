@@ -1,4 +1,4 @@
-.PHONY: install dev test lint typecheck build clean fmt bench e2e bump
+.PHONY: install dev test lint typecheck build clean fmt bench e2e bump land
 
 install:
 	pip install -e ".[dev]"
@@ -35,6 +35,16 @@ e2e:
 # touch CHANGELOG.md — see the script.
 bump:
 	python scripts/bump_version.py $(VERSION)
+
+# Land a green Dependabot PR as an ordinary commit by the maintainer.
+#
+#   make land PR=53
+#
+# Squash-merging on GitHub records dependabot[bot] as the commit author, which
+# is what put it on the Contributors list. Refuses PRs whose CI did not run on a
+# base containing current main, and asks Dependabot to rebase them instead.
+land:
+	python scripts/land_dependabot.py $(PR)
 
 build-frontend:
 	cd frontend && npm ci && npm run build
