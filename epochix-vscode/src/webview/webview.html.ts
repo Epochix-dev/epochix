@@ -84,16 +84,23 @@ export function buildWebviewHtml(opts: WebviewHtmlOptions): string {
   // Rewrite the built asset refs to webview-resource URIs, dropping the
   // `crossorigin` attribute (not meaningful for vscode-resource URIs).
   //
-  // Vite emits content-hashed names — `assets/index-B7xK2p.js` — and a new
-  // hash on every content change. Matching literal `main.js`/`main.css` (which
-  // this build has never produced) silently rewrote nothing, leaving the
-  // root-absolute `/assets/...` paths Vite writes. Those resolve against the
-  // webview origin, not the extension folder, so the panel loaded no script
-  // and no stylesheet at all. Match the shape instead of a fixed name.
+  // What ships is the output of `build:webview` (frontend/vite.webview.config.js):
+  // one nonce'd `./main.js` and one `./main.css`, because the webview CSP admits
+  // exactly one script and a lazy chunk would be blocked. Match any relative
+  // form — `./x`, `/x`, bare `x`, optionally under `assets/` — rather than a
+  // fixed name.
+  //
+  // 0.7.5 replaced a working `(?:\.\/)?main\.js` rewrite with a pattern that
+  // could not match a leading `./`, on the false premise that this build never
+  // emits main.js; that premise came from testing the SERVER bundle, which
+  // `vsce package` overwrites via `vscode:prepublish`. 0.7.5 through 0.7.10
+  // shipped an unrewritten `src="./main.js"`, which resolves against the
+  // webview origin and 404s: a blank panel for everyone without the Python
+  // sidecar. The tests now run against the bundle that ships.
   html = html
     .replace(/\s*crossorigin/g, "")
     .replace(
-      /(src|href)="\/?((?:assets\/)?[A-Za-z0-9._-]+\.(?:js|css))"/g,
+      /(src|href)="(?:\.\/|\/)?((?:assets\/)?[A-Za-z0-9._-]+\.(?:js|css))"/g,
       (_m, attr: string, rel: string) =>
         `${attr}="${webview
           .asWebviewUri(vscode.Uri.joinPath(distUri, ...rel.split("/")))

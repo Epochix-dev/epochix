@@ -3,7 +3,7 @@
 
     python scripts/bump_version.py 0.7.11
 
-Three files record the version and they must not drift apart:
+Four files record the version and they must not drift apart:
 
 * ``pyproject.toml`` is the source of truth and what PyPI publishes.
 * ``uv.lock`` records the project version too, and only refreshes when uv next
@@ -13,6 +13,10 @@ Three files record the version and they must not drift apart:
 * ``epochix-vscode/package.json`` is rewritten from the git tag at publish
   time, but the committed value is meant to sit at the last released version.
   It had drifted onto a 0.5.x line matching no tag at all.
+* ``epochix-vscode/package-lock.json`` records the extension's own version
+  twice (top level and ``packages[""]``). It sat at 0.5.76 through every
+  release up to 0.7.10 while the manifest beside it moved on — found only
+  because an unrelated ``npm install`` rewrote it.
 
 CHANGELOG.md is deliberately NOT touched. What changed is not derivable from a
 version number, and a generated entry would be exactly the kind of filler this
@@ -22,6 +26,7 @@ project refuses to ship.
 from __future__ import annotations
 
 import argparse
+import json
 import pathlib
 import re
 import subprocess
@@ -44,6 +49,27 @@ def _replace_once(path: pathlib.Path, pattern: str, replacement: str) -> None:
         raise SystemExit(f"{path}: expected one match for {pattern!r}, found {count}")
     if new != text:
         path.write_text(new, encoding="utf-8")
+
+
+def _set_lock_version(path: pathlib.Path, version: str) -> None:
+    """Set the package's own version in an npm lockfile, formatting untouched.
+
+    npm writes lockfiles as ``JSON.stringify(lock, null, 2) + "\\n"``, which
+    ``json.dumps(indent=2)`` reproduces byte for byte, so a round trip changes
+    nothing but the two fields. Line endings are preserved as found, because a
+    checkout under ``core.autocrlf`` has CRLF on disk.
+    """
+    raw = path.read_bytes().decode("utf-8")
+    crlf = "\r\n" in raw
+    lock = json.loads(raw)
+    if "version" not in lock or "" not in lock.get("packages", {}):
+        raise SystemExit(f"{path}: not an npm v2+ lockfile with a root package")
+    lock["version"] = version
+    lock["packages"][""]["version"] = version
+    out = json.dumps(lock, indent=2, ensure_ascii=False) + "\n"
+    if crlf:
+        out = out.replace("\n", "\r\n")
+    path.write_bytes(out.encode("utf-8"))
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -73,6 +99,9 @@ def main(argv: list[str] | None = None) -> int:
         f'"version": "{version}"',
     )
     print(f"  epochix-vscode/package.json -> {version}")
+
+    _set_lock_version(ROOT / "epochix-vscode" / "package-lock.json", version)
+    print(f"  epochix-vscode/package-lock.json -> {version}")
 
     if args.no_lock:
         print("  uv.lock                   -> skipped (--no-lock)")

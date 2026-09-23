@@ -18,7 +18,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
-          node-version: "20"
+          node-version: "22"
           cache: "npm"
           cache-dependency-path: frontend/package-lock.json
       - run: cd frontend && npm ci && npm run build
@@ -159,7 +159,7 @@ jobs:
           path: epochix-vscode/webview-dist/
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
-          node-version: "20"
+          node-version: "22"
       # vsce package's prepublish hook rebuilds the webview via vite in
       # ../frontend, so install the frontend's deps too.
       - run: npm --prefix frontend ci && npm --prefix epochix-vscode ci && cd epochix-vscode && npx vsce package --no-dependencies

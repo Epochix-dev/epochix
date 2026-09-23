@@ -1,17 +1,26 @@
 /**
  * Standalone mode must load the bundle it ships.
  *
- * `buildWebviewHtml` reads the vendored `webview-dist/index.html` and rewrites
- * its asset references to `asWebviewUri` values, because a webview document
- * cannot fetch a plain relative or root-absolute path off disk. The rewrite
- * looked for `main.js` / `main.css` — names Vite has never emitted here. It
- * emits content-hashed `assets/index-<hash>.js`, so the rewrite matched
- * nothing and the shipped HTML kept `src="/assets/index-<hash>.js"`, which
- * resolves against the webview origin and 404s. Blank panel.
+ * `buildWebviewHtml` reads `webview-dist/index.html` and rewrites its asset
+ * references to `asWebviewUri` values, because a webview document cannot fetch
+ * a relative or root-absolute path off disk.
  *
- * This is the no-sidecar path: exactly what a user who has not `pip install`ed
- * epochix sees, and what `_degradeToStandalone` falls back to when the server
- * dies mid-run.
+ * What ships in `webview-dist/` is the output of `build:webview`
+ * (frontend/vite.webview.config.js), produced by `vscode:prepublish` when
+ * `vsce package` runs: one nonce'd `./main.js` and one `./main.css`, because
+ * the webview CSP admits exactly one script and a lazy chunk would be blocked.
+ *
+ * History worth keeping, because these tests once enforced the opposite:
+ * 0.7.5 replaced a working `(?:\.\/)?main\.js` rewrite with a pattern that
+ * could not match a leading `./`, reasoning that "this build never emits
+ * main.js". That was true only of the SERVER bundle (`npm run build`, hashed
+ * `/assets/index-*.js`), which CI was copying into webview-dist — and which
+ * `vsce package` then overwrites. So every test here validated an artifact that
+ * never shipped, passed, and 0.7.5 through 0.7.10 went out with an unrewritten
+ * `src="./main.js"`: a blank panel for everyone without the Python sidecar.
+ *
+ * This is the no-sidecar path: what a user who has not `pip install`ed epochix
+ * sees, and what `_degradeToStandalone` falls back to when the server dies.
  */
 import * as assert from "assert";
 import * as fs from "fs";
@@ -53,18 +62,36 @@ async function standaloneHtml(): Promise<{ html: string; root: string }> {
   }
 }
 
+function distRoot(): string {
+  const ext = vscode.extensions.getExtension(EXT_ID);
+  assert.ok(ext);
+  return path.join(ext.extensionPath, "webview-dist");
+}
+
 suite("Standalone webview assets", () => {
-  test("the vendored bundle really is hash-named, not main.js", () => {
-    const ext = vscode.extensions.getExtension(EXT_ID);
-    assert.ok(ext);
-    const root = path.join(ext.extensionPath, "webview-dist");
+  test("the bundle under test is the one the release ships", () => {
+    // Premise guard. If this fails, webview-dist was filled from the wrong
+    // build (the server bundle) and every other test in this suite would be
+    // checking an artifact that never reaches a user — which is precisely how
+    // a blank panel survived six releases.
+    const root = distRoot();
     const index = fs.readFileSync(path.join(root, "index.html"), "utf-8");
-    // Guards the premise: if the build ever does emit main.js this test's
-    // reasoning changes, and it should fail loudly rather than pass vacuously.
     assert.ok(
-      /src="[^"]*assets\/index-[A-Za-z0-9_-]+\.js"/.test(index),
-      `expected a hashed entry script in the built index.html, got:\n${index.slice(0, 600)}`,
+      /<script type="module"[^>]*src="\.\/main\.js"/.test(index),
+      "webview-dist/index.html does not load ./main.js — it was not built with " +
+        `\`npm run build:webview\`. Got:\n${index.slice(0, 600)}`,
     );
+    assert.ok(fs.existsSync(path.join(root, "main.js")), "no webview-dist/main.js");
+    assert.ok(fs.existsSync(path.join(root, "main.css")), "no webview-dist/main.css");
+  });
+
+  test("exactly one script is loaded, as the CSP requires", async () => {
+    // The CSP is `script-src 'nonce-…'`: one nonce, one module script. A second
+    // script tag or a lazily imported chunk is blocked at runtime.
+    const { html } = await standaloneHtml();
+    const moduleScripts = html.match(/<script type="module"[^>]*>/g) ?? [];
+    assert.strictEqual(moduleScripts.length, 1, JSON.stringify(moduleScripts));
+    assert.ok(/nonce="[^"]+"/.test(moduleScripts[0]), "the module script has no nonce");
   });
 
   test("no asset reference survives unrewritten", async () => {
@@ -101,7 +128,6 @@ suite("Standalone webview assets", () => {
     }
   });
 
-
   test("the webview is told which extension version rendered it", async () => {
     // Standalone mode has no sidecar, so the dashboard's report button cannot
     // ask `/api/version` and filed "epochix (unavailable)" every time. Issue
@@ -130,14 +156,10 @@ suite("Standalone webview assets", () => {
       html.includes('id="warning-strip"'),
       "standalone HTML has no warning strip mount point",
     );
-    const entry = fs
-      .readdirSync(path.join(root, "assets"))
-      .find((f) => /^index-.*\.js$/.test(f));
-    assert.ok(entry, "no entry bundle in webview-dist/assets");
-    const js = fs.readFileSync(path.join(root, "assets", entry), "utf-8");
+    const js = fs.readFileSync(path.join(root, "main.js"), "utf-8");
     assert.ok(
       js.includes("warning-strip"),
-      "the entry bundle never touches the warning strip",
+      "main.js never touches the warning strip",
     );
   });
 });
