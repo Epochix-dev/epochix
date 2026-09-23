@@ -126,8 +126,16 @@ It commits the same change as the maintainer and closes the PR, and it refuses
 any PR whose CI did not run on a base containing current `main` — `main` is not
 branch-protected, so that check is the only gate a direct push has.
 
-Removing the 31 existing bot-authored commits means rewriting `main`'s history
-(force push); that is a separate, deliberate decision.
+The 31 existing bot-authored commits were re-authored on 2026-09-23 by
+rewriting `main` (user-approved; trees verified identical commit by commit;
+tags left on the original commits; backup branch
+`backup/main-before-reauthor-2026-09-23`). The Contributors API now lists only
+the maintainer.
+
+Security settings enabled the same day: Dependabot security updates, secret
+scanning and push protection (vulnerability alerts were already on). The
+initial secret scan of the full history found nothing. Security-update PRs are
+opened by Dependabot too — land them with `make land` like any other.
 
 ## Features worth considering
 
