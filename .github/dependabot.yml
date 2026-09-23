@@ -27,6 +27,16 @@ updates:
       interval: "weekly"
     open-pull-requests-limit: 5
     groups:
+      # vitest and @vitest/coverage-v8 are version-locked: coverage-v8 declares
+      # a peer dependency on the exact same vitest major. Dependabot opened the
+      # 4 -> 5 major as two separate PRs (#44, #45), and each pinned its half
+      # against the other's OLD version, so `npm ci` failed with ERESOLVE on
+      # both — neither could ever pass alone, and merging one would have broken
+      # main. Same failure as codeql-action below. No update-types filter, so
+      # majors travel together too; listed first because a dependency joins
+      # the first group it matches.
+      vitest:
+        patterns: ["vitest", "@vitest/*"]
       frontend-patches:
         patterns: ["*"]
         update-types: ["minor", "patch"]
