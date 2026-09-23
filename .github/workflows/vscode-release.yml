@@ -32,7 +32,12 @@ on:
   workflow_dispatch:
 
 env:
-  NODE_VERSION: "20"
+  # 22, not 20: Node 20 reached end of life in April 2026, and both publish
+  # tools now declare `engines: node >= 22` (@vscode/vsce 4.0.0, ovsx 1.2.0 —
+  # each released AFTER 0.7.10 shipped). They happened to still run on 20,
+  # outside their declared support. The extension itself is unaffected: its
+  # bundle targets `node18` in esbuild.config.mjs, whatever builds it.
+  NODE_VERSION: "22"
   EXTENSION_DIR: epochix-vscode
 
 # Least privilege by default: every job gets a read-only token unless it
@@ -161,6 +166,8 @@ jobs:
       name: vscode-marketplace
       url: https://marketplace.visualstudio.com/items?itemName=epochix.epochix
     steps:
+      # Checkout FIRST: it cleans the workspace, so the artifact must land after.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           name: vsix-${{ needs.package-vsix.outputs.version }}
@@ -169,9 +176,16 @@ jobs:
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
           node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: ${{ env.EXTENSION_DIR }}/package-lock.json
 
-      - name: Install vsce
-        run: npm install -g @vscode/vsce
+      # The LOCKED vsce — the same one that packaged the .vsix. This used to be
+      # `npm install -g @vscode/vsce`, i.e. whatever was newest on release day:
+      # vsce 4.0.0 appeared ten days after 0.7.10 and would have been the first
+      # thing to touch the next release, untested. Now a vsce bump is a
+      # reviewed Dependabot PR, and CI packages with it (see ci.yml).
+      - name: Install the locked vsce
+        run: npm ci --prefix ${{ env.EXTENSION_DIR }}
 
       - name: Publish to VS Code Marketplace
         # The Marketplace publish endpoint flakes with transient 5xx/timeouts
@@ -181,7 +195,7 @@ jobs:
         # failure. A real auth error (bad/expired PAT) still fails all attempts.
         run: |
           for attempt in 1 2 3; do
-            if vsce publish --packagePath ./vsix/*.vsix --skip-duplicate; then
+            if npx --prefix ${{ env.EXTENSION_DIR }} --no-install vsce publish --packagePath ./vsix/*.vsix --skip-duplicate; then
               echo "Published on attempt $attempt."
               exit 0
             fi
@@ -203,6 +217,7 @@ jobs:
       name: open-vsx
       url: https://open-vsx.org/extension/epochix/epochix
     steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           name: vsix-${{ needs.package-vsix.outputs.version }}
@@ -211,9 +226,14 @@ jobs:
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
           node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: ${{ env.EXTENSION_DIR }}/package-lock.json
 
-      - name: Install ovsx
-        run: npm install -g ovsx
+      # Locked, for the same reason as vsce above: `npm install -g ovsx` took
+      # whatever was newest, and ovsx 1.2.0 (engines: node >= 22) shipped after
+      # 0.7.10. It is a devDependency now, so Dependabot proposes the bump.
+      - name: Install the locked ovsx
+        run: npm ci --prefix ${{ env.EXTENSION_DIR }}
 
       # ovsx publish requires the namespace to already exist — it is NOT
       # auto-created. create-namespace is idempotent-friendly here: if it
@@ -222,8 +242,9 @@ jobs:
       # this account, else Open VSX returns 403.)
       - name: Publish to Open VSX
         run: |
-          ovsx create-namespace epochix --pat "$OVSX_PAT" || echo "namespace already exists (or creation skipped)"
-          ovsx publish ./vsix/*.vsix --pat "$OVSX_PAT"
+          OVSX="npx --prefix ${{ env.EXTENSION_DIR }} --no-install ovsx"
+          $OVSX create-namespace epochix --pat "$OVSX_PAT" || echo "namespace already exists (or creation skipped)"
+          $OVSX publish ./vsix/*.vsix --pat "$OVSX_PAT"
         env:
           OVSX_PAT: ${{ secrets.OVSX_PAT }}
 

@@ -7,6 +7,67 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.7.11] — 2026-09-23
+
+### Fixed
+
+- **The VS Code extension's standalone mode shipped a blank panel in 0.7.5
+  through 0.7.10.** This was a regression introduced in 0.7.5, by a change
+  that claimed to fix the very thing it broke.
+
+  Standalone mode is what runs for anyone who has not installed the Python
+  package, and what the extension falls back to when the sidecar dies. It reads
+  `webview-dist/index.html` and rewrites the script and stylesheet paths to
+  webview URIs, because a webview cannot fetch a relative path off disk. What
+  ships there is the output of `build:webview`: a single nonce'd `./main.js`
+  and `./main.css`, by design, since the webview CSP admits exactly one script.
+  The rewrite up to 0.7.4 matched `./main.js` and worked.
+
+  0.7.5 replaced it with a pattern that could not match a leading `./`, on the
+  reasoning that "this build has never emitted main.js". That was true only of
+  the *server* bundle — and CI, and the local vendoring script, were copying the
+  server bundle into `webview-dist` before running the extension tests. So the
+  tests validated an artifact that never ships and passed, while `vsce package`
+  rebuilt the real one and every release went out with an unrewritten
+  `src="./main.js"` that 404s against the webview origin. Confirmed by
+  unpacking the published 0.7.4 and 0.7.10 `.vsix` files and running each
+  release's own rewrite against its own shipped HTML.
+
+  The rewrite now accepts `./x`, `/x` and bare `x`. More importantly, CI and
+  `scripts/update-vendored-frontend.sh` build the webview with
+  `npm run build:webview`, exactly as the release does; a new test fails loudly
+  if `webview-dist` holds anything other than that single-script build; and CI
+  now runs `vsce package` and checks the `.vsix` it produces. Put the 0.7.10
+  regex back and the suite fails with `./main.js` and `./main.css` "never
+  rewritten" — the exact symptom that shipped.
+
+### Changed
+
+- **The release publishes with locked tools.** The Marketplace and Open VSX jobs
+  ran `npm install -g @vscode/vsce` and `npm install -g ovsx` — whatever was
+  newest on release day. Both shipped new versions after 0.7.10 (vsce 4.0.0,
+  ovsx 1.2.0) that declare `engines: node >= 22`, while the release ran Node 20.
+  Tested: both still run on 20 today, so 0.7.11 would not have failed — but it
+  would have been the first thing to execute them, untested. `ovsx` is now a
+  devDependency like `vsce`, the publish jobs use the lockfile, and Dependabot
+  proposes the bumps where CI can see them.
+
+- **Node 22 across every workflow.** Node 20 reached end of life in April 2026
+  and both publish tools now require 22. The extension is unaffected: its
+  bundle targets `node18` in `esbuild.config.mjs` regardless of what builds it.
+
+- **`make bump` also sets `epochix-vscode/package-lock.json`,** which records the
+  extension's own version and sat at 0.5.76 through every release up to 0.7.10.
+  The drift test checks it.
+
+- **Dependabot groups `vitest` and `@vitest/*`.** It opened the vitest 4 -> 5
+  major as two PRs (#44, #45); coverage-v8 declares a peer dependency on the
+  same vitest major, so each failed `npm ci` with ERESOLVE and neither could
+  ever pass alone. Landed together in #46 after confirming the same 13 test
+  files and 147 tests run under vitest 5.
+
+---
+
 ## [0.7.10] — 2026-09-04
 
 ### Fixed

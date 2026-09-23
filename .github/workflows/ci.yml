@@ -82,23 +82,27 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
-          node-version: "20"
+          node-version: "22"
           cache: npm
           cache-dependency-path: epochix-vscode/package-lock.json
       - run: cd epochix-vscode && npm ci
 
-      # The extension SHIPS this bundle and renders it itself whenever the
-      # Python sidecar is absent. CI never built it, so every standalone-mode
-      # test ran against a missing bundle and took the "not built yet"
-      # fallback branch — which is how a rewrite that matched no asset name at
-      # all survived: the panel it produced was blank in exactly the case no
-      # test could see.
-      - name: Build and vendor the webview bundle
+      # Build the webview the way the RELEASE does. `vsce package` runs
+      # `vscode:prepublish`, which runs `build:webview`
+      # (frontend/vite.webview.config.js): one nonce'd `./main.js` and one
+      # `./main.css`, because the webview CSP admits exactly one script.
+      #
+      # This step used to copy the SERVER build (`npm run build`, hashed
+      # `/assets/index-*.js` plus lazy chunks) into webview-dist instead. Every
+      # standalone-mode test then validated an artifact that never ships, and
+      # a rewrite that could not match the real `./main.js` passed CI for six
+      # releases (0.7.5 - 0.7.10) while the shipped panel was blank.
+      - name: Build the webview bundle exactly as the release does
         run: |
-          cd frontend && npm ci && npm run build && cd ..
-          rm -rf epochix-vscode/webview-dist
-          cp -r frontend/dist epochix-vscode/webview-dist
+          cd frontend && npm ci && npm run build:webview && cd ..
           test -f epochix-vscode/webview-dist/index.html
+          test -f epochix-vscode/webview-dist/main.js
+          grep -q 'src="./main.js"' epochix-vscode/webview-dist/index.html
 
       - name: Lint the extension
         run: npm run lint
@@ -108,6 +112,17 @@ jobs:
         working-directory: epochix-vscode
       - name: Run extension host integration tests
         run: xvfb-run -a npm test
+        working-directory: epochix-vscode
+
+      # vsce only ran at RELEASE time, so a bump to it (Dependabot #49 proposed
+      # 3 -> 4) could pass every check here and first execute while shipping.
+      # Package with the locked vsce, exactly as the release does, and confirm
+      # the webview inside the .vsix is the single-script build that ships.
+      - name: Package the extension as the release does
+        run: |
+          npx --no-install vsce package --no-dependencies -o "$RUNNER_TEMP/ci.vsix"
+          unzip -l "$RUNNER_TEMP/ci.vsix" | grep -q "extension/webview-dist/main.js"
+          unzip -p "$RUNNER_TEMP/ci.vsix" extension/webview-dist/index.html | grep -q 'src="./main.js"'
         working-directory: epochix-vscode
 
   browser:
@@ -134,7 +149,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
-          node-version: "20"
+          node-version: "22"
           cache: npm
           cache-dependency-path: frontend/package-lock.json
       - run: cd frontend && npm ci && npm run build
