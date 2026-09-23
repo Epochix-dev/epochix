@@ -104,6 +104,16 @@ keeping the grade it earned before it blew up. Fixing it surfaced a second
 defect one layer up — a frame with no metaphor cards left the previous frame's
 cards on screen, so the diverged run displayed "Grade B+" beside its "Grade F".
 
+## A test that validated the wrong artifact (2026-09-23)
+
+0.7.5 through 0.7.10 shipped a blank standalone panel in the VS Code
+extension, introduced by a 0.7.5 change of mine and caught only by unpacking
+the published `.vsix`. The lesson generalises beyond this bug: **the extension
+tests were run against `frontend/dist` (the server build), but the release
+packages `build:webview` output.** Two builds, one tested, the other shipped.
+Now CI builds what the release builds and packages the `.vsix` itself. When a
+release step rebuilds something (`vscode:prepublish`), test the rebuild.
+
 ## Features worth considering
 
 - **Run comparison in exports.** `CompareView` exists on screen and no export
