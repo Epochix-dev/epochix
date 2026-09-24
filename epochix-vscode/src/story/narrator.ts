@@ -166,14 +166,16 @@ const TEMPLATES: Record<string, string[]> = {
   "custom/awakening": [
     "Training has begun. The model is processing its first examples at epoch {epoch}.",
   ],
+  // The neutral set: used for CUSTOM runs, and for any task whose own wording
+  // would name a metric the run never logged. It names the real series.
   "custom/learning": [
-    "The model is making progress. Metric: {value} at epoch {epoch}.",
+    "The model is making progress. {metric} {value} at epoch {epoch}.",
   ],
   "custom/understanding": [
-    "Good progress. The model has learned the main patterns. Value: {value}.",
+    "Good progress. The model has learned the main patterns. {metric} {value}.",
   ],
   "custom/mastering": [
-    "Strong performance. Metric value {value} at epoch {epoch}.",
+    "Strong performance. {metric} {value} at epoch {epoch}.",
   ],
   "custom/polishing": [
     "Excellent results. The model is being fine-tuned at epoch {epoch}.",
@@ -201,23 +203,125 @@ export interface NarrateOptions {
   primaryValue: number;
   delta: number;
   runId: string;
+  /** The series the numbers came from, e.g. "val_loss". */
+  metric?: string;
+}
+
+// Several task sets name their metric in the prose — "Accuracy {value_pct}",
+// "mAP", "Perplexity", "EER", "MAE", and regression's "Error has dropped to".
+// That sentence is only true when the run's primary metric IS that metric.
+// Mirrors _PROSE_ASSUMES in story_engine/narrator.py. A log loss narrated as
+// "Accuracy 41.8%", ROUGE as "Perplexity falls", or a rising R² as "Error has
+// dropped" are all false statements built from real numbers.
+const PROSE_ASSUMES: Partial<Record<TaskType, ReadonlySet<string>>> = {
+  classification: new Set(["accuracy", "val_accuracy"]),
+  detection: new Set(["map50", "val_map50", "map", "map75"]),
+  nlp: new Set(["perplexity", "val_perplexity"]),
+  biometric: new Set(["eer", "val_eer"]),
+  gaze: new Set(["mae", "val_mae"]),
+  regression: new Set([
+    "mae", "val_mae", "rmse", "val_rmse", "mse", "val_mse",
+    "mape", "val_mape", "medae", "rmsle",
+  ]),
+};
+
+function proseFitsMetric(task: TaskType, metric: string | undefined): boolean {
+  const assumed = PROSE_ASSUMES[task];
+  if (assumed === undefined || !metric) return true;
+  return assumed.has(metric.toLowerCase());
+}
+
+/** "val_log_loss" -> "validation log loss", for use inside a sentence. */
+export function displayMetric(metric: string | undefined): string {
+  if (!metric) return "the metric";
+  for (const [prefix, spoken] of [["val_", "validation "], ["train_", "training "]]) {
+    if (metric.startsWith(prefix)) {
+      return spoken + metric.slice(prefix.length).replace(/_/g, " ");
+    }
+  }
+  return metric.replace(/_/g, " ");
+}
+
+function fmtEpoch(epoch: number | null): string {
+  return epoch !== null ? String(Math.round(epoch)) : "?";
 }
 
 export function narrate(opts: NarrateOptions): string {
-  const key = `${opts.task}/${opts.phase}`;
+  const proseTask: TaskType = proseFitsMetric(opts.task, opts.metric) ? opts.task : "custom";
+  const key = `${proseTask}/${opts.phase}`;
   const templates = TEMPLATES[key] ?? TEMPLATES[`custom/${opts.phase}`] ?? [
     `Training in progress (epoch ${opts.epoch ?? "?"}).`,
   ];
 
   const template = templates[pickIndex(opts.runId, templates.length)];
 
-  const epochStr = opts.epoch !== null ? String(Math.round(opts.epoch)) : "?";
   const valuePct = `${(opts.primaryValue * 100).toFixed(1)}%`;
   const deltaStr = opts.delta !== 0 ? (opts.delta >= 0 ? "+" : "") + opts.delta.toFixed(4) : "0";
 
   return template
-    .replace(/\{epoch\}/g, epochStr)
+    .replace(/\{epoch\}/g, fmtEpoch(opts.epoch))
     .replace(/\{value\}/g, opts.primaryValue.toFixed(4))
     .replace(/\{delta\}/g, deltaStr)
-    .replace(/\{value_pct\}/g, valuePct);
+    .replace(/\{value_pct\}/g, valuePct)
+    .replace(/\{metric\}/g, displayMetric(opts.metric));
 }
+
+// ── Runs that are not progressing — mirrors narrator.py ─────────────────────
+// Phase templates are chosen by how far through training a run is, not by
+// whether its metric moved, so on their own they narrate progress that the
+// data does not show. These replace them when the numbers say otherwise.
+// English only, like the rest of this module.
+
+const PAST_PEAK = [
+  "Epoch {epoch}: {value}, worse than the best of {best} at epoch {best_epoch}. The model has passed its peak — the earlier checkpoint is the better one.",
+  "Past its best: {best} at epoch {best_epoch}, now {value}. The later epochs are not improving on it; stopping earlier would have been better.",
+  "Epoch {epoch}: performance has slipped from {best} (epoch {best_epoch}) to {value}. The later epochs are moving away from the best result, not toward it.",
+];
+
+const STALLED = [
+  "Epoch {epoch}: the metric has barely moved — {baseline} to {value} over {epochs_seen} epochs. The model is not learning yet — check the learning rate first, then the data pipeline.",
+  "After {epochs_seen} epochs the metric sits at {value}, essentially where it started ({baseline}). Worth checking the learning rate, the data pipeline and the label mapping.",
+  "No meaningful progress yet: {baseline} to {value} across {epochs_seen} epochs. This usually points to a setup problem rather than a model that needs more time.",
+];
+
+const DIVERGED = [
+  "Epoch {epoch}: {metric} became undefined (NaN). The run diverged — the last usable reading was {value} at epoch {last_epoch}. Lower the learning rate and check for exploding gradients.",
+  "{metric} stopped being a number at epoch {epoch}. Training diverged; the last real value was {value} at epoch {last_epoch}. A smaller learning rate or gradient clipping is the usual fix.",
+  "The run diverged at epoch {epoch}: {metric} is no longer a number. Nothing after epoch {last_epoch} ({value}) can be read. Check the learning rate first.",
+];
+
+export function narratePastPeak(o: {
+  epoch: number | null; value: number; best: number;
+  bestEpoch: number | null; runId: string;
+}): string {
+  return PAST_PEAK[pickIndex(o.runId, PAST_PEAK.length)]
+    .replace(/\{epoch\}/g, fmtEpoch(o.epoch))
+    .replace(/\{value\}/g, o.value.toFixed(4))
+    .replace(/\{best\}/g, o.best.toFixed(4))
+    .replace(/\{best_epoch\}/g, fmtEpoch(o.bestEpoch));
+}
+
+export function narrateStalled(o: {
+  epoch: number | null; value: number; baseline: number;
+  epochsSeen: number; runId: string;
+}): string {
+  return STALLED[pickIndex(o.runId, STALLED.length)]
+    .replace(/\{epoch\}/g, fmtEpoch(o.epoch))
+    .replace(/\{value\}/g, o.value.toFixed(4))
+    .replace(/\{baseline\}/g, o.baseline.toFixed(4))
+    .replace(/\{epochs_seen\}/g, String(o.epochsSeen));
+}
+
+export function narrateDiverged(o: {
+  epoch: number | null; metric: string; lastValue: number;
+  lastEpoch: number | null; runId: string;
+}): string {
+  return DIVERGED[pickIndex(o.runId, DIVERGED.length)]
+    .replace(/\{epoch\}/g, fmtEpoch(o.epoch))
+    .replace(/\{last_epoch\}/g, fmtEpoch(o.lastEpoch))
+    .replace(/\{value\}/g, o.lastValue.toFixed(4))
+    .replace(/\{metric\}/g, displayMetric(o.metric));
+}
+
+/** Every variant, so tests can assert over all of them rather than one sample. */
+export const _VARIANTS = { PAST_PEAK, STALLED, DIVERGED };

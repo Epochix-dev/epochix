@@ -23,24 +23,45 @@ export const PHASE_EMOJIS: Record<Phase, string> = {
  * @param progress      0.0–1.0 fraction of total epochs completed.
  * @param primaryValue  Current primary metric value.
  * @param baseline      Value at epoch 0 (or first recorded epoch).
- * @param target        Theoretical maximum (1.0 for accuracy/mAP, etc.).
+ * @param target        The ideal value: 1.0 for accuracy/mAP, 0 for a loss.
+ * @param lowerBetter   Whether improvement means moving DOWN towards target.
+ *                      Without it a falling loss measured towards 1.0 never
+ *                      counted as progress at all.
  */
 export function computePhase(
   progress: number,
   primaryValue: number,
   baseline: number,
   target: number,
+  lowerBetter = false,
 ): Phase {
   if (progress < 0.10) return "awakening";
 
-  const span = target - baseline;
-  const relative =
-    span > 0 ? (primaryValue - baseline) / (span + 1e-9) : progress;
+  const span = lowerBetter ? baseline - target : target - baseline;
+  const moved = lowerBetter ? baseline - primaryValue : primaryValue - baseline;
+  const relative = span > 0 ? moved / (span + 1e-9) : progress;
 
   if (progress < 0.40 || relative < 0.40) return "learning";
   if (progress < 0.70 || relative < 0.75) return "understanding";
   if (progress < 0.95 || relative < 0.95) return "mastering";
   return "polishing";
+}
+
+/**
+ * Fraction of the achievable improvement realised so far, clamped to [0, 1].
+ * Mirrors relative_improvement in story_engine/phases.py; undefined when the
+ * baseline already sits at the ideal, so callers can fall back.
+ */
+export function relativeImprovement(
+  primaryValue: number,
+  baseline: number,
+  lowerBetter: boolean,
+): number | undefined {
+  const ideal = lowerBetter ? 0 : 1;
+  const span = lowerBetter ? baseline - ideal : ideal - baseline;
+  if (Math.abs(span) <= 1e-9) return undefined;
+  const improved = lowerBetter ? baseline - primaryValue : primaryValue - baseline;
+  return Math.max(0, Math.min(1, improved / span));
 }
 
 /**

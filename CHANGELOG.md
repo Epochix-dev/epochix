@@ -7,6 +7,58 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.7.12] — 2026-09-24
+
+### Fixed — the VS Code extension's own engine
+
+The extension ships a TypeScript copy of the story engine, used by everyone who
+has not installed the Python package. AGENTS.md warns that the two copies drift;
+this one had drifted a long way. Driven through the log shapes that exposed
+Python bugs in 0.7.7 and 0.7.8, it:
+
+- **Told no story at all for six of nine common log shapes** — a plain
+  `loss` / `val_loss` log (the most common thing a training script prints), a
+  YOLO `box_loss` / `cls_loss` log, an XGBoost log, a ROUGE log and a run that
+  went to NaN. Metrics it did not recognise defaulted the task to
+  "classification", which then waited for a `val_accuracy` that was never
+  logged. Unrecognised runs are now a neutral task narrated by the metric they
+  actually logged, graded on how far it improved.
+- **Graded every metric on accuracy bands, higher-is-better.** A loss has no
+  absolute scale, and FID, log loss, l2 and EER-style errors are lower-is-better.
+  The per-metric direction table, grading on improvement, and "incomplete" for a
+  single reading are ported from the Python engine.
+- **Named metrics the run never logged:** a log loss would have read as
+  "Accuracy", Dice as IoU, a rising R² as "Error has dropped". Wording written for
+  one metric is now used only for that metric.
+- **Said "Patterns are starting to click" as validation accuracy fell from 0.79
+  to 0.60.** It had no past-peak, stalled or diverged wording at all; the Python
+  versions are ported, including "stalled means flat, never fallen".
+- **Warned "plateau" on a steadily falling loss** — its only check was "no value
+  went up" — and announced every grade change, including a fall to F, as "Grade
+  improved". Overfitting and divergence warnings are ported too.
+- **Graded XGBoost on its TRAINING loss.** The universal parser read
+  `train-logloss` and `valid-logloss` as one key and kept the first. Python's
+  boosting parser (XGBoost, LightGBM, CatBoost) is ported, so validation is what
+  gets graded and the boosting round is the x-axis.
+- **Pinned any log without `Epoch x/N` in its first phase forever** ("the model
+  is processing its first examples at epoch 55"). With no known total, progress
+  is now the fraction of achievable improvement, as in Python.
+
+### Fixed — the Python engine
+
+- **Every FID-graded run got A+, improving or worsening.** There are no generative
+  grading bands, so FID fell through to the classification bands,
+  higher-is-better: every FID above 0.95 is "A+". FID's scale depends on the
+  dataset and feature extractor, so it is graded on improvement instead.
+- **A live run that went to NaN showed no divergence until it exited.** 0.7.8
+  reported it only from the end-of-stream step, and a live run has no end — a
+  diverged one can print `nan` for hours. It is reported on the NaN line itself,
+  using that line's own sequence number: any other would collide with the
+  `(run_id, seq)` primary key, where the store's `on_conflict_do_nothing` would
+  drop the frame silently.
+
+---
+
 ## [0.7.11] — 2026-09-23
 
 ### Fixed

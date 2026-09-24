@@ -137,6 +137,21 @@ scanning and push protection (vulnerability alerts were already on). The
 initial secret scan of the full history found nothing. Security-update PRs are
 opened by Dependabot too — land them with `make land` like any other.
 
+## Engine parity (2026-09-24)
+
+The extension's TypeScript engine was brought up to the Python engine's
+truthfulness fixes in 0.7.12, and `standaloneTruthfulness.test.ts` drives it
+through the same log shapes. Known gaps that remain, deliberately not done yet:
+
+- **Narratives are English only** in the extension engine. The Python engine is
+  localised (en/fa/fr); the standalone panel shows English stories whatever the
+  locale.
+- **Regression keys lose their split** in the TS canonicaliser (`val_mae` and
+  `mae` both become `MAE`), so a regression run can be graded on training error.
+  Python keeps `val_MAE`. Same class of bug as the boosting fix above.
+- The two engines are still hand-ported copies. Any change to grading, direction
+  or wording must be made in both; the tests on each side are the only guard.
+
 ## Features worth considering
 
 - **Run comparison in exports.** `CompareView` exists on screen and no export

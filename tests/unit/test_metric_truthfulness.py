@@ -248,3 +248,35 @@ class TestPastPeakWording:
         )
         assert "1.7300" in text and "0.6878" in text, text
         assert not re.search(r"\{[a-z_]+\}", text), f"unrendered token in {text!r}"
+
+
+class TestFidIsGradedOnWhatItDid:
+    """FID was graded A+ whatever it did.
+
+    There is no generative row in the default bands, so FID fell through to the
+    CLASSIFICATION bands, higher-is-better: every FID >= 0.95 is "A+". An
+    improving and a worsening FID run graded identically, which means the grade
+    carried no information at all. FID's scale depends on the dataset and the
+    feature extractor, so it is graded on improvement instead.
+    """
+
+    @staticmethod
+    def _fid_run(tmp_path: Path, name: str, values: list[float]) -> tuple[object, list]:
+        lines = [f"Epoch {i}/{len(values)} g_loss=1.0 fid={v}" for i, v in enumerate(values, 1)]
+        return _story(tmp_path, lines, name)
+
+    def test_improving_and_worsening_fid_do_not_share_a_grade(self, tmp_path: Path) -> None:
+        up, _ = self._fid_run(tmp_path, "fid_up", [120, 90, 70, 55, 45, 38, 33, 30])
+        down, _ = self._fid_run(tmp_path, "fid_down", [30, 33, 38, 45, 55, 70, 90, 120])
+        assert up.final_grade != down.final_grade, (
+            f"improving and worsening FID both graded {up.final_grade}"
+        )
+
+    def test_a_worsening_fid_is_not_praised(self, tmp_path: Path) -> None:
+        run, _ = self._fid_run(tmp_path, "fid_bad", [30, 33, 38, 45, 55, 70, 90, 120])
+        assert str(run.final_grade) in {"Grade.F", "Grade.D"}, run.final_grade
+
+    def test_a_falling_fid_counts_as_improvement(self, tmp_path: Path) -> None:
+        """Lower is better: a falling FID must grade well, not badly."""
+        run, _ = self._fid_run(tmp_path, "fid_good", [120, 90, 70, 55, 45, 38, 33, 30])
+        assert str(run.final_grade).startswith("Grade.A"), run.final_grade

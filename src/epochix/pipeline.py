@@ -127,7 +127,7 @@ def _emit_line(
     if ctx.total_epochs is not None and engine.total_epochs != ctx.total_epochs:
         engine.total_epochs = ctx.total_epochs
 
-    return _emit_metrics(
+    last_epoch = _emit_metrics(
         raw_metrics,
         timestamp=timestamp,
         run_id=run_id,
@@ -135,6 +135,29 @@ def _emit_line(
         store=store,
         hub=hub,
     )
+
+    # Report the divergence NOW. Waiting for the end of the stream meant a live
+    # run — which never ends, and a diverged one can print `nan` for hours —
+    # showed no divergence until the process exited (AGENTS.md: streaming has no
+    # end). The frame takes THIS line's seq, which no other frame can hold
+    # because each line's seq is unique and this line produced none; any other
+    # seq could collide with the (run_id, seq) primary key, where
+    # on_conflict_do_nothing would silently drop the frame. A line that did emit
+    # a frame of its own leaves the report to the end-of-stream call.
+    if non_finite is not None and last_epoch is None:
+        diverged = engine.flush_divergence(ctx.seq - 1)
+        if diverged is not None:
+            store.append_story_frame(diverged)
+            hub.publish(
+                run_id,
+                hub.make_message(
+                    msg_type="story_frame",
+                    run_id=run_id,
+                    seq=diverged.seq,
+                    payload=diverged.model_dump(mode="json"),
+                ),
+            )
+    return last_epoch
 
 
 def _emit_metrics(
