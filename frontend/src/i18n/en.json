@@ -1,10 +1,10 @@
 {
   "phases": {
-    "awakening": "🌱 Awakening",
-    "learning": "📚 Learning",
-    "understanding": "💡 Understanding",
-    "mastering": "⚡ Mastering",
-    "polishing": "✨ Polishing"
+    "awakening": "Awakening",
+    "learning": "Learning",
+    "understanding": "Understanding",
+    "mastering": "Mastering",
+    "polishing": "Polishing"
   },
   "milestones": {
     "first_above_25": "First 25% achieved",
@@ -17,26 +17,18 @@
     "plateau": "Learning plateau",
     "lr_drop": "Learning rate reduced",
     "divergence": "Training diverged",
-    "training_complete": "Training complete"
-  },
-  "warnings": {
-    "overfit": "The model may be memorising examples instead of learning to generalise.",
-    "plateau": "Learning has slowed. The model has stopped finding new patterns.",
-    "divergence": "Something went wrong — the model's score has spiked unexpectedly."
+    "training_complete": "Training complete",
+    "first_metric": "First reading",
+    "grade_transition": "Grade change",
+    "phase_transition": "New phase"
   },
   "labels": {
     "epoch": "Epoch",
-    "grade": "Grade",
-    "phase": "Phase",
     "connected": "Live",
     "disconnected": "Offline",
-    "loading": "Loading…",
     "waiting": "Waiting for training data…",
-    "engineer": "Engineer Panel",
-    "skills": "Skills",
-    "confidence": "Maturity",
-    "timeline": "Training Journey",
-    "export": "Export"
+    "reconnecting": "Reconnecting…",
+    "frame": "Frame"
   },
   "tasks": {
     "classification": "Classification",

@@ -19,6 +19,7 @@ import * as path from "path";
 import { persistLogFile } from "../sidecar/persistLog";
 import { StatusBar } from "../statusBar";
 import { StandaloneEngine } from "./StandaloneEngine";
+import { resolvedTheme, taskHint } from "../config";
 import { buildUrl, openExternalUrl } from "../util/uri";
 
 
@@ -55,7 +56,7 @@ export class DashboardPanel {
     this._theme = theme;
 
     // Standalone engine is used when no sidecar is available
-    this._engine = sidecar ? null : new StandaloneEngine();
+    this._engine = sidecar ? null : new StandaloneEngine(taskHint());
 
     this._panel.webview.html = buildWebviewHtml({
       extensionUri,
@@ -73,10 +74,18 @@ export class DashboardPanel {
 
     this._panel.onDidDispose(() => this.dispose(), null, this._disposables);
 
+    // `epochix.theme` pins light or dark; only "auto" follows VS Code. The
+    // panel used to ignore the setting entirely and always follow VS Code.
     vscode.window.onDidChangeActiveColorTheme(
-      (t) => {
-        const newTheme = t.kind === vscode.ColorThemeKind.Light ? "light" : "dark";
-        this._post({ type: "themeChange", theme: newTheme });
+      () => this._post({ type: "themeChange", theme: resolveTheme() }),
+      null,
+      this._disposables,
+    );
+    vscode.workspace.onDidChangeConfiguration(
+      (e) => {
+        if (e.affectsConfiguration("epochix.theme")) {
+          this._post({ type: "themeChange", theme: resolveTheme() });
+        }
       },
       null,
       this._disposables,
@@ -287,7 +296,7 @@ export class DashboardPanel {
    */
   private _degradeToStandalone(extensionUri: vscode.Uri, locale: string): void {
     this._sidecar = null;
-    this._engine = new StandaloneEngine();
+    this._engine = new StandaloneEngine(taskHint());
     this._panel.webview.html = buildWebviewHtml({
       extensionUri,
       webview: this._panel.webview,
@@ -370,7 +379,5 @@ export function describeSidecarError(err: unknown): string {
 }
 
 function resolveTheme(): "light" | "dark" {
-  return vscode.window.activeColorTheme.kind === vscode.ColorThemeKind.Light
-    ? "light"
-    : "dark";
+  return resolvedTheme();
 }

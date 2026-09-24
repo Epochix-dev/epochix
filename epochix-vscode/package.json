@@ -237,10 +237,12 @@
             "regression",
             "biometric",
             "gaze",
-            "nlp"
+            "nlp",
+            "segmentation",
+            "generative"
           ],
           "default": "auto",
-          "description": "Force a task type instead of auto-detecting from the log."
+          "description": "Force a task type instead of auto-detecting from the log. Applies to logs the extension reads itself: opened files, the demo and watched terminals."
         },
         "epochix.useSidecar": {
           "type": "string",
@@ -260,7 +262,8 @@
         "epochix.llmFallback": {
           "type": "boolean",
           "default": false,
-          "description": "Enable Ollama LLM fallback parsing for unknown log formats (requires Ollama running locally)."
+          "description": "No effect in the extension, and never had one: it reads logs with its own parsers. The LLM fallback is part of the Python package (`epochix watch`).",
+          "deprecationMessage": "This setting has no effect. The LLM fallback parser is available in the Python package, not the extension."
         },
         "epochix.theme": {
           "type": "string",

@@ -1,10 +1,10 @@
 {
   "phases": {
-    "awakening": "🌱 Éveil",
-    "learning": "📚 Apprentissage",
-    "understanding": "💡 Compréhension",
-    "mastering": "⚡ Maîtrise",
-    "polishing": "✨ Perfectionnement"
+    "awakening": "Éveil",
+    "learning": "Apprentissage",
+    "understanding": "Compréhension",
+    "mastering": "Maîtrise",
+    "polishing": "Perfectionnement"
   },
   "milestones": {
     "first_above_25": "Premier 25% atteint",
@@ -17,26 +17,18 @@
     "plateau": "Plateau d'apprentissage",
     "lr_drop": "Taux d'apprentissage réduit",
     "divergence": "Divergence de l'entraînement",
-    "training_complete": "Entraînement terminé"
-  },
-  "warnings": {
-    "overfit": "Le modèle mémorise peut-être les exemples plutôt que de généraliser.",
-    "plateau": "L'apprentissage ralentit. Le modèle ne trouve plus de nouveaux schémas.",
-    "divergence": "Un problème est survenu — le score du modèle a augmenté de façon inattendue."
+    "training_complete": "Entraînement terminé",
+    "first_metric": "Première mesure",
+    "grade_transition": "Changement de note",
+    "phase_transition": "Nouvelle phase"
   },
   "labels": {
     "epoch": "Époque",
-    "grade": "Note",
-    "phase": "Phase",
     "connected": "En direct",
     "disconnected": "Hors ligne",
-    "loading": "Chargement…",
     "waiting": "En attente des données d'entraînement…",
-    "engineer": "Panneau Ingénieur",
-    "skills": "Compétences",
-    "confidence": "Maturité",
-    "timeline": "Parcours d'entraînement",
-    "export": "Exporter"
+    "reconnecting": "Reconnexion…",
+    "frame": "Trame"
   },
   "tasks": {
     "classification": "Classification",

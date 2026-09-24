@@ -7,6 +7,87 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.7.13] — 2026-09-24
+
+### Fixed — invented milestones
+
+- **"Crossed 25%, 50%, 75% and 90%" at epoch 1 for a loss of 1.2.** The
+  milestone tracker took its direction from the task, not the metric the run is
+  graded on, so a custom run graded on `val_loss` — and every FID — was read
+  higher-is-better. A loss climbing from 0.5 to 1.3 "crossed 90%" on the way
+  up, and "best so far" tracked the worst value. Percentage milestones now fire
+  only for metrics that are fractions (accuracy, IoU, mAP…) logged on a 0–1
+  scale.
+- **"Biggest single-epoch improvement" reported the biggest move either way**,
+  so a run's worst deterioration was celebrated. It is now the largest step in
+  the right direction, and a run that never improved claims none.
+
+### Fixed — a validation metric filed as a training metric
+
+- **Python:** `validation_accuracy`, `validation_f1`, `test_l1`, `val_mae_cm` and
+  `val_error_rate` lost their split and were graded as training metrics — the
+  numbers that keep improving while a model overfits. A held-out prefix now
+  keeps its split whenever the metric has one.
+- **VS Code extension:** its hand-ported name tables had drifted from Python's —
+  170 of 319 names canonicalised differently. `valid_loss` and `eval_loss` were
+  read as TRAINING loss, and a Keras regression's `mae` and `val_mae` merged into
+  one series. The tables are now generated from the Python source
+  (`make gen-ts-tables`), and a golden file of Python's answers for 375 names is
+  replayed by the extension's tests, so they cannot drift silently again.
+
+### Fixed — W&B offline import
+
+- **`epochix import-wandb <dir>` failed on every current wandb.** wandb 0.30
+  moved its writer to Go and deleted the Python reader the importer used, and
+  the importer then told people who had wandb installed to install it. The
+  `.wandb` file's framing is now read directly (the format is small and stable);
+  only wandb's protobuf definitions are still used. A run that is still being
+  written is read up to its last whole record, and corruption is an error
+  rather than a guess. None of this was caught because no CI job installed
+  wandb — see below.
+
+### Fixed — VS Code extension settings that did nothing
+
+- **`epochix.theme`** was ignored: the panel had its own resolver that only
+  followed VS Code. "light" and "dark" now apply, and changing the setting
+  updates an open dashboard.
+- **`epochix.taskHint`** never reached an engine, and task detection would have
+  overwritten it anyway. A pinned task is now kept, and is sent to the sidecar
+  when a run is saved there. `segmentation` and `generative` can be pinned too.
+- **`epochix.llmFallback`** was read and never used; the extension has no LLM
+  path. It is marked deprecated, with a message saying so.
+- **Saving a log to the sidecar recorded its last epoch twice.** The "run
+  finished" marker was sent as an extra copy of the final metric on a new seq,
+  which the server stored as a real measurement.
+
+### Fixed — dashboard localisation
+
+- The epoch label, phase names, connection status and task names were English
+  in every locale, while `fa.json` and `fr.json` held translations no code read
+  (40 of 60 keys were dead). They are now read at runtime; the unused keys are
+  gone, and a test fails on any key that is missing, unused, or absent from a
+  locale.
+- Timeline cards from the extension's own engine were headed with raw
+  identifiers ("grade_transition"). Every milestone kind either engine emits
+  now has a title in every locale.
+- The phase badge and the phase journey drew different icons for "mastering".
+
+### CI
+
+- The integrations job now also runs the tests that need torch, numpy, wandb or
+  pypdfium2 — activation capture, architecture capture, the accelerator report,
+  the W&B offline import and the PDF render check. They skipped everywhere
+  before, and the job fails if any of them skips.
+
+### Removed
+
+- `scripts/_gen_templates.py` and `scripts/_gen_i18n_templates.py`: one-shot
+  generators for narrative templates that have since been corrected by hand.
+  Running either would have overwritten 30 template files and reverted those
+  fixes.
+
+---
+
 ## [0.7.12] — 2026-09-24
 
 ### Fixed — the VS Code extension's own engine

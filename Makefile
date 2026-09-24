@@ -1,4 +1,4 @@
-.PHONY: install dev test lint typecheck build clean fmt bench e2e bump land
+.PHONY: install dev test lint typecheck build clean fmt bench e2e bump land gen-ts-tables
 
 install:
 	pip install -e ".[dev]"
@@ -45,6 +45,13 @@ bump:
 # base containing current main, and asks Dependabot to rebase them instead.
 land:
 	python scripts/land_dependabot.py $(PR)
+
+# Regenerate the VS Code extension's engine tables (canonical metric names,
+# task signals, preferred and on-scale keys) from the Python engine. Run after
+# changing any of them; tests/unit/test_ts_engine_tables_sync.py fails until
+# the generated files are committed.
+gen-ts-tables:
+	uv run python scripts/gen_ts_engine_tables.py
 
 build-frontend:
 	cd frontend && npm ci && npm run build

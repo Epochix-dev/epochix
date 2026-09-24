@@ -13,6 +13,7 @@
  */
 import * as fs from "fs";
 import * as readline from "readline";
+import { taskHint } from "../config";
 import { StandaloneEngine } from "../webview/StandaloneEngine";
 import type { ServerManager } from "./ServerManager";
 
@@ -24,7 +25,8 @@ export async function persistLogFile(
   filePath: string,
   runName: string,
 ): Promise<string> {
-  const engine = new StandaloneEngine();
+  const hint = taskHint();
+  const engine = new StandaloneEngine(hint);
 
   await new Promise<void>((resolve, reject) => {
     const rl = readline.createInterface({
@@ -59,11 +61,14 @@ export async function persistLogFile(
   // this is the only route by which it can learn the architecture — without it
   // the Network State panel reads "No architecture to display" for a log that
   // plainly contains one.
-  const runId = await sidecar.createRun(runName, undefined, engine.architecture(), primary);
+  const runId = await sidecar.createRun(runName, hint, engine.architecture(), primary);
 
-  for (let i = 0; i < metrics.length; i += _CONCURRENCY) {
+  // Every metric but the last goes in parallel batches; the last is sent on
+  // its own afterwards, carrying `finished` (see below).
+  const body = metrics.slice(0, -1);
+  for (let i = 0; i < body.length; i += _CONCURRENCY) {
     await Promise.all(
-      metrics.slice(i, i + _CONCURRENCY).map((m, j) =>
+      body.slice(i, i + _CONCURRENCY).map((m, j) =>
         sidecar.pushEvent(runId, {
           seq: i + j,
           epoch: m.epoch,
@@ -82,13 +87,16 @@ export async function persistLogFile(
   // spinner and never gets a final grade — every run persisted from here
   // showed up in `epochix list` as `⟳ [-] custom`, however good it was.
   //
-  // Sent as its own zero-value event on the last seq rather than folded into
-  // the loop above: the batch is dispatched with Promise.all, so whichever
-  // request happens to finish last is not the one carrying the last metric.
+  // The flag rides on the real last metric, sent only after every batch has
+  // landed: Promise.all gives no ordering, so folding it into a batch could
+  // close the run before its other events arrived. It used to be sent as an
+  // EXTRA event repeating the last value on a new seq, which the server
+  // stored as a genuine measurement — every persisted run ended with its
+  // final epoch recorded twice.
   const last = metrics[metrics.length - 1];
   if (last) {
     await sidecar.pushEvent(runId, {
-      seq: metrics.length,
+      seq: metrics.length - 1,
       epoch: last.epoch,
       canonical_key: last.canonical_key,
       raw_key: last.canonical_key,

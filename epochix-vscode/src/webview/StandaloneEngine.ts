@@ -35,63 +35,50 @@ import {
 import { NEVER_METRICS } from "../parsers/neverMetrics";
 import type { StoryFrameMsg, MilestoneMsg, WarningMsg, RunSummaryMsg } from "./messages";
 import { parseArchitecture, type ArchLayer } from "../story/architecture";
+import {
+  CANONICAL_MAP,
+  ON_SCALE,
+  PREFERRED_KEYS,
+  SPLIT_PREFIXES,
+  TASK_SIGNALS,
+  UNIT_SUFFIXES,
+  VALIDATION_PREFIXES,
+} from "../story/engineTables.generated";
 
 // ── Canonical key normalisation ───────────────────────────────────────────────
+//
+// The tables are GENERATED from the Python engine (story/engineTables.generated.ts)
+// and this is Python's canonicalize_key, step for step. Both used to be ported by
+// hand: a differential run found 170 of 319 names canonicalised differently —
+// `valid_loss` and `eval_loss` became TRAINING loss here, and `val_mae` merged
+// into training MAE, so the same log got a different primary metric and grade
+// depending on which engine read it.
 
-const CANONICAL_MAP: Record<string, string> = {
-  // Direct entries MUST exist for split metrics that are their own canonical
-  // key. Prefix-stripping runs only when there is no direct hit, and without
-  // these `val_accuracy` strips to `accuracy` and the two series merge again —
-  // the bug 0.5.42 fixed.
-  val_accuracy: "val_accuracy", validation_accuracy: "val_accuracy",
-  val_acc: "val_accuracy", val_accy: "val_accuracy",
-  // `accuracy` is TRAINING accuracy. Mapping it onto val_accuracy merged two
-  // different measurements into one series — the demo produced 40 "val_accuracy"
-  // points for a 20-epoch run, half of which were training numbers.
-  accuracy: "accuracy", acc: "accuracy",
-  train_acc: "train_accuracy", train_accuracy: "train_accuracy",
-  loss: "train_loss", train_loss: "train_loss",
-  val_loss: "val_loss", validation_loss: "val_loss",
-  map50: "mAP50", "mAP50-95": "mAP", map: "mAP",
-  perplexity: "perplexity", ppl: "perplexity",
-  eer: "EER", equal_error_rate: "EER",
-  mae: "MAE", mean_absolute_error: "MAE",
-  // Mirrors src/epochix/normalizer/canonical_keys.py. Keep the two in sync:
-  // a key recognised on one side only produces a different task, a different
-  // primary metric and a different grade for the same log.
-  iou: "IoU", jaccard: "IoU", miou: "mIoU", mean_iou: "mIoU",
-  dice: "Dice", dice_coef: "Dice", dice_score: "Dice",
-  auc: "AUC", roc_auc: "AUC", auroc: "AUC",
-  psnr: "PSNR", ssim: "SSIM", lpips: "LPIPS",
-  wer: "WER", cer: "CER", bpc: "BPC",
-  r2: "R2", r2_score: "R2", mape: "MAPE",
-  top5_accuracy: "top5_accuracy", specificity: "specificity",
-  ndcg: "NDCG", mrr: "MRR", grad_norm: "grad_norm",
-  // Boosting objectives, as the boosting parser emits them. Mapped directly so
-  // the split survives: the SPLIT_PREFIXES fallback below would strip `val_`
-  // and merge the validation curve into the training one, which is the
-  // collapse the boosting parser exists to undo. Mirrors Python's canonical
-  // names (val_logloss -> val_log_loss, train_logloss -> log_loss).
-  logloss: "log_loss", log_loss: "log_loss",
-  train_logloss: "log_loss", train_log_loss: "log_loss",
-  val_logloss: "val_log_loss", val_log_loss: "val_log_loss",
-  error: "error_rate", train_error: "error_rate",
-  val_error: "val_error_rate", val_error_rate: "val_error_rate",
-};
+function stripUnits(key: string): string {
+  for (const suffix of UNIT_SUFFIXES) {
+    if (key.endsWith(suffix) && key.length > suffix.length) return key.slice(0, -suffix.length);
+  }
+  return key;
+}
 
-// Split prefixes, mirroring _SPLIT_PREFIXES in canonical_keys.py. Without this
-// `val_iou` never reached "IoU" on the TypeScript side, so a segmentation run
-// produced ZERO frames in the extension while working fine through Python.
-const SPLIT_PREFIXES = ["val_", "valid_", "validation_", "test_", "eval_", "train_"];
-
+/**
+ * Canonical name for a raw metric key. Unlike Python, which files every
+ * unknown key under "custom", an unknown key keeps its own name: this engine
+ * narrates a custom run by the metric it actually logged.
+ */
 function canonicalise(key: string): string {
-  const lo = key.toLowerCase().replace(/-/g, "_");
-  const direct = CANONICAL_MAP[lo] ?? CANONICAL_MAP[key];
+  const k = key.toLowerCase().trim();
+  const direct = CANONICAL_MAP.get(k);
   if (direct !== undefined) return direct;
+  const base = CANONICAL_MAP.get(stripUnits(k));
+  if (base !== undefined) return base;
   for (const pre of SPLIT_PREFIXES) {
-    if (lo.startsWith(pre)) {
-      const rest = CANONICAL_MAP[lo.slice(pre.length)];
-      if (rest !== undefined) return rest;
+    if (k.startsWith(pre)) {
+      const rest = stripUnits(k.slice(pre.length));
+      const held = VALIDATION_PREFIXES.has(pre) ? CANONICAL_MAP.get(`val_${rest}`) : undefined;
+      if (held !== undefined) return held;
+      const plain = CANONICAL_MAP.get(rest);
+      if (plain !== undefined) return plain;
       break;
     }
   }
@@ -100,35 +87,14 @@ function canonicalise(key: string): string {
 
 // ── Task detection ────────────────────────────────────────────────────────────
 
-// Mirrors _TASK_SIGNALS in story_engine/task_classifier.py: first match wins,
-// and a run matching nothing is CUSTOM. This used to fall back to
-// CLASSIFICATION, so a plain `loss` / `val_loss` log — the most common thing a
-// training script prints — was classified, waited for a val_accuracy it never
-// logged, and produced no story at all.
-const TASK_SIGNALS: ReadonlyArray<[TaskType, ReadonlySet<string>]> = [
-  ["biometric", new Set(["eer", "equal_error_rate", "tar", "far", "tar_at_far_0_001"])],
-  // Segmentation before detection: IoU/Dice decide what the run actually is.
-  ["segmentation", new Set(["miou", "iou", "dice", "pixel_accuracy"])],
-  ["detection", new Set(["map", "map50", "box_loss", "cls_loss"])],
-  ["nlp", new Set(["perplexity", "ppl", "bleu", "rouge", "wer", "cer", "bpc"])],
-  ["generative", new Set(["psnr", "ssim", "lpips", "fid", "is_score"])],
-  ["regression", new Set([
-    "mae", "rmse", "mse", "r2", "mape", "medae", "rmsle", "explained_variance",
-  ])],
-  ["classification", new Set([
-    "accuracy", "val_accuracy", "auc", "pr_auc", "top5_accuracy",
-    "balanced_accuracy", "mcc", "kappa", "error_rate", "val_error_rate",
-    "log_loss", "val_log_loss", "logloss",
-  ])],
-];
-
 // Nothing distinguishes a gaze model from any other regression except its
 // names. Mirrors refine_gaze: classifying every MAE run as gaze graded a
 // house-price MAE against bands built for angles in degrees.
 const GAZE_HINT = /gaze|angular|pitch|yaw|eye_|_eye\b|fixation/i;
 
 function detectTask(metrics: readonly RawMetric[]): TaskType {
-  const keys = new Set(metrics.map((m) => canonicalise(m.key).toLowerCase()));
+  // First match wins, a run matching nothing is CUSTOM — as in Python.
+  const keys = new Set(metrics.map((m) => canonicalise(m.key)));
   for (const [task, signals] of TASK_SIGNALS) {
     if ([...signals].some((s) => keys.has(s))) {
       if (task === "regression" && metrics.some((m) => GAZE_HINT.test(m.key))) {
@@ -139,49 +105,6 @@ function detectTask(metrics: readonly RawMetric[]): TaskType {
   }
   return "custom";
 }
-
-// Last resorts shared by every task whose headline metric may not have been
-// computed yet — YOLO prints box_loss and cls_loss every epoch and mAP only at
-// validation. Off-scale, so they grade on improvement, not the task's bands.
-const LOSS_LAST_RESORTS = ["val_loss", "train_loss"];
-
-// Preference order per task, mirroring _PREFERRED_KEYS_FOR_TASK in
-// story_engine/__init__.py. Every key that can SIGNAL a task must also be
-// readable as its metric, or the run is detected and then tells no story.
-const PREFERRED_KEYS: Record<TaskType, string[]> = {
-  segmentation: ["mIoU", "IoU", "Dice", "pixel_accuracy", ...LOSS_LAST_RESORTS],
-  detection: ["mAP50", "mAP", "mAP75", "box_loss", "cls_loss", ...LOSS_LAST_RESORTS],
-  nlp: ["perplexity", "bleu", "rouge", "WER", "CER", "BPC", ...LOSS_LAST_RESORTS],
-  biometric: ["EER", "TAR", "TAR_at_FAR_0_001", "FAR", ...LOSS_LAST_RESORTS],
-  gaze: ["MAE", "RMSE"],
-  // R² first: it is the only one of these that means anything without knowing
-  // the target's units. See METRIC_THRESHOLDS in story/grader.ts.
-  regression: ["R2", "MAE", "RMSE", "MSE", "MAPE", "MedAE", "RMSLE", "explained_variance"],
-  classification: [
-    "val_accuracy", "accuracy", "AUC", "PR_AUC", "top5_accuracy",
-    "balanced_accuracy", "MCC", "kappa",
-    // Gradient boosting prints its objective and nothing else by default.
-    "val_log_loss", "log_loss", "logloss", "val_error_rate", "error_rate",
-  ],
-  generative: ["fid", "is_score", "PSNR", "SSIM", "LPIPS", ...LOSS_LAST_RESORTS],
-  custom: [...LOSS_LAST_RESORTS],
-};
-
-// The one metric per task whose absolute bands in grader.ts mean something.
-// Mirrors _ON_SCALE_KEYS: any other primary is graded on improvement. Empty for
-// generative on purpose — there are no FID bands, and grading FID against the
-// classification bands made every FID "A+" (a Python bug found alongside this).
-const ON_SCALE: Record<TaskType, ReadonlySet<string>> = {
-  classification: new Set(["val_accuracy", "accuracy"]),
-  regression: new Set(["R2"]),
-  gaze: new Set(["MAE"]),
-  segmentation: new Set(["mIoU"]),
-  detection: new Set(["mAP50"]),
-  nlp: new Set(["perplexity"]),
-  biometric: new Set(["EER"]),
-  generative: new Set(),
-  custom: new Set(),
-};
 
 // A metric explicitly assigned a non-number: `loss: nan`, `val_loss=inf`.
 // Mirrors _NON_FINITE_ASSIGNMENT in pipeline.py. Bounded quantifier: an
@@ -299,7 +222,12 @@ export class StandaloneEngine {
   private _archScan: string[] = [];
   private _architecture: ArchLayer[] = [];
 
+  // A task the user pinned (`epochix.taskHint`). Detection runs after the
+  // first few metrics and used to overwrite it, so the setting did nothing.
+  private readonly _taskHint: TaskType | undefined;
+
   constructor(taskHint?: TaskType) {
+    this._taskHint = taskHint;
     this._parsers = [
       new PytorchLightningParser(),
       new KerasParser(),
@@ -530,7 +458,7 @@ export class StandaloneEngine {
     if (this._allMetrics.length === 0) return [];
     if (!force && this._allMetrics.length < TASK_MIN_METRICS) return [];
 
-    this._task = detectTask(this._allMetrics);
+    this._task = this._taskHint ?? detectTask(this._allMetrics);
     this._primaryMetric = primaryMetricFrom(
       this._task,
       [...new Set(this._allMetrics.map((m) => canonicalise(m.key)))],
@@ -830,3 +758,6 @@ function gradeRank(g: Grade): number {
 function generateId(): string {
   return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
 }
+
+/** Exposed for tests. */
+export const _internals = { canonicalise, detectTask, primaryMetricFrom };

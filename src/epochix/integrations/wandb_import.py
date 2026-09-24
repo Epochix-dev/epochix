@@ -20,6 +20,9 @@ from __future__ import annotations
 import json
 import logging
 import math
+import struct
+import zlib
+from collections.abc import Iterator
 from pathlib import Path
 from typing import Any
 
@@ -110,6 +113,72 @@ def import_wandb(
     return run_ms_id
 
 
+# The framing of a ``run-*.wandb`` file: a LevelDB log
+# (https://github.com/google/leveldb/blob/main/doc/log_format.md) behind a
+# 7-byte W&B header. wandb used to ship a Python reader for it
+# (``wandb.sdk.internal.datastore.DataStore``); 0.30 moved its writer to Go and
+# deleted the reader, so importing it failed on every current install and the
+# importer told people who HAD wandb to install it. The format is small and
+# stable, so it is read here with the standard library; only the protobuf
+# definitions still come from wandb.
+_LOG_HEADER = struct.Struct("<4sHB")  # ident, magic, version
+_LOG_IDENT = b":W&B"
+_LOG_MAGIC = 0xBEE1
+_BLOCK_LEN = 32768
+_REC_HEADER = struct.Struct("<IHB")  # crc32, length, type
+_FULL, _FIRST, _MIDDLE, _LAST = 1, 2, 3, 4
+# Each record's checksum is zlib's crc32 of its data, seeded with the crc32 of
+# its type byte.
+_TYPE_CRC = {t: zlib.crc32(bytes([t])) & 0xFFFFFFFF for t in (_FULL, _FIRST, _MIDDLE, _LAST)}
+
+
+def _wandb_records(path: Path) -> Iterator[bytes]:
+    """Yield each complete record's payload from a ``run-*.wandb`` file.
+
+    A run that is still writing ends mid-record; that tail is not a result yet
+    and is dropped rather than raised on. A checksum mismatch anywhere else is
+    corruption, and guessing at the bytes would put invented numbers on the
+    chart, so it stops the import with an error instead.
+    """
+    blob = path.read_bytes()
+    if len(blob) < _LOG_HEADER.size:
+        raise ValueError(f"{path.name} is not a W&B run file (too short)")
+    ident, magic, _version = _LOG_HEADER.unpack_from(blob, 0)
+    if ident != _LOG_IDENT or magic != _LOG_MAGIC:
+        raise ValueError(f"{path.name} is not a W&B run file (bad header)")
+
+    pos = _LOG_HEADER.size
+    pending: bytearray | None = None
+    while True:
+        left_in_block = _BLOCK_LEN - pos % _BLOCK_LEN
+        if left_in_block < _REC_HEADER.size:
+            pos += left_in_block  # block trailer: zero padding
+        if pos + _REC_HEADER.size > len(blob):
+            return
+        crc, length, kind = _REC_HEADER.unpack_from(blob, pos)
+        start = pos + _REC_HEADER.size
+        end = start + length
+        if kind == 0 and length == 0:
+            # Zeroed space a writer preallocated but never filled.
+            return
+        if end > len(blob):
+            return  # the record being written when the file was copied
+        data = blob[start:end]
+        if kind not in _TYPE_CRC or zlib.crc32(data, _TYPE_CRC[kind]) & 0xFFFFFFFF != crc:
+            raise ValueError(f"{path.name} is corrupt at byte {pos}: record checksum mismatch")
+        pos = end
+        if kind == _FULL:
+            pending = None
+            yield data
+        elif kind == _FIRST:
+            pending = bytearray(data)
+        elif pending is not None:
+            pending += data
+            if kind == _LAST:
+                yield bytes(pending)
+                pending = None
+
+
 def _scan_wandb_file(path: Path) -> tuple[str | None, list[dict[str, float]]]:
     """(run name, history rows) from a local ``run-*.wandb`` file.
 
@@ -125,7 +194,6 @@ def _scan_wandb_file(path: Path) -> tuple[str | None, list[dict[str, float]]]:
     """
     try:
         from wandb.proto import wandb_internal_pb2 as pb
-        from wandb.sdk.internal.datastore import DataStore
     except ImportError:
         # The API path has said this clearly since it was written; the offline
         # path imported wandb bare and dumped a ModuleNotFoundError traceback
@@ -135,17 +203,11 @@ def _scan_wandb_file(path: Path) -> tuple[str | None, list[dict[str, float]]]:
             "wandb is required to read a local run directory. Install with: pip install wandb"
         ) from None
 
-    store = DataStore()
-    store.open_for_scan(str(path))
-
     name: str | None = None
     rows: list[dict[str, float]] = []
-    while True:
-        data = store.scan_data()
-        if data is None:
-            break
+    for data in _wandb_records(path):
         record = pb.Record()
-        record.ParseFromString(bytes(data))
+        record.ParseFromString(data)
         kind = record.WhichOneof("record_type")
         if kind == "run" and name is None:
             name = record.run.display_name or record.run.run_id or None
