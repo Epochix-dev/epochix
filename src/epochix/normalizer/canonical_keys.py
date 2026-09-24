@@ -19,6 +19,7 @@ CANONICAL_MAP: dict[str, str] = {
     "train_acc": "accuracy",
     "train_accuracy": "accuracy",
     "val_acc": "val_accuracy",
+    "val_accy": "val_accuracy",
     "val_accuracy": "val_accuracy",
     "valid_accuracy": "val_accuracy",
     "eval_accuracy": "val_accuracy",
@@ -57,6 +58,7 @@ CANONICAL_MAP: dict[str, str] = {
     "mse": "MSE",
     # Biometric
     "eer": "EER",
+    "equal_error_rate": "EER",
     "tar": "TAR",
     "far": "FAR",
     "tar_at_far_0001": "TAR_at_FAR_0_001",
@@ -204,6 +206,7 @@ CANONICAL_MAP: dict[str, str] = {
     "val_multi_logloss": "val_log_loss",
     "val_mlogloss": "val_log_loss",
     "val_error": "val_error_rate",
+    "val_error_rate": "val_error_rate",
     "test_error": "val_error_rate",
     "eval_error": "val_error_rate",
     "val_merror": "val_error_rate",
@@ -233,6 +236,13 @@ _SPLIT_PREFIXES = (
     "val_",
 )
 
+# A prefix that names a held-out split. For a metric that HAS a split
+# (`val_accuracy`, `val_MAE`), any of these must land on the `val_` form:
+# stripping the prefix instead turned `validation_accuracy` into training
+# `accuracy` and `test_l1` into training `MAE` — so a run was graded on how
+# well it fit the data it trained on.
+_VALIDATION_PREFIXES = frozenset({"validation_", "valid_", "eval_", "test_", "val_"})
+
 # Unit suffixes frameworks tack onto regression/gaze metrics
 # (e.g. mae_cm, val_rmse_deg, mae_mm).
 _UNIT_SUFFIXES = ("_cm", "_mm", "_deg", "_rad", "_px", "_percent", "_pct", "_m")
@@ -252,8 +262,9 @@ def canonicalize_key(raw_key: str) -> str:
       1. exact (lower-cased) lookup — handles the explicit val_/train_ forms,
       2. after stripping a known unit suffix (``mae_cm`` → ``mae``),
       3. after stripping a ``val_``/``train_`` prefix and any unit suffix
-         (``val_mae_cm`` → ``mae``) — only helps split-agnostic metrics, since
-         split metrics were already caught in step 1.
+         (``val_mae_cm`` → ``mae``). A held-out prefix keeps its split when
+         the metric has one (``validation_accuracy`` → ``val_accuracy``,
+         ``val_mae_cm`` → ``val_MAE``); otherwise the base metric is used.
     """
     key = raw_key.lower().strip()
 
@@ -267,6 +278,8 @@ def canonicalize_key(raw_key: str) -> str:
     for pre in _SPLIT_PREFIXES:
         if key.startswith(pre):
             rest = _strip_units(key[len(pre) :])
+            if pre in _VALIDATION_PREFIXES and f"val_{rest}" in CANONICAL_MAP:
+                return CANONICAL_MAP[f"val_{rest}"]
             if rest in CANONICAL_MAP:
                 return CANONICAL_MAP[rest]
             break

@@ -1,4 +1,5 @@
 import { escapeHtml as _esc } from '../escape.js';
+import { t } from '../i18n/apply.js';
 /**
  * PhaseJourney.js — horizontal phase-timeline ribbon.
  *
@@ -58,7 +59,8 @@ export class PhaseJourney {
 
     const parts = [];
     segs.forEach((g, idx) => {
-      const meta = PHASE_META[g.phase] ?? { icon: '•', label: g.phase, plain: '' };
+      const base = PHASE_META[g.phase] ?? { icon: '•', label: g.phase, plain: '' };
+      const meta = { ...base, label: t(`phases.${g.phase}`, base.label) };
       const widthPct = ((g.endEpoch - g.startEpoch + 1) / totalSpan) * 100;
       const active = curEpoch != null && curEpoch >= g.startEpoch && curEpoch <= g.endEpoch;
       const epochRange = g.startEpoch === g.endEpoch

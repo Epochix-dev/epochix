@@ -704,6 +704,8 @@ class StoryEngine:
             seq=event.seq,
             primary_value=primary_value,
             prev_value=self._prev_primary,
+            metric=primary_key,
+            lower_better=lower_better,
         )
 
         # Gather warning inputs from latest history

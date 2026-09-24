@@ -146,11 +146,12 @@ through the same log shapes. Known gaps that remain, deliberately not done yet:
 - **Narratives are English only** in the extension engine. The Python engine is
   localised (en/fa/fr); the standalone panel shows English stories whatever the
   locale.
-- **Regression keys lose their split** in the TS canonicaliser (`val_mae` and
-  `mae` both become `MAE`), so a regression run can be graded on training error.
-  Python keeps `val_MAE`. Same class of bug as the boosting fix above.
-- The two engines are still hand-ported copies. Any change to grading, direction
-  or wording must be made in both; the tests on each side are the only guard.
+- ~~**Regression keys lose their split** in the TS canonicaliser.~~ Fixed in
+  0.7.13, with a wider cause: the TS name tables had drifted on 170 of 319 names.
+- The name tables (canonical keys, task signals, preferred and on-scale keys)
+  are **generated from the Python engine** since 0.7.13 (`make gen-ts-tables`),
+  with a golden file replayed by the extension's tests. Grading, direction and
+  wording logic are still hand-ported; the tests on each side guard them.
 
 ## Features worth considering
 

@@ -18,6 +18,11 @@ const MILESTONE_EMOJIS = {
   lr_drop:           '📉',
   divergence:        '💥',
   training_complete: '🎓',
+  // Kinds the extension's own engine emits. Without titles for them the
+  // card was headed with the raw identifier, e.g. "grade_transition".
+  first_metric:      '🎬',
+  grade_transition:  '🏷️',
+  phase_transition:  '🧭',
 };
 
 export class TimelineStory {
@@ -63,7 +68,7 @@ export class TimelineStory {
         this._seen.add(key);
         this._appendCard({
           emoji: MILESTONE_EMOJIS[m.kind] ?? '📌',
-          title: this._i18n[m.kind] ?? m.kind,
+          title: this._i18n[m.kind] ?? m.kind.replaceAll('_', ' '),
           message: m.message ?? '',
           epoch: m.epoch,
           warning: m.kind === 'overfit_warning' || m.kind === 'plateau' || m.kind === 'divergence',

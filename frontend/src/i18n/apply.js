@@ -10,6 +10,23 @@
 
 export const RTL_LOCALES = new Set(['fa']);
 
+// The dictionary for text built at runtime. The static pass below only
+// reaches markup that exists at load; panels that write their own text
+// (the epoch label, phase names, the connection dot) stayed English in
+// every locale while fa.json and fr.json held translations nobody read.
+let _active = null;
+
+/** Make `dict` the dictionary `t()` reads. */
+export function setActiveI18n(dict) {
+  _active = dict;
+}
+
+/** Translated text for `key`, or `fallback` when there is none. */
+export function t(key, fallback) {
+  const v = _active ? resolveKey(_active, key) : null;
+  return typeof v === 'string' ? v : fallback;
+}
+
 /** Resolve a dotted path ("ui.nav.overview") against a nested dict. */
 export function resolveKey(dict, path) {
   return path.split('.').reduce((o, k) => (o && o[k] != null ? o[k] : null), dict);

@@ -1,10 +1,10 @@
 {
   "phases": {
-    "awakening": "🌱 بیداری",
-    "learning": "📚 یادگیری",
-    "understanding": "💡 درک",
-    "mastering": "⚡ تسلط",
-    "polishing": "✨ پالایش"
+    "awakening": "بیداری",
+    "learning": "یادگیری",
+    "understanding": "درک",
+    "mastering": "تسلط",
+    "polishing": "پالایش"
   },
   "milestones": {
     "first_above_25": "اولین ۲۵٪ حاصل شد",
@@ -17,26 +17,18 @@
     "plateau": "توقف یادگیری",
     "lr_drop": "کاهش نرخ یادگیری",
     "divergence": "واگرایی آموزش",
-    "training_complete": "آموزش کامل شد"
-  },
-  "warnings": {
-    "overfit": "مدل ممکن است داده‌های آموزشی را حفظ کند نه تعمیم دهد.",
-    "plateau": "یادگیری کند شده. مدل الگوی جدیدی نمی‌یابد.",
-    "divergence": "مشکلی رخ داده — امتیاز مدل به‌طور غیرمنتظره افزایش یافته."
+    "training_complete": "آموزش کامل شد",
+    "first_metric": "اولین اندازه‌گیری",
+    "grade_transition": "تغییر نمره",
+    "phase_transition": "مرحله تازه"
   },
   "labels": {
     "epoch": "دوره",
-    "grade": "نمره",
-    "phase": "مرحله",
     "connected": "زنده",
     "disconnected": "آفلاین",
-    "loading": "در حال بارگذاری…",
     "waiting": "در انتظار داده آموزشی…",
-    "engineer": "پانل مهندس",
-    "skills": "مهارت‌ها",
-    "confidence": "بلوغ آموزش",
-    "timeline": "مسیر آموزش",
-    "export": "خروجی"
+    "reconnecting": "در حال اتصال دوباره…",
+    "frame": "فریم"
   },
   "tasks": {
     "classification": "دسته‌بندی",

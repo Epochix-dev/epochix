@@ -211,8 +211,7 @@ ignore_missing_imports = true
 module = ["epochix.integrations.jupyter"]
 disallow_untyped_calls = false
 
-# The W&B importer calls into wandb's own untyped internals (DataStore) and a
-# generated protobuf module whose attributes mypy cannot see. These only appear
+# The W&B importer uses wandb's generated protobuf module whose attributes mypy cannot see. These only appear
 # where wandb is actually installed — CI's typecheck env has no wandb, so they
 # were invisible there while failing on any developer machine that did.
 [[tool.mypy.overrides]]

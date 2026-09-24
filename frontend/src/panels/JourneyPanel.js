@@ -10,6 +10,7 @@ import { GradeArcChart }   from '../visualizations/GradeArcChart.js';
 import { metricDisplayLabel, isPercentMetric } from '../viz-util.js';
 import { escapeHtml as _esc } from '../escape.js';
 import { frameReportButton, reportFrame } from '../report.js';
+import { t } from '../i18n/apply.js';
 
 const PHASE_ICON = {
   awakening:     '🌱',
@@ -104,7 +105,7 @@ export class JourneyPanel {
           });
         }
       } else if (!s.live && !frame) {
-        el.innerHTML = `<p class="narrative-placeholder">Waiting for training data…</p>`;
+        el.innerHTML = `<p class="narrative-placeholder">${_esc(t('labels.waiting', 'Waiting for training data…'))}</p>`;
       }
     }
 
@@ -178,7 +179,6 @@ export class JourneyPanel {
     }
 
     // ── Phase badge ─────────────────────────────────────────────────────────
-    // i18n labels already carry the emoji; only prepend the icon on raw fallback.
     const phaseBadge = document.getElementById('phase-badge');
     if (phaseBadge && frame?.phase) {
       phaseBadge.textContent = _phaseLabel(this._i18n, frame.phase);
@@ -214,9 +214,10 @@ export class JourneyPanel {
 }
 
 
-/** Phase label with emoji — uses i18n (already has emoji) or icon+name fallback. */
+/** Icon + localised phase name. The icon is the panels' own, so the badge
+ *  and the phase journey can no longer disagree about it. */
 function _phaseLabel(i18n, phase) {
-  return i18n?.phases?.[phase] ?? `${PHASE_ICON[phase] ?? ''} ${phase}`.trim();
+  return `${PHASE_ICON[phase] ?? ''} ${i18n?.phases?.[phase] ?? phase}`.trim();
 }
 
 /**

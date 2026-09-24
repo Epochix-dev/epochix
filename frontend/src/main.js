@@ -33,7 +33,7 @@ import { Educational }                       from './visualizations/Educational.
 import en from './i18n/en.json';
 import fa from './i18n/fa.json';
 import fr from './i18n/fr.json';
-import { applyStaticI18n } from './i18n/apply.js';
+import { applyStaticI18n, setActiveI18n, t } from './i18n/apply.js';
 import { escapeHtml as _esc } from './escape.js';
 import { REPORT_LABELS, openIssue } from './report.js';
 import { WarningStrip } from './visualizations/WarningStrip.js';
@@ -85,7 +85,9 @@ store.subscribe((s) => {
   const dot = document.getElementById('connection-dot');
   if (!dot) return;
   dot.className = `connection-dot${s.connected ? ' live' : s.live ? ' error' : ''}`;
-  dot.title     = s.connected ? 'Live' : s.live ? 'Reconnecting…' : 'Offline';
+  dot.title     = s.connected
+    ? t('labels.connected', 'Live')
+    : s.live ? t('labels.reconnecting', 'Reconnecting…') : t('labels.disconnected', 'Offline');
 });
 
 // ── export mode detection ─────────────────────────────────────────────────────
@@ -148,6 +150,7 @@ async function main() {
     getParam('locale') ?? runLocale ?? localStorage.getItem('ms-locale') ?? 'en';
   const i18n   = loadI18n(locale);
   store.set({ locale });
+  setActiveI18n(i18n);
   applyStaticI18n(i18n, locale);  // localise chrome + set text direction (RTL for fa)
 
   // Mount panels early so they show skeleton state
@@ -653,7 +656,7 @@ async function showRunList() {
             <div class="rc-body">
               <div class="rc-name">${_esc(name)}</div>
               <div class="rc-meta">
-                <span class="rc-chip">${_esc(task)}</span>
+                <span class="rc-chip">${_esc(t(`tasks.${task}`, task))}</span>
                 <span class="${finished ? '' : 'rc-live'}">${_esc(date)}</span>
               </div>
             </div>
