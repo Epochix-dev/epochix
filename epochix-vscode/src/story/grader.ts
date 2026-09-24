@@ -133,6 +133,85 @@ export function computeGrade(
   return "F";
 }
 
+// ── Metric direction — mirrors metric_lower_better in story_engine/grade.py ──
+//
+// A metric whose direction is unknown falls back to its TASK's default, and
+// the failure is silent: the grade simply comes out inverted. Exact keys are
+// checked before the substring hints because the hints get some names
+// backwards ("val_mape" contains "map", a higher-is-better hint).
+const DIRECTION_BY_KEY: Record<string, boolean> = {
+  mape: true, smape: true, wer: true, cer: true, bpc: true, lpips: true,
+  nll: true, log_loss: true, val_log_loss: true, logloss: true,
+  rouge: false, val_rouge: false, rouge1: false, rouge2: false, rougel: false,
+  meteor: false, val_meteor: false,
+  tar: false, val_tar: false, far: true, val_far: true,
+  tar_at_far_0_001: false, val_tar_at_far_0_001: false,
+  fid: true, val_fid: true, kid: true, val_kid: true,
+  is_score: false, inception_score: false, spearman: false, pearson: false,
+  error_rate: true, val_error_rate: true,
+  val_mae: true, val_rmse: true, val_mse: true, val_mape: true,
+  val_medae: true, val_rmsle: true,
+  val_r2: false, val_auc: false, val_f1: false, val_accuracy: false,
+  brier: true, huber: true, quantile_loss: true, medae: true, rmsle: true,
+  ndcg: false, mrr: false, specificity: false, sensitivity: false,
+  pixel_accuracy: false, top5_accuracy: false, balanced_accuracy: false,
+  mcc: false, kappa: false, explained_variance: false, silhouette: false,
+  // LightGBM's names for MAE / MSE. No hint matches "l1" or "l2", so without a
+  // pin they inherited the task default and a falling error graded as decline.
+  l1: true, l2: true, val_l1: true, val_l2: true, train_l1: true, train_l2: true,
+};
+const LOWER_NAME_HINTS = [
+  "loss", "error", "err", "mae", "mse", "rmse", "perplexity", "ppl", "eer", "nll",
+];
+const HIGHER_NAME_HINTS = [
+  "acc", "accuracy", "f1", "auc", "map", "precision", "recall", "iou", "dice",
+  "bleu", "psnr", "ssim", "r2",
+];
+
+/** Direction inferred from a metric's name, or undefined when it says nothing. */
+export function metricLowerBetter(metric: string | undefined): boolean | undefined {
+  if (!metric) return undefined;
+  const n = metric.toLowerCase();
+  if (n in DIRECTION_BY_KEY) return DIRECTION_BY_KEY[n];
+  if (LOWER_NAME_HINTS.some((h) => n.includes(h))) return true;
+  if (HIGHER_NAME_HINTS.some((h) => n.includes(h))) return false;
+  return undefined;
+}
+
+/** The task's default direction, used only when the metric's name says nothing. */
+export function taskLowerBetter(task: TaskType): boolean {
+  return LOWER_BETTER.has(task);
+}
+
+// ── Grading on improvement — mirrors grade_by_trajectory in grade.py ────────
+//
+// For a metric with no absolute scale (a bare loss, a log loss, FID) there is
+// no "an 0.19 loss is a B": the number only means something relative to where
+// it started. Grading such a run against accuracy bands scored a healthy,
+// falling loss as if it were 19% accuracy. Sorted best-first; the value is the
+// minimum fraction of improvement from the baseline for that grade.
+const TRAJECTORY_THRESHOLDS: Threshold[] = [
+  ["A+", 0.70], ["A", 0.55], ["A-", 0.45], ["B+", 0.35], ["B", 0.25],
+  ["B-", 0.16], ["C+", 0.09], ["C", 0.04], ["C-", 0.005],
+  ["D", -0.03], // essentially flat
+  // anything worse — the metric moved the wrong way — is an F
+];
+
+export function gradeByTrajectory(
+  baseline: number,
+  current: number,
+  lowerBetter: boolean,
+): Grade {
+  const denom = Math.abs(baseline) > 1e-9 ? Math.abs(baseline) : 1e-9;
+  const improvement = lowerBetter
+    ? (baseline - current) / denom
+    : (current - baseline) / denom;
+  for (const [grade, threshold] of TRAJECTORY_THRESHOLDS) {
+    if (improvement >= threshold) return grade;
+  }
+  return "F";
+}
+
 /** Return grade colour hex (matches frontend theme). */
 export function gradeColor(grade: Grade): string {
   if (grade.startsWith("A")) return "#22c55e"; // green

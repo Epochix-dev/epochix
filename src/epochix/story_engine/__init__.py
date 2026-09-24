@@ -223,6 +223,15 @@ _ON_SCALE_KEYS: dict[TaskType, frozenset[str]] = {
     # single reading (a cross-validation mean, say) that left it ungraded
     # entirely, despite 90.5% being a perfectly gradeable number.
     TaskType.CLASSIFICATION: frozenset({"val_accuracy", "accuracy"}),
+    # Deliberately EMPTY: no generative metric has absolute bands here. There
+    # is no GENERATIVE row in grade._DEFAULT_THRESHOLDS, so the first preferred
+    # key — FID — was graded against the CLASSIFICATION bands, higher-is-better:
+    # any FID >= 0.95 is "A+", i.e. every FID there is. An improving and a
+    # worsening FID run both graded A+. FID's scale depends on the dataset and
+    # the feature extractor, so bands for it would be invented numbers; it is
+    # graded on improvement from baseline instead, like a loss, and its
+    # lower-is-better direction comes from grade._DIRECTION_BY_KEY.
+    TaskType.GENERATIVE: frozenset(),
 }
 
 _PRIMARY_KEY_FOR_TASK: dict[TaskType, str] = {
@@ -263,6 +272,9 @@ class StoryEngine:
     # A MetricEvent's value is a FiniteFloat, so a NaN can never travel as one
     # — the pipeline hands it over here instead.
     _non_finite: tuple[str, float | None] | None = field(default=None, init=False)
+    # Set when the divergence frame has gone out, so the end-of-stream call
+    # cannot publish it a second time.
+    _divergence_emitted: bool = field(default=False, init=False)
 
     def _effective_task(self) -> TaskType:
         return self.task or TaskType.CUSTOM
@@ -418,7 +430,7 @@ class StoryEngine:
         would assert a measurement that does not exist and draw a flat segment
         on the chart to prove it. The narrative names the epoch it broke at.
         """
-        if self._non_finite is None:
+        if self._non_finite is None or self._divergence_emitted:
             return None
         prev = self._prev_frame
         if prev is None:
@@ -464,6 +476,7 @@ class StoryEngine:
             task_type=self._effective_task(),
         )
         self._prev_frame = frame
+        self._divergence_emitted = True
         return frame
 
     def _ensure_milestones(self) -> None:
@@ -575,7 +588,9 @@ class StoryEngine:
         # so an improving run scored WORSE than a worsening one. Where the
         # scale does not apply, grade on improvement from baseline instead.
         preferred = _PREFERRED_KEYS_FOR_TASK.get(task, ())
-        on_scale = _ON_SCALE_KEYS.get(task) or (preferred[:1] and frozenset(preferred[:1]))
+        # `in`, not `.get() or`: an explicitly EMPTY entry means "no metric of
+        # this task has a scale", and must not fall back to the first key.
+        on_scale = _ON_SCALE_KEYS[task] if task in _ON_SCALE_KEYS else frozenset(preferred[:1])
         off_scale = bool(preferred) and primary_key not in on_scale
         needs_trajectory = task is TaskType.CUSTOM or off_scale
 
