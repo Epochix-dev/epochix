@@ -10,6 +10,7 @@ from epochix.story_engine.config_loader import GradeConfig
 from epochix.story_engine.grade import (
     compute_grade,
     grade_by_trajectory,
+    grade_note,
     has_absolute_scale,
     impossible_reason,
     is_lower_better,
@@ -657,11 +658,12 @@ class StoryEngine:
         # is actually true when the metric has not meaningfully moved.
         # Track the run's own best so the story can't claim "peak form" while
         # sitting below a better earlier checkpoint.
-        if self._best_primary is None or (
+        new_best = self._best_primary is None or (
             primary_value < self._best_primary
             if lower_better
             else primary_value > self._best_primary
-        ):
+        )
+        if new_best:
             self._best_primary = primary_value
             self._best_epoch = event.epoch
 
@@ -785,6 +787,12 @@ class StoryEngine:
             # prediction-confidence estimate — kept under this field name for
             # storage/back-compat; UI labels it "Maturity".
             confidence=advancement,
+            grade_note=grade_note(
+                grade,
+                len(self._metric_history.get(primary_key, ())),
+                has_epoch=event.epoch is not None,
+                new_best=new_best,
+            ),
             narrative=narrative,
             metaphor_cards=self._build_metaphor_cards(phase, grade),
             skill_dimensions=skill_dims,

@@ -72,6 +72,10 @@
       "liveMetrics": "Live Metrics",
       "engineer": "Engineer Panel"
     },
-    "gradeCaveat": "Graded against fixed thresholds for this task type — it does not know how hard your dataset is. The trend and the best-epoch call are the reliable parts."
+    "gradeCaveat": "Graded against fixed thresholds for this task type — it does not know how hard your dataset is. The trend and the best-epoch call are the reliable parts.",
+    "gradeNotes": {
+      "few_readings": "Provisional: this grade rests on fewer than five readings of the metric.",
+      "still_improving": "Still improving at the last reading — the grade shows where the run got to, not where it was heading."
+    }
   }
 }

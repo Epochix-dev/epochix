@@ -62,6 +62,11 @@ _EN: dict[str, str] = {
     "md.value": "Value",
     "md.grade": "Grade",
     "md.task": "Task",
+    "md.grade_note": "About the grade",
+    "grade_note.few_readings": "Provisional: this grade rests on fewer than five "
+    "readings of the metric.",
+    "grade_note.still_improving": "Still improving at the last reading — the grade "
+    "shows where the run got to, not where it was heading.",
     "md.final_phase": "Final phase",
     "md.primary_metric": "Primary metric",
     "md.epochs": "Epochs",
@@ -113,6 +118,10 @@ _FA: dict[str, str] = {
     "md.value": "مقدار",
     "md.grade": "نمره",
     "md.task": "وظیفه",
+    "md.grade_note": "دربارهٔ نمره",
+    "grade_note.few_readings": "موقت: این نمره بر کمتر از پنج خوانش از سنجه تکیه دارد.",
+    "grade_note.still_improving": "در آخرین خوانش هنوز در حال بهبود بود — نمره نشان "
+    "می‌دهد اجرا به کجا رسید، نه به کجا می‌رفت.",
     "md.final_phase": "مرحله نهایی",
     "md.primary_metric": "معیار اصلی",
     "md.epochs": "دوره‌ها",
@@ -164,6 +173,11 @@ _FR: dict[str, str] = {
     "md.value": "Valeur",
     "md.grade": "Note",
     "md.task": "Tâche",
+    "md.grade_note": "À propos de la note",
+    "grade_note.few_readings": "Provisoire : cette note repose sur moins de cinq "
+    "mesures de la métrique.",
+    "grade_note.still_improving": "Encore en progrès à la dernière mesure — la note "
+    "montre où l'exécution est arrivée, pas où elle allait.",
     "md.final_phase": "Phase finale",
     "md.primary_metric": "Métrique principale",
     "md.epochs": "Époques",

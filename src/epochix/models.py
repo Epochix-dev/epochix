@@ -76,6 +76,12 @@ class Warning(BaseModel):
     message: str
 
 
+# Why a frame's letter deserves less weight than it looks, derived from the
+# log alone. None when there is nothing to qualify. The surfaces render it in
+# the reader's language; see story_engine.grade.grade_note.
+GradeNote = Literal["few_readings", "still_improving"]
+
+
 class StoryFrame(BaseModel):
     run_id: str
     seq: int
@@ -90,6 +96,7 @@ class StoryFrame(BaseModel):
     # the run's accuracy formatter and displayed "123.6%".
     primary_metric: str | None = None
     confidence: float = Field(ge=0.0, le=1.0)
+    grade_note: GradeNote | None = None
     narrative: str
     metaphor_cards: list[MetaphorCard] = Field(default_factory=list)
     skill_dimensions: dict[str, float] = Field(default_factory=dict)

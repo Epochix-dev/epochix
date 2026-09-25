@@ -81,6 +81,9 @@ story_frames_table = Table(
     # the run was, so every export and API consumer of frames saw "custom".
     Column("task_type", String),
     Column("confidence", Float),
+    # Why the frame's letter deserves less weight (few readings, still
+    # improving) — or NULL. See story_engine.grade.grade_note.
+    Column("grade_note", String),
     Column("narrative", Text),
     Column("metaphor_json", Text),
     Column("skill_json", Text),
@@ -165,6 +168,7 @@ class RunStore:
             for table, column, ddl in (
                 ("story_frames", "primary_key", "TEXT"),
                 ("story_frames", "task_type", "TEXT"),
+                ("story_frames", "grade_note", "TEXT"),
             ):
                 info = cur.execute(f"PRAGMA table_info({table})").fetchall()
                 if not info:
@@ -414,6 +418,7 @@ class RunStore:
                     "primary_key": frame.primary_metric,
                     "task_type": frame.task_type.value,
                     "confidence": frame.confidence,
+                    "grade_note": frame.grade_note,
                     "narrative": frame.narrative,
                     "metaphor_json": json.dumps([m.model_dump() for m in frame.metaphor_cards]),
                     "skill_json": json.dumps(frame.skill_dimensions),
@@ -462,6 +467,7 @@ class RunStore:
                     primary_metric_value=r.primary_value,
                     primary_metric=r.primary_key,
                     confidence=r.confidence or 0.0,
+                    grade_note=r.grade_note,
                     narrative=r.narrative or "",
                     metaphor_cards=[MetaphorCard(**m) for m in json.loads(r.metaphor_json or "[]")],
                     skill_dimensions=json.loads(r.skill_json or "{}"),

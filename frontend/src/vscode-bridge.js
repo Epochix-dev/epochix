@@ -26,6 +26,8 @@ export function mapFrame(f) {
     // the run's metric and formatted a box_loss frame as mAP50.
     primary_metric: f.primaryMetric,
     confidence: f.confidence,
+    // Why the letter deserves less weight (few readings, still improving).
+    grade_note: f.gradeNote ?? null,
     narrative: f.narrative,
     task_type: f.taskType,
   };

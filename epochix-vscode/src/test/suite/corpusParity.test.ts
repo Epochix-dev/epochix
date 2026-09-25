@@ -30,6 +30,7 @@ interface Expectation {
   last_value: number | null;
   keys: string[];
   metric_from_epoch: number | null;
+  grade_note: string | null;
 }
 
 function repoRoot(): string {
@@ -61,6 +62,7 @@ function run(file: string): Omit<Expectation, "path"> {
     last_value: last ? Math.round(last.primaryMetricValue * 1e4) / 1e4 : null,
     keys: keys.sort((a, b) => (a < b ? -1 : a > b ? 1 : 0)),
     metric_from_epoch: starts.length ? Math.min(...starts) : null,
+    grade_note: last ? last.gradeNote : null,
   };
 }
 
@@ -83,6 +85,7 @@ suite("Corpus parity — the extension reads every log as Python does", () => {
       assert.strictEqual(got.frames, want.frames, "frames");
       assert.strictEqual(got.last_value, want.last_value, "last value");
       assert.strictEqual(got.metric_from_epoch, want.metric_from_epoch, "story metric starts at");
+      assert.strictEqual(got.grade_note, want.grade_note, "grade note");
     });
   }
 });

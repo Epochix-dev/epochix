@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import math
+from typing import Literal
 
 from epochix.enums import Grade, TaskType
 from epochix.story_engine.config_loader import GradeConfig
@@ -311,6 +312,40 @@ _TRAJECTORY_THRESHOLDS: list[tuple[Grade, float]] = [
     (Grade.D, -0.03),  # essentially flat
     # anything worse (the metric moved the wrong way — a diverging loss) → F
 ]
+
+
+# Below this many readings of the primary metric a letter is provisional: a
+# trajectory grade is measured against the first reading, and an absolute one
+# is a single noisy epoch. Five is a judgement, not a statistic — it is the
+# threshold for saying so, never a number shown as a measurement.
+FEW_READINGS = 5
+
+
+def grade_note(
+    grade: Grade,
+    readings: int,
+    *,
+    has_epoch: bool,
+    new_best: bool,
+) -> Literal["few_readings", "still_improving"] | None:
+    """Why this letter deserves less weight than it looks, or None.
+
+    An 11-epoch run and a 200-epoch run received equally confident letters.
+    Two things the log does show make a letter provisional: it rests on few
+    readings, or the metric was still setting new bests when it was taken, so
+    the letter says where the run got to rather than where it was heading.
+    A single fit-and-score result (no epoch, one reading) is a finished
+    result, not an early epoch, and an ``I`` grade has nothing to qualify.
+    """
+    if grade is Grade.INCOMPLETE:
+        return None
+    if not has_epoch and readings <= 1:
+        return None
+    if readings < FEW_READINGS:
+        return "few_readings"
+    if new_best:
+        return "still_improving"
+    return None
 
 
 def grade_by_trajectory(baseline: float, current: float, lower_better: bool) -> Grade:

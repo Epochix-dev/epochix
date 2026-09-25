@@ -153,6 +153,14 @@ export class JourneyPanel {
       if (frame.grade) this._statEls.grade.textContent = frame.grade;
     }
 
+    // ── Grade note ──────────────────────────────────────────────────────────
+    const noteEl = document.getElementById('grade-note');
+    if (noteEl) {
+      const text = gradeNoteText(frame?.grade_note);
+      noteEl.textContent = text;
+      noteEl.hidden = !text;
+    }
+
     // ── Metaphor cards  ─────────────────────────────────────────────────────
     // Model uses { title, body, icon } — render all three.
     const mc = document.getElementById('metaphor-cards');
@@ -355,4 +363,23 @@ function _renderEmpty(el, s) {
   } else {
     el.innerHTML = `<p class="narrative-placeholder">${_esc(t('labels.waiting', 'Waiting for training data…'))}</p>`;
   }
+}
+
+/**
+ * The sentence for a frame's grade note, in the reader's language, or ''.
+ * An 11-epoch run and a 200-epoch run got equally confident letters; the
+ * engines now say when a letter rests on few readings or on a metric still
+ * setting new bests (story_engine.grade.grade_note).
+ * @param {string|null|undefined} note
+ */
+export function gradeNoteText(note) {
+  if (note === 'few_readings') {
+    return t('ui.gradeNotes.few_readings',
+      'Provisional: this grade rests on fewer than five readings of the metric.');
+  }
+  if (note === 'still_improving') {
+    return t('ui.gradeNotes.still_improving',
+      'Still improving at the last reading — the grade shows where the run got to, not where it was heading.');
+  }
+  return '';
 }

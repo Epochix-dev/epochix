@@ -442,7 +442,9 @@ class StoryFrame(BaseModel):
     phase: Phase                      # see enum below
     grade: Grade                      # current letter
     primary_metric_value: float
-    confidence: float                 # 0.0–1.0 for hero visuals
+    primary_metric: str | None        # the canonical key the value came from
+    confidence: float                 # 0.0–1.0 the run's advancement ("maturity")
+    grade_note: GradeNote | None      # why the letter is provisional, if it is
     narrative: str                    # short paragraph
     metaphor_cards: list[MetaphorCard]
     skill_dimensions: dict[str, float] # for radar
@@ -539,7 +541,10 @@ CREATE TABLE story_frames (
   phase           TEXT,
   grade           TEXT,
   primary_value   REAL,
+  primary_key     TEXT,             -- the metric primary_value was read from
+  task_type       TEXT,             -- the task the frame was told under
   confidence      REAL,
+  grade_note      TEXT,             -- "few_readings" | "still_improving" | NULL
   narrative       TEXT,
   metaphor_json   TEXT,
   skill_json      TEXT,
