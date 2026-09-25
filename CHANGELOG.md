@@ -45,6 +45,20 @@ An audit of every setting against the code found five that no code read.
   every export and API that reads frames. The task is stored with the frame;
   frames from older databases take the run's task.
 
+### Added — Farsi PDFs
+
+- **A Farsi run's PDF is drawn in Farsi.** fpdf2's core fonts are Latin-1, so
+  the report fell back to English chrome and left its sentences out. It now
+  embeds Vazirmatn (SIL Open Font License, shipped in the package with its
+  licence) and shapes the text with uharfbuzz — joined letters, right-to-left
+  order, right-aligned pages. `uharfbuzz` is the `pdf` extra
+  (`pip install "epochix[pdf]"`); without it the fallback stays, and the cover
+  now names that command. English and French reports keep the core fonts.
+- **Phase names were English in every report language** — the PDF's phase
+  pages and epoch table, and the Markdown summary, printed `Understanding` in a
+  French or Farsi report. They come from the same translated catalogue as the
+  warnings now; the PDF's "<- best" marker is translated too.
+
 ### Fixed — the Alembic migrations
 
 They had fallen behind the schema the store creates (no `milestones` or

@@ -16,12 +16,15 @@ grade, one page per training phase, milestones, and a final-metrics appendix.
 
 from __future__ import annotations
 
+import importlib.util
 from itertools import pairwise
+from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
-from epochix.i18n import t
+from epochix.i18n import is_rtl, t
 from epochix.normalizer.canonical_keys import is_recognised
 from epochix.story_engine.grade import metric_lower_better
+from epochix.story_engine.messages import phase_name
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -32,6 +35,15 @@ if TYPE_CHECKING:
 # bound, so it matches a slide's proportions rather than a page's.
 _W, _H = 297.0, 210.0
 _MARGIN = 20.0
+
+# Vazirmatn (SIL Open Font License 1.1; OFL.txt beside it) draws Persian and
+# Latin. fpdf2's core fonts are Latin-1 only, so a Farsi report used to fall
+# back to English chrome with its sentences left out. Persian also needs
+# shaping — joined letters, right-to-left order — which fpdf2 does through
+# the optional uharfbuzz (`pip install "epochix[pdf]"`). Without it the
+# letters would be drawn isolated and backwards, which is worse than English.
+_FONT_DIR = Path(__file__).parent / "fonts"
+_UNICODE_FAMILY = "vazirmatn"
 
 _INK = (26, 30, 46)
 _MUTED = (122, 132, 160)
@@ -52,20 +64,50 @@ _GRADE_RGB: dict[str, tuple[int, int, int]] = {
 }
 
 
-def _pdf() -> Any:  # noqa: ANN401 - fpdf2 ships no py.typed
+def can_draw_persian() -> bool:
+    """Whether this install has what a Persian PDF needs: the font and a shaper."""
+    return (
+        importlib.util.find_spec("uharfbuzz") is not None
+        and (_FONT_DIR / "Vazirmatn-Regular.ttf").is_file()
+        and (_FONT_DIR / "Vazirmatn-Bold.ttf").is_file()
+    )
+
+
+def _pdf(*, unicode: bool = False) -> Any:  # noqa: ANN401 - fpdf2 ships no py.typed
     from fpdf import FPDF
 
-    doc = FPDF(orientation="L", unit="mm", format="A4")
+    class _Doc(FPDF):
+        # Whether text is drawn with the embedded font (see _s and _text).
+        epx_unicode = False
+
+    doc = _Doc(orientation="L", unit="mm", format="A4")
     doc.set_auto_page_break(auto=True, margin=_MARGIN)
-    # Core fonts only: no font file to vendor, no licence to carry, and
-    # identical output on every machine.
-    doc.set_font("helvetica", size=12)
+    # Core fonts unless the report needs more: identical output everywhere,
+    # nothing embedded. A report that needs Persian embeds Vazirmatn and
+    # shapes its text, each paragraph taking the direction of its script.
+    doc.epx_unicode = unicode
+    if unicode:
+        doc.add_font(_UNICODE_FAMILY, "", str(_FONT_DIR / "Vazirmatn-Regular.ttf"))
+        doc.add_font(_UNICODE_FAMILY, "B", str(_FONT_DIR / "Vazirmatn-Bold.ttf"))
+        doc.set_text_shaping(use_shaping_engine=True)
+    doc.set_font(_UNICODE_FAMILY if unicode else "helvetica", size=12)
     return doc
 
 
 def _text(doc: Any, size: int, colour: tuple[int, int, int], style: str = "") -> None:  # noqa: ANN401
-    doc.set_font("helvetica", style=style, size=size)
+    family = _UNICODE_FAMILY if getattr(doc, "epx_unicode", False) else "helvetica"
+    doc.set_font(family, style=style, size=size)
     doc.set_text_color(*colour)
+
+
+def _s(doc: Any, value: object) -> str:  # noqa: ANN401
+    """Text as this document can draw it: as-is with the embedded font."""
+    return str(value) if getattr(doc, "epx_unicode", False) else _ascii(value)
+
+
+def _lead(locale: str) -> str:
+    """Alignment for full-width text: a right-to-left language starts at the right."""
+    return "R" if is_rtl(locale) else "L"
 
 
 def _ascii(value: object) -> str:
@@ -196,7 +238,7 @@ def _line_chart(
 
     _text(doc, 11, _INK, "B")
     doc.set_xy(x, y)
-    doc.cell(w, 6, _ascii(title))
+    doc.cell(w, 6, _s(doc, title))
 
     top = y + 8.0
     plot_h = h - 8.0
@@ -216,7 +258,7 @@ def _line_chart(
         doc.set_draw_color(*_GRID)
         doc.line(x, gy, x + w, gy)
         doc.set_xy(x + w + 1.0, gy - 2.0)
-        doc.cell(16, 4, _ascii(f"{y_hi - y_span * i / 3.0:.4g}"))
+        doc.cell(16, 4, _s(doc, f"{y_hi - y_span * i / 3.0:.4g}"))
 
     for index, (label, points) in enumerate(series):
         colour = _SERIES_RGB[index % len(_SERIES_RGB)]
@@ -239,14 +281,14 @@ def _line_chart(
         doc.line(lx, ly + 1.5, lx + 5.0, ly + 1.5)
         _text(doc, 8, _MUTED)
         doc.set_xy(lx + 6.5, ly - 0.5)
-        doc.cell(34, 4, _ascii(label))
+        doc.cell(34, 4, _s(doc, label))
 
     # x axis extent, so "epoch 1 to 20" is stated rather than assumed.
     _text(doc, 7, _MUTED)
     doc.set_xy(x, top + plot_h + 0.5)
-    doc.cell(20, 4, _ascii(f"{x_lo:g}"))
+    doc.cell(20, 4, _s(doc, f"{x_lo:g}"))
     doc.set_xy(x + w - 20.0, top + plot_h + 0.5)
-    doc.cell(20, 4, _ascii(f"{x_hi:g}"), align="R")
+    doc.cell(20, 4, _s(doc, f"{x_hi:g}"), align="R")
     doc.set_line_width(0.2)
 
 
@@ -268,7 +310,9 @@ def _charts_page(
 
     doc.add_page()
     _text(doc, 22, _INK, "B")
-    doc.cell(0, 12, _ascii(t("pdf.charts", locale)), new_x="LMARGIN", new_y="NEXT")
+    doc.cell(
+        0, 12, _s(doc, t("pdf.charts", locale)), align=_lead(locale), new_x="LMARGIN", new_y="NEXT"
+    )
 
     # Two panels per row, and the row height grows when there is only one row.
     # Fixed-height panels left two thirds of a landscape page blank, which is
@@ -355,9 +399,9 @@ def _cover_facts(
     for label, value in rows:
         doc.set_x(left)
         _text(doc, 10, _MUTED)
-        doc.cell(38, 6, _ascii(label))
+        doc.cell(38, 6, _s(doc, label))
         _text(doc, 10, _INK, "B")
-        doc.cell(54, 6, _ascii(value), new_x="LMARGIN", new_y="NEXT")
+        doc.cell(54, 6, _s(doc, value), new_x="LMARGIN", new_y="NEXT")
 
 
 def _epoch_table(
@@ -398,15 +442,16 @@ def _epoch_table(
         doc.cell(
             0,
             12,
-            _ascii(t("pdf.epochs" if first else "pdf.epochs_continued", locale)),
+            _s(doc, t("pdf.epochs" if first else "pdf.epochs_continued", locale)),
+            align=_lead(locale),
             new_x="LMARGIN",
             new_y="NEXT",
         )
         doc.ln(2)
         _text(doc, 9, _MUTED)
         for header, width in columns:
-            doc.cell(width, 6, _ascii(header))
-        doc.cell(0, 6, _ascii(t("col.grade", locale)), new_x="LMARGIN", new_y="NEXT")
+            doc.cell(width, 6, _s(doc, header))
+        doc.cell(0, 6, _s(doc, t("col.grade", locale)), new_x="LMARGIN", new_y="NEXT")
         doc.set_draw_color(*_RULE)
         doc.line(_MARGIN, doc.get_y(), _W - _MARGIN, doc.get_y())
         doc.ln(1)
@@ -424,15 +469,16 @@ def _epoch_table(
         is_best = best is not None and frame is best
 
         _text(doc, 9, _INK, "B" if is_best else "")
-        doc.cell(22.0, 5.5, _ascii(f"{frame.epoch:g}" if frame.epoch is not None else "-"))
-        doc.cell(34.0, 5.5, _ascii(_fmt(value)))
-        doc.cell(26.0, 5.5, _ascii(delta))
-        doc.cell(34.0, 5.5, _ascii(frame.phase.value.title() if frame.phase else ""))
+        doc.cell(22.0, 5.5, _s(doc, f"{frame.epoch:g}" if frame.epoch is not None else "-"))
+        doc.cell(34.0, 5.5, _s(doc, _fmt(value)))
+        doc.cell(26.0, 5.5, _s(doc, delta))
+        doc.cell(34.0, 5.5, _s(doc, phase_name(frame.phase.value, locale) if frame.phase else ""))
         label = frame.grade.value if frame.grade else ""
         doc.cell(
             0,
             5.5,
-            _ascii(f"{label}   <- best" if is_best else label),
+            # The marker was an English literal in every locale.
+            _s(doc, f"{label}   ({t('col.best', locale)})" if is_best else label),
             new_x="LMARGIN",
             new_y="NEXT",
         )
@@ -451,12 +497,13 @@ def _drawable_locale(locale: str) -> bool:
 
 
 _UNRENDERABLE_NOTE = (
-    "This report is in English. The PDF fonts cannot draw this run's language; "
-    "the HTML and Markdown exports can."
+    "This report is in English: drawing this run's language needs the PDF "
+    'extra (pip install "epochix[pdf]"). The HTML and Markdown exports carry it '
+    "already."
 )
 
 
-def _display_title(run: Run) -> str:
+def _display_title(run: Run, doc: Any = None) -> str:  # noqa: ANN401
     """A cover title that is readable, even when the name is not renderable.
 
     fpdf2's core fonts are Latin-1, so a Farsi or CJK name comes back from
@@ -470,6 +517,8 @@ def _display_title(run: Run) -> str:
     correctly whatever the page can draw.
     """
     name = run.name or run.id
+    if getattr(doc, "epx_unicode", False):
+        return name if len(name) <= 56 else name[:55] + "\u2026"
     rendered = _ascii(name).replace("?", " ").strip()
     rendered = " ".join(rendered.split())
     if sum(ch.isalnum() for ch in rendered) < 2:
@@ -502,7 +551,14 @@ def _final_metrics_table(
 
     doc.add_page()
     _text(doc, 22, _INK, "B")
-    doc.cell(0, 14, _ascii(t("pdf.final_metrics", locale)), new_x="LMARGIN", new_y="NEXT")
+    doc.cell(
+        0,
+        14,
+        _s(doc, t("pdf.final_metrics", locale)),
+        align=_lead(locale),
+        new_x="LMARGIN",
+        new_y="NEXT",
+    )
     doc.ln(2)
 
     widths = (52.0, 32.0, 46.0, 32.0)
@@ -517,7 +573,7 @@ def _final_metrics_table(
         widths,
         strict=True,
     ):
-        doc.cell(width, 6, _ascii(header))
+        doc.cell(width, 6, _s(doc, header))
     doc.ln(6)
     doc.set_draw_color(*_RULE)
     doc.line(_MARGIN, doc.get_y(), _W - _MARGIN, doc.get_y())
@@ -533,15 +589,15 @@ def _final_metrics_table(
         at = f" ({t('cover.epoch_n', locale)} {best_epoch:g})" if best_epoch is not None else ""
 
         _text(doc, 9, _INK)
-        doc.cell(widths[0], 5.5, _ascii(key))
-        doc.cell(widths[1], 5.5, _ascii(_fmt(final)))
-        doc.cell(widths[2], 5.5, _ascii(_fmt(best) + at))
+        doc.cell(widths[0], 5.5, _s(doc, key))
+        doc.cell(widths[1], 5.5, _s(doc, _fmt(final)))
+        doc.cell(widths[2], 5.5, _s(doc, _fmt(best) + at))
         # Signed, and only when there is more than one reading: a single
         # measurement has not changed by zero, it has not changed at all.
         doc.cell(
             widths[3],
             5.5,
-            _ascii(f"{final - first:+.4g}" if len(points) > 1 else ""),
+            _s(doc, f"{final - first:+.4g}" if len(points) > 1 else ""),
             new_x="LMARGIN",
             new_y="NEXT",
         )
@@ -568,26 +624,40 @@ def _skills_and_model(
 
     if skills:
         _text(doc, 22, _INK, "B")
-        doc.cell(0, 14, _ascii(t("pdf.skills", locale)), new_x="LMARGIN", new_y="NEXT")
+        doc.cell(
+            0,
+            14,
+            _s(doc, t("pdf.skills", locale)),
+            align=_lead(locale),
+            new_x="LMARGIN",
+            new_y="NEXT",
+        )
         doc.ln(1)
         bar_w = 96.0
         for name, value in skills.items():
             share = max(0.0, min(1.0, float(value)))
             y = doc.get_y()
             _text(doc, 10, _MUTED)
-            doc.cell(46.0, 7, _ascii(str(name)))
+            doc.cell(46.0, 7, _s(doc, str(name)))
             doc.set_fill_color(*_RULE)
             doc.rect(_MARGIN + 46.0, y + 1.6, bar_w, 3.6, style="F")
             doc.set_fill_color(86, 156, 214)
             doc.rect(_MARGIN + 46.0, y + 1.6, bar_w * share, 3.6, style="F")
             doc.set_xy(_MARGIN + 46.0 + bar_w + 3.0, y)
             _text(doc, 10, _INK, "B")
-            doc.cell(20.0, 7, _ascii(f"{share:.2f}"), new_x="LMARGIN", new_y="NEXT")
+            doc.cell(20.0, 7, _s(doc, f"{share:.2f}"), new_x="LMARGIN", new_y="NEXT")
         doc.ln(4)
 
     if layers:
         _text(doc, 16, _INK, "B")
-        doc.cell(0, 10, _ascii(t("pdf.architecture", locale)), new_x="LMARGIN", new_y="NEXT")
+        doc.cell(
+            0,
+            10,
+            _s(doc, t("pdf.architecture", locale)),
+            align=_lead(locale),
+            new_x="LMARGIN",
+            new_y="NEXT",
+        )
         _text(doc, 9, _MUTED)
         for header, width in zip(
             (
@@ -599,7 +669,7 @@ def _skills_and_model(
             (44.0, 34.0, 30.0, 60.0),
             strict=True,
         ):
-            doc.cell(width, 6, _ascii(header))
+            doc.cell(width, 6, _s(doc, header))
         doc.ln(6)
         doc.set_draw_color(*_RULE)
         doc.line(_MARGIN, doc.get_y(), _W - _MARGIN, doc.get_y())
@@ -626,7 +696,7 @@ def _skills_and_model(
                 (44.0, 34.0, 30.0, 60.0),
                 strict=True,
             ):
-                doc.cell(width, 6, _ascii(header))
+                doc.cell(width, 6, _s(doc, header))
             doc.ln(6)
             doc.set_draw_color(*_RULE)
             doc.line(_MARGIN, doc.get_y(), _W - _MARGIN, doc.get_y())
@@ -645,7 +715,7 @@ def _skills_and_model(
                 doc.cell(
                     0,
                     10,
-                    _ascii(f"{t('pdf.architecture', locale)} ({t('pdf.continued', locale)})"),
+                    _s(doc, f"{t('pdf.architecture', locale)} ({t('pdf.continued', locale)})"),
                     new_x="LMARGIN",
                     new_y="NEXT",
                 )
@@ -653,13 +723,13 @@ def _skills_and_model(
             shown += 1
             params = layer.get("params")
             _text(doc, 9, _INK)
-            doc.cell(44.0, 5.5, _ascii(str(layer.get("name", ""))[:24]))
-            doc.cell(34.0, 5.5, _ascii(str(layer.get("layer_type", ""))[:18]))
-            doc.cell(30.0, 5.5, _ascii(str(layer.get("params_str", params or ""))))
+            doc.cell(44.0, 5.5, _s(doc, str(layer.get("name", ""))[:24]))
+            doc.cell(34.0, 5.5, _s(doc, str(layer.get("layer_type", ""))[:18]))
+            doc.cell(30.0, 5.5, _s(doc, str(layer.get("params_str", params or ""))))
             doc.cell(
                 60.0,
                 5.5,
-                _ascii(str(layer.get("plain_label", ""))[:34]),
+                _s(doc, str(layer.get("plain_label", ""))[:34]),
                 new_x="LMARGIN",
                 new_y="NEXT",
             )
@@ -667,7 +737,7 @@ def _skills_and_model(
         _text(doc, 10, _MUTED)
         omitted = len(layers) - shown
         suffix = f"  (+{omitted} more)" if omitted > 0 else ""
-        doc.cell(0, 6, _ascii(f"{total:,} {t('pdf.total_params', locale)}{suffix}"))
+        doc.cell(0, 6, _s(doc, f"{total:,} {t('pdf.total_params', locale)}{suffix}"))
 
 
 def render_pdf(
@@ -677,11 +747,13 @@ def render_pdf(
     locale: str = "en",
 ) -> bytes:
     """The run as a PDF: cover, one page per phase, milestones, metrics."""
-    doc = _pdf()
-    # Decide once whether this locale can be drawn at all. When it cannot the
-    # chrome falls back to English so the document stays navigable, and the
-    # cover says why instead of leaving the reader with "??? ???????".
-    drawable = _drawable_locale(locale)
+    # Decide once how this locale is drawn: the core fonts when Latin-1 is
+    # enough, the embedded Persian font when it is not and the shaper is
+    # installed. Otherwise the chrome falls back to English so the document
+    # stays navigable, and the cover says why and how to fix it.
+    unicode = not _drawable_locale(locale) and can_draw_persian()
+    doc = _pdf(unicode=unicode)
+    drawable = unicode or _drawable_locale(locale)
     note = "" if drawable else _UNRENDERABLE_NOTE
     if not drawable:
         locale = "en"
@@ -698,16 +770,16 @@ def render_pdf(
     doc.add_page()
     doc.set_y(_H * 0.28)
     _text(doc, 72, grade_rgb, "B")
-    doc.cell(0, 26, _ascii(grade), align="C", new_x="LMARGIN", new_y="NEXT")
+    doc.cell(0, 26, _s(doc, grade), align="C", new_x="LMARGIN", new_y="NEXT")
     _text(doc, 26, _INK, "B")
-    doc.cell(0, 14, _display_title(run), align="C", new_x="LMARGIN", new_y="NEXT")
+    doc.cell(0, 14, _display_title(run, doc), align="C", new_x="LMARGIN", new_y="NEXT")
     _text(doc, 13, _MUTED)
     task = run.task_type.value if run.task_type else "custom"
     when = run.finished_at.strftime("%Y-%m-%d") if run.finished_at else ""
     doc.cell(
         0,
         8,
-        _ascii(" · ".join(x for x in (task, when) if x)),
+        _s(doc, " · ".join(x for x in (task, when) if x)),
         align="C",
         new_x="LMARGIN",
         new_y="NEXT",
@@ -717,7 +789,7 @@ def render_pdf(
         doc.ln(6)
         doc.set_x(_MARGIN * 2)
         _text(doc, 13, _INK if drawable else _MUTED)
-        doc.multi_cell(_W - _MARGIN * 4, 7, _ascii(summary), align="C")
+        doc.multi_cell(_W - _MARGIN * 4, 7, _s(doc, summary), align="C")
 
     _cover_facts(doc, run, frames, events, locale)
 
@@ -756,16 +828,30 @@ def render_pdf(
             )
         else:
             span = ""
-        doc.cell(0, 6, _ascii(span), new_x="LMARGIN", new_y="NEXT")
+        doc.cell(0, 6, _s(doc, span), align=_lead(locale), new_x="LMARGIN", new_y="NEXT")
 
         _text(doc, 30, _INK, "B")
-        doc.cell(0, 16, _ascii(phase.title()), new_x="LMARGIN", new_y="NEXT")
+        doc.cell(
+            0,
+            16,
+            _s(doc, phase_name(phase, locale)),
+            align=_lead(locale),
+            new_x="LMARGIN",
+            new_y="NEXT",
+        )
 
         value = last.primary_metric_value
         if value is not None:
             _text(doc, 20, grade_rgb, "B")
             metric = last.primary_metric or run.primary_metric or ""
-            doc.cell(0, 12, _ascii(f"{metric}  {value:.4f}"), new_x="LMARGIN", new_y="NEXT")
+            doc.cell(
+                0,
+                12,
+                _s(doc, f"{metric}  {value:.4f}"),
+                align=_lead(locale),
+                new_x="LMARGIN",
+                new_y="NEXT",
+            )
             # What the phase actually did, rather than a single snapshot of it.
             if first.primary_metric_value is not None and len(block) > 1:
                 moved = value - first.primary_metric_value
@@ -773,7 +859,8 @@ def render_pdf(
                 doc.cell(
                     0,
                     6,
-                    _ascii(f"{first.primary_metric_value:.4f} -> {value:.4f}  ({moved:+.4g})"),
+                    _s(doc, f"{first.primary_metric_value:.4f} -> {value:.4f}  ({moved:+.4g})"),
+                    align=_lead(locale),
                     new_x="LMARGIN",
                     new_y="NEXT",
                 )
@@ -781,7 +868,11 @@ def render_pdf(
         if last.narrative and drawable:
             doc.ln(4)
             _text(doc, 14, _INK)
-            doc.multi_cell(_W - _MARGIN * 2, 8, _ascii(last.narrative))
+            width = _W - _MARGIN * 2
+            if is_rtl(locale):
+                # Right-aligned text ends where the headings above it end.
+                doc.set_x(doc.w - doc.r_margin - width)
+            doc.multi_cell(width, 8, _s(doc, last.narrative), align=_lead(locale))
 
     _final_metrics_table(doc, events, locale)
     _skills_and_model(doc, run, frames, locale)

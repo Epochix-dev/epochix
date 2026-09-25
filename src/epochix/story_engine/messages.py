@@ -88,6 +88,19 @@ MESSAGES: dict[str, dict[str, str]] = {
 }
 
 
+def phase_name(phase: str, locale: str = "en") -> str:
+    """A training phase's name, capitalised, in *locale*.
+
+    The exporters printed `phase.title()` — English in a French or Farsi
+    report — beside a translated everything else.
+    """
+    key = f"phase_{phase}"
+    if key not in MESSAGES["en"]:
+        return phase.title()
+    name = message(key, locale)
+    return name[:1].upper() + name[1:]
+
+
 def message(key: str, locale: str = "en", **fields: str) -> str:
     """The message *key* in *locale* (English when there is none), filled in."""
     table = MESSAGES.get(locale, MESSAGES["en"])

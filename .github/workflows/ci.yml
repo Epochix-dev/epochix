@@ -232,7 +232,8 @@ jobs:
             tests/unit/test_activations_sdk.py \
             tests/unit/test_architecture_sdk.py \
             tests/unit/test_accelerator_report.py \
-            tests/unit/test_pdf_export.py
+            tests/unit/test_pdf_export.py \
+            tests/unit/test_pdf_persian.py
           # These tests skip when a framework is missing, and an all-skipped run
           # still exits 0 — so demand that they actually executed.
           uv run --no-sync python - <<'PY'
