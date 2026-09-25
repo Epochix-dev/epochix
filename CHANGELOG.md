@@ -9,6 +9,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added — the story says what to do next
+
+- **A run that went wrong now ends with a next step, not only a
+  description.** Past its peak: keep the checkpoint from the best epoch and
+  use early stopping on the metric. Stalled: check the learning rate, then
+  the data pipeline and the label mapping. Diverged: lower the learning rate
+  or clip the gradients, and restart from a checkpoint at or before the last
+  good epoch. The overfitting and plateau warnings, which described the
+  problem and stopped, now say what to try.
+- Before this, advice lived inside some narrative variants and not others,
+  and the variant is chosen by run id, so whether a reader got a next step
+  was luck. The step is now one fixed sentence per state, appended after
+  every variant, in English, Farsi and French, identically in the Python
+  engine and the VS Code extension's.
+
 ### Fixed — an empty dashboard that waited forever (#35)
 
 - **A VS Code dashboard opened with nothing attached read "Waiting for

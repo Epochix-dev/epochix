@@ -94,13 +94,15 @@ def test_every_stalled_variant_is_actionable() -> None:
     """Variant choice is seeded by the run id, so ONE unhelpful variant means a
     random third of users get a dead end — and a randomly failing test.
     """
-    from epochix.story_engine.narrator import _load_stalled
+    from epochix.story_engine.narrator import _load_stalled, narrate_stalled
 
-    for variant in _load_stalled("en"):
-        low = variant.lower()
-        assert "learning rate" in low or "setup problem" in low, (
-            f"stalled variant offers nothing to check: {variant!r}"
-        )
+    # The advice is a fixed next step appended to every variant (see
+    # test_next_step.py); this checks what a reader actually gets.
+    variants = _load_stalled("en")
+    texts = {narrate_stalled(8.0, 0.116, 0.101, 8, f"r{i}") for i in range(400)}
+    assert len(texts) == len(variants), "not every variant was drawn"
+    for text in texts:
+        assert "learning rate" in text.lower(), f"stalled story offers nothing to check: {text!r}"
 
 
 # "Stalled" and "past peak" are different diagnoses with different fixes, and

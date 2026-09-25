@@ -111,22 +111,25 @@ export function narratePastPeak(o: {
   epoch: number | null; value: number; best: number;
   bestEpoch: number | null; runId: string; locale?: string;
 }): string {
-  return pick(SPECIAL_TEMPLATES[resolveLocale(o.locale)].pastPeak, o.runId)
+  const bestAt = fmtEpoch(o.bestEpoch);
+  const story = pick(SPECIAL_TEMPLATES[resolveLocale(o.locale)].pastPeak, o.runId)
     .replace(/\{epoch\}/g, fmtEpoch(o.epoch))
     .replace(/\{value\}/g, o.value.toFixed(4))
     .replace(/\{best\}/g, o.best.toFixed(4))
-    .replace(/\{best_epoch\}/g, fmtEpoch(o.bestEpoch));
+    .replace(/\{best_epoch\}/g, bestAt);
+  return `${story} ${message("next_pastpeak", o.locale, { best_epoch: bestAt })}`;
 }
 
 export function narrateStalled(o: {
   epoch: number | null; value: number; baseline: number;
   epochsSeen: number; runId: string; locale?: string;
 }): string {
-  return pick(SPECIAL_TEMPLATES[resolveLocale(o.locale)].stalled, o.runId)
+  const story = pick(SPECIAL_TEMPLATES[resolveLocale(o.locale)].stalled, o.runId)
     .replace(/\{epoch\}/g, fmtEpoch(o.epoch))
     .replace(/\{value\}/g, o.value.toFixed(4))
     .replace(/\{baseline\}/g, o.baseline.toFixed(4))
     .replace(/\{epochs_seen\}/g, String(o.epochsSeen));
+  return `${story} ${message("next_stalled", o.locale)}`;
 }
 
 export function narrateDiverged(o: {
@@ -134,11 +137,13 @@ export function narrateDiverged(o: {
   lastEpoch: number | null; runId: string; locale?: string;
 }): string {
   const loc = resolveLocale(o.locale);
-  return pick(SPECIAL_TEMPLATES[loc].diverged, o.runId)
+  const lastAt = fmtEpoch(o.lastEpoch);
+  const story = pick(SPECIAL_TEMPLATES[loc].diverged, o.runId)
     .replace(/\{epoch\}/g, fmtEpoch(o.epoch))
-    .replace(/\{last_epoch\}/g, fmtEpoch(o.lastEpoch))
+    .replace(/\{last_epoch\}/g, lastAt)
     .replace(/\{value\}/g, o.lastValue.toFixed(4))
     .replace(/\{metric\}/g, displayMetric(o.metric, loc));
+  return `${story} ${message("next_diverged", loc, { last_epoch: lastAt })}`;
 }
 
 /**

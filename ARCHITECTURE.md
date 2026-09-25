@@ -775,9 +775,14 @@ Detected milestones (each fires at most once per run):
 
 Warnings appear as amber cards in the timeline. Examples:
 
-- *"The model may be memorising the study material instead of understanding it."* — overfit
-- *"Learning has slowed. The model has stopped finding new patterns."* — plateau
+- *"The model may be memorising the study material instead of understanding it. Next step: stop at the best validation epoch, add regularisation (dropout, weight decay) or augmentation, or collect more data."* — overfit
+- *"Learning has slowed. The model has stopped finding new patterns. Next step: a lower learning rate (for example a reduce-on-plateau schedule) may restart progress; otherwise more epochs at this rate are unlikely to help."* — plateau
 - *"Something went wrong — the model's score has spiked. The teacher may need to lower the learning rate."* — divergence
+
+A story that finds the run past its peak, stalled or diverged ends with one
+fixed "Next step:" sentence (`next_pastpeak`, `next_stalled`, `next_diverged`
+in `story_engine/messages.py`), appended after whichever variant the run
+drew, so advice never depends on the variant.
 
 ---
 

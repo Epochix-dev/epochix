@@ -143,6 +143,7 @@ class TestMetricDirection:
         last = frames[-1].narrative.lower()
         assert "past its best" not in last, f"rising ROUGE called a decline: {last!r}"
         assert "stopping earlier" not in last, last
+        assert "early stopping" not in last, last
         assert str(run.final_grade) != "Grade.F", "an improving run graded F"
 
 
