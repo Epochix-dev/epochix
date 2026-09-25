@@ -7,6 +7,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.7.14] — unreleased
+
+### Fixed — what the Python engine reads out of a log
+
+Found by running every log in the repository through the pipeline and
+comparing what came out with what the file says. Two fixtures had never been
+read by any test.
+
+- **A web server's log got a training story.** "Response sent: 200 OK" and
+  "Numbers but no keys: 0.234" were read as metrics, filed under one name,
+  "custom", and narrated as a model "past its best, 200.0 → 0.234", graded F.
+  A metric whose name we do not recognise now keeps that name — two unknown
+  metrics are two series, not one — and a name printed only once is held until
+  it recurs, since a single "word: number" is indistinguishable from prose.
+- **The fingerprint demo told 50 epochs as one reading.** Its `Epoch 15/50`
+  lines win the Keras parser, which could not read the `train_loss=… EER=…`
+  lines under them. A line the run's parser cannot read now gets a second look
+  from the universal parser, keeping only metrics we recognise, on a scratch
+  context so prose cannot move the step axis.
+- **The Keras parser read any "word: number" anywhere** — the dataset sizes
+  ("Train: 4200 | Val: 800"), and a tqdm timestamp "[00:12<00:00" as a metric
+  named `00`. Keras prints metrics as " - name: value"; that is now required,
+  and metric names must start with a letter in the universal parser too.
+- **Every Keras and Lightning run's first frame was TRAINING accuracy**, and the
+  rest validation accuracy: one chart, two series, and the baseline taken from
+  the wrong one. A one-epoch run was graded on training accuracy. The engine
+  now sees every metric on a line before choosing which one tells the story.
+- **Colour codes whose escape byte was lost** (common in saved CI output) became
+  part of metric names: `1mloss`, `1maccuracy`.
+
+`tests/integration/test_log_corpus_truth.py` drives all 38 logs through the
+pipeline against reviewed expectations, and fails for a log without one.
+
+---
+
 ## [0.7.13] — 2026-09-24
 
 ### Fixed — invented milestones

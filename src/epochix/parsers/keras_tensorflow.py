@@ -14,7 +14,11 @@ _EPOCH_LINE = re.compile(r"^Epoch\s+(\d+)/(\d+)\s*$")
 # Step counts are bounded ({1,10}) so an unanchored search can't backtrack O(n²)
 # on a long digit run (a 200k-digit line froze the sniff for ~12s).
 _METRIC_LINE = re.compile(r"\d{1,10}/\d{1,10}\s+\[=+>?\.*\]")
-_KV_PAIR = re.compile(r"(\w{1,64}):\s*([-+]?\d+(?:\.\d+)?(?:[eE][-+]?\d+)?)")
+# Keras prints every metric as " - name: value" (Keras 2 and 3 alike), so the
+# dash is required. Without it any "word: number" on any line was a metric:
+# "Dataset | Train: 4200 | Val: 800" charted the dataset sizes, "Total params:
+# 462,410" a parameter count, and a tqdm "[00:12<00:00" a metric named `00`.
+_KV_PAIR = re.compile(r"(?:^|\s)-\s+([A-Za-z_]\w{0,63}):\s*([-+]?\d+(?:\.\d+)?(?:[eE][-+]?\d+)?)")
 
 # Shared so a key filtered in one parser cannot leak through another.
 _SKIP_KEYS = NEVER_METRICS

@@ -5,7 +5,7 @@ from dataclasses import dataclass, field
 
 from epochix.enums import Grade, Phase, TaskType
 from epochix.models import MetaphorCard, MetricEvent, Milestone, StoryFrame, Warning
-from epochix.normalizer.canonical_keys import canonicalize_key
+from epochix.normalizer.canonical_keys import canonicalize_key, is_recognised
 from epochix.story_engine.config_loader import GradeConfig
 from epochix.story_engine.grade import (
     compute_grade,
@@ -250,6 +250,9 @@ class StoryEngine:
     grade_config: GradeConfig | None = None  # loaded from .epochix.yaml
 
     _seen_keys: set[str] = field(default_factory=set, init=False)
+    # Keys on the line being processed, announced before its events arrive
+    # one at a time. See announce().
+    _announced_keys: set[str] = field(default_factory=set, init=False)
     # Canonicalising throws away exactly what tells a gaze run apart: both
     # `gaze_mae` and a plain `mae` arrive as MAE. Keep the originals.
     _seen_raw_keys: set[str] = field(default_factory=set, init=False)
@@ -298,8 +301,15 @@ class StoryEngine:
         # the story instead of matching nothing. Fall back to the default when
         # none has appeared yet.
         for key in _PREFERRED_KEYS_FOR_TASK.get(task, ()):
-            if key in self._metric_history:
+            if key in self._metric_history or key in self._announced_keys:
                 return key
+        if task is TaskType.CUSTOM:
+            # A run whose metrics we do not recognise is told by the first of
+            # them, under its own name. They used to be merged into one
+            # "custom" series, which put unrelated numbers on one curve.
+            for key in self._metric_history:
+                if not is_recognised(key):
+                    return key
         return _PRIMARY_KEY_FOR_TASK.get(task, "val_loss")
 
     def process(self, event: MetricEvent) -> StoryFrame | None:
@@ -409,6 +419,18 @@ class StoryEngine:
                 frames.append(frame)
         self._warmup = []
         return frames
+
+    def announce(self, keys: set[str]) -> None:
+        """Name every metric on a line before its events are processed.
+
+        Events arrive one at a time, and the primary metric is the most
+        preferred key seen so far — so on `loss: … - accuracy: … - val_loss: …
+        - val_accuracy: …` the first frame was TRAINING accuracy, and the
+        second, same epoch, validation accuracy: one chart, two series, and a
+        baseline taken from the wrong one. A one-epoch run was graded on
+        training accuracy outright.
+        """
+        self._announced_keys |= keys
 
     def note_non_finite(self, key: str, epoch: float | None) -> None:
         """Record that the log reported a non-numeric value (NaN/inf) for *key*.

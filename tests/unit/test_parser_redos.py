@@ -86,8 +86,11 @@ def test_key_at_length_limit_still_captured() -> None:
     parser = UniversalParser()
     ctx = ParserContext(run_id="t")
     key = "k" * 64  # exactly at the bound
-    metrics = parser.parse_line(f"{key}=0.5", ctx)
-    assert any(m.key == key for m in metrics)
+    # An unrecognised name is released once it recurs (a single print is
+    # indistinguishable from prose), so read it twice: both readings come out.
+    assert parser.parse_line(f"{key}=0.5", ctx) == []
+    metrics = parser.parse_line(f"{key}=0.6", ctx)
+    assert [m.value for m in metrics if m.key == key] == [0.5, 0.6]
 
 
 def test_keras_sniff_fast_on_long_digit_run() -> None:

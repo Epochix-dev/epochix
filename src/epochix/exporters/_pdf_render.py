@@ -20,6 +20,7 @@ from itertools import pairwise
 from typing import TYPE_CHECKING, Any
 
 from epochix.i18n import t
+from epochix.normalizer.canonical_keys import is_recognised
 from epochix.story_engine.grade import metric_lower_better
 
 if TYPE_CHECKING:
@@ -122,7 +123,21 @@ _ERROR_KEYS = ("MAE", "val_MAE", "RMSE", "val_RMSE", "MAPE", "val_MAPE")
 # under "custom". It is still a real series with a real shape, and it was the
 # only thing a GridSearchCV run produced — charted on its own axis, since it
 # shares a scale with nothing else.
-_CUSTOM_KEYS = ("custom",)
+_MAX_UNRECOGNISED_SERIES = 4
+
+
+def _unrecognised_keys(events: Sequence[MetricEvent]) -> list[str]:
+    """The run's metrics we do not know by name, in the order they first appear.
+
+    They used to arrive merged under one key, "custom"; each now keeps its own
+    name, so each is its own series. Capped so a log full of them stays legible.
+    """
+    keys: list[str] = []
+    for event in events:
+        key = event.canonical_key
+        if key not in keys and not is_recognised(key):
+            keys.append(key)
+    return keys[:_MAX_UNRECOGNISED_SERIES]
 
 
 def _series(
@@ -245,7 +260,7 @@ def _charts_page(
         (t("pdf.chart.loss", locale), _series(events, _LOSS_KEYS)),
         (t("pdf.chart.quality", locale), _series(events, _QUALITY_KEYS)),
         (t("pdf.chart.error", locale), _series(events, _ERROR_KEYS)),
-        (t("col.metric", locale), _series(events, _CUSTOM_KEYS)),
+        (t("col.metric", locale), _series(events, _unrecognised_keys(events))),
     ]
     panels = [(t, s) for t, s in panels if s]
     if not panels:

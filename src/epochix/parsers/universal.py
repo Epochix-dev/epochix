@@ -7,7 +7,7 @@ from statistics import fmean
 from typing import cast
 
 from epochix.models import RawMetric
-from epochix.normalizer.canonical_keys import canonicalize_key
+from epochix.normalizer.canonical_keys import canonicalize_key, is_recognised
 from epochix.parsers._never_metrics import NEVER_METRICS
 from epochix.parsers.base import ParserContext
 from epochix.parsers.registry import register_parser
@@ -16,9 +16,10 @@ from epochix.parsers.registry import register_parser
 # Key capture is bounded ({1,64}) so a long run of word characters before a
 # missing delimiter can't trigger O(n²) backtracking (a 100k-char line used to
 # hang the parser for seconds). A real metric key is never that long.
-_KV_EQ = re.compile(r"(\w{1,64})\s*=\s*([-+]?\d+(?:\.\d+)?(?:[eE][-+]?\d+)?)")
+_KV_EQ = re.compile(r"([A-Za-z_]\w{0,63})\s*=\s*([-+]?\d+(?:\.\d+)?(?:[eE][-+]?\d+)?)")
 # Pattern 2: key: value
-_KV_COLON = re.compile(r"(\w{1,64})\s*:\s*([-+]?\d+(?:\.\d+)?(?:[eE][-+]?\d+)?)")
+# Keys start with a letter here too: a timestamp "00:12" is not a metric `00`.
+_KV_COLON = re.compile(r"([A-Za-z_]\w{0,63})\s*:\s*([-+]?\d+(?:\.\d+)?(?:[eE][-+]?\d+)?)")
 # Pattern 3: JSON-ish dict anywhere in the line
 _JSON_FRAG = re.compile(r"\{[^{}]+\}")
 # Bare "Epoch N" / "Epoch N/M" header (common when the epoch is printed on the
@@ -359,21 +360,36 @@ class UniversalParser:
             ):
                 continue
             seen_keys.add(key_lo)
+            metric = RawMetric(
+                seq=ctx.seq,
+                epoch=ctx.current_epoch,
+                step=ctx.current_step,
+                key=key,
+                value=val,
+                parser_name=self.name,
+                confidence=conf,
+            )
+            # A name we do not recognise, printed once, is indistinguishable
+            # from a number in prose: "Response sent: 200 OK" reads as
+            # `sent: 200`. Hold its first reading and release it, in order,
+            # when the name comes back — a real series always does. Nothing
+            # waits for an end of stream, which a live run never reaches.
+            if not is_recognised(key):
+                held = cast(
+                    "dict[str, RawMetric | None]", ctx.extra.setdefault("held_unrecognised", {})
+                )
+                if key_lo not in held:
+                    held[key_lo] = metric
+                    continue
+                first = held[key_lo]
+                if first is not None:
+                    metrics.append(first)
+                    held[key_lo] = None
             # Remembered so a printed mean is not duplicated by the fold
             # aggregate at flush time (see flush).
             emitted: set[str] = ctx.extra.setdefault("emitted_keys", set())  # type: ignore[assignment]
             emitted.add(key_lo)
-            metrics.append(
-                RawMetric(
-                    seq=ctx.seq,
-                    epoch=ctx.current_epoch,
-                    step=ctx.current_step,
-                    key=key,
-                    value=val,
-                    parser_name=self.name,
-                    confidence=conf,
-                )
-            )
+            metrics.append(metric)
 
         return metrics
 

@@ -22,6 +22,13 @@ def normalize(raw: RawMetric, run_id: str, timestamp: datetime | None = None) ->
         raise ValueError(f"Cannot normalize non-finite value: {raw.value!r}")
 
     canonical = canonicalize_key(raw.key)
+    if canonical == "custom":
+        # Every metric we did not recognise used to be filed under the one
+        # name "custom", so two unrelated numbers became one series: a web
+        # server log's "sent: 200" and "keys: 0.234" were narrated as a
+        # model "past its best, 200.0 -> 0.234". A name we do not know is
+        # still the only honest label for its own numbers.
+        canonical = raw.key.strip() or "custom"
     unit = infer_unit(canonical, value)
 
     # Scale-normalise ratio metrics to [0, 1]. Frameworks log accuracy/mAP/EER
