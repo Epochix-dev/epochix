@@ -294,7 +294,8 @@ class UniversalParser:
             except json.JSONDecodeError:
                 continue
             for k, v in obj.items():
-                if isinstance(v, (int, float)):
+                # bool is an int in Python; a JSON `true` is not a reading of 1.0.
+                if isinstance(v, (int, float)) and not isinstance(v, bool):
                     candidates.append((k, float(v), 0.65))
         text = _blanked(text, spans)
 

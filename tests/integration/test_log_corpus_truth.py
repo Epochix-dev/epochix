@@ -54,7 +54,7 @@ def test_every_log_has_an_expectation() -> None:
     assert set(LOGS) == set(TRUTH)
 
 
-def _run(path: Path) -> tuple[str, str | None, int, float | None, tuple[str, ...]]:
+def _run(path: Path) -> tuple[str, str | None, int, float | None, tuple[str, ...], float | None]:
     store = RunStore(":memory:")
     run = asyncio.run(
         run_pipeline(ingester=FileBatchIngester("c", str(path)), run_id="c", store=store, hub=Hub())
@@ -62,24 +62,29 @@ def _run(path: Path) -> tuple[str, str | None, int, float | None, tuple[str, ...
     frames = store.get_story_frames("c")
     events = store.get_metric_events("c")
     last = frames[-1] if frames else None
+    # The epoch the story's metric first appears at: a run whose first epochs
+    # were told on a different series shows up here, not in the frame count.
+    starts = [f.epoch for f in frames if last and f.primary_metric == last.primary_metric]
     return (
         run.task_type.value if run.task_type else "custom",
         last.primary_metric if last else None,
         len(frames),
         round(last.primary_metric_value, 4) if last else None,
         tuple(sorted({e.canonical_key for e in events})),
+        min((e for e in starts if e is not None), default=None),
     )
 
 
 @pytest.mark.parametrize("name", sorted(TRUTH))
 def test_the_log_tells_what_it_contains(name: str) -> None:
-    task, metric, frames, last_value, keys = _run(LOGS[name])
+    task, metric, frames, last_value, keys, from_epoch = _run(LOGS[name])
     want = TRUTH[name]
     assert (ROOT / want["path"]).resolve() == LOGS[name].resolve()
     assert keys == tuple(want["keys"]), f"metrics stored: {keys}"
     assert (task, metric) == (want["task"], want["metric"])
     assert frames == want["frames"]
     assert last_value == want["last_value"]
+    assert from_epoch == want["metric_from_epoch"]
 
 
 def test_one_story_metric_per_run() -> None:

@@ -344,7 +344,10 @@ class StoryEngine:
         # parsed as `custom`, or metric ordering) have already filled the first
         # three events. We lock only once a *definite* (non-custom) task emerges.
         if not self._task_locked and self.task is None and self._events_count >= 3:
-            detected = classify_task(self._seen_keys)
+            # The whole current line counts, not only the events processed so far:
+            # an `eval_loss, eval_accuracy` line otherwise classified on eval_loss
+            # alone, and that epoch's accuracy never reached the story.
+            detected = classify_task(self._seen_keys | self._announced_keys)
             if detected != TaskType.CUSTOM:
                 if detected == TaskType.REGRESSION:
                     # val_MAE too: a boosting run reports only its validation
@@ -399,7 +402,10 @@ class StoryEngine:
             return []
 
         if self.task is None:
-            detected = classify_task(self._seen_keys)
+            # The whole current line counts, not only the events processed so far:
+            # an `eval_loss, eval_accuracy` line otherwise classified on eval_loss
+            # alone, and that epoch's accuracy never reached the story.
+            detected = classify_task(self._seen_keys | self._announced_keys)
             if detected != TaskType.CUSTOM:
                 if detected == TaskType.REGRESSION:
                     mae_hist = self._metric_history.get("val_MAE") or self._metric_history.get(

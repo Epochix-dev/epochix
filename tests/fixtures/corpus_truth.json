@@ -9,7 +9,8 @@
    "train_loss",
    "val_accuracy",
    "val_loss"
-  ]
+  ],
+  "metric_from_epoch": 0.0
  },
  "ansi_colors.log": {
   "path": "tests/fixtures/logs/ansi_colors.log",
@@ -20,7 +21,8 @@
   "keys": [
    "accuracy",
    "train_loss"
-  ]
+  ],
+  "metric_from_epoch": 1.0
  },
  "detection_coco.log": {
   "path": "tests/fixtures/logs/detection_coco.log",
@@ -36,7 +38,8 @@
    "mAP50",
    "precision",
    "recall"
-  ]
+  ],
+  "metric_from_epoch": 5.0
  },
  "diverging_loss.log": {
   "path": "tests/fixtures/logs/diverging_loss.log",
@@ -49,7 +52,8 @@
    "train_loss",
    "val_accuracy",
    "val_loss"
-  ]
+  ],
+  "metric_from_epoch": 1.0
  },
  "empty.log": {
   "path": "tests/fixtures/logs/empty.log",
@@ -57,7 +61,8 @@
   "metric": null,
   "frames": 0,
   "last_value": null,
-  "keys": []
+  "keys": [],
+  "metric_from_epoch": null
  },
  "fastai_real.log": {
   "path": "tests/fixtures/logs/fastai_real.log",
@@ -69,7 +74,8 @@
    "accuracy",
    "train_loss",
    "val_loss"
-  ]
+  ],
+  "metric_from_epoch": 0.0
  },
  "fingerprint_matching.log": {
   "path": "demo/fingerprint_matching.log",
@@ -82,7 +88,8 @@
    "TAR_at_FAR_0_001",
    "lr",
    "train_loss"
-  ]
+  ],
+  "metric_from_epoch": 1.0
  },
  "garbage.log": {
   "path": "tests/fixtures/logs/garbage.log",
@@ -90,7 +97,8 @@
   "metric": null,
   "frames": 0,
   "last_value": null,
-  "keys": []
+  "keys": [],
+  "metric_from_epoch": null
  },
  "gaze_estimation.log": {
   "path": "demo/gaze_estimation.log",
@@ -102,7 +110,8 @@
    "MAE",
    "lr",
    "train_loss"
-  ]
+  ],
+  "metric_from_epoch": 1.0
  },
  "hf_classification.log": {
   "path": "tests/fixtures/logs/hf_classification.log",
@@ -115,7 +124,8 @@
    "train_loss",
    "val_accuracy",
    "val_loss"
-  ]
+  ],
+  "metric_from_epoch": 1.0
  },
  "huggingface_5ep.log": {
   "path": "tests/fixtures/logs/huggingface_5ep.log",
@@ -128,7 +138,8 @@
    "train_loss",
    "val_accuracy",
    "val_loss"
-  ]
+  ],
+  "metric_from_epoch": 1.0
  },
  "huggingface_bert.log": {
   "path": "demo/huggingface_bert.log",
@@ -142,7 +153,8 @@
    "val_accuracy",
    "val_f1",
    "val_loss"
-  ]
+  ],
+  "metric_from_epoch": 1.0
  },
  "huggingface_nlp_10ep.log": {
   "path": "tests/fixtures/logs/huggingface_nlp_10ep.log",
@@ -155,7 +167,8 @@
    "perplexity",
    "train_loss",
    "val_loss"
-  ]
+  ],
+  "metric_from_epoch": 1.0
  },
  "interrupted.log": {
   "path": "tests/fixtures/logs/interrupted.log",
@@ -166,7 +179,8 @@
   "keys": [
    "train_loss",
    "val_accuracy"
-  ]
+  ],
+  "metric_from_epoch": 1.0
  },
  "keras_100ep.log": {
   "path": "tests/fixtures/logs/keras_100ep.log",
@@ -179,7 +193,8 @@
    "train_loss",
    "val_accuracy",
    "val_loss"
-  ]
+  ],
+  "metric_from_epoch": 1.0
  },
  "keras_50ep.log": {
   "path": "tests/fixtures/logs/keras_50ep.log",
@@ -192,7 +207,8 @@
    "train_loss",
    "val_accuracy",
    "val_loss"
-  ]
+  ],
+  "metric_from_epoch": 1.0
  },
  "keras_image_classifier.log": {
   "path": "demo/keras_image_classifier.log",
@@ -205,7 +221,8 @@
    "train_loss",
    "val_accuracy",
    "val_loss"
-  ]
+  ],
+  "metric_from_epoch": 1.0
  },
  "keras_short.log": {
   "path": "tests/fixtures/logs/keras_short.log",
@@ -218,7 +235,8 @@
    "train_loss",
    "val_accuracy",
    "val_loss"
-  ]
+  ],
+  "metric_from_epoch": 1.0
  },
  "mixed_frameworks.log": {
   "path": "tests/fixtures/logs/mixed_frameworks.log",
@@ -232,7 +250,8 @@
    "train_loss",
    "val_accuracy",
    "val_loss"
-  ]
+  ],
+  "metric_from_epoch": 3.0
  },
  "multiline_json.log": {
   "path": "tests/fixtures/logs/multiline_json.log",
@@ -246,7 +265,8 @@
    "val_accuracy",
    "val_f1",
    "val_loss"
-  ]
+  ],
+  "metric_from_epoch": 1.0
  },
  "no_val_metrics.log": {
   "path": "tests/fixtures/logs/no_val_metrics.log",
@@ -257,7 +277,8 @@
   "keys": [
    "accuracy",
    "train_loss"
-  ]
+  ],
+  "metric_from_epoch": 1.0
  },
  "pl_high_accuracy.log": {
   "path": "tests/fixtures/logs/pl_high_accuracy.log",
@@ -270,7 +291,8 @@
    "train_loss",
    "val_accuracy",
    "val_loss"
-  ]
+  ],
+  "metric_from_epoch": 1.0
  },
  "plateau.log": {
   "path": "tests/fixtures/logs/plateau.log",
@@ -281,7 +303,8 @@
   "keys": [
    "train_loss",
    "val_accuracy"
-  ]
+  ],
+  "metric_from_epoch": 1.0
  },
  "pytorch_lightning.log": {
   "path": "demo/pytorch_lightning.log",
@@ -294,7 +317,8 @@
    "train_loss",
    "val_accuracy",
    "val_loss"
-  ]
+  ],
+  "metric_from_epoch": 10.0
  },
  "pytorch_lightning_30ep.log": {
   "path": "tests/fixtures/logs/pytorch_lightning_30ep.log",
@@ -307,7 +331,8 @@
    "train_loss",
    "val_accuracy",
    "val_loss"
-  ]
+  ],
+  "metric_from_epoch": 1.0
  },
  "pytorch_lightning_long.log": {
   "path": "tests/fixtures/logs/pytorch_lightning_long.log",
@@ -320,7 +345,8 @@
    "train_loss",
    "val_accuracy",
    "val_loss"
-  ]
+  ],
+  "metric_from_epoch": 1.0
  },
  "pytorch_lightning_short.log": {
   "path": "tests/fixtures/logs/pytorch_lightning_short.log",
@@ -333,7 +359,8 @@
    "train_loss",
    "val_accuracy",
    "val_loss"
-  ]
+  ],
+  "metric_from_epoch": 1.0
  },
  "scientific_notation.log": {
   "path": "tests/fixtures/logs/scientific_notation.log",
@@ -345,7 +372,8 @@
    "lr",
    "train_loss",
    "val_loss"
-  ]
+  ],
+  "metric_from_epoch": 1.0
  },
  "seq2seq_attention.log": {
   "path": "demo/seq2seq_attention.log",
@@ -358,7 +386,8 @@
    "train_loss",
    "val_accuracy",
    "val_loss"
-  ]
+  ],
+  "metric_from_epoch": 4.0
  },
  "single_epoch.log": {
   "path": "tests/fixtures/logs/single_epoch.log",
@@ -371,7 +400,8 @@
    "train_loss",
    "val_accuracy",
    "val_loss"
-  ]
+  ],
+  "metric_from_epoch": 1.0
  },
  "universal_20ep.log": {
   "path": "tests/fixtures/logs/universal_20ep.log",
@@ -385,7 +415,8 @@
    "train_loss",
    "val_accuracy",
    "val_loss"
-  ]
+  ],
+  "metric_from_epoch": 1.0
  },
  "universal_kv_colon.log": {
   "path": "tests/fixtures/logs/universal_kv_colon.log",
@@ -399,7 +430,8 @@
    "train_loss",
    "val_accuracy",
    "val_loss"
-  ]
+  ],
+  "metric_from_epoch": 1.0
  },
  "vscode-demo.log": {
   "path": "epochix-vscode/media/demo.log",
@@ -413,7 +445,8 @@
    "train_loss",
    "val_accuracy",
    "val_loss"
-  ]
+  ],
+  "metric_from_epoch": 1.0
  },
  "yolo_100ep.log": {
   "path": "tests/fixtures/logs/yolo_100ep.log",
@@ -429,7 +462,8 @@
    "mAP50",
    "precision",
    "recall"
-  ]
+  ],
+  "metric_from_epoch": 5.0
  },
  "yolo_50ep.log": {
   "path": "tests/fixtures/logs/yolo_50ep.log",
@@ -445,7 +479,8 @@
    "mAP50",
    "precision",
    "recall"
-  ]
+  ],
+  "metric_from_epoch": 5.0
  },
  "yolo_real_ultralytics.log": {
   "path": "tests/fixtures/logs/yolo_real_ultralytics.log",
@@ -461,7 +496,8 @@
    "mAP50",
    "precision",
    "recall"
-  ]
+  ],
+  "metric_from_epoch": 1.0
  },
  "yolo_short.log": {
   "path": "tests/fixtures/logs/yolo_short.log",
@@ -477,7 +513,8 @@
    "mAP50",
    "precision",
    "recall"
-  ]
+  ],
+  "metric_from_epoch": 5.0
  },
  "yolov8_detection.log": {
   "path": "demo/yolov8_detection.log",
@@ -493,6 +530,7 @@
    "mAP50",
    "precision",
    "recall"
-  ]
+  ],
+  "metric_from_epoch": 10.0
  }
 }
