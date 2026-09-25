@@ -384,13 +384,16 @@ def _cover_facts(
             # is the model getting WORSE, and a reader should not have to know
             # the metric's direction to read its own report.
             worse = (drift > 0) if lower_better else (drift < 0)
-            rows.append(("since best", f"{_fmt(abs(drift))} {'worse' if worse else 'better'}"))
+            direction = t("cover.worse" if worse else "cover.better", locale)
+            rows.append((t("cover.since_best", locale), f"{_fmt(abs(drift))} {direction}"))
     if epochs:
         rows.append((t("cover.epochs", locale), f"{epochs[0]:g} - {epochs[-1]:g} ({len(epochs)})"))
     if run.parser_used:
         rows.append((t("cover.read_by", locale), run.parser_used))
 
-    if not rows:
+    # Why the letter above deserves less weight than it looks, if it does.
+    last_note = frames[-1].grade_note if frames else None
+    if not rows and last_note is None:
         return
 
     doc.ln(4)
@@ -402,6 +405,11 @@ def _cover_facts(
         doc.cell(38, 6, _s(doc, label))
         _text(doc, 10, _INK, "B")
         doc.cell(54, 6, _s(doc, value), new_x="LMARGIN", new_y="NEXT")
+    if last_note is not None:
+        doc.ln(2)
+        doc.set_x(left)
+        _text(doc, 10, _MUTED)
+        doc.multi_cell(width, 5, _s(doc, t(f"grade_note.{last_note}", locale)), align="C")
 
 
 def _epoch_table(

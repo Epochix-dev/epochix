@@ -72,6 +72,10 @@
       "liveMetrics": "Métriques en direct",
       "engineer": "Panneau ingénieur"
     },
-    "gradeCaveat": "Noté selon des seuils fixes pour ce type de tâche — sans connaître la difficulté de vos données. La tendance et le meilleur epoch sont les parties fiables."
+    "gradeCaveat": "Noté selon des seuils fixes pour ce type de tâche — sans connaître la difficulté de vos données. La tendance et le meilleur epoch sont les parties fiables.",
+    "gradeNotes": {
+      "few_readings": "Provisoire : cette note repose sur moins de cinq mesures de la métrique.",
+      "still_improving": "Encore en progrès à la dernière mesure — la note montre où l'exécution est arrivée, pas où elle allait."
+    }
   }
 }

@@ -1015,6 +1015,19 @@ body {
 
 /* The grade is a summary against fixed thresholds, not a measurement of model
    quality relative to the dataset. Stated, not hidden. */
+/* Why this letter deserves less weight: few readings, or still improving. */
+.grade-note {
+  margin-top: 10px;
+  padding: 6px 10px;
+  border-left: 3px solid var(--accent-secondary);
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--accent-secondary) 10%, transparent);
+  color: var(--text-secondary);
+  font-family: var(--font-sans);
+  font-size: 12px;
+  line-height: 1.5;
+}
+.grade-note[hidden] { display: none; }
 .grade-caveat {
   margin-top: 10px;
   font-size: 11px;

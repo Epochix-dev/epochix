@@ -197,8 +197,11 @@ an expectation.
   run drew, and the overfitting and plateau warnings say what to try. Both
   engines, all three locales; `tests/unit/test_next_step.py` and
   `nextStep.test.ts` assert every variant in every locale.
-- **Confidence in the grade for short runs.** An 11-epoch run and a 200-epoch
-  run currently receive equally confident letters.
+- ~~**Confidence in the grade for short runs.**~~ Done, without inventing a
+  confidence number: a letter carries a note when it rests on fewer than five
+  readings or the metric was still setting new bests (`grade_note`), on the
+  dashboard and in the Markdown and PDF reports, from both engines. Five is a
+  judgement recorded in `FEW_READINGS`, not a statistic.
 - **Separate GridSearchCV candidates properly.** Fold results are grouped by
   parameter set and the winner is charted, but `epochix check` reports
   "N candidates x M folds" without per-candidate detail in exports.

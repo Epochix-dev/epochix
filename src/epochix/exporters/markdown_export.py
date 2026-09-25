@@ -115,6 +115,10 @@ def build_markdown(run_id: str, store: RunStore) -> str:
     lines.append(f"| {t('md.field', locale)} | {t('md.value', locale)} |")
     lines.append("|-------|-------|")
     lines.append(f"| **{t('md.grade', locale)}** | {grade_emoji} **{grade_str}** |")
+    # Why the letter deserves less weight than it looks, if it does.
+    if frames and frames[-1].grade_note is not None:
+        note = t(f"grade_note.{frames[-1].grade_note}", locale)
+        lines.append(f"| **{t('md.grade_note', locale)}** | {note} |")
     lines.append(f"| **{t('md.task', locale)}** | {task_str} |")
     lines.append(f"| **{t('md.final_phase', locale)}** | {phase_str or '—'} |")
     lines.append(

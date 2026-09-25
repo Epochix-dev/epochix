@@ -9,6 +9,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added — a grade says when it is provisional
+
+- **An 11-epoch run and a 200-epoch run received equally confident letters.**
+  A two-reading run could show an A+ with nothing beside it. A letter now
+  carries a note when the log shows it deserves less weight than it looks:
+  it rests on **fewer than five readings** of the metric, or the metric was
+  **still setting new bests** at the reading it was taken from, so it shows
+  where the run got to rather than where it was heading. No confidence
+  number is invented for this; both conditions are read straight off the log.
+- Shown under the grade on the dashboard (browser and VS Code) and in the
+  Markdown and PDF reports, in English, Farsi and French. Stored per frame
+  (`story_frames.grade_note`, migration `0003`; existing databases gain the
+  column on open), in the JSON export, and computed identically by the VS Code
+  extension's engine — the 38-log corpus truth now pins each log's final note
+  for both engines.
+
+### Fixed
+
+- The PDF cover's "since best … worse/better" row was English in Farsi and
+  French reports; its translations existed and were not used.
+- The VS Code extension's engine put the parser's confidence in a line into
+  each frame's `confidence`, where the Python engine puts the run's
+  advancement. Nothing displayed it, but a JSON export from the extension
+  carried the wrong quantity under that name.
+
 ### Added — the story says what to do next
 
 - **A run that went wrong now ends with a next step, not only a

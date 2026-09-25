@@ -220,3 +220,25 @@ export function gradeColor(grade: Grade): string {
   if (grade === "D") return "#f97316"; // orange
   return "#ef4444"; // red for F / I
 }
+
+// Below this many readings of the primary metric a letter is provisional.
+// Mirrors FEW_READINGS in story_engine/grade.py.
+export const FEW_READINGS = 5;
+
+/**
+ * Why a letter deserves less weight than it looks, or null — mirrors
+ * story_engine.grade.grade_note. An 11-epoch run and a 200-epoch run received
+ * equally confident letters; a letter resting on few readings, or taken while
+ * the metric was still setting new bests, is provisional and now says so.
+ */
+export function gradeNote(
+  grade: Grade,
+  readings: number,
+  o: { hasEpoch: boolean; newBest: boolean },
+): "few_readings" | "still_improving" | null {
+  if (grade === "I") return null;
+  if (!o.hasEpoch && readings <= 1) return null;
+  if (readings < FEW_READINGS) return "few_readings";
+  if (o.newBest) return "still_improving";
+  return null;
+}

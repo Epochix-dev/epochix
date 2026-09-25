@@ -23,9 +23,14 @@ export interface StoryFrameMsg {
    *  without the name the dashboard drew and formatted both as one. */
   primaryMetric: string;
   confidence: number;
+  /** Why the letter deserves less weight than it looks — mirrors
+   *  story_engine.grade.grade_note. Null when there is nothing to qualify. */
+  gradeNote: GradeNote | null;
   narrative: string;
   taskType: TaskType;
 }
+
+export type GradeNote = "few_readings" | "still_improving";
 
 export interface MilestoneMsg {
   kind: string;

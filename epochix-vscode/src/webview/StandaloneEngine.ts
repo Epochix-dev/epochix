@@ -22,6 +22,7 @@ import type { Grade, TaskType } from "../story/grader";
 import {
   computeGrade,
   gradeByTrajectory,
+  gradeNote,
   hasAbsoluteScale,
   metricLowerBetter,
   taskLowerBetter,
@@ -567,7 +568,9 @@ export class StandaloneEngine {
     const lowerBetter = metricLowerBetter(key) ?? taskLowerBetter(this._task);
 
     // Best so far, updated BEFORE the past-peak check, as in the Python engine.
-    if (this._best === null || (lowerBetter ? value < this._best : value > this._best)) {
+    const newBest =
+      this._best === null || (lowerBetter ? value < this._best : value > this._best);
+    if (newBest || this._best === null) {
       this._best = value;
       this._bestEpoch = epoch;
     }
@@ -639,7 +642,12 @@ export class StandaloneEngine {
       grade,
       primaryMetricValue: value,
       primaryMetric: key,
-      confidence: primary.confidence,
+      // The run's advancement, as in the Python engine — not the parser's
+      // confidence in the line, which this carried and nothing displayed.
+      confidence: progress,
+      gradeNote: gradeNote(grade, this._primaryReadings, {
+        hasEpoch: epoch !== null, newBest,
+      }),
       narrative,
       taskType: this._task,
     };
@@ -684,6 +692,8 @@ export class StandaloneEngine {
       ...prev,
       seq: this._ctx.seq,
       grade: "F",
+      // A divergence is certain, not provisional — as in the Python engine.
+      gradeNote: null,
       narrative: narrateDiverged({
         epoch, metric, lastValue: prev.primaryMetricValue,
         lastEpoch: prev.epoch, runId: this._runId, locale: this._locale,
