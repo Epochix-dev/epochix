@@ -77,6 +77,9 @@ story_frames_table = Table(
     # predate task detection and carry a different metric than the run's final
     # primary; without this the dashboard formatted them with the wrong one.
     Column("primary_key", String),
+    # The task the frame was told under. Frames read back as CUSTOM whatever
+    # the run was, so every export and API consumer of frames saw "custom".
+    Column("task_type", String),
     Column("confidence", Float),
     Column("narrative", Text),
     Column("metaphor_json", Text),
@@ -159,7 +162,10 @@ class RunStore:
         raw = self._engine.raw_connection()
         try:
             cur = raw.cursor()
-            for table, column, ddl in (("story_frames", "primary_key", "TEXT"),):
+            for table, column, ddl in (
+                ("story_frames", "primary_key", "TEXT"),
+                ("story_frames", "task_type", "TEXT"),
+            ):
                 info = cur.execute(f"PRAGMA table_info({table})").fetchall()
                 if not info:
                     continue  # created fresh with the current schema
@@ -406,6 +412,7 @@ class RunStore:
                     "grade": frame.grade.value,
                     "primary_value": frame.primary_metric_value,
                     "primary_key": frame.primary_metric,
+                    "task_type": frame.task_type.value,
                     "confidence": frame.confidence,
                     "narrative": frame.narrative,
                     "metaphor_json": json.dumps([m.model_dump() for m in frame.metaphor_cards]),
@@ -436,6 +443,12 @@ class RunStore:
         from epochix.enums import Grade, Phase
         from epochix.models import MetaphorCard, Warning
 
+        run_task = TaskType.CUSTOM
+        if rows and any(r.task_type is None for r in rows):
+            run = self.get_run(run_id)
+            if run is not None:
+                run_task = run.task_type
+
         result = []
         for r in rows:
             result.append(
@@ -454,7 +467,8 @@ class RunStore:
                     skill_dimensions=json.loads(r.skill_json or "{}"),
                     warnings=[Warning(**w) for w in json.loads(r.warnings_json or "[]")],
                     milestones=[],
-                    task_type=TaskType.CUSTOM,  # re-joined when needed
+                    # Frames stored before the column existed take the run's task.
+                    task_type=TaskType(r.task_type) if r.task_type else run_task,
                 )
             )
         return result

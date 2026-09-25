@@ -189,6 +189,7 @@ export const CANONICAL_MAP: ReadonlyMap<string, string> = new Map([
   ["val_f1", "val_f1"],
   ["test_f1", "val_f1"],
   ["eval_f1", "val_f1"],
+  ["val_f1_score", "val_f1"],
 ]);
 
 export const SPLIT_PREFIXES: readonly string[] = ["validation_", "valid_", "training_", "eval_", "test_", "train_", "val_"];

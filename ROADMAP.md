@@ -23,17 +23,18 @@ Closed items live in [CHANGELOG.md](CHANGELOG.md).
 
 ## PDF export
 
-Done, including the last two gaps: a run whose only series canonicalises to
-`custom` — a GridSearchCV score, typically — now gets its own panel instead of
-reaching no curve at all, and a model deeper than one page continues onto
+Done, including the last two gaps: a run whose only series is a metric we do
+not recognise by name — a GridSearchCV score, typically — now gets its own
+panel, charted under its own name, instead of reaching no curve at all, and a model deeper than one page continues onto
 another rather than stopping at the page edge with the rest reported as a
 count.
 
 ## Internationalisation
 
 Complete for the three locales the project ships. Narratives (54/54 template
-groups), dashboard UI (60/60 keys), the CLI, and the exports all speak English,
-Farsi and French.
+groups), warning and milestone messages, dashboard UI (54/54 keys, none
+unused — a test fails on a dead or missing key), the CLI, the exports and the
+VS Code extension's own engine all speak English, Farsi and French.
 
 What was wrong and is now fixed: the CLI had **no `--locale` flag at all**, so
 the translations existed and the primary interface could not reach them; the

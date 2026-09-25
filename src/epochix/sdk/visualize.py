@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
-import webbrowser
 from typing import TYPE_CHECKING
+
+from epochix.browser import open_in_browser
 
 if TYPE_CHECKING:
     from epochix.models import Run
@@ -58,7 +59,7 @@ def visualize(
     _app.state.engine_map = {}
 
     url = f"http://{host}:{port}/v/{run.id}"
-    webbrowser.open(url)
+    open_in_browser(url)
 
     if blocking:
         uvicorn.run(_app, host=host, port=port, log_level="warning")
@@ -96,7 +97,7 @@ def serve(
 
     url = f"http://{host}:{port}"
     if open_browser:
-        webbrowser.open(url)
+        open_in_browser(url)
 
     uvicorn.run(_app, host=host, port=port, log_level="warning")
     return url

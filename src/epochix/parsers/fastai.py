@@ -78,8 +78,13 @@ class FastAIParser:
             ),
         ]
 
+        # fastai computes every column after valid_loss on the VALIDATION set
+        # (Learner metrics run in the validate step), so they are validation
+        # metrics. Filed under their bare names, a fastai classifier's accuracy
+        # was recorded as training accuracy.
         for i, val_str in enumerate(extras_raw):
-            key = self._extra_headers[i] if i < len(self._extra_headers) else f"metric_{i}"
+            name = self._extra_headers[i] if i < len(self._extra_headers) else f"metric_{i}"
+            key = f"valid_{name}"
             with contextlib.suppress(ValueError):
                 metrics.append(
                     RawMetric(

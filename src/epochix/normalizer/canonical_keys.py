@@ -217,6 +217,7 @@ CANONICAL_MAP: dict[str, str] = {
     "val_f1": "val_f1",
     "test_f1": "val_f1",
     "eval_f1": "val_f1",
+    "val_f1_score": "val_f1",
 }
 
 CANONICAL_SET = frozenset(CANONICAL_MAP.values())

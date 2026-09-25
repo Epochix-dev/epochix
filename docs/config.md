@@ -16,9 +16,10 @@ epochix config show         # the values currently in effect
 | `EPOCHIX_HOST` | `127.0.0.1` | Interface to bind. See the security note below before changing. |
 | `EPOCHIX_PORT` | `7860` | Server port. |
 | `EPOCHIX_LOG_LEVEL` | `INFO` | Logging verbosity. |
-| `EPOCHIX_OPEN_BROWSER` | `true` | Open a browser when a run starts. |
+| `EPOCHIX_OPEN_BROWSER` | `true` | Open a browser when a run starts. `false` suppresses it everywhere — every command and the Python SDK — and prints the URL instead. |
 | `EPOCHIX_KEEP_RAW_LINES` | `false` | Keep the raw log lines alongside parsed metrics. |
-| `EPOCHIX_TELEMETRY` | `false` | Off. epochix sends nothing anywhere by default. |
+| `EPOCHIX_SCRUB_SECRETS` | `true` | Redact secret-looking strings (API keys, tokens, passwords, credentials in URLs) from the raw lines that are stored, and from lines sent to an LLM provider. Metrics are always read from the line as printed. |
+| `EPOCHIX_TELEMETRY` | `false` | Has no effect: epochix has no telemetry and sends nothing anywhere. Accepted so existing configs keep loading. |
 
 ### Serving beyond localhost
 
@@ -27,7 +28,6 @@ epochix config show         # the values currently in effect
 | `EPOCHIX_AUTH_TOKEN` | empty | Required token for writes. |
 | `EPOCHIX_CORS_ORIGINS` | empty | Comma-separated allowed origins. |
 | `EPOCHIX_EXPOSE_DOCS` | `false` | Serve the OpenAPI docs endpoints. |
-| `EPOCHIX_SCRUB_SECRETS` | `false` | Redact secret-looking strings from stored lines. |
 
 !!! warning "Binding a public interface"
 
@@ -37,12 +37,14 @@ epochix config show         # the values currently in effect
     machine can create and delete runs. epochix prints a warning when you bind
     publicly without a token. See [Deployment](deployment.md).
 
-### Optional backends
+### Hosted backends — not built
 
-| Variable | Default | What it does |
-|---|---|---|
-| `EPOCHIX_REDIS_URL` | empty | Redis for the pub/sub hub across processes. |
-| `EPOCHIX_POSTGRES_DSN` | empty | Postgres instead of SQLite. |
+A Redis pub/sub hub and a Postgres store are planned for a hosted mode and
+do not exist yet. Earlier versions listed `EPOCHIX_REDIS_URL` and
+`EPOCHIX_POSTGRES_DSN` here as working; nothing read them, so a run pointed
+at Postgres went to the local SQLite file. Setting either one now stops
+epochix with an error rather than storing your runs somewhere you did not
+ask for.
 
 ### LLM fallback parser (opt-in)
 
