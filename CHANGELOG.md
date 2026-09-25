@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [0.7.14] — unreleased
+## [0.7.14] — 2026-09-25
 
 ### Fixed — what the Python engine reads out of a log
 
