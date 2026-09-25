@@ -25,6 +25,7 @@ import { StandaloneEngine } from "../../webview/StandaloneEngine";
 import { BoostingParser } from "../../parsers/boosting";
 import { makeContext } from "../../parsers/base";
 import { _VARIANTS } from "../../story/narrator";
+import { SPECIAL_TEMPLATES } from "../../story/narratives.generated";
 import type { StoryFrameMsg } from "../../webview/messages";
 
 interface Run {
@@ -167,11 +168,12 @@ suite("Standalone engine — runs that are not progressing", () => {
   });
 
   test("no past-peak or stalled variant makes a false claim", () => {
-    for (const v of _VARIANTS.PAST_PEAK) {
+    // Wording checks read the English; the placeholder checks below cover every locale.
+    for (const v of SPECIAL_TEMPLATES.en.pastPeak) {
       assert.ok(!/below the best/i.test(v), `"below" is false for a loss: ${v}`);
       assert.ok(!/overfitting/i.test(v), `past-peak cannot know the cause: ${v}`);
     }
-    for (const v of _VARIANTS.STALLED) {
+    for (const v of SPECIAL_TEMPLATES.en.stalled) {
       assert.ok(/learning rate|setup problem/i.test(v), `stalled variant gives no advice: ${v}`);
     }
   });

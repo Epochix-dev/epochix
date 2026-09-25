@@ -15,6 +15,7 @@ from epochix.story_engine.grade import (
     is_lower_better,
     metric_lower_better,
 )
+from epochix.story_engine.messages import message
 from epochix.story_engine.milestones import MilestoneTracker
 from epochix.story_engine.narrator import (
     narrate,
@@ -276,6 +277,11 @@ class StoryEngine:
     # cannot publish it a second time.
     _divergence_emitted: bool = field(default=False, init=False)
 
+    def __post_init__(self) -> None:
+        # The detector is built by a default factory, before the locale is
+        # known; without this its warnings were English in every run.
+        self._warnings.locale = self.locale
+
     def _effective_task(self) -> TaskType:
         return self.task or TaskType.CUSTOM
 
@@ -340,7 +346,9 @@ class StoryEngine:
                         detected = refine_gaze(detected, mae_hist[-1], self._seen_raw_keys)
                 self.task = detected
                 self._task_locked = True
-                self._milestones = MilestoneTracker(run_id=self.run_id, task=self.task)
+                self._milestones = MilestoneTracker(
+                    run_id=self.run_id, task=self.task, locale=self.locale
+                )
 
         # Warmup: buffer events until the task-detection window (≥3 events) is
         # satisfied, then start emitting. On the first emit, replay the buffered
@@ -469,8 +477,7 @@ class StoryEngine:
                 Warning(
                     kind="divergence",
                     epoch=epoch,
-                    message="Something went wrong — the loss became undefined. "
-                    "The teacher may need to lower the learning rate.",
+                    message=message("warn_nan", self.locale),
                 )
             ],
             task_type=self._effective_task(),
@@ -484,6 +491,7 @@ class StoryEngine:
             self._milestones = MilestoneTracker(
                 run_id=self.run_id,
                 task=self._effective_task(),
+                locale=self.locale,
             )
 
     def _emit(self, event: MetricEvent) -> StoryFrame | None:

@@ -90,12 +90,14 @@ suite("Declared settings are honoured", () => {
   test("saving a run to the sidecar sends each measurement once", async () => {
     await setSetting("taskHint", "segmentation");
 
-    const created: Array<{ task: string | undefined }> = [];
+    const created: Array<{ task: string | undefined; locale: string | undefined }> = [];
     const events: SidecarEvent[] = [];
     const recorder = {
       port: 1,
-      createRun: (_name: string, task?: string) => {
-        created.push({ task });
+      createRun: (
+        _name: string, task?: string, _arch?: unknown, _primary?: unknown, locale?: string,
+      ) => {
+        created.push({ task, locale });
         return Promise.resolve("run-1");
       },
       pushEvent: (_id: string, e: SidecarEvent) => {
@@ -108,10 +110,11 @@ suite("Declared settings are honoured", () => {
     const file = path.join(dir, "train.log");
     fs.writeFileSync(file, KERAS_ACC.join("\n") + "\n", "utf-8");
 
-    await persistLogFile(recorder, file, "train.log");
+    await persistLogFile(recorder, file, "train.log", "fa");
 
-    // The pinned task reaches the server's engine too.
-    assert.deepStrictEqual(created, [{ task: "segmentation" }]);
+    // The pinned task and the language reach the server's engine too: it
+    // writes this run's story, and wrote it in English without the locale.
+    assert.deepStrictEqual(created, [{ task: "segmentation", locale: "fa" }]);
 
     // Four metrics per epoch, eight epochs — and not one more.
     assert.strictEqual(events.length, 8 * 4, "an extra event was sent");

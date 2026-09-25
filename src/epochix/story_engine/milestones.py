@@ -5,6 +5,7 @@ from dataclasses import dataclass, field
 from epochix.enums import TaskType
 from epochix.models import Milestone
 from epochix.story_engine.grade import is_unit_bounded
+from epochix.story_engine.messages import message
 
 _LOWER_BETTER_TASKS = frozenset(
     {TaskType.NLP, TaskType.BIOMETRIC, TaskType.GAZE, TaskType.REGRESSION}
@@ -22,6 +23,7 @@ _NOT_A_FRACTION = frozenset({"R2", "SSIM"})
 class MilestoneTracker:
     run_id: str
     task: TaskType
+    locale: str = "en"
 
     _best: float = field(default=float("-inf"), init=False)
     _crossed_thresholds: set[float] = field(default_factory=set, init=False)
@@ -79,7 +81,7 @@ class MilestoneTracker:
                         kind="best_so_far",
                         epoch=epoch,
                         value=primary_value,
-                        message=f"New best: {primary_value:.4f}",
+                        message=message("ms_best", self.locale, value=f"{primary_value:.4f}"),
                     )
                 )
                 self._fired.add("best_so_far")
@@ -111,7 +113,12 @@ class MilestoneTracker:
                             kind=kind,
                             epoch=epoch,
                             value=primary_value,
-                            message=f"Crossed {int(threshold * 100)}%: {primary_value:.4f}",
+                            message=message(
+                                "ms_crossed",
+                                self.locale,
+                                pct=str(int(threshold * 100)),
+                                value=f"{primary_value:.4f}",
+                            ),
                         )
                     )
 
@@ -139,7 +146,7 @@ class MilestoneTracker:
                     kind="biggest_jump",
                     epoch=epoch,
                     value=max_delta,
-                    message=f"Biggest single-epoch improvement: {max_delta:.4f}",
+                    message=message("ms_biggest_jump", self.locale, value=f"{max_delta:.4f}"),
                 )
             )
 
@@ -150,7 +157,7 @@ class MilestoneTracker:
                 kind="training_complete",
                 epoch=epoch,
                 value=self._best if self._best != float("-inf") else None,
-                message="Training completed.",
+                message=message("ms_complete", self.locale),
             )
         )
         return result

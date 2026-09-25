@@ -6,6 +6,7 @@ from dataclasses import dataclass, field
 from typing import Literal
 
 from epochix.models import Warning
+from epochix.story_engine.messages import message
 
 WarningKind = Literal["overfit", "plateau", "divergence", "lr_drop"]
 
@@ -25,6 +26,7 @@ _DIVERGE_GROWTH = 10.0
 class WarningDetector:
     """Stateful detector for training pathologies."""
 
+    locale: str = "en"
     _train_losses: deque[float] = field(default_factory=lambda: deque(maxlen=10), init=False)
     _val_losses: deque[float] = field(default_factory=lambda: deque(maxlen=10), init=False)
     _primary: deque[float] = field(default_factory=lambda: deque(maxlen=10), init=False)
@@ -56,8 +58,7 @@ class WarningDetector:
                     Warning(
                         kind="divergence",
                         epoch=epoch,
-                        message="Something went wrong — the loss became undefined. "
-                        "The teacher may need to lower the learning rate.",
+                        message=message("warn_nan", self.locale),
                     )
                 )
             elif len(self._train_losses) >= 2 and train_loss > self._train_losses[-2] * 10:
@@ -65,8 +66,7 @@ class WarningDetector:
                     Warning(
                         kind="divergence",
                         epoch=epoch,
-                        message="The loss has spiked unexpectedly. "
-                        "The model may have stepped too far in one direction.",
+                        message=message("warn_spike", self.locale),
                     )
                 )
             elif (
@@ -80,8 +80,7 @@ class WarningDetector:
                     Warning(
                         kind="divergence",
                         epoch=epoch,
-                        message="The loss is climbing away from where it started. "
-                        "The teacher may need to lower the learning rate.",
+                        message=message("warn_climb", self.locale),
                     )
                 )
 
@@ -109,8 +108,7 @@ class WarningDetector:
                     Warning(
                         kind="overfit",
                         epoch=epoch,
-                        message="The model may be memorising the study material "
-                        "instead of understanding it.",
+                        message=message("warn_overfit", self.locale),
                     )
                 )
 
@@ -125,7 +123,7 @@ class WarningDetector:
                     Warning(
                         kind="plateau",
                         epoch=epoch,
-                        message="Learning has slowed. The model has stopped finding new patterns.",
+                        message=message("warn_plateau", self.locale),
                     )
                 )
 
@@ -136,7 +134,12 @@ class WarningDetector:
                     Warning(
                         kind="lr_drop",
                         epoch=epoch,
-                        message=f"Learning rate decreased from {self._lr_prev:.2e} to {lr:.2e}.",
+                        message=message(
+                            "warn_lr_drop",
+                            self.locale,
+                            old=f"{self._lr_prev:.2e}",
+                            new=f"{lr:.2e}",
+                        ),
                     )
                 )
             self._lr_prev = lr

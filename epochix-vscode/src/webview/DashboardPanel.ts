@@ -56,7 +56,7 @@ export class DashboardPanel {
     this._theme = theme;
 
     // Standalone engine is used when no sidecar is available
-    this._engine = sidecar ? null : new StandaloneEngine(taskHint());
+    this._engine = sidecar ? null : new StandaloneEngine(taskHint(), locale);
 
     this._panel.webview.html = buildWebviewHtml({
       extensionUri,
@@ -133,7 +133,7 @@ export class DashboardPanel {
     if (sidecar) {
       // Parse locally, then persist through the sidecar's public API so the
       // run lands in saved history.
-      persistLogFile(sidecar, fileUri.fsPath, path.basename(fileUri.fsPath))
+      persistLogFile(sidecar, fileUri.fsPath, path.basename(fileUri.fsPath), locale)
         .then((runId) => {
           panel._runId = runId;
           panel._panel.webview.html = buildWebviewHtml({
@@ -296,7 +296,7 @@ export class DashboardPanel {
    */
   private _degradeToStandalone(extensionUri: vscode.Uri, locale: string): void {
     this._sidecar = null;
-    this._engine = new StandaloneEngine(taskHint());
+    this._engine = new StandaloneEngine(taskHint(), locale);
     this._panel.webview.html = buildWebviewHtml({
       extensionUri,
       webview: this._panel.webview,

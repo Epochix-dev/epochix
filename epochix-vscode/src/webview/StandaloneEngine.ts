@@ -30,7 +30,12 @@ import {
   narrate,
   narrateDiverged,
   narratePastPeak,
+  narrateSingleReading,
   narrateStalled,
+  message,
+  displayMetric,
+  resolveLocale,
+  type Locale,
 } from "../story/narrator";
 import { NEVER_METRICS } from "../parsers/neverMetrics";
 import type { StoryFrameMsg, MilestoneMsg, WarningMsg, RunSummaryMsg } from "./messages";
@@ -226,8 +231,13 @@ export class StandaloneEngine {
   // first few metrics and used to overwrite it, so the setting did nothing.
   private readonly _taskHint: TaskType | undefined;
 
-  constructor(taskHint?: TaskType) {
+  // The language the story is told in (`epochix.locale`). The engine used to
+  // have English templates only, whatever the setting said.
+  private readonly _locale: Locale;
+
+  constructor(taskHint?: TaskType, locale?: string) {
     this._taskHint = taskHint;
+    this._locale = resolveLocale(locale);
     this._parsers = [
       new PytorchLightningParser(),
       new KerasParser(),
@@ -556,14 +566,21 @@ export class StandaloneEngine {
       !pastPeak;
 
     let narrative: string;
-    if (stalled) {
+    // A result, not a stage of training: one reading and no epoch is a script
+    // that fit once and printed a score. Mirrors narrate_single_reading.
+    if (epoch === null && this._primaryReadings <= 1) {
+      narrative = narrateSingleReading({
+        value, metric: key, runId: this._runId, locale: this._locale,
+      });
+    } else if (stalled) {
       narrative = narrateStalled({
         epoch, value, baseline: this._baseline,
-        epochsSeen: this._primaryReadings, runId: this._runId,
+        epochsSeen: this._primaryReadings, runId: this._runId, locale: this._locale,
       });
     } else if (pastPeak) {
       narrative = narratePastPeak({
         epoch, value, best: this._best, bestEpoch: this._bestEpoch, runId: this._runId,
+        locale: this._locale,
       });
     } else {
       narrative = narrate({
@@ -574,6 +591,7 @@ export class StandaloneEngine {
         delta,
         runId: this._runId,
         metric: key,
+        locale: this._locale,
       });
     }
 
@@ -623,8 +641,7 @@ export class StandaloneEngine {
     this._warnings.push({
       kind: "divergence",
       epoch,
-      message: "Something went wrong — the loss became undefined. "
-        + "The teacher may need to lower the learning rate.",
+      message: message("warn_nan", this._locale),
     });
     this._seenMilestones.add("divergence_warning");
     return {
@@ -633,7 +650,7 @@ export class StandaloneEngine {
       grade: "F",
       narrative: narrateDiverged({
         epoch, metric, lastValue: prev.primaryMetricValue,
-        lastEpoch: prev.epoch, runId: this._runId,
+        lastEpoch: prev.epoch, runId: this._runId, locale: this._locale,
       }),
     };
   }
@@ -645,7 +662,10 @@ export class StandaloneEngine {
       this._milestones.push({
         kind: "first_metric",
         epoch: frame.epoch,
-        message: `First ${this._primaryMetric} recorded: ${frame.primaryMetricValue.toFixed(4)}`,
+        message: message("ms_first_metric", this._locale, {
+          metric: displayMetric(this._primaryMetric, this._locale),
+          value: frame.primaryMetricValue.toFixed(4),
+        }),
       });
     }
 
@@ -663,7 +683,9 @@ export class StandaloneEngine {
         this._milestones.push({
           kind: "grade_transition",
           epoch: frame.epoch,
-          message: `Grade ${rose ? "improved" : "dropped"} to ${frame.grade}`,
+          message: message(rose ? "ms_grade_up" : "ms_grade_down", this._locale, {
+            grade: frame.grade,
+          }),
         });
       }
     }
@@ -676,7 +698,9 @@ export class StandaloneEngine {
         this._milestones.push({
           kind: "phase_transition",
           epoch: frame.epoch,
-          message: `Entered ${frame.phase} phase`,
+          message: message("ms_phase", this._locale, {
+            phase: message(`phase_${frame.phase}`, this._locale),
+          }),
         });
       }
     }
@@ -701,8 +725,7 @@ export class StandaloneEngine {
       const w = this._frames.slice(-PLATEAU_WINDOW).map((f) => f.primaryMetricValue);
       const span = Math.max(...w) - Math.min(...w);
       if (span / (Math.abs(w[0]) + 1e-9) < PLATEAU_DELTA) {
-        warn("plateau_warning", "plateau",
-          "Learning has slowed. The model has stopped finding new patterns.");
+        warn("plateau_warning", "plateau", message("warn_plateau", this._locale));
       }
     }
 
@@ -715,8 +738,7 @@ export class StandaloneEngine {
       const valRising = vw.every((x, i) => i === 0 || x > vw[i - 1]);
       const trainFalling = tw.every((x, i) => i === 0 || x < tw[i - 1]);
       if (valRising && trainFalling) {
-        warn("overfit_warning", "overfit",
-          "The model may be memorising the study material instead of understanding it.");
+        warn("overfit_warning", "overfit", message("warn_overfit", this._locale));
       }
     }
 
@@ -727,14 +749,12 @@ export class StandaloneEngine {
       const last = t[t.length - 1];
       const prev = t[t.length - 2];
       if (last > prev * DIVERGE_GROWTH) {
-        warn("divergence_warning", "divergence",
-          "The loss has spiked unexpectedly. The model may have stepped too far in one direction.");
+        warn("divergence_warning", "divergence", message("warn_spike", this._locale));
       } else if (
         this._bestTrainLoss !== null && this._bestTrainLoss > 0 &&
         last > this._bestTrainLoss * DIVERGE_GROWTH
       ) {
-        warn("divergence_warning", "divergence",
-          "The loss is climbing away from where it started. The teacher may need to lower the learning rate.");
+        warn("divergence_warning", "divergence", message("warn_climb", this._locale));
       }
     }
     // Fold in only the losses seen since the last check: rescanning the whole
