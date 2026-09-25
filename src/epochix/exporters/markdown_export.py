@@ -6,6 +6,7 @@ import re
 from typing import TYPE_CHECKING
 
 from epochix.i18n import t
+from epochix.story_engine.messages import phase_name
 
 if TYPE_CHECKING:
     from epochix.store.sqlite_store import RunStore
@@ -52,12 +53,13 @@ _GRADE_EMOJI: dict[str, str] = {
     "I": "⏳",
 }
 
-_PHASE_LABEL: dict[str, str] = {
-    "awakening": "🌱 Awakening",
-    "learning": "📚 Learning",
-    "understanding": "💡 Understanding",
-    "mastering": "⚡ Mastering",
-    "polishing": "✨ Polishing",
+# The engine's own icons (story_engine/phases); the names are translated.
+_PHASE_ICON: dict[str, str] = {
+    "awakening": "🌱",
+    "learning": "📚",
+    "understanding": "💡",
+    "mastering": "🎯",
+    "polishing": "✨",
 }
 
 _MILESTONE_EMOJI: dict[str, str] = {
@@ -106,7 +108,9 @@ def build_markdown(run_id: str, store: RunStore) -> str:
     phase_str = ""
     if frames:
         last_phase = frames[-1].phase
-        phase_str = _PHASE_LABEL.get(last_phase.value if last_phase else "", "")
+        if last_phase is not None:
+            icon = _PHASE_ICON.get(last_phase.value, "")
+            phase_str = f"{icon} {phase_name(last_phase.value, locale)}".strip()
 
     lines.append(f"| {t('md.field', locale)} | {t('md.value', locale)} |")
     lines.append("|-------|-------|")

@@ -49,9 +49,11 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-# Empty alias: PDF works from the base install now. Kept so existing
-# `pip install 'epochix[pdf]'` commands and docs keep working.
-pdf       = []
+# PDF works from the base install for Latin-script reports. Persian also
+# needs text shaping (joined letters, right-to-left order), which fpdf2 does
+# through uharfbuzz; without it a Farsi PDF falls back to English and says
+# how to get this. The font itself ships in the package.
+pdf       = ["uharfbuzz>=0.39"]
 # Retained so existing `pip install 'epochix[gif]'` commands, docs and blog
 # posts keep working. pillow is a core dependency now, so this is empty.
 gif       = []
@@ -84,6 +86,8 @@ dev       = [
   # Alembic is imported by store/migrations/*; needed for a hermetic
   # `mypy --strict` run in CI even though SQLite mode doesn't use it.
   "alembic>=1.13",
+  # So the Persian PDF path is exercised in CI, not only the fallback.
+  "uharfbuzz>=0.39",
   "playwright>=1.45",
   # The %epochix magics are only reachable through a real IPython shell; without
   # this the jupyter tests would silently skip in CI.
@@ -136,6 +140,7 @@ exclude = [
   "src/epochix/_demos/**",
   "src/epochix/_frontend/dist/**",
   "src/epochix/_brand/**",
+  "src/epochix/exporters/fonts/**",
 ]
 
 [tool.hatch.build.targets.wheel.shared-data]
@@ -155,6 +160,8 @@ exclude = [
 # Brand mark, composited into the GIF export's watermark. Vendored because
 # `asset/` sits outside the package and is not otherwise shipped.
 "asset/epochix_mark_512.png" = "epochix/_brand/mark.png"
+# Vazirmatn (SIL OFL 1.1, licence alongside) — the PDF's Persian font.
+"src/epochix/exporters/fonts" = "epochix/exporters/fonts"
 
 [tool.hatch.envs.default]
 features = ["dev"]

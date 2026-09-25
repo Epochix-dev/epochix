@@ -103,12 +103,19 @@ class TestMarkdownIsLocalised:
 
 
 class TestThePdfDoesNotPretend:
-    """The PDF's core fonts are Latin-1.
+    """Without a text shaper the PDF cannot draw Persian.
 
-    Localising it made Farsi *worse*: headings, labels and narrative all became
-    question marks, so even the structure stopped being navigable. It now falls
-    back to English chrome and says why.
+    Localising it on core fonts made Farsi *worse*: headings, labels and
+    narrative all became question marks, so even the structure stopped being
+    navigable. Without uharfbuzz it falls back to English chrome and says how to
+    get the rest (`epochix[pdf]`); with it, see test_pdf_persian.py.
     """
+
+    @pytest.fixture(autouse=True)
+    def _no_shaper(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        import epochix.exporters._pdf_render as render
+
+        monkeypatch.setattr(render, "can_draw_persian", lambda: False)
 
     def test_a_drawable_locale_is_translated(self, tmp_path: Path) -> None:
         from tests.unit.test_pdf_charts import _pdf_text
@@ -123,10 +130,11 @@ class TestThePdfDoesNotPretend:
         text = _pdf_text(build_pdf(run_id=run_id, store=store))
         assert "?" not in text
 
-    def test_it_says_why_it_is_in_english(self, tmp_path: Path) -> None:
+    def test_it_says_why_it_is_in_english_and_how_to_fix_it(self, tmp_path: Path) -> None:
         from tests.unit.test_pdf_charts import _pdf_text
 
         run_id, store = _store(tmp_path / "fa2", locale="fa")
         text = _pdf_text(build_pdf(run_id=run_id, store=store))
-        assert "cannot draw" in text
+        assert "This report is in English" in text
+        assert "epochix[pdf]" in text
         assert "Markdown" in text
