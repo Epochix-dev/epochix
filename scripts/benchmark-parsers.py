@@ -29,11 +29,11 @@ from epochix.parsers.base import ParserContext
 # log no framework parser claims: it tries every syntax it knows (key=value,
 # key: value, JSON, qualified "Train accuracy: …", whitespace rows) on every
 # line. This gate never ran until a PR touched the parsers, and it then
-# measured 16.7k; a single-scan rewrite took it to 25k. Its floor is set
-# below what it measures, to catch regressions, and ROADMAP.md tracks
-# getting it to 50k. A stated target it does not meet is not a target.
+# measured 16.7k; two output-identical passes took it to ~31k. Its floor sits
+# below that to catch regressions; ROADMAP.md records why 50k was not worth
+# the API change it would take. A stated target it does not meet is not a target.
 DEFAULT_TARGET = 50_000
-TARGETS: dict[str, int] = {"universal": 20_000}
+TARGETS: dict[str, int] = {"universal": 24_000}
 
 
 SAMPLE_LINES: dict[str, list[str]] = {
