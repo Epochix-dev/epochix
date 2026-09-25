@@ -62,6 +62,19 @@ _EN: dict[str, str] = {
     "md.value": "Value",
     "md.grade": "Grade",
     "md.task": "Task",
+    "cv.title": "Cross-validation",
+    "cv.search_title": "Parameter search",
+    "cv.setting": "Setting",
+    "cv.metric": "Metric",
+    "cv.mean": "Mean",
+    "cv.spread": "± std",
+    "cv.range": "Range",
+    "cv.folds": "Folds",
+    "cv.chosen": "chosen",
+    "cv.search_note": "Only the chosen setting is charted and graded: the highest mean, as "
+    "scikit-learn scorers are higher-is-better. Fold order carries no meaning.",
+    "cv.note": "Folds are reported here rather than charted: their order carries no meaning, "
+    "so they have no trend.",
     "md.grade_note": "About the grade",
     "grade_note.few_readings": "Provisional: this grade rests on fewer than five "
     "readings of the metric.",
@@ -118,6 +131,18 @@ _FA: dict[str, str] = {
     "md.value": "مقدار",
     "md.grade": "نمره",
     "md.task": "وظیفه",
+    "cv.title": "اعتبارسنجی متقابل",
+    "cv.search_title": "جست‌وجوی پارامتر",
+    "cv.setting": "تنظیم",
+    "cv.metric": "سنجه",
+    "cv.mean": "میانگین",
+    "cv.spread": "± انحراف معیار",
+    "cv.range": "بازه",
+    "cv.folds": "تعداد بخش‌ها",
+    "cv.chosen": "انتخاب‌شده",
+    "cv.search_note": "تنها تنظیم انتخاب‌شده رسم و نمره‌دهی می‌شود: بیشترین میانگین، چون "
+    "امتیازدهنده‌های scikit-learn هرچه بیشتر بهتر هستند. ترتیب بخش‌ها معنایی ندارد.",
+    "cv.note": "بخش‌ها این‌جا گزارش می‌شوند، نه در نمودار: ترتیبشان معنایی ندارد، پس روندی هم ندارند.",
     "md.grade_note": "دربارهٔ نمره",
     "grade_note.few_readings": "موقت: این نمره بر کمتر از پنج خوانش از سنجه تکیه دارد.",
     "grade_note.still_improving": "در آخرین خوانش هنوز در حال بهبود بود — نمره نشان "
@@ -173,6 +198,20 @@ _FR: dict[str, str] = {
     "md.value": "Valeur",
     "md.grade": "Note",
     "md.task": "Tâche",
+    "cv.title": "Validation croisée",
+    "cv.search_title": "Recherche de paramètres",
+    "cv.setting": "Réglage",
+    "cv.metric": "Métrique",
+    "cv.mean": "Moyenne",
+    "cv.spread": "± écart-type",
+    "cv.range": "Plage",
+    "cv.folds": "Plis",
+    "cv.chosen": "choisi",
+    "cv.search_note": "Seul le réglage choisi est tracé et noté : la moyenne la plus haute, les "
+    "scores de scikit-learn étant « plus haut = mieux ». L'ordre des plis n'a pas "
+    "de sens.",
+    "cv.note": "Les plis sont rapportés ici plutôt que tracés : leur ordre n'a pas de sens, "
+    "ils n'ont donc pas de tendance.",
     "md.grade_note": "À propos de la note",
     "grade_note.few_readings": "Provisoire : cette note repose sur moins de cinq "
     "mesures de la métrique.",

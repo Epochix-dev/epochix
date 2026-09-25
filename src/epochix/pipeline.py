@@ -21,8 +21,9 @@ import dataclasses
 import logging
 import re
 from datetime import datetime, timezone
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
+from epochix import cross_validation
 from epochix.enums import TaskType
 from epochix.models import RawMetric, Run
 from epochix.normalizer import normalize
@@ -649,6 +650,18 @@ async def run_pipeline(
             )
             if ep is not None:
                 last_epoch = ep
+
+    # Keep what the folds said. Only their mean (or the chosen setting's) was
+    # charted; every setting a search tried was read and then thrown away,
+    # so no export could show how they compared.
+    cv = cross_validation.record(
+        cast("dict[str, list[float]]", ctx.extra.get("cv_folds") or {}),
+        cast("dict[str, dict[str, list[float]]]", ctx.extra.get("cv_candidates") or {}),
+    )
+    if cv is not None:
+        current = store.get_run(run_id)
+        current_cfg = dict(current.config) if current and current.config else {}
+        store.update_run_config(run_id, {**current_cfg, "cross_validation": cv})
 
     # A run that ended before the engine's 3-event warmup completed still has
     # its events buffered. Without this they are simply dropped, and a log with

@@ -9,6 +9,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added — every setting a parameter search tried, in the reports
+
+- **GridSearchCV's comparison never left the terminal.** Fold rows were
+  grouped by setting and the winner charted, then everything else the folds
+  said was discarded; `epochix check` listed the candidates and no export
+  could. The fold readings are now kept on the run, and the Markdown and PDF
+  reports carry a *Parameter search* table — every setting, its mean, spread,
+  range and fold count, best first, with the one that was charted marked —
+  in English, Farsi and French. A plain cross-validation gets a
+  *Cross-validation* table of its folds. The JSON export carries the raw
+  readings. `check` ranks through the same function, so every surface names
+  the same winner.
+- The Markdown report's milestone suffix "(epoch N)" was English in every
+  locale.
+
 ### Added — a grade says when it is provisional
 
 - **An 11-epoch run and a 200-epoch run received equally confident letters.**

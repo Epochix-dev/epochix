@@ -21,6 +21,7 @@ from itertools import pairwise
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
+from epochix import cross_validation
 from epochix.i18n import is_rtl, t
 from epochix.normalizer.canonical_keys import is_recognised
 from epochix.story_engine.grade import metric_lower_better
@@ -492,6 +493,65 @@ def _epoch_table(
         )
 
 
+def _cv_page(doc: Any, run: Run, locale: str = "en") -> None:  # noqa: ANN401
+    """Every setting a search tried, or a plain cross-validation's folds.
+
+    The chart carries one number per metric — the chosen setting's mean —
+    and the rest of what the folds said was not in the report at all.
+    """
+    cv = (run.config or {}).get("cross_validation")
+    if not isinstance(cv, dict):
+        return
+    rows = cross_validation.summarise(cv)
+    if not rows:
+        return
+    search = cross_validation.is_search(cv)
+
+    doc.add_page()
+    _text(doc, 22, _INK, "B")
+    title = t("cv.search_title" if search else "cv.title", locale)
+    doc.cell(0, 12, _s(doc, title), align=_lead(locale), new_x="LMARGIN", new_y="NEXT")
+    doc.ln(2)
+
+    head = [t("cv.metric", locale), t("cv.mean", locale), t("cv.spread", locale)]
+    head += [t("cv.range", locale), t("cv.folds", locale)]
+    widths: list[float] = [28.0, 20.0, 22.0, 34.0, 14.0]
+    if search:
+        head.insert(0, t("cv.setting", locale))
+        widths.insert(0, _W - 2 * _MARGIN - sum(widths))
+    _text(doc, 9, _INK)
+    # A table, not cells: a setting such as "criterion=gini, max_depth=8,
+    # min_samples_leaf=4" is longer than any fixed column, and wraps here.
+    with doc.table(
+        col_widths=tuple(widths),
+        width=sum(widths),
+        first_row_as_headings=True,
+        borders_layout="HORIZONTAL_LINES",
+        line_height=5.5,
+    ) as table:
+        header = table.row()
+        for h in head:
+            header.cell(_s(doc, h))
+        for r in rows:
+            cells = [
+                r.metric,
+                f"{r.mean:.4g}",
+                "" if r.std is None else f"{r.std:.4g}",
+                f"{r.lowest:.4g} - {r.highest:.4g}",
+                str(r.folds),
+            ]
+            if search:
+                mark = f"  ({t('cv.chosen', locale)})" if r.chosen else ""
+                cells.insert(0, r.setting + mark)
+            row = table.row()
+            for c in cells:
+                row.cell(_s(doc, c))
+    doc.ln(4)
+    _text(doc, 9, _MUTED)
+    note = t("cv.search_note" if search else "cv.note", locale)
+    doc.multi_cell(0, 5, _s(doc, note), align=_lead(locale))
+
+
 def _drawable_locale(locale: str) -> bool:
     """Whether a locale's own words survive Latin-1.
 
@@ -803,6 +863,7 @@ def render_pdf(
 
     _charts_page(doc, events, locale)
     _epoch_table(doc, frames, run, locale)
+    _cv_page(doc, run, locale)
 
     # ── One page per phase, in the order the run moved through them ──────
     #
