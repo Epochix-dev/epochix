@@ -63,6 +63,10 @@ export function startVscodeBridge(applyTheme) {
         store.set({
           run: null,
           live: !msg.hasSidecar,
+          host: 'vscode',
+          // Whether a log or terminal feeds this panel. Opened bare, nothing
+          // will ever arrive, and the panel must say so rather than wait.
+          attached: msg.attached !== false,
           connected: true,
           // init replays the WHOLE snapshot, so the stream must be cleared
           // first. Without this a second init (a reload, a theme change, any
@@ -87,7 +91,10 @@ export function startVscodeBridge(applyTheme) {
         break;
 
       case 'frame':
-        if (msg.frame) pushFrame(mapFrame(msg.frame));
+        if (msg.frame) {
+          if (!store.get().attached) store.set({ attached: true });
+          pushFrame(mapFrame(msg.frame));
+        }
         break;
 
       // Raw metric events. Diagnostics, metric spread, histograms and the
@@ -140,6 +147,12 @@ export function startVscodeBridge(applyTheme) {
       default:
         break;
     }
+  });
+
+  // The empty panel's buttons: run one of the host's own commands.
+  window.addEventListener('ms-run-command', (ev) => {
+    const command = ev.detail?.command;
+    if (typeof command === 'string') vscode.postMessage({ type: 'runCommand', command });
   });
 
   // Re-broadcast scrub requests from the UI back to the host engine.

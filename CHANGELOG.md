@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [Unreleased]
+
+### Fixed — an empty dashboard that waited forever (#35)
+
+- **A VS Code dashboard opened with nothing attached read "Waiting for
+  training data…" forever.** The extension told the webview every standalone
+  panel was live, so a panel opened from the command palette or the shortcut,
+  with no log and no terminal feeding it, waited for data nothing would ever
+  send. A user reported exactly that screen: "epochs 0", no metric, no task.
+  The panel now tells the webview whether anything feeds it, and when nothing
+  does it says so and offers **Try the demo**, **Open a log file** and
+  **Watch the active terminal** as buttons. A webview message may run only
+  those three commands, never an arbitrary one.
+- **A log with no metrics in it also claimed data was on its way.** A finished
+  run with no frames now says no training metrics were found, and asks for a
+  couple of example lines if the log does contain training output.
+- The grade arc's own "Waiting for training data…" was drawn in English in
+  every locale; it is translated now.
+
 ## [0.7.15] — 2026-09-25
 
 ### Fixed — documented settings that did nothing
