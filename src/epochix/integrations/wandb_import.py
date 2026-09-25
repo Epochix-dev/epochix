@@ -106,9 +106,9 @@ def import_wandb(
     run_ms_id: str = reporter._run_id  # noqa: SLF001
 
     if open_browser:
-        import webbrowser
+        from epochix.browser import open_in_browser
 
-        webbrowser.open(f"http://127.0.0.1:{port}/v/{run_ms_id}")
+        open_in_browser(f"http://127.0.0.1:{port}/v/{run_ms_id}")
 
     return run_ms_id
 
@@ -292,9 +292,9 @@ def import_wandb_dir(
         created.append(reporter._run_id)  # noqa: SLF001
 
     if created and open_browser:
-        import webbrowser
+        from epochix.browser import open_in_browser
 
-        webbrowser.open(f"http://127.0.0.1:{port}/v/{created[0]}")
+        open_in_browser(f"http://127.0.0.1:{port}/v/{created[0]}")
     return created
 
 

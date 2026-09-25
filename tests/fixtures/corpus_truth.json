@@ -67,12 +67,12 @@
  "fastai_real.log": {
   "path": "tests/fixtures/logs/fastai_real.log",
   "task": "classification",
-  "metric": "accuracy",
+  "metric": "val_accuracy",
   "frames": 4,
   "last_value": 0.8594,
   "keys": [
-   "accuracy",
    "train_loss",
+   "val_accuracy",
    "val_loss"
   ],
   "metric_from_epoch": 0.0
@@ -242,7 +242,7 @@
   "path": "tests/fixtures/logs/mixed_frameworks.log",
   "task": "classification",
   "metric": "val_accuracy",
-  "frames": 4,
+  "frames": 5,
   "last_value": 0.801,
   "keys": [
    "accuracy",

@@ -120,6 +120,20 @@ function cleanLine(text: string): string {
   return cr >= 0 ? t.slice(cr + 1) : t;
 }
 
+/** Every built-in parser, best first — fresh instances. */
+function makeParsers(): Parser[] {
+  return [
+    new PytorchLightningParser(),
+    new KerasParser(),
+    new HuggingFaceParser(),
+    new YoloParser(),
+    new BoostingParser(),
+    new FastAIParser(),
+    new AccelerateParser(),
+    new UniversalParser(),
+  ].sort((a, b) => b.priority - a.priority);
+}
+
 // ── Engine ────────────────────────────────────────────────────────────────────
 
 // As the Python pipeline: sample SNIFF_SAMPLE_LINES lines (or everything, at
@@ -145,9 +159,9 @@ const _ARCH_SCAN_LINES = 200;
 export class StandaloneEngine {
   private readonly _parsers: Parser[];
   private _activeParsers: Parser[] | null = null;
-  // Reads recognised metrics off a line the chosen parser could not (Python's
-  // _fallback_metrics). Null when the run is on the universal parser.
-  private _fallback: UniversalParser | null = null;
+  // Read recognised metrics off a line the chosen parser could not: every
+  // other parser, best first (Python's _fallback_parsers).
+  private _fallbacks: Parser[] = [];
   // Canonical keys in the order first logged, their raw names, and how many
   // readings of each — Python's _metric_history, _seen_raw_keys.
   private _seenKeys: string[] = [];
@@ -195,16 +209,7 @@ export class StandaloneEngine {
 
   constructor(taskHint?: TaskType, locale?: string) {
     this._locale = resolveLocale(locale);
-    this._parsers = [
-      new PytorchLightningParser(),
-      new KerasParser(),
-      new HuggingFaceParser(),
-      new YoloParser(),
-      new BoostingParser(),
-      new FastAIParser(),
-      new AccelerateParser(),
-      new UniversalParser(),
-    ].sort((a, b) => b.priority - a.priority);
+    this._parsers = makeParsers();
 
     // A task the user pinned (`epochix.taskHint`) is locked in, so detection
     // cannot overwrite it — it once did, and the setting did nothing.
@@ -377,7 +382,7 @@ export class StandaloneEngine {
   private _processLine(line: string): StoryFrameMsg[] {
     this._ctx.seq++;
     let metrics = this._activeParsers![0].parseLine(line, this._ctx);
-    if (metrics.length === 0 && this._fallback !== null) {
+    if (metrics.length === 0 && this._fallbacks.length > 0) {
       metrics = this._fallbackMetrics(line);
     }
 
@@ -394,26 +399,31 @@ export class StandaloneEngine {
   }
 
   /**
-   * Recognised metrics the chosen parser could not read on this line, read on
-   * a scratch context so prose cannot move the step axis — Python's
-   * _fallback_metrics. A line that carried real metrics also carried their
-   * epoch, and later lines without one belong to it.
+   * Recognised metrics the chosen parser could not read on this line —
+   * Python's _fallback_metrics. Every other parser gets a look, best first,
+   * each on a scratch context so prose cannot move the step axis: a
+   * Lightning progress line inside a Keras log is read by the Lightning
+   * parser (the universal one skips progress bars by design). A line that
+   * carried real metrics also carried their epoch.
    */
   private _fallbackMetrics(line: string): RawMetric[] {
-    const scratch: ParserContext = {
-      ...this._ctx,
-      axis: null,
-      heldUnrecognised: new Map(),
-      emittedKeys: new Set(),
-      cvFolds: new Map(),
-      cvCandidates: new Map(),
-    };
-    const metrics = this._fallback!.parseLine(line, scratch).filter((m) => isRecognised(m.key));
-    if (metrics.length > 0) {
-      this._ctx.currentEpoch = scratch.currentEpoch;
-      this._ctx.totalEpochs = scratch.totalEpochs;
+    for (const fallback of this._fallbacks) {
+      const scratch: ParserContext = {
+        ...this._ctx,
+        axis: null,
+        heldUnrecognised: new Map(),
+        emittedKeys: new Set(),
+        cvFolds: new Map(),
+        cvCandidates: new Map(),
+      };
+      const metrics = fallback.parseLine(line, scratch).filter((m) => isRecognised(m.key));
+      if (metrics.length > 0) {
+        this._ctx.currentEpoch = scratch.currentEpoch;
+        this._ctx.totalEpochs = scratch.totalEpochs;
+        return metrics;
+      }
     }
-    return metrics;
+    return [];
   }
 
   /** One line's metrics: record them, then warm up or build a frame. */
@@ -515,7 +525,8 @@ export class StandaloneEngine {
     }
     const universal = this._parsers.find((p) => p.name === "universal")!;
     const chosen = best === null || bestScore < SNIFF_THRESHOLD ? universal : best;
-    this._fallback = chosen.name === "universal" ? null : new UniversalParser();
+    // Fresh instances: some parsers keep state between lines (fastai's headers).
+    this._fallbacks = makeParsers().filter((p) => p.name !== chosen.name);
     return [chosen];
   }
 

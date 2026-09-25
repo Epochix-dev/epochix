@@ -273,6 +273,7 @@
  "val_error": "val_error_rate",
  "val_error_rate": "val_error_rate",
  "val_f1": "val_f1",
+ "val_f1_score": "val_f1",
  "val_fid": "fid",
  "val_iou": "IoU",
  "val_l1": "val_MAE",

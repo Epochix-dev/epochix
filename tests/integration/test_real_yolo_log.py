@@ -102,13 +102,15 @@ def test_fastai_table_keeps_the_accuracy_column(tmp_path: Path) -> None:
     metrics = store.get_metric_events(run.id)
     keys = {m.canonical_key for m in metrics}
 
-    assert "accuracy" in keys, f"the accuracy column was dropped: saw {keys}"
+    # fastai computes its metrics columns on the validation set.
+    assert "val_accuracy" in keys, f"the accuracy column was dropped: saw {keys}"
+    assert "accuracy" not in keys, "a validation metric was filed as training accuracy"
     assert run.task_type == TaskType.CLASSIFICATION, (
         f"a run with an accuracy column is classification, not {run.task_type}"
     )
-    assert run.primary_metric == "accuracy"
+    assert run.primary_metric == "val_accuracy"
 
-    accs = sorted(m.value for m in metrics if m.canonical_key == "accuracy")
+    accs = sorted(m.value for m in metrics if m.canonical_key == "val_accuracy")
     assert accs == pytest.approx([0.671875, 0.789062, 0.828125, 0.859375]), accs
 
 

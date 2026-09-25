@@ -26,7 +26,6 @@ import contextlib
 import json
 import logging
 import sys
-import webbrowser
 from pathlib import Path
 from statistics import fmean, stdev
 from typing import TYPE_CHECKING, cast
@@ -34,6 +33,7 @@ from typing import TYPE_CHECKING, cast
 import typer
 import uvicorn
 
+from epochix.browser import open_in_browser
 from epochix.config import Settings, get_settings
 from epochix.console import console_safe, console_symbols, harden_streams
 from epochix.enums import TaskType
@@ -90,8 +90,10 @@ def _new_run_id() -> str:
 
 def _open_browser(port: int, run_id: str) -> None:
     url = f"http://127.0.0.1:{port}/v/{run_id}"
-    typer.echo(f"  Opening: {url}")
-    webbrowser.open(url)
+    if open_in_browser(url):
+        typer.echo(f"  Opening: {url}")
+    else:
+        typer.echo(f"  Dashboard: {url}")
 
 
 def _task_from_str(task_str: str | None) -> TaskType | None:
@@ -600,7 +602,7 @@ def cmd_open(
 
     _app = create_app(settings=settings)
     typer.echo(console_safe(f"Opening run {run_id} …"))
-    webbrowser.open(f"http://127.0.0.1:{port}/v/{run_id}")
+    open_in_browser(f"http://127.0.0.1:{port}/v/{run_id}")
     uvicorn.run(_app, host="127.0.0.1", port=port, log_level="warning")
 
 

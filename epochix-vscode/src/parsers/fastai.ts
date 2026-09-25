@@ -55,7 +55,9 @@ export class FastAIParser implements Parser {
     extras.forEach((raw, i) => {
       const value = parseFloat(raw);
       if (Number.isNaN(value)) return;
-      out.push(metric(this._extraHeaders[i] ?? `metric_${i}`, value, 0.8));
+      // Validation metrics: fastai computes every column after valid_loss in
+      // its validate step (as fastai.py).
+      out.push(metric(`valid_${this._extraHeaders[i] ?? `metric_${i}`}`, value, 0.8));
     });
     return out.filter((x) => !Number.isNaN(x.value));
   }

@@ -28,8 +28,8 @@ from epochix.models import RawMetric, Run
 from epochix.normalizer import normalize
 from epochix.normalizer.canonical_keys import canonicalize_key, is_recognised
 from epochix.parsers.base import ParserContext
-from epochix.parsers.registry import SNIFF_SAMPLE_LINES, detect_parser
-from epochix.parsers.universal import UniversalParser
+from epochix.parsers.registry import SNIFF_SAMPLE_LINES, detect_parser, get_registry
+from epochix.scrub import scrub_secrets
 from epochix.story_engine import StoryEngine
 
 # ANSI escape sequences (color codes + "erase line" \x1b[K, used by every
@@ -104,26 +104,49 @@ _NON_FINITE_ASSIGNMENT = re.compile(
 )
 
 
-def _fallback_metrics(fallback: BaseParser, text: str, ctx: ParserContext) -> list[RawMetric]:
+def _fallback_parsers(chosen: BaseParser) -> list[BaseParser]:
+    """Fresh instances of every other built-in line parser, best first.
+
+    Built-in only: the LLM parser calls out to a model, and a third-party
+    plugin's behaviour on lines of a format it never claimed is unknown. Fresh
+    instances, because some parsers keep state between lines (fastai's column
+    headers) that must not be shared with the run's own parser.
+    """
+    return [
+        type(p)()
+        for p in get_registry()
+        if type(p) is not type(chosen)
+        and p.name != "llm_fallback"
+        and type(p).__module__.startswith("epochix.parsers.")
+    ]
+
+
+def _fallback_metrics(
+    fallbacks: list[BaseParser], text: str, ctx: ParserContext
+) -> list[RawMetric]:
     """Recognised metrics the run's own parser could not read on this line.
 
     One parser is chosen per run, and a log is not always one format: the
     fingerprint demo prints `Epoch 15/50` (so the Keras parser wins) and its
-    metrics as `train_loss=… EER=…` on the next line, which Keras cannot
-    read — 50 epochs became one reading. The universal parser gets a second
-    look, on a scratch context so prose ("Total optimization steps = 500")
-    cannot move the run's step axis, and only names we recognise are kept:
-    "Dataset | Train: 4200" is a size, not a result.
+    metrics as `train_loss=… EER=…` on the next line, which Keras cannot read —
+    50 epochs became one reading; a Lightning progress line inside a Keras log
+    was dropped whole, because the universal parser skips progress bars by
+    design. The other parsers get a look, best first, each on a scratch context
+    so prose ("Total optimization steps = 500") cannot move the run's step
+    axis, and only names we recognise are kept: "Dataset | Train: 4200" is a
+    size, not a result.
     """
-    scratch = dataclasses.replace(ctx, extra={})
-    metrics = [m for m in fallback.parse_line(text, scratch) if is_recognised(m.key)]
-    if metrics:
-        # A line that carried real metrics also carried their epoch ({'epoch':
-        # 3.0}, "Epoch 4/10: …"); later lines without one belong to it. The step
-        # stays put — that is the counter prose can move.
-        ctx.current_epoch = scratch.current_epoch
-        ctx.total_epochs = scratch.total_epochs
-    return metrics
+    for fallback in fallbacks:
+        scratch = dataclasses.replace(ctx, extra={})
+        metrics = [m for m in fallback.parse_line(text, scratch) if is_recognised(m.key)]
+        if metrics:
+            # A line that carried real metrics also carried their epoch ({'epoch':
+            # 3.0}, "Epoch 4/10: …"); later lines without one belong to it. The
+            # step stays put — that is the counter prose can move.
+            ctx.current_epoch = scratch.current_epoch
+            ctx.total_epochs = scratch.total_epochs
+            return metrics
+    return []
 
 
 def _emit_line(
@@ -131,7 +154,7 @@ def _emit_line(
     text: str,
     timestamp: datetime,
     parser: BaseParser,
-    fallback: BaseParser | None = None,
+    fallback: list[BaseParser] | None = None,
     ctx: ParserContext,
     run_id: str,
     engine: StoryEngine,
@@ -143,7 +166,7 @@ def _emit_line(
     Returns the epoch from the last frame emitted (or None if no frame).
     """
     raw_metrics = parser.parse_line(text, ctx)
-    if not raw_metrics and fallback is not None:
+    if not raw_metrics and fallback:
         raw_metrics = _fallback_metrics(fallback, text, ctx)
 
     # No parser can return this as a metric, so look for it on the raw line.
@@ -358,8 +381,8 @@ async def run_pipeline(
     sample_lines: list[str] = []
     parser: BaseParser | None = None
     # Reads what a framework parser cannot on a mixed-format line; see
-    # _fallback_metrics. None when the run is already on the universal parser.
-    fallback: BaseParser | None = None
+    # _fallback_metrics: every other built-in parser, best first.
+    fallback: list[BaseParser] = []
     ctx = ParserContext(run_id=run_id)
     engine = StoryEngine(
         run_id=run_id,
@@ -466,7 +489,7 @@ async def run_pipeline(
         if parser is not None or not sample_lines:
             return
         parser = detect_parser(sample_lines)
-        fallback = None if parser.name == "universal" else UniversalParser()
+        fallback = _fallback_parsers(parser)
         run = Run(**{**run.model_dump(), "parser_used": parser.name})
         logger.debug("Detected parser (%d lines): %s", len(sample_lines), parser.name)
         for buf_seq, buf_ts, buf_text in sniff_buffer:
@@ -495,8 +518,12 @@ async def run_pipeline(
         # downstream parsers see clean text.
         clean_text = _clean_line(raw_line.text)  # type: ignore[attr-defined]
 
+        # Stored and transmitted copies are scrubbed; the parsers below still
+        # read the line as printed, so no metric can change.
+        outbound = scrub_secrets(clean_text) if settings.scrub_secrets else clean_text
+
         if settings.llm_enabled and clean_text.strip() and len(llm_lines) < _LLM_MAX_LINES:
-            llm_lines.append((raw_line.seq, clean_text))  # type: ignore[attr-defined]
+            llm_lines.append((raw_line.seq, outbound))  # type: ignore[attr-defined]
 
         if len(arch_scan_lines) < _ARCH_SCAN_LIMIT:
             arch_scan_lines.append(clean_text)
@@ -508,7 +535,7 @@ async def run_pipeline(
                 run_id=run_id,
                 seq=raw_line.seq,  # type: ignore[attr-defined]
                 ts=raw_line.timestamp,  # type: ignore[attr-defined]
-                text=clean_text,
+                text=outbound,
             )
 
         if parser is None:

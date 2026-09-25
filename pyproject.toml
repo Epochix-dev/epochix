@@ -58,9 +58,11 @@ gif       = []
 lightning = ["pytorch-lightning>=2.3"]
 hf        = ["transformers>=4.40"]
 llm       = ["httpx>=0.27"]
-# Postgres-backed hosted mode also ships the Alembic migration runner.
-postgres  = ["asyncpg>=0.30", "alembic>=1.13"]
-redis     = ["redis>=5.0"]
+# The hosted mode these were for (Postgres store, Redis hub) is not built, so
+# they installed drivers nothing imports. Kept, empty, so existing
+# `pip install 'epochix[postgres]'` commands keep working.
+postgres  = []
+redis     = []
 # mkdocs pinned <2: the 2.0 rewrite removes the plugin system that
 # mkdocs-material + mkdocstrings depend on.
 docs      = ["mkdocs>=1.6,<2", "mkdocs-material>=9.5", "mkdocstrings[python]>=0.25"]

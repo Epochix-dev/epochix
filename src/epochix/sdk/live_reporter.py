@@ -315,9 +315,9 @@ class LiveReporter:
             server_task = asyncio.create_task(server.serve())
             await asyncio.sleep(0.5)
             if open_browser:
-                import webbrowser
+                from epochix.browser import open_in_browser
 
-                webbrowser.open(f"http://127.0.0.1:{port}/v/{run_id}")
+                open_in_browser(f"http://127.0.0.1:{port}/v/{run_id}")
             try:
                 await run_pipeline(
                     ingester=receiver,

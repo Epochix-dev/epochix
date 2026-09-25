@@ -7,6 +7,52 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.7.15] — unreleased
+
+### Fixed — documented settings that did nothing
+
+An audit of every setting against the code found five that no code read.
+
+- **`EPOCHIX_SCRUB_SECRETS` was documented — "redact secret-looking strings
+  from stored lines" — and implemented nowhere.** A training script that
+  printed its W&B key, an `HF_TOKEN` or a database URL had it stored verbatim
+  in the raw-line store, and the opt-in LLM fallback sent it to the configured
+  provider. It is implemented now (`epochix/scrub.py`: credentials in URLs,
+  bearer tokens, `…_API_KEY=`/`password:` assignments, and AWS, GitHub,
+  OpenAI/Anthropic, Hugging Face, Slack, Google and JWT token shapes) and **on
+  by default**: it only touches the stored or transmitted copy of a line, never
+  what the parsers read, and never a plain number.
+- **`EPOCHIX_POSTGRES_DSN` and `EPOCHIX_REDIS_URL`** were documented as a
+  Postgres store and a Redis hub. Neither exists; a run pointed at Postgres
+  went to the local SQLite file. Setting either now stops epochix with an
+  error saying so. The `postgres` and `redis` extras, which installed drivers
+  nothing imported, are empty aliases.
+- **`EPOCHIX_OPEN_BROWSER=false` opened the browser anyway** — every command
+  and the SDK called the browser directly. Everything now goes through one
+  helper that honours it.
+- `EPOCHIX_TELEMETRY` is documented as what it is: there is no telemetry.
+
+### Fixed — reading logs
+
+- **fastai's metric columns were filed as training metrics.** fastai computes
+  them on the validation set; a fastai classifier's accuracy is now
+  `val_accuracy`, in both engines.
+- **A Lightning progress line inside a Keras log was dropped** — the fallback
+  was the universal parser alone, which skips progress bars by design. A line
+  the run's parser cannot read now gets a look from every other parser, best
+  first, in both engines.
+- **Stored story frames read back as task "custom"** whatever the run was, in
+  every export and API that reads frames. The task is stored with the frame;
+  frames from older databases take the run's task.
+
+### Fixed — the Alembic migrations
+
+They had fallen behind the schema the store creates (no `milestones` or
+`raw_lines` tables, two missing columns). Migration `0002` catches up, and a
+test now fails when they disagree.
+
+---
+
 ## [0.7.14] — 2026-09-25
 
 ### Fixed — what the Python engine reads out of a log

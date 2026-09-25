@@ -176,6 +176,6 @@ def _read_scalar_events(event_dir: Path) -> Iterator[tuple[int, str, float]]:
 
 
 def _open_dashboard(port: int, run_id: str) -> None:
-    import webbrowser
+    from epochix.browser import open_in_browser
 
-    webbrowser.open(f"http://127.0.0.1:{port}/v/{run_id}")
+    open_in_browser(f"http://127.0.0.1:{port}/v/{run_id}")
