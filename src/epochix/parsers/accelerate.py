@@ -43,7 +43,8 @@ class AccelerateParser:
 
         metrics: list[RawMetric] = []
         for key, val in data.items():
-            if not isinstance(val, (int, float)):
+            # bool is an int in Python: `"sync": True` is not a reading of 1.0.
+            if isinstance(val, bool) or not isinstance(val, (int, float)):
                 continue
             metrics.append(
                 RawMetric(

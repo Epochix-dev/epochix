@@ -116,7 +116,14 @@ def _fallback_metrics(fallback: BaseParser, text: str, ctx: ParserContext) -> li
     "Dataset | Train: 4200" is a size, not a result.
     """
     scratch = dataclasses.replace(ctx, extra={})
-    return [m for m in fallback.parse_line(text, scratch) if is_recognised(m.key)]
+    metrics = [m for m in fallback.parse_line(text, scratch) if is_recognised(m.key)]
+    if metrics:
+        # A line that carried real metrics also carried their epoch ({'epoch':
+        # 3.0}, "Epoch 4/10: …"); later lines without one belong to it. The step
+        # stays put — that is the counter prose can move.
+        ctx.current_epoch = scratch.current_epoch
+        ctx.total_epochs = scratch.total_epochs
+    return metrics
 
 
 def _emit_line(
