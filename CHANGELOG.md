@@ -36,9 +36,17 @@ read by any test.
   now sees every metric on a line before choosing which one tells the story.
 - **Colour codes whose escape byte was lost** (common in saved CI output) became
   part of metric names: `1mloss`, `1maccuracy`.
+- **A Hugging Face story left out epoch 1's accuracy.** The task was classified
+  on the metrics processed so far, so an `eval_loss, eval_accuracy` line was
+  judged on `eval_loss` alone. Classification now sees the whole line.
+- **A line read by the fallback parser lost its epoch** (`{'epoch': 3.0}`), so
+  the lines after it were stamped with an older one.
+- **A JSON `true` was charted as a reading of 1.0** — in Python a bool is an
+  int — by the Hugging Face, Accelerate and universal parsers.
 
 `tests/integration/test_log_corpus_truth.py` drives all 38 logs through the
-pipeline against reviewed expectations, and fails for a log without one.
+pipeline against reviewed expectations — including the epoch each story's
+metric starts at — and fails for a log without one.
 
 ---
 
