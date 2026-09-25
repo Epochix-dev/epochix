@@ -200,6 +200,26 @@ _SKIP_KEYS = NEVER_METRICS | _NN_REPR_KWARGS
 _PROGRESS_BAR = re.compile(r"\d{1,3}%\|")
 
 
+def _blanked(text: str, spans: list[tuple[int, int]]) -> str:
+    """*text* with each (start, end) span replaced by as many spaces.
+
+    Every pattern below used to be run twice per line: `finditer` to read the
+    matches, then `sub` to blank the very same matches. The second scan was
+    half the cost of the fallback parser, which is what any unrecognised log
+    runs through. Spaces keep every later span aligned with the original.
+    """
+    if not spans:
+        return text
+    out: list[str] = []
+    at = 0
+    for start, end in spans:
+        out.append(text[at:start])
+        out.append(" " * (end - start))
+        at = end
+    out.append(text[at:])
+    return "".join(out)
+
+
 @register_parser
 class UniversalParser:
     name = "universal"
@@ -209,7 +229,9 @@ class UniversalParser:
         return 0.10  # always weakly confident; format detector uses this as floor
 
     def parse_line(self, line: str, ctx: ParserContext) -> list[RawMetric]:
-        if _PROGRESS_BAR.search(line):
+        # Cheap membership tests gate the regexes: each pattern below needs a
+        # character the line may simply not contain.
+        if "%|" in line and _PROGRESS_BAR.search(line):
             return []
 
         if _FOLD_ROW.match(line):
@@ -234,7 +256,8 @@ class UniversalParser:
 
         # Blank out model configuration before anything reads the line. Spaces,
         # so every span below still lines up with the original.
-        text = _CONSTRUCTOR.sub(lambda m: " " * len(m.group()), line)
+        text = _CONSTRUCTOR.sub(lambda m: " " * len(m.group()), line) if "(" in line else line
+        delimited = "=" in text or ":" in text
 
         # Collect every candidate first, in confidence order (JSON > key=value >
         # key: value), so the two passes below see the whole line.
@@ -243,17 +266,17 @@ class UniversalParser:
         # Split-qualified metrics first, and blanked once taken: otherwise the
         # colon pattern reads "Train accuracy: 0.98" a second time as a bare
         # `accuracy`, and one printed number becomes two recorded measurements.
-        def _blank(match: re.Match[str]) -> str:
-            return " " * len(match.group())
-
-        for q in _QUALIFIED.finditer(text):
+        # Every match is blanked, parsed or not — as `sub` did.
+        spans: list[tuple[int, int]] = []
+        for q in _QUALIFIED.finditer(text) if delimited else ():
+            spans.append(q.span())
             split = q.group(1).lower()
             split = "val" if split in _VAL_WORDS else "train"
             with contextlib.suppress(ValueError):
                 candidates.append((f"{split}_{q.group(2)}", float(q.group(3)), 0.60))
-        text = _QUALIFIED.sub(_blank, text)
+        text = _blanked(text, spans)
 
-        for c in _COMPOUND.finditer(text):
+        for c in _COMPOUND.finditer(text) if delimited else ():
             joined = f"{c.group(1)}_{c.group(2)}"
             if canonicalize_key(joined) == "custom":
                 continue
@@ -261,7 +284,9 @@ class UniversalParser:
                 candidates.append((joined, float(c.group(3)), 0.58))
             text = text[: c.start()] + " " * len(c.group()) + text[c.end() :]
 
-        for frag in _JSON_FRAG.finditer(text):
+        spans = []
+        for frag in _JSON_FRAG.finditer(text) if "{" in text else ():
+            spans.append(frag.span())
             frag_text = frag.group().replace("'", '"')
             try:
                 obj: dict[str, object] = json.loads(frag_text)
@@ -270,17 +295,21 @@ class UniversalParser:
             for k, v in obj.items():
                 if isinstance(v, (int, float)):
                     candidates.append((k, float(v), 0.65))
-        text = _JSON_FRAG.sub(_blank, text)
+        text = _blanked(text, spans)
 
-        for m in _KV_EQ.finditer(text):
+        spans = []
+        for m in _KV_EQ.finditer(text) if "=" in text else ():
+            spans.append(m.span())
             with contextlib.suppress(ValueError):
                 candidates.append((m.group(1), float(m.group(2)), 0.55))
-        text = _KV_EQ.sub(_blank, text)
+        text = _blanked(text, spans)
 
-        for m in _KV_COLON.finditer(text):
+        spans = []
+        for m in _KV_COLON.finditer(text) if ":" in text else ():
+            spans.append(m.span())
             with contextlib.suppress(ValueError):
                 candidates.append((m.group(1), float(m.group(2)), 0.45))
-        text = _KV_COLON.sub(_blank, text)
+        text = _blanked(text, spans)
 
         # Whitespace-separated pairs, last and only on a metric row (see
         # _KV_SPACE). Everything a delimiter already claimed has been blanked
