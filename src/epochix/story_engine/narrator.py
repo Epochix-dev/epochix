@@ -5,6 +5,7 @@ import random
 from pathlib import Path
 
 from epochix.enums import Phase, TaskType
+from epochix.story_engine.messages import message
 
 # Template variants per task × phase (loaded lazily, cached)
 _template_cache: dict[str, list[str]] = {}
@@ -66,12 +67,14 @@ def narrate_past_peak(
     templates = _load_special("_pastpeak", locale, "The run is past its best value.")
     seed = int(hashlib.md5(run_id.encode(), usedforsecurity=False).hexdigest()[:8], 16)
     template = random.Random(seed).choice(templates)
-    return (
+    best_at = str(int(best_epoch)) if best_epoch is not None else "?"
+    story = (
         template.replace("{epoch}", str(int(epoch)) if epoch is not None else "?")
         .replace("{value}", f"{primary_value:.4f}")
         .replace("{best}", f"{best_value:.4f}")
-        .replace("{best_epoch}", str(int(best_epoch)) if best_epoch is not None else "?")
+        .replace("{best_epoch}", best_at)
     )
+    return f"{story} {message('next_pastpeak', locale, best_epoch=best_at)}"
 
 
 def narrate_single_reading(
@@ -134,12 +137,13 @@ def narrate_stalled(
     templates = _load_stalled(locale)
     seed = int(hashlib.md5(run_id.encode(), usedforsecurity=False).hexdigest()[:8], 16)
     template = random.Random(seed).choice(templates)
-    return (
+    story = (
         template.replace("{epoch}", str(int(epoch)) if epoch is not None else "?")
         .replace("{value}", f"{primary_value:.4f}")
         .replace("{baseline}", f"{baseline:.4f}")
         .replace("{epochs_seen}", str(epochs_seen))
     )
+    return f"{story} {message('next_stalled', locale)}"
 
 
 def _load_diverged(locale: str = "en") -> list[str]:
@@ -178,12 +182,14 @@ def narrate_diverged(
     templates = _load_diverged(locale)
     seed = int(hashlib.md5(run_id.encode(), usedforsecurity=False).hexdigest()[:8], 16)
     template = random.Random(seed).choice(templates)
-    return (
+    last_at = str(int(last_epoch)) if last_epoch is not None else "?"
+    story = (
         template.replace("{epoch}", str(int(epoch)) if epoch is not None else "?")
-        .replace("{last_epoch}", str(int(last_epoch)) if last_epoch is not None else "?")
+        .replace("{last_epoch}", last_at)
         .replace("{value}", "?" if last_value is None else f"{last_value:.4f}")
         .replace("{metric}", _display_metric(metric, locale))
     )
+    return f"{story} {message('next_diverged', locale, last_epoch=last_at)}"
 
 
 # Most task template sets name their metric in the prose — "Accuracy

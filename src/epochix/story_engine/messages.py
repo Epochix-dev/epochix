@@ -20,8 +20,19 @@ MESSAGES: dict[str, dict[str, str]] = {
         "warn_climb": "The loss is climbing away from where it started. "
         "The teacher may need to lower the learning rate.",
         "warn_overfit": "The model may be memorising the study material "
-        "instead of understanding it.",
-        "warn_plateau": "Learning has slowed. The model has stopped finding new patterns.",
+        "instead of understanding it. Next step: stop at the best validation epoch, "
+        "add regularisation (dropout, weight decay) or augmentation, or collect more data.",
+        "warn_plateau": "Learning has slowed. The model has stopped finding new patterns. "
+        "Next step: a lower learning rate (for example a reduce-on-plateau schedule) "
+        "may restart progress; otherwise more epochs at this rate are unlikely to help.",
+        # The sentence after a past-peak, stalled or diverged story: what to do
+        # about it. Appended to every variant, so no run draws one without it.
+        "next_pastpeak": "Next step: keep the checkpoint from epoch {best_epoch} if one "
+        "was saved, and use early stopping on this metric so the next run ends there.",
+        "next_stalled": "Next step: check the learning rate first, then the data pipeline "
+        "and the label mapping.",
+        "next_diverged": "Next step: lower the learning rate or clip the gradients, and "
+        "restart from a checkpoint saved at or before epoch {last_epoch}.",
         "warn_lr_drop": "Learning rate decreased from {old} to {new}.",
         "ms_best": "New best: {value}",
         "ms_crossed": "Crossed {pct}%: {value}",
@@ -44,8 +55,19 @@ MESSAGES: dict[str, dict[str, str]] = {
         "warn_spike": "loss ناگهان جهش کرد. شاید مدل در یک جهت بیش از حد پیش رفته باشد.",
         "warn_climb": "loss از نقطه‌ی شروعش دور می‌شود و بالا می‌رود. "
         "شاید معلم باید نرخ یادگیری را پایین بیاورد.",
-        "warn_overfit": "شاید مدل به‌جای فهمیدن مطالب، آن‌ها را حفظ می‌کند.",
-        "warn_plateau": "یادگیری کند شده است. مدل دیگر الگوی تازه‌ای پیدا نمی‌کند.",
+        "warn_overfit": "شاید مدل به‌جای فهمیدن مطالب، آن‌ها را حفظ می‌کند. "
+        "گام بعدی: در بهترین دورهٔ اعتبارسنجی متوقف شوید، منظم‌سازی (dropout، weight decay) "
+        "یا داده‌افزایی اضافه کنید، یا دادهٔ بیشتری جمع کنید.",
+        "warn_plateau": "یادگیری کند شده است. مدل دیگر الگوی تازه‌ای پیدا نمی‌کند. "
+        "گام بعدی: کاهش نرخ یادگیری (مثلاً با زمان‌بندی reduce-on-plateau) ممکن است "
+        "پیشرفت را از سر بگیرد؛ وگرنه ادامهٔ آموزش با همین نرخ احتمالاً کمکی نمی‌کند.",
+        "next_pastpeak": "گام بعدی: اگر نقطهٔ ذخیرهٔ دوره {best_epoch} را دارید همان را "
+        "نگه دارید، و برای این سنجه توقف زودهنگام (early stopping) بگذارید تا اجرای "
+        "بعدی همان‌جا متوقف شود.",
+        "next_stalled": "گام بعدی: ابتدا نرخ یادگیری را بررسی کنید، سپس خط دادهٔ ورودی "
+        "و نگاشت برچسب‌ها را.",
+        "next_diverged": "گام بعدی: نرخ یادگیری را کاهش دهید یا گرادیان‌ها را برش دهید، "
+        "و از نقطهٔ ذخیره‌ای در دوره {last_epoch} یا پیش از آن دوباره شروع کنید.",
         "warn_lr_drop": "نرخ یادگیری از {old} به {new} کاهش یافت.",
         "ms_best": "بهترین مقدار تازه: {value}",
         "ms_crossed": "از {pct}% گذشت: {value}",
@@ -68,8 +90,22 @@ MESSAGES: dict[str, dict[str, str]] = {
         "Le modèle a peut-être fait un pas trop grand dans une direction.",
         "warn_climb": "La loss remonte et s'éloigne de son point de départ. "
         "Le professeur devrait peut-être baisser le taux d'apprentissage.",
-        "warn_overfit": "Le modèle mémorise peut-être la matière au lieu de la comprendre.",
-        "warn_plateau": "L'apprentissage ralentit. Le modèle ne trouve plus de nouveaux motifs.",
+        "warn_overfit": "Le modèle mémorise peut-être la matière au lieu de la comprendre. "
+        "Étape suivante : arrêtez-vous à la meilleure époque de validation, ajoutez de la "
+        "régularisation (dropout, weight decay) ou de l'augmentation de données, ou "
+        "collectez plus de données.",
+        "warn_plateau": "L'apprentissage ralentit. Le modèle ne trouve plus de nouveaux "
+        "motifs. Étape suivante : baisser le taux d'apprentissage (par exemple un "
+        "planificateur reduce-on-plateau) peut relancer la progression ; sinon, continuer "
+        "à ce taux a peu de chances d'aider.",
+        "next_pastpeak": "Étape suivante : conservez le point de contrôle de l'époque "
+        "{best_epoch} s'il a été enregistré, et activez l'arrêt anticipé (early stopping) "
+        "sur cette métrique pour que la prochaine exécution s'arrête là.",
+        "next_stalled": "Étape suivante : vérifiez d'abord le taux d'apprentissage, puis "
+        "le pipeline de données et le mappage des étiquettes.",
+        "next_diverged": "Étape suivante : réduisez le taux d'apprentissage ou écrêtez "
+        "les gradients, et reprenez depuis un point de contrôle de l'époque {last_epoch} "
+        "ou antérieur.",
         "warn_lr_drop": "Le taux d'apprentissage est passé de {old} à {new}.",
         "ms_best": "Nouveau meilleur résultat : {value}",
         "ms_crossed": "Seuil de {pct} % franchi : {value}",

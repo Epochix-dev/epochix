@@ -192,9 +192,11 @@ an expectation.
 - **Run comparison in exports.** `CompareView` exists on screen and no export
   format includes it, so the one artifact you would want to send someone —
   "these two runs, side by side" — cannot leave the browser.
-- **Say what to do next.** The engine already detects past-peak, stalled and
-  overfitting. It describes them and stops short of the obvious next sentence:
-  stop earlier, lower the learning rate, get more data.
+- ~~**Say what to do next.**~~ Done. Past-peak, stalled and diverged stories
+  end with one fixed "Next step:" sentence each, after whichever variant the
+  run drew, and the overfitting and plateau warnings say what to try. Both
+  engines, all three locales; `tests/unit/test_next_step.py` and
+  `nextStep.test.ts` assert every variant in every locale.
 - **Confidence in the grade for short runs.** An 11-epoch run and a 200-epoch
   run currently receive equally confident letters.
 - **Separate GridSearchCV candidates properly.** Fold results are grouped by
