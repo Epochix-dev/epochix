@@ -59,6 +59,20 @@ An audit of every setting against the code found five that no code read.
   French or Farsi report. They come from the same translated catalogue as the
   warnings now; the PDF's "<- best" marker is translated too.
 
+### Performance
+
+- **The universal parser is ~25% faster again** (25k to 31k lines/sec on CI),
+  with byte-identical output over 680,021 lines — `contextlib.suppress` around
+  every number cost more than the conversion, and the same metric names were
+  re-canonicalised on every line. Name lookups are cached pipeline-wide. The
+  50k planning target is retired, with the reasoning in ROADMAP.md.
+
+### Fixed — docs
+
+- `ARCHITECTURE.md` described parser detection as "the first 50 lines, or 5
+  seconds"; it is 200 lines or 1.5 s of quiet, with the per-line fallback.
+- ROADMAP.md lost six sections to an edit in this release's PDF work; restored.
+
 ### Fixed — the Alembic migrations
 
 They had fallen behind the schema the store creates (no `milestones` or

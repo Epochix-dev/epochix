@@ -641,7 +641,7 @@ Parsers are **stateful per run** (e.g. PyTorch Lightning needs to know the curre
 
 ### 9.3 Format Detection
 
-On the first 50 lines (or 5 seconds in live mode), every registered parser runs `.sniff()`. The winner is locked in for the rest of the run. If sniff scores are all below 0.3, the universal fallback is used.
+On the first 200 lines (or after 1.5 seconds of quiet in live mode), every registered parser runs `.sniff()`. The winner is locked in for the rest of the run; if every score is below 0.3, the universal parser is used. A line the chosen parser cannot read is offered to every other built-in parser, best first, and only metrics with recognised names are kept from it — a log is not always one format. The VS Code extension's engine does the same, and both are held to `tests/fixtures/corpus_truth.json`.
 
 ### 9.4 LLM Fallback
 
@@ -1222,7 +1222,7 @@ A `docker-compose.yml` ships in the repo: server + Redis + Postgres + an optiona
 | Metric                                  | Target               |
 |-----------------------------------------|----------------------|
 | Parse throughput (framework parsers)    | ≥ 50k lines/sec      |
-| Parse throughput (universal fallback)   | ≥ 20k lines/sec (measured ~25k on CI; 50k is open work) |
+| Parse throughput (universal fallback)   | ≥ 24k lines/sec (measured ~31k on CI; see ROADMAP) |
 | Live latency (parse → browser render)   | < 500 ms p95         |
 | First meaningful paint                  | < 300 ms (local)     |
 | WS connections per worker               | ≥ 1000 concurrent    |
