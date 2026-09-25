@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import contextlib
 import json
 import re
 from statistics import fmean
@@ -68,8 +67,12 @@ _ITERATION_LEADER = re.compile(r"^\s*(?:iter|iteration|round)\s+(\d{1,9})\b", re
 # accuracy" both became `accuracy` and were charted as ONE two-point series
 # running 1.0 → 0.982: a decline the model never had. They are measurements of
 # different splits, not consecutive readings.
+# The lookahead lets the engine reject most positions on one character before
+# trying eight case-insensitive alternatives there — this was the costliest
+# pattern per line. It matches exactly the same text.
 _QUALIFIED = re.compile(
-    rf"\b(train|training|test|val|valid|validation|eval|holdout)\s+(\w{{1,64}})\s*[:=]\s*({_NUM})",
+    rf"\b(?=[tvehTVEH])(train|training|test|val|valid|validation|eval|holdout)"
+    rf"\s+(\w{{1,64}})\s*[:=]\s*({_NUM})",
     re.IGNORECASE,
 )
 _VAL_WORDS = frozenset({"test", "val", "valid", "validation", "eval", "holdout"})
@@ -273,16 +276,22 @@ class UniversalParser:
             spans.append(q.span())
             split = q.group(1).lower()
             split = "val" if split in _VAL_WORDS else "train"
-            with contextlib.suppress(ValueError):
+            try:  # noqa: SIM105 - not contextlib.suppress: it costs more per call than
+                # the rest of the statement, and this runs several times per line
                 candidates.append((f"{split}_{q.group(2)}", float(q.group(3)), 0.60))
+            except ValueError:
+                pass
         text = _blanked(text, spans)
 
         for c in _COMPOUND.finditer(text) if delimited else ():
             joined = f"{c.group(1)}_{c.group(2)}"
             if canonicalize_key(joined) == "custom":
                 continue
-            with contextlib.suppress(ValueError):
+            try:  # noqa: SIM105 - not contextlib.suppress: it costs more per call than
+                # the rest of the statement, and this runs several times per line
                 candidates.append((joined, float(c.group(3)), 0.58))
+            except ValueError:
+                pass
             text = text[: c.start()] + " " * len(c.group()) + text[c.end() :]
 
         spans = []
@@ -302,15 +311,21 @@ class UniversalParser:
         spans = []
         for m in _KV_EQ.finditer(text) if "=" in text else ():
             spans.append(m.span())
-            with contextlib.suppress(ValueError):
+            try:  # noqa: SIM105 - not contextlib.suppress: it costs more per call than
+                # the rest of the statement, and this runs several times per line
                 candidates.append((m.group(1), float(m.group(2)), 0.55))
+            except ValueError:
+                pass
         text = _blanked(text, spans)
 
         spans = []
         for m in _KV_COLON.finditer(text) if ":" in text else ():
             spans.append(m.span())
-            with contextlib.suppress(ValueError):
+            try:  # noqa: SIM105 - not contextlib.suppress: it costs more per call than
+                # the rest of the statement, and this runs several times per line
                 candidates.append((m.group(1), float(m.group(2)), 0.45))
+            except ValueError:
+                pass
         text = _blanked(text, spans)
 
         # Whitespace-separated pairs, last and only on a metric row (see
@@ -327,8 +342,11 @@ class UniversalParser:
                     and canonicalize_key(key) == "custom"
                 ):
                     continue
-                with contextlib.suppress(ValueError):
+                try:  # noqa: SIM105 - not contextlib.suppress: it costs more per call than
+                    # the rest of the statement, and this runs several times per line
                     candidates.append((key, float(m.group(2)), 0.50))
+                except ValueError:
+                    pass
 
         # Pass 1 — control keys (epoch/step) take effect BEFORE any metric on
         # this line is stamped. They can legitimately appear last: the SDK
@@ -351,6 +369,7 @@ class UniversalParser:
         # Pass 2 — emit the metrics; first occurrence of a key wins.
         metrics: list[RawMetric] = []
         seen_keys: set[str] = set()
+        emitted = cast("set[str] | None", ctx.extra.get("emitted_keys"))
         for key, val, conf in candidates:
             key_lo = key.lower()
             if (
@@ -388,7 +407,9 @@ class UniversalParser:
                     held[key_lo] = None
             # Remembered so a printed mean is not duplicated by the fold
             # aggregate at flush time (see flush).
-            emitted: set[str] = ctx.extra.setdefault("emitted_keys", set())  # type: ignore[assignment]
+            if emitted is None:
+                emitted = set()
+                ctx.extra["emitted_keys"] = emitted
             emitted.add(key_lo)
             metrics.append(metric)
 
@@ -421,14 +442,20 @@ class UniversalParser:
         if named:
             out: list[tuple[str, float]] = []
             for key, raw in named:
-                with contextlib.suppress(ValueError):
+                try:  # noqa: SIM105 - not contextlib.suppress: it costs more per call than
+                    # the rest of the statement, and this runs several times per line
                     out.append((key, float(raw)))
+                except ValueError:
+                    pass
             return out
 
         score = _CV_SCORE.search(line)
         if score is not None:
-            with contextlib.suppress(ValueError):
+            try:  # noqa: SIM105 - not contextlib.suppress: it costs more per call than
+                # the rest of the statement, and this runs several times per line
                 return [("score", float(score.group(1)))]
+            except ValueError:
+                pass
             return []
 
         # A hand-written loop names the metric instead: "Fold 1: accuracy = 0.9375".
@@ -438,8 +465,11 @@ class UniversalParser:
                 key_lo = match.group(1).lower()
                 if key_lo in _SKIP_KEYS or key_lo in _EPOCH_KEYS or key_lo in _STEP_KEYS:
                     continue
-                with contextlib.suppress(ValueError):
+                try:  # noqa: SIM105 - not contextlib.suppress: it costs more per call than
+                    # the rest of the statement, and this runs several times per line
                     hits.append((match.group(1), float(match.group(2))))
+                except ValueError:
+                    pass
             if hits:
                 return hits
         return []

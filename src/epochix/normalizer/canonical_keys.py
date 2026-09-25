@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from functools import lru_cache
+
 # Maps raw parser key variants → canonical key name.
 # Keys are lowercased before lookup.
 CANONICAL_MAP: dict[str, str] = {
@@ -256,11 +258,17 @@ def _strip_units(key: str) -> str:
     return key
 
 
+# Pure functions of a string, called for every metric of every line; a
+# run logs the same few dozen names over and over.
+@lru_cache(maxsize=4096)
 def is_recognised(key: str) -> bool:
     """Whether *key* is a metric this engine knows by name (raw or canonical)."""
     return key in CANONICAL_SET or canonicalize_key(key) != "custom"
 
 
+# Pure functions of a string, called for every metric of every line; a
+# run logs the same few dozen names over and over.
+@lru_cache(maxsize=4096)
 def canonicalize_key(raw_key: str) -> str:
     """Return the canonical key for a raw parser key, or 'custom' if unknown.
 
