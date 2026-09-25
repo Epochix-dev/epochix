@@ -24,9 +24,10 @@ export async function persistLogFile(
   sidecar: ServerManager,
   filePath: string,
   runName: string,
+  locale?: string,
 ): Promise<string> {
   const hint = taskHint();
-  const engine = new StandaloneEngine(hint);
+  const engine = new StandaloneEngine(hint, locale);
 
   await new Promise<void>((resolve, reject) => {
     const rl = readline.createInterface({
@@ -61,7 +62,7 @@ export async function persistLogFile(
   // this is the only route by which it can learn the architecture — without it
   // the Network State panel reads "No architecture to display" for a log that
   // plainly contains one.
-  const runId = await sidecar.createRun(runName, hint, engine.architecture(), primary);
+  const runId = await sidecar.createRun(runName, hint, engine.architecture(), primary, locale);
 
   // Every metric but the last goes in parallel batches; the last is sent on
   // its own afterwards, carrying `finished` (see below).

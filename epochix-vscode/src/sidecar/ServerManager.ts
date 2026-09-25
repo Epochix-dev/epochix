@@ -175,12 +175,16 @@ export class ServerManager implements vscode.Disposable {
     task?: string,
     architecture?: unknown[],
     primaryMetric?: string | null,
+    locale?: string,
   ): Promise<string> {
     const res = await this._post("/api/runs", {
       name,
       task,
       architecture: architecture?.length ? architecture : undefined,
       primary_metric: primaryMetric || undefined,
+      // The server writes this run's story; without the locale it wrote it
+      // in English whatever `epochix.locale` said.
+      locale: locale || undefined,
     });
     const id = res["id"] ?? res["run_id"];
     if (typeof id !== "string") {

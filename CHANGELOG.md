@@ -60,6 +60,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   finished" marker was sent as an extra copy of the final metric on a new seq,
   which the server stored as a real measurement.
 
+### Fixed — stories in the language you chose
+
+- **The VS Code extension told every story in English**, whatever
+  `epochix.locale` said: its engine carried its own English-only copy of the
+  templates. They are now generated from the Python engine's templates in
+  every locale (en, fa, fr), so the two engines tell the same stories.
+- **Runs saved through the sidecar were narrated in English too** — the
+  extension never sent the locale when it created the run there.
+- **Warnings and milestones were English in every locale**, in both engines.
+  They now come from one translated catalogue (`story_engine/messages.py`).
+- **"validation MAE" appeared mid-sentence in French and Farsi stories.** The
+  split word is now in the story's own language and word order ("MAE de
+  validation").
+- **A rising R² was narrated as "Error falls steadily"** in both engines: the
+  regression templates describe an error, and R² is regression's first-choice
+  metric. Those templates are now used only for error metrics.
+- The extension now reports a single result with no epoch (a script that fits
+  once and prints a score) as a result, as Python does, instead of narrating
+  it as the first epoch of a training run.
+
 ### Fixed — dashboard localisation
 
 - The epoch label, phase names, connection status and task names were English

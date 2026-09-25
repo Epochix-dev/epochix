@@ -143,15 +143,16 @@ The extension's TypeScript engine was brought up to the Python engine's
 truthfulness fixes in 0.7.12, and `standaloneTruthfulness.test.ts` drives it
 through the same log shapes. Known gaps that remain, deliberately not done yet:
 
-- **Narratives are English only** in the extension engine. The Python engine is
-  localised (en/fa/fr); the standalone panel shows English stories whatever the
-  locale.
+- ~~**Narratives are English only** in the extension engine.~~ Fixed in 0.7.13:
+  templates, warning and milestone messages are generated from the Python
+  engine in every locale.
 - ~~**Regression keys lose their split** in the TS canonicaliser.~~ Fixed in
   0.7.13, with a wider cause: the TS name tables had drifted on 170 of 319 names.
 - The name tables (canonical keys, task signals, preferred and on-scale keys)
   are **generated from the Python engine** since 0.7.13 (`make gen-ts-tables`),
-  with a golden file replayed by the extension's tests. Grading, direction and
-  wording logic are still hand-ported; the tests on each side guard them.
+  with a golden file replayed by the extension's tests, and so are the
+  narrative templates and messages. Grading, direction and phase logic are
+  still hand-ported; the tests on each side guard them.
 
 ## Performance (2026-09-24)
 

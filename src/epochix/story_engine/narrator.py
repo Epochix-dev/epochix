@@ -94,7 +94,7 @@ def narrate_single_reading(
     seed = int(hashlib.md5(run_id.encode(), usedforsecurity=False).hexdigest()[:8], 16)
     template = random.Random(seed).choice(templates)
     return template.replace("{value}", f"{primary_value:.4f}").replace(
-        "{metric}", _display_metric(metric)
+        "{metric}", _display_metric(metric, locale)
     )
 
 
@@ -182,7 +182,7 @@ def narrate_diverged(
         template.replace("{epoch}", str(int(epoch)) if epoch is not None else "?")
         .replace("{last_epoch}", str(int(last_epoch)) if last_epoch is not None else "?")
         .replace("{value}", "?" if last_value is None else f"{last_value:.4f}")
-        .replace("{metric}", _display_metric(metric))
+        .replace("{metric}", _display_metric(metric, locale))
     )
 
 
@@ -214,8 +214,26 @@ _PROSE_ASSUMES: dict[TaskType, frozenset[str]] = {
     TaskType.NLP: frozenset({"perplexity", "val_perplexity"}),
     TaskType.BIOMETRIC: frozenset({"EER", "val_EER"}),
     TaskType.GENERATIVE: frozenset({"fid", "FID", "val_fid", "val_FID"}),
-    # REGRESSION and GAZE templates already say "{metric}", so they are honest
-    # for whichever series they are handed. CUSTOM names no metric at all.
+    # REGRESSION and GAZE templates name the series with "{metric}", but their
+    # prose is about an ERROR: "Error falls steadily", "l'erreur est en baisse".
+    # R² is regression's first-choice metric and rises as the model improves,
+    # so a good R² run was narrated "Error falls steadily. validation R2 0.84".
+    # Only error metrics get that prose. CUSTOM names no metric at all.
+    TaskType.REGRESSION: frozenset(
+        {
+            "MAE",
+            "val_MAE",
+            "RMSE",
+            "val_RMSE",
+            "MSE",
+            "val_MSE",
+            "MAPE",
+            "val_MAPE",
+            "MedAE",
+            "RMSLE",
+        }
+    ),
+    TaskType.GAZE: frozenset({"MAE", "val_MAE", "RMSE", "val_RMSE"}),
 }
 
 
@@ -265,19 +283,28 @@ def narrate(
         .replace("{value}", f"{primary_value:.4f}")
         .replace("{delta}", delta_str)
         .replace("{value_pct}", f"{primary_value * 100:.1f}%")
-        .replace("{metric}", _display_metric(metric))
+        .replace("{metric}", _display_metric(metric, locale))
     )
 
 
 # Canonical keys are stored in a machine form ("val_RMSE"); the story is a
-# sentence, so it says "validation RMSE".
-_METRIC_PREFIXES = (("val_", "validation "), ("train_", "training "))
+# sentence, so it says "validation RMSE" — in the sentence's own language. The
+# split word used to be English in every locale, so a French story read
+# "L'erreur validation MAE descend" and a Farsi one carried an English word
+# mid-sentence. Word order differs too: French and Farsi put it after.
+_METRIC_SPLIT_WORDS: dict[str, tuple[tuple[str, str], ...]] = {
+    "en": (("val_", "validation {}"), ("train_", "training {}")),
+    "fr": (("val_", "{} de validation"), ("train_", "{} d'entraînement")),
+    "fa": (("val_", "{} اعتبارسنجی"), ("train_", "{} آموزشی")),
+}
+# What a template's {metric} reads as when the run named no series.
+_NO_METRIC: dict[str, str] = {"en": "error", "fr": "erreur", "fa": "خطا"}
 
 
-def _display_metric(metric: str | None) -> str:
+def _display_metric(metric: str | None, locale: str = "en") -> str:
     if not metric:
-        return "error"
-    for prefix, spoken in _METRIC_PREFIXES:
+        return _NO_METRIC.get(locale, _NO_METRIC["en"])
+    for prefix, pattern in _METRIC_SPLIT_WORDS.get(locale, _METRIC_SPLIT_WORDS["en"]):
         if metric.startswith(prefix):
-            return spoken + metric[len(prefix) :].replace("_", " ")
+            return pattern.format(metric[len(prefix) :].replace("_", " "))
     return metric.replace("_", " ")
