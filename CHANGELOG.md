@@ -44,6 +44,34 @@ read by any test.
 - **A JSON `true` was charted as a reading of 1.0** — in Python a bool is an
   int — by the Hugging Face, Accelerate and universal parsers.
 
+### Fixed — the VS Code extension reads logs as the Python engine does
+
+The extension's own engine, used without the Python package, disagreed with
+Python on **25 of the 38 logs** in the repository. It narrated metrics named
+`using` (a Lightning banner), `summary` (a YOLO model summary), `00` (a tqdm
+timestamp) and `Train` (a dataset size); lost every YOLO validation row behind
+a preamble; had no fastai parser; recorded a YOLO epoch once per progress-bar
+redraw; and graded Hugging Face runs on training loss. It now agrees on all 38.
+
+- Its parsers are ported from Python rather than approximated: the full
+  universal parser (qualified splits, two-word names, cross-validation folds,
+  constructor masking, progress-bar skipping, holding a once-printed name), the
+  Keras, Lightning and Hugging Face fixes, and new fastai and Accelerate
+  parsers. The never-metric names and sniff settings are generated from Python.
+- One parser per run, chosen on a 200-line sample as in Python, with the
+  universal parser reading recognised metrics off lines it cannot — instead of
+  "best parser plus universal on every line". A watched terminal settles on
+  what it has after 1.5 s of quiet, so a live run still draws as it goes.
+- Lines are cleaned as in Python (colour codes, carriage-return redraws), and
+  files are read in raw chunks: `readline` split a redraw into separate lines.
+- The task is re-classified while it is still unknown, and the story's metric
+  is re-chosen line by line with its baseline restarted on a switch — the
+  engine had locked both after four metrics.
+- Frames now carry the metric they measure, so the dashboard no longer formats
+  a `box_loss` frame with `mAP50`'s formatter.
+- `epochix-vscode/src/test/suite/corpusParity.test.ts` replays the same
+  `tests/fixtures/corpus_truth.json` the Python pipeline is held to.
+
 `tests/integration/test_log_corpus_truth.py` drives all 38 logs through the
 pipeline against reviewed expectations — including the epoch each story's
 metric starts at — and fails for a log without one.

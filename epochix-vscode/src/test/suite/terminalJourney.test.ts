@@ -177,7 +177,10 @@ suite("Terminal → dashboard journey", () => {
       if (feedable !== null) frames.push(...engine.feed(feedable));
     }
 
-    // No flush() — this is mid-run.
+    // The engine samples up to 200 lines before choosing a parser, as Python
+    // does; the panel settles when the terminal goes quiet between epochs
+    // ("the panel settles a quiet terminal" below). No flush(): mid-run.
+    frames.push(...engine.settle());
     assert.ok(frames.length > 0, "a live run drew nothing until it finished");
     assert.ok(frames.map((f) => f.epoch).includes(1), "the first epoch was lost");
   });

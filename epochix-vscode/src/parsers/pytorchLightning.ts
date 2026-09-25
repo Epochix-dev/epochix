@@ -23,6 +23,10 @@ export class PytorchLightningParser implements Parser {
     if (epochMatch) {
       ctx.currentEpoch = parseFloat(epochMatch[1]);
       ctx.totalEpochs = parseInt(epochMatch[2], 10);
+    } else {
+      // No epoch header: not a training-progress line. Config and trailer
+      // lines ("`max_epochs=30` reached") are not metrics. As in Python.
+      return [];
     }
 
     const metrics: RawMetric[] = [];

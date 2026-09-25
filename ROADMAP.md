@@ -154,17 +154,16 @@ through the same log shapes. Known gaps that remain, deliberately not done yet:
   narrative templates and messages. Grading, direction and phase logic are
   still hand-ported; the tests on each side guard them.
 
-## Parser parity (2026-09-24)
+## Parser parity (2026-09-25) — done in 0.7.14
 
-Running every log in the repository through both engines found the extension's
-standalone engine disagreeing with Python on 25 of 38 — narrating metrics named
-`using`, `summary`, `00` and `Train`, missing YOLO validation rows, and grading
-Hugging Face runs on training loss. The causes are in the TS parsers: a 125-line
-universal parser against Python's 478, no fastai or Accelerate parser, no ANSI
-cleaning, best-parser-plus-universal on every line, and task detection that locks
-after four metrics. Python's own bugs found on the way are fixed in 0.7.14.
-In progress: port the parsers and replay `test_log_corpus_truth.py`'s expectations
-through the extension.
+Both engines are held to one truth file, `tests/fixtures/corpus_truth.json`
+(38 logs: task, story metric, frames, last value, metric names, the epoch the
+story's metric starts at), by `test_log_corpus_truth.py` and
+`corpusParity.test.ts`. Before: 25 of 38 disagreed. After: 0. Name tables,
+templates, messages and never-metric names are generated from Python; the
+parsers and engine logic are ported, and this corpus is what keeps them honest.
+Add a log to `demo/` or `tests/fixtures/logs/` and both tests fail until it has
+an expectation.
 
 ## Performance (2026-09-24)
 

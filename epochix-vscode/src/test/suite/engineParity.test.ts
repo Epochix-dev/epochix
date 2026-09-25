@@ -76,4 +76,24 @@ suite("Engine parity with Python", () => {
     assert.strictEqual(engine.primaryMetricKey(), "val_loss");
     assert.deepStrictEqual(frames.map((f) => f.primaryMetricValue), [0.9, 0.7, 0.6, 0.55, 0.52]);
   });
+
+  test("when the story moves to another metric, its bookkeeping starts again", () => {
+    // YOLO prints losses every epoch and validates every few; the story is told
+    // on box_loss until the first mAP50 row, then on mAP50. Carrying box_loss's
+    // best (a loss of ~1.0) into mAP50 (~0.05) read as a collapse: "past its
+    // best" on the very first validation.
+    const ext = vscode.extensions.getExtension("epochix.epochix");
+    assert.ok(ext);
+    const log = path.resolve(ext.extensionPath, "..", "tests", "fixtures", "logs", "yolo_100ep.log");
+    const engine = new StandaloneEngine();
+    const frames: StoryFrameMsg[] = [...engine.feed(fs.readFileSync(log, "utf-8")), ...engine.flush()];
+    const metrics = frames.map((f) => f.primaryMetric);
+    const first = metrics.indexOf("mAP50");
+    assert.ok(first > 0 && metrics[0] === "box_loss", `expected a switch, got ${metrics.join(",")}`);
+    const switched = frames[first];
+    assert.ok(
+      !/best of|past its best|slipped from/i.test(switched.narrative),
+      `the first mAP50 frame was judged against box_loss: ${switched.narrative}`,
+    );
+  });
 });

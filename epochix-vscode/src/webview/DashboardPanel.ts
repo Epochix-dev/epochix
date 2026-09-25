@@ -10,7 +10,6 @@
  */
 import * as vscode from "vscode";
 import * as fs from "fs";
-import * as readline from "readline";
 
 import { buildWebviewHtml } from "./webview.html";
 import type { ExtToWeb, StoryFrameMsg, WebToExt } from "./messages";
@@ -36,6 +35,8 @@ export class DashboardPanel {
     return this._runId;
   }
   private _architectureSent = false;
+  // Fires when a watched terminal goes quiet; see feedLines.
+  private _idleTimer: ReturnType<typeof setTimeout> | undefined;
   private _metricsSent = 0;
 
   private _disposables: vscode.Disposable[] = [];
@@ -172,7 +173,19 @@ export class DashboardPanel {
    */
   feedLines(buffer: string): void {
     if (!this._engine) return;
-    const frames = this._engine.feed(buffer);
+    this._postFrames(this._engine.feed(buffer));
+    // The engine samples up to 200 lines before choosing a parser, as the
+    // Python pipeline does, so a short live run would draw nothing until it
+    // ended. When the terminal goes quiet — between epochs — choose on what
+    // has arrived (Python's IDLE_SNIFF_SECS).
+    if (this._idleTimer !== undefined) clearTimeout(this._idleTimer);
+    this._idleTimer = setTimeout(() => {
+      this._idleTimer = undefined;
+      if (this._engine) this._postFrames(this._engine.settle());
+    }, IDLE_SETTLE_MS);
+  }
+
+  private _postFrames(frames: StoryFrameMsg[]): void {
     this._postArchitecture();
     this._postMetrics();
     for (const frame of frames) {
@@ -326,20 +339,21 @@ export class DashboardPanel {
   private _parseLogFile(filePath: string): void {
     if (!this._engine) return;
 
-    const rl = readline.createInterface({
-      input: fs.createReadStream(filePath, { encoding: "utf-8" }),
-      crlfDelay: Infinity,
-    });
+    // Raw chunks, not readline: readline ends a line at a lone \r too, so every
+    // progress-bar redraw ("\r 1/3 ... 0%\r 1/3 ... 100%") became its own line
+    // and a YOLO epoch was recorded once per redraw. The engine splits on \n
+    // and collapses redraws to their final state, as the Python ingester does.
+    const stream = fs.createReadStream(filePath, { encoding: "utf-8" });
 
-    rl.on("line", (line) => {
-      const frames = this._engine!.feed(line + "\n");
+    stream.on("data", (chunk) => {
+      const frames = this._engine!.feed(String(chunk));
       for (const frame of frames) {
         this._post({ type: "frame", frame });
         StatusBar.update(frame);
       }
     });
 
-    rl.on("close", () => {
+    stream.on("end", () => {
       // Commit anything still held back by the format sniff — a short log can
       // end before the engine ever became confident, and those lines would
       // otherwise never be drawn.
@@ -355,6 +369,7 @@ export class DashboardPanel {
   }
 
   dispose(): void {
+    if (this._idleTimer !== undefined) clearTimeout(this._idleTimer);
     DashboardPanel.current = undefined;
     this._panel.dispose();
     for (const d of this._disposables) d.dispose();
@@ -363,6 +378,9 @@ export class DashboardPanel {
 }
 
 // ── helpers ───────────────────────────────────────────────────────────────────
+
+/** Quiet time after which a live terminal's sample is enough to choose a parser. */
+const IDLE_SETTLE_MS = 1500;
 
 /**
  * Turn a Node socket error into something a person can act on.

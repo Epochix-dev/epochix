@@ -235,3 +235,14 @@ export const ON_SCALE: Readonly<Record<TaskType, ReadonlySet<string>>> = {
   generative: new Set([]),
   custom: new Set([]),
 };
+
+/** Names that are never a metric: run config, model-summary totals, units
+ *  (parsers/_never_metrics.py). */
+export const NEVER_METRICS: ReadonlySet<string> = new Set(["accumulate_grad_batches", "batch_size", "batchsize", "bs", "devices", "epochs", "flops", "gpus", "img_size", "imgsz", "log_every_n_steps", "macs", "max_epochs", "ms", "node", "non_trainable_params", "ns", "num_epochs", "num_workers", "params", "patience", "pid", "port", "precision", "rank", "s", "save_top_k", "seed", "total_epochs", "total_params", "trainable_params", "us", "verbose", "workers", "world_size"]);
+
+/** Keyword arguments of a torch `print(model)` dump (parsers/universal.py). */
+export const NN_REPR_KWARGS: ReadonlySet<string> = new Set(["affine", "batch_first", "bias", "ceil_mode", "count_include_pad", "dilation", "dropout", "embedding_dim", "eps", "groups", "hidden_size", "in_channels", "in_features", "inplace", "kernel_size", "momentum", "nhead", "num_embeddings", "num_features", "num_layers", "out_channels", "out_features", "output_padding", "padding", "padding_mode", "return_indices", "stride", "track_running_stats"]);
+
+/** Lines sampled before a parser is chosen (parsers/registry.py). */
+export const SNIFF_SAMPLE_LINES = 200;
+export const SNIFF_THRESHOLD = 0.3;

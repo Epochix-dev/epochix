@@ -30,6 +30,9 @@ from epochix.normalizer import canonical_keys as ck  # noqa: E402
 from epochix.story_engine import _ON_SCALE_KEYS, _PREFERRED_KEYS_FOR_TASK  # noqa: E402
 from epochix.story_engine import messages, narrator  # noqa: E402
 from epochix.story_engine.task_classifier import _TASK_SIGNALS  # noqa: E402
+from epochix.parsers._never_metrics import NEVER_METRICS  # noqa: E402
+from epochix.parsers.registry import SNIFF_SAMPLE_LINES, SNIFF_THRESHOLD  # noqa: E402
+from epochix.parsers.universal import _NN_REPR_KWARGS  # noqa: E402
 
 TARGET = REPO / "epochix-vscode" / "src" / "story" / "engineTables.generated.ts"
 # The narrative templates, per locale, exactly as the Python loader resolves
@@ -116,7 +119,21 @@ def render() -> str:
         "export const ON_SCALE: Readonly<Record<TaskType, ReadonlySet<string>>> = {",
     ]
     lines += [f"  {t.value}: new Set({_js(_on_scale(t))})," for t in tasks]
-    lines += ["};", ""]
+    lines += [
+        "};",
+        "",
+        "/** Names that are never a metric: run config, model-summary totals, units",
+        " *  (parsers/_never_metrics.py). */",
+        f"export const NEVER_METRICS: ReadonlySet<string> = new Set({_js(sorted(NEVER_METRICS))});",
+        "",
+        "/** Keyword arguments of a torch `print(model)` dump (parsers/universal.py). */",
+        f"export const NN_REPR_KWARGS: ReadonlySet<string> = new Set({_js(sorted(_NN_REPR_KWARGS))});",
+        "",
+        "/** Lines sampled before a parser is chosen (parsers/registry.py). */",
+        f"export const SNIFF_SAMPLE_LINES = {SNIFF_SAMPLE_LINES};",
+        f"export const SNIFF_THRESHOLD = {SNIFF_THRESHOLD};",
+        "",
+    ]
     return "\n".join(lines)
 
 
