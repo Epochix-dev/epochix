@@ -1,0 +1,498 @@
+{
+ "accelerate_real.log": {
+  "path": "tests/fixtures/logs/accelerate_real.log",
+  "task": "classification",
+  "metric": "val_accuracy",
+  "frames": 4,
+  "last_value": 0.86,
+  "keys": [
+   "train_loss",
+   "val_accuracy",
+   "val_loss"
+  ]
+ },
+ "ansi_colors.log": {
+  "path": "tests/fixtures/logs/ansi_colors.log",
+  "task": "classification",
+  "metric": "accuracy",
+  "frames": 3,
+  "last_value": 0.632,
+  "keys": [
+   "accuracy",
+   "train_loss"
+  ]
+ },
+ "detection_coco.log": {
+  "path": "tests/fixtures/logs/detection_coco.log",
+  "task": "detection",
+  "metric": "mAP50",
+  "frames": 10,
+  "last_value": 0.741,
+  "keys": [
+   "box_loss",
+   "cls_loss",
+   "dfl_loss",
+   "mAP",
+   "mAP50",
+   "precision",
+   "recall"
+  ]
+ },
+ "diverging_loss.log": {
+  "path": "tests/fixtures/logs/diverging_loss.log",
+  "task": "classification",
+  "metric": "val_accuracy",
+  "frames": 5,
+  "last_value": 0.589,
+  "keys": [
+   "accuracy",
+   "train_loss",
+   "val_accuracy",
+   "val_loss"
+  ]
+ },
+ "empty.log": {
+  "path": "tests/fixtures/logs/empty.log",
+  "task": "custom",
+  "metric": null,
+  "frames": 0,
+  "last_value": null,
+  "keys": []
+ },
+ "fastai_real.log": {
+  "path": "tests/fixtures/logs/fastai_real.log",
+  "task": "classification",
+  "metric": "accuracy",
+  "frames": 4,
+  "last_value": 0.8594,
+  "keys": [
+   "accuracy",
+   "train_loss",
+   "val_loss"
+  ]
+ },
+ "fingerprint_matching.log": {
+  "path": "demo/fingerprint_matching.log",
+  "task": "biometric",
+  "metric": "EER",
+  "frames": 13,
+  "last_value": 0.0212,
+  "keys": [
+   "EER",
+   "TAR_at_FAR_0_001",
+   "lr",
+   "train_loss"
+  ]
+ },
+ "garbage.log": {
+  "path": "tests/fixtures/logs/garbage.log",
+  "task": "custom",
+  "metric": null,
+  "frames": 0,
+  "last_value": null,
+  "keys": []
+ },
+ "gaze_estimation.log": {
+  "path": "demo/gaze_estimation.log",
+  "task": "regression",
+  "metric": "MAE",
+  "frames": 18,
+  "last_value": 1.587,
+  "keys": [
+   "MAE",
+   "lr",
+   "train_loss"
+  ]
+ },
+ "hf_classification.log": {
+  "path": "tests/fixtures/logs/hf_classification.log",
+  "task": "classification",
+  "metric": "val_accuracy",
+  "frames": 20,
+  "last_value": 0.8964,
+  "keys": [
+   "lr",
+   "train_loss",
+   "val_accuracy",
+   "val_loss"
+  ]
+ },
+ "huggingface_5ep.log": {
+  "path": "tests/fixtures/logs/huggingface_5ep.log",
+  "task": "classification",
+  "metric": "val_accuracy",
+  "frames": 5,
+  "last_value": 0.8895,
+  "keys": [
+   "lr",
+   "train_loss",
+   "val_accuracy",
+   "val_loss"
+  ]
+ },
+ "huggingface_bert.log": {
+  "path": "demo/huggingface_bert.log",
+  "task": "classification",
+  "metric": "val_accuracy",
+  "frames": 10,
+  "last_value": 0.8456,
+  "keys": [
+   "lr",
+   "train_loss",
+   "val_accuracy",
+   "val_f1",
+   "val_loss"
+  ]
+ },
+ "huggingface_nlp_10ep.log": {
+  "path": "tests/fixtures/logs/huggingface_nlp_10ep.log",
+  "task": "nlp",
+  "metric": "perplexity",
+  "frames": 10,
+  "last_value": 1.18,
+  "keys": [
+   "lr",
+   "perplexity",
+   "train_loss",
+   "val_loss"
+  ]
+ },
+ "interrupted.log": {
+  "path": "tests/fixtures/logs/interrupted.log",
+  "task": "classification",
+  "metric": "val_accuracy",
+  "frames": 3,
+  "last_value": 0.521,
+  "keys": [
+   "train_loss",
+   "val_accuracy"
+  ]
+ },
+ "keras_100ep.log": {
+  "path": "tests/fixtures/logs/keras_100ep.log",
+  "task": "classification",
+  "metric": "val_accuracy",
+  "frames": 100,
+  "last_value": 0.853,
+  "keys": [
+   "accuracy",
+   "train_loss",
+   "val_accuracy",
+   "val_loss"
+  ]
+ },
+ "keras_50ep.log": {
+  "path": "tests/fixtures/logs/keras_50ep.log",
+  "task": "classification",
+  "metric": "val_accuracy",
+  "frames": 50,
+  "last_value": 0.8668,
+  "keys": [
+   "accuracy",
+   "train_loss",
+   "val_accuracy",
+   "val_loss"
+  ]
+ },
+ "keras_image_classifier.log": {
+  "path": "demo/keras_image_classifier.log",
+  "task": "classification",
+  "metric": "val_accuracy",
+  "frames": 11,
+  "last_value": 0.7834,
+  "keys": [
+   "accuracy",
+   "train_loss",
+   "val_accuracy",
+   "val_loss"
+  ]
+ },
+ "keras_short.log": {
+  "path": "tests/fixtures/logs/keras_short.log",
+  "task": "classification",
+  "metric": "val_accuracy",
+  "frames": 10,
+  "last_value": 0.8564,
+  "keys": [
+   "accuracy",
+   "train_loss",
+   "val_accuracy",
+   "val_loss"
+  ]
+ },
+ "mixed_frameworks.log": {
+  "path": "tests/fixtures/logs/mixed_frameworks.log",
+  "task": "classification",
+  "metric": "val_accuracy",
+  "frames": 4,
+  "last_value": 0.801,
+  "keys": [
+   "accuracy",
+   "lr",
+   "train_loss",
+   "val_accuracy",
+   "val_loss"
+  ]
+ },
+ "multiline_json.log": {
+  "path": "tests/fixtures/logs/multiline_json.log",
+  "task": "classification",
+  "metric": "val_accuracy",
+  "frames": 5,
+  "last_value": 0.6789,
+  "keys": [
+   "lr",
+   "train_loss",
+   "val_accuracy",
+   "val_f1",
+   "val_loss"
+  ]
+ },
+ "no_val_metrics.log": {
+  "path": "tests/fixtures/logs/no_val_metrics.log",
+  "task": "classification",
+  "metric": "accuracy",
+  "frames": 5,
+  "last_value": 0.689,
+  "keys": [
+   "accuracy",
+   "train_loss"
+  ]
+ },
+ "pl_high_accuracy.log": {
+  "path": "tests/fixtures/logs/pl_high_accuracy.log",
+  "task": "classification",
+  "metric": "val_accuracy",
+  "frames": 20,
+  "last_value": 0.8728,
+  "keys": [
+   "accuracy",
+   "train_loss",
+   "val_accuracy",
+   "val_loss"
+  ]
+ },
+ "plateau.log": {
+  "path": "tests/fixtures/logs/plateau.log",
+  "task": "classification",
+  "metric": "val_accuracy",
+  "frames": 10,
+  "last_value": 0.825,
+  "keys": [
+   "train_loss",
+   "val_accuracy"
+  ]
+ },
+ "pytorch_lightning.log": {
+  "path": "demo/pytorch_lightning.log",
+  "task": "classification",
+  "metric": "val_accuracy",
+  "frames": 14,
+  "last_value": 0.876,
+  "keys": [
+   "accuracy",
+   "train_loss",
+   "val_accuracy",
+   "val_loss"
+  ]
+ },
+ "pytorch_lightning_30ep.log": {
+  "path": "tests/fixtures/logs/pytorch_lightning_30ep.log",
+  "task": "classification",
+  "metric": "val_accuracy",
+  "frames": 30,
+  "last_value": 0.8735,
+  "keys": [
+   "accuracy",
+   "train_loss",
+   "val_accuracy",
+   "val_loss"
+  ]
+ },
+ "pytorch_lightning_long.log": {
+  "path": "tests/fixtures/logs/pytorch_lightning_long.log",
+  "task": "classification",
+  "metric": "val_accuracy",
+  "frames": 100,
+  "last_value": 0.8818,
+  "keys": [
+   "accuracy",
+   "train_loss",
+   "val_accuracy",
+   "val_loss"
+  ]
+ },
+ "pytorch_lightning_short.log": {
+  "path": "tests/fixtures/logs/pytorch_lightning_short.log",
+  "task": "classification",
+  "metric": "val_accuracy",
+  "frames": 5,
+  "last_value": 0.8752,
+  "keys": [
+   "accuracy",
+   "train_loss",
+   "val_accuracy",
+   "val_loss"
+  ]
+ },
+ "scientific_notation.log": {
+  "path": "tests/fixtures/logs/scientific_notation.log",
+  "task": "custom",
+  "metric": "val_loss",
+  "frames": 5,
+  "last_value": 0.28,
+  "keys": [
+   "lr",
+   "train_loss",
+   "val_loss"
+  ]
+ },
+ "seq2seq_attention.log": {
+  "path": "demo/seq2seq_attention.log",
+  "task": "classification",
+  "metric": "val_accuracy",
+  "frames": 8,
+  "last_value": 0.771,
+  "keys": [
+   "accuracy",
+   "train_loss",
+   "val_accuracy",
+   "val_loss"
+  ]
+ },
+ "single_epoch.log": {
+  "path": "tests/fixtures/logs/single_epoch.log",
+  "task": "classification",
+  "metric": "val_accuracy",
+  "frames": 1,
+  "last_value": 0.874,
+  "keys": [
+   "accuracy",
+   "train_loss",
+   "val_accuracy",
+   "val_loss"
+  ]
+ },
+ "universal_20ep.log": {
+  "path": "tests/fixtures/logs/universal_20ep.log",
+  "task": "classification",
+  "metric": "val_accuracy",
+  "frames": 20,
+  "last_value": 0.8728,
+  "keys": [
+   "accuracy",
+   "lr",
+   "train_loss",
+   "val_accuracy",
+   "val_loss"
+  ]
+ },
+ "universal_kv_colon.log": {
+  "path": "tests/fixtures/logs/universal_kv_colon.log",
+  "task": "classification",
+  "metric": "val_accuracy",
+  "frames": 30,
+  "last_value": 0.8527,
+  "keys": [
+   "accuracy",
+   "lr",
+   "train_loss",
+   "val_accuracy",
+   "val_loss"
+  ]
+ },
+ "vscode-demo.log": {
+  "path": "epochix-vscode/media/demo.log",
+  "task": "classification",
+  "metric": "val_accuracy",
+  "frames": 20,
+  "last_value": 0.98,
+  "keys": [
+   "accuracy",
+   "lr",
+   "train_loss",
+   "val_accuracy",
+   "val_loss"
+  ]
+ },
+ "yolo_100ep.log": {
+  "path": "tests/fixtures/logs/yolo_100ep.log",
+  "task": "detection",
+  "metric": "mAP50",
+  "frames": 25,
+  "last_value": 0.783,
+  "keys": [
+   "box_loss",
+   "cls_loss",
+   "dfl_loss",
+   "mAP",
+   "mAP50",
+   "precision",
+   "recall"
+  ]
+ },
+ "yolo_50ep.log": {
+  "path": "tests/fixtures/logs/yolo_50ep.log",
+  "task": "detection",
+  "metric": "mAP50",
+  "frames": 15,
+  "last_value": 0.798,
+  "keys": [
+   "box_loss",
+   "cls_loss",
+   "dfl_loss",
+   "mAP",
+   "mAP50",
+   "precision",
+   "recall"
+  ]
+ },
+ "yolo_real_ultralytics.log": {
+  "path": "tests/fixtures/logs/yolo_real_ultralytics.log",
+  "task": "detection",
+  "metric": "mAP50",
+  "frames": 5,
+  "last_value": 0.688,
+  "keys": [
+   "box_loss",
+   "cls_loss",
+   "dfl_loss",
+   "mAP",
+   "mAP50",
+   "precision",
+   "recall"
+  ]
+ },
+ "yolo_short.log": {
+  "path": "tests/fixtures/logs/yolo_short.log",
+  "task": "detection",
+  "metric": "mAP50",
+  "frames": 7,
+  "last_value": 0.781,
+  "keys": [
+   "box_loss",
+   "cls_loss",
+   "dfl_loss",
+   "mAP",
+   "mAP50",
+   "precision",
+   "recall"
+  ]
+ },
+ "yolov8_detection.log": {
+  "path": "demo/yolov8_detection.log",
+  "task": "detection",
+  "metric": "mAP50",
+  "frames": 11,
+  "last_value": 0.663,
+  "keys": [
+   "box_loss",
+   "cls_loss",
+   "dfl_loss",
+   "mAP",
+   "mAP50",
+   "precision",
+   "recall"
+  ]
+ }
+}
