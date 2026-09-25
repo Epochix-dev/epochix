@@ -255,6 +255,11 @@ def _strip_units(key: str) -> str:
     return key
 
 
+def is_recognised(key: str) -> bool:
+    """Whether *key* is a metric this engine knows by name (raw or canonical)."""
+    return key in CANONICAL_SET or canonicalize_key(key) != "custom"
+
+
 def canonicalize_key(raw_key: str) -> str:
     """Return the canonical key for a raw parser key, or 'custom' if unknown.
 

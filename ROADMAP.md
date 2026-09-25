@@ -154,6 +154,18 @@ through the same log shapes. Known gaps that remain, deliberately not done yet:
   narrative templates and messages. Grading, direction and phase logic are
   still hand-ported; the tests on each side guard them.
 
+## Parser parity (2026-09-24)
+
+Running every log in the repository through both engines found the extension's
+standalone engine disagreeing with Python on 25 of 38 — narrating metrics named
+`using`, `summary`, `00` and `Train`, missing YOLO validation rows, and grading
+Hugging Face runs on training loss. The causes are in the TS parsers: a 125-line
+universal parser against Python's 478, no fastai or Accelerate parser, no ANSI
+cleaning, best-parser-plus-universal on every line, and task detection that locks
+after four metrics. Python's own bugs found on the way are fixed in 0.7.14.
+In progress: port the parsers and replay `test_log_corpus_truth.py`'s expectations
+through the extension.
+
 ## Performance (2026-09-24)
 
 - **Universal parser throughput: ~25k lines/sec on CI, target 50k.** The

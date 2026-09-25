@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import asyncio
 import contextlib
+import dataclasses
 import logging
 import re
 from datetime import datetime, timezone
@@ -25,9 +26,10 @@ from typing import TYPE_CHECKING
 from epochix.enums import TaskType
 from epochix.models import RawMetric, Run
 from epochix.normalizer import normalize
-from epochix.normalizer.canonical_keys import canonicalize_key
+from epochix.normalizer.canonical_keys import canonicalize_key, is_recognised
 from epochix.parsers.base import ParserContext
 from epochix.parsers.registry import SNIFF_SAMPLE_LINES, detect_parser
+from epochix.parsers.universal import UniversalParser
 from epochix.story_engine import StoryEngine
 
 # ANSI escape sequences (color codes + "erase line" \x1b[K, used by every
@@ -35,6 +37,9 @@ from epochix.story_engine import StoryEngine
 # when stdout is redirected to a file/pipe and break our regex-based parsers,
 # so strip them before any downstream sees the text.
 _ANSI_RE = re.compile(r"\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])")
+# A colour code whose ESC byte was lost on the way to a file — common in
+# saved CI output: "[1mloss: 1.234[0m" produced a metric named `1mloss`.
+_ORPHAN_SGR_RE = re.compile(r"\[(?:\d{1,3}(?:;\d{1,3}){0,8})?m")
 
 
 # A real metric log line is short; anything vastly longer is a tensor/array dump
@@ -48,7 +53,7 @@ def _clean_line(text: str) -> str:
     we only care about the last update before the actual newline)."""
     if len(text) > _MAX_LINE_LEN:
         text = text[:_MAX_LINE_LEN]
-    cleaned = _ANSI_RE.sub("", text)
+    cleaned = _ORPHAN_SGR_RE.sub("", _ANSI_RE.sub("", text))
     # A trailing \r is a CRLF line ending, not a progress redraw. Collapsing on
     # it would return the empty string after it and wipe every line of a
     # Windows-encoded log.
@@ -99,11 +104,27 @@ _NON_FINITE_ASSIGNMENT = re.compile(
 )
 
 
+def _fallback_metrics(fallback: BaseParser, text: str, ctx: ParserContext) -> list[RawMetric]:
+    """Recognised metrics the run's own parser could not read on this line.
+
+    One parser is chosen per run, and a log is not always one format: the
+    fingerprint demo prints `Epoch 15/50` (so the Keras parser wins) and its
+    metrics as `train_loss=… EER=…` on the next line, which Keras cannot
+    read — 50 epochs became one reading. The universal parser gets a second
+    look, on a scratch context so prose ("Total optimization steps = 500")
+    cannot move the run's step axis, and only names we recognise are kept:
+    "Dataset | Train: 4200" is a size, not a result.
+    """
+    scratch = dataclasses.replace(ctx, extra={})
+    return [m for m in fallback.parse_line(text, scratch) if is_recognised(m.key)]
+
+
 def _emit_line(
     *,
     text: str,
     timestamp: datetime,
     parser: BaseParser,
+    fallback: BaseParser | None = None,
     ctx: ParserContext,
     run_id: str,
     engine: StoryEngine,
@@ -115,6 +136,8 @@ def _emit_line(
     Returns the epoch from the last frame emitted (or None if no frame).
     """
     raw_metrics = parser.parse_line(text, ctx)
+    if not raw_metrics and fallback is not None:
+        raw_metrics = _fallback_metrics(fallback, text, ctx)
 
     # No parser can return this as a metric, so look for it on the raw line.
     non_finite = _NON_FINITE_ASSIGNMENT.search(text)
@@ -175,12 +198,17 @@ def _emit_metrics(
     metrics arrive as a batch rather than from a parse_line call).
     """
     last_epoch: float | None = None
+    events = []
     for raw in raw_metrics:
         try:
-            event = normalize(raw, run_id=run_id, timestamp=timestamp)
+            events.append(normalize(raw, run_id=run_id, timestamp=timestamp))
         except ValueError:
             continue
+    # The whole batch is one line: let the engine see every name on it before
+    # choosing which one tells the story (see StoryEngine.announce).
+    engine.announce({event.canonical_key for event in events})
 
+    for event in events:
         store.append_metric_event(event)
 
         # process_all (not process) so a warmup backfill — where the buffered
@@ -322,6 +350,9 @@ async def run_pipeline(
     # --- Parser auto-detection (sniff first N lines) -------------------
     sample_lines: list[str] = []
     parser: BaseParser | None = None
+    # Reads what a framework parser cannot on a mixed-format line; see
+    # _fallback_metrics. None when the run is already on the universal parser.
+    fallback: BaseParser | None = None
     ctx = ParserContext(run_id=run_id)
     engine = StoryEngine(
         run_id=run_id,
@@ -424,10 +455,11 @@ async def run_pipeline(
     # set). Called when the sniff window fills, when the live stream goes idle
     # between epochs, or at end-of-stream.
     def _flush_sniff() -> None:
-        nonlocal parser, run, sniff_buffer, last_epoch
+        nonlocal parser, fallback, run, sniff_buffer, last_epoch
         if parser is not None or not sample_lines:
             return
         parser = detect_parser(sample_lines)
+        fallback = None if parser.name == "universal" else UniversalParser()
         run = Run(**{**run.model_dump(), "parser_used": parser.name})
         logger.debug("Detected parser (%d lines): %s", len(sample_lines), parser.name)
         for buf_seq, buf_ts, buf_text in sniff_buffer:
@@ -436,6 +468,7 @@ async def run_pipeline(
                 text=buf_text,
                 timestamp=buf_ts,
                 parser=parser,
+                fallback=fallback,
                 ctx=ctx,
                 run_id=run_id,
                 engine=engine,
@@ -484,6 +517,7 @@ async def run_pipeline(
             text=clean_text,
             timestamp=raw_line.timestamp,  # type: ignore[attr-defined]
             parser=parser,
+            fallback=fallback,
             ctx=ctx,
             run_id=run_id,
             engine=engine,
