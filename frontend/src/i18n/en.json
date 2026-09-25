@@ -28,7 +28,14 @@
     "disconnected": "Offline",
     "waiting": "Waiting for training data…",
     "reconnecting": "Reconnecting…",
-    "frame": "Frame"
+    "frame": "Frame",
+    "empty_title": "Nothing is loaded yet.",
+    "empty_hint": "Open a training log, try the bundled demo, or run training in a terminal — Epochix follows it as it prints.",
+    "try_demo": "Try the demo",
+    "open_log": "Open a log file",
+    "watch_terminal": "Watch the active terminal",
+    "no_metrics": "No training metrics were found in this log.",
+    "no_metrics_hint": "If it does contain training output, please report it with a couple of example lines — that is a parsing bug."
   },
   "tasks": {
     "classification": "Classification",

@@ -60,6 +60,8 @@ export type ExtToWeb =
       milestones: MilestoneMsg[];
       warnings: WarningMsg[];
       hasSidecar: boolean;
+      /** Whether a log or terminal feeds this panel (see DashboardPanel._attached). */
+      attached: boolean;
     }
   | { type: "frame"; frame: StoryFrameMsg }
   | { type: "milestone"; milestone: MilestoneMsg }
@@ -83,4 +85,6 @@ export type WebToExt =
       metric?: string;
     }
   | { type: "openExternal"; url: string }
-  | { type: "installSidecar" };
+  | { type: "installSidecar" }
+  /** A button on the empty dashboard; the host runs only ALLOWED_WEBVIEW_COMMANDS. */
+  | { type: "runCommand"; command: string };

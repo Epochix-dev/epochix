@@ -35,6 +35,10 @@ export class DashboardPanel {
     return this._runId;
   }
   private _architectureSent = false;
+  // Whether a log file or a terminal feeds this panel. Opened bare, nothing
+  // will ever arrive; the webview then explains how to load something
+  // instead of "Waiting for training data…" forever (issue #35).
+  private _attached = false;
   // Fires when a watched terminal goes quiet; see feedLines.
   private _idleTimer: ReturnType<typeof setTimeout> | undefined;
   private _metricsSent = 0;
@@ -130,6 +134,7 @@ export class DashboardPanel {
     locale = "en",
   ): void {
     const panel = DashboardPanel.createOrShow(extensionUri, sidecar, locale);
+    panel._attached = true;
 
     if (sidecar) {
       // Parse locally, then persist through the sidecar's public API so the
@@ -172,6 +177,7 @@ export class DashboardPanel {
    * Called by TerminalWatcher; no-op in sidecar mode.
    */
   feedLines(buffer: string): void {
+    this._attached = true;
     if (!this._engine) return;
     this._postFrames(this._engine.feed(buffer));
     // The engine samples up to 200 lines before choosing a parser, as the
@@ -232,6 +238,13 @@ export class DashboardPanel {
         // may re-encode it. `window.open` in a browser never did, which is why
         // testing only that path missed it.
         void openExternalUrl(msg.url);
+        break;
+      case "runCommand":
+        // A webview may only trigger the empty-state commands, never an
+        // arbitrary one: its content is ours, but its messages are input.
+        if (ALLOWED_WEBVIEW_COMMANDS.has(msg.command)) {
+          void vscode.commands.executeCommand(msg.command);
+        }
         break;
       case "installSidecar":
         void openExternalUrl("https://github.com/epochix-dev/epochix#install");
@@ -294,6 +307,7 @@ export class DashboardPanel {
       architecture: this._engine?.architecture() ?? [],
       metrics: this._engine?.metrics() ?? [],
       hasSidecar,
+      attached: this._attached,
     });
 
     if (!hasSidecar) {
@@ -381,6 +395,13 @@ export class DashboardPanel {
 
 /** Quiet time after which a live terminal's sample is enough to choose a parser. */
 const IDLE_SETTLE_MS = 1500;
+
+/** The only commands a webview message may run (the empty dashboard's buttons). */
+export const ALLOWED_WEBVIEW_COMMANDS: ReadonlySet<string> = new Set([
+  "epochix.tryDemo",
+  "epochix.openLogFile",
+  "epochix.watchTerminal",
+]);
 
 /**
  * Turn a Node socket error into something a person can act on.

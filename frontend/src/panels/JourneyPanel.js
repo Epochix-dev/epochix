@@ -11,6 +11,7 @@ import { metricDisplayLabel, isPercentMetric } from '../viz-util.js';
 import { escapeHtml as _esc } from '../escape.js';
 import { frameReportButton, reportFrame } from '../report.js';
 import { t } from '../i18n/apply.js';
+import { emptyState, EMPTY_STATE_COMMANDS } from './emptyState.js';
 
 const PHASE_ICON = {
   awakening:     '🌱',
@@ -104,8 +105,8 @@ export class JourneyPanel {
             reportFrame(frame, run, version);
           });
         }
-      } else if (!s.live && !frame) {
-        el.innerHTML = `<p class="narrative-placeholder">${_esc(t('labels.waiting', 'Waiting for training data…'))}</p>`;
+      } else if (!frame) {
+        _renderEmpty(el, s);
       }
     }
 
@@ -324,4 +325,34 @@ function _countUp(el, to, opts = {}) {
     }
   };
   el._raf = requestAnimationFrame(step);
+}
+
+/** The story panel with nothing to tell — see emptyState.js. */
+function _renderEmpty(el, s) {
+  const state = emptyState(s);
+  if (el.dataset.empty === state) return; // unchanged: keep the buttons' listeners
+  el.dataset.empty = state;
+  if (state === 'nothing-attached') {
+    const labels = {
+      'epochix.tryDemo': t('labels.try_demo', 'Try the demo'),
+      'epochix.openLogFile': t('labels.open_log', 'Open a log file'),
+      'epochix.watchTerminal': t('labels.watch_terminal', 'Watch the active terminal'),
+    };
+    el.innerHTML =
+      `<p class="narrative-placeholder">${_esc(t('labels.empty_title', 'Nothing is loaded yet.'))}</p>` +
+      `<p class="narrative-hint">${_esc(t('labels.empty_hint', ''))}</p>` +
+      `<div class="empty-actions">${EMPTY_STATE_COMMANDS.map((c) =>
+        `<button type="button" class="empty-action" data-command="${_esc(c)}">${_esc(labels[c])}</button>`).join('')}</div>`;
+    for (const btn of el.querySelectorAll('.empty-action')) {
+      btn.addEventListener('click', () => {
+        window.dispatchEvent(new CustomEvent('ms-run-command', { detail: { command: btn.dataset.command } }));
+      });
+    }
+  } else if (state === 'no-metrics') {
+    el.innerHTML =
+      `<p class="narrative-placeholder">${_esc(t('labels.no_metrics', 'No training metrics were found in this log.'))}</p>` +
+      `<p class="narrative-hint">${_esc(t('labels.no_metrics_hint', ''))}</p>`;
+  } else {
+    el.innerHTML = `<p class="narrative-placeholder">${_esc(t('labels.waiting', 'Waiting for training data…'))}</p>`;
+  }
 }

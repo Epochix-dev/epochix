@@ -344,6 +344,21 @@ body {
 }
 .narrative-live { animation: fadeSlide 400ms ease; }
 .narrative-placeholder { color: var(--text-muted); font-style: italic; font-family: var(--font-sans); font-size: 13px; }
+/* The empty VS Code dashboard: what to do instead of waiting (issue #35). */
+.narrative-hint { color: var(--text-secondary); font-family: var(--font-sans); font-size: 13px; line-height: 1.5; margin: 6px 0 0; }
+.empty-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.empty-action {
+  padding: 6px 12px;
+  border: 1px solid var(--border-default);
+  border-radius: 8px;
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+  font: inherit;
+  font-family: var(--font-sans);
+  font-size: 13px;
+  cursor: pointer;
+}
+.empty-action:hover, .empty-action:focus-visible { border-color: var(--accent-primary); }
 
 /* Stat row */
 .stat-row {

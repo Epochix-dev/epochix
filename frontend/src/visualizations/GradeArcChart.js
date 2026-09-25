@@ -19,6 +19,7 @@ import {
   metricLabel,
 } from '../viz-util.js';
 import { escapeHtml as _esc } from '../escape.js';
+import { t } from '../i18n/apply.js';
 
 const PHASE_BG = {
   awakening:     'rgba(167,139,250,0.10)',
@@ -195,7 +196,7 @@ export class GradeArcChart {
       ctx.fillStyle = 'rgba(148,163,184,0.3)';
       ctx.font = '13px DM Sans, sans-serif';
       ctx.textAlign = 'center';
-      ctx.fillText('Waiting for training data…', w / 2, h / 2);
+      ctx.fillText(t('labels.waiting', 'Waiting for training data…'), w / 2, h / 2);
       return;
     }
 

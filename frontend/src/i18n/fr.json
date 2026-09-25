@@ -28,7 +28,14 @@
     "disconnected": "Hors ligne",
     "waiting": "En attente des données d'entraînement…",
     "reconnecting": "Reconnexion…",
-    "frame": "Trame"
+    "frame": "Trame",
+    "empty_title": "Rien n'est encore chargé.",
+    "empty_hint": "Ouvrez un journal d'entraînement, essayez la démo fournie, ou lancez l'entraînement dans un terminal — Epochix le suit au fil de l'eau.",
+    "try_demo": "Essayer la démo",
+    "open_log": "Ouvrir un fichier journal",
+    "watch_terminal": "Suivre le terminal actif",
+    "no_metrics": "Aucune métrique d'entraînement n'a été trouvée dans ce journal.",
+    "no_metrics_hint": "S'il contient bien une sortie d'entraînement, signalez-le avec quelques lignes d'exemple — c'est un bug de lecture."
   },
   "tasks": {
     "classification": "Classification",

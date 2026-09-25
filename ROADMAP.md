@@ -84,6 +84,12 @@ What was real:
   "not learning yet — check the learning rate". Found by reading the rendered
   page, not the tests: both statements were on screen at once. Fixed — see
   the changelog.
+- **An empty VS Code dashboard waited forever (#35).** Every standalone panel
+  was marked live, so a bare panel — and a log with no metrics — both read
+  "Waiting for training data…" indefinitely. The panel now reports whether a
+  log or terminal feeds it; the empty state says which kind of nothing it is
+  and offers the three ways in as buttons (allow-listed on the host side).
+  Fixed — see the changelog.
 
 ## Audit of the week's changes (2026-09-02)
 
