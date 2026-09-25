@@ -8,7 +8,10 @@ const EPOCH_LINE = /^Epoch\s+(\d+)\/(\d+)\s*$/;
 // Step counts bounded ({1,10}) so an unanchored search can't backtrack O(n²)
 // on a long digit run (a 200k-digit line froze the sniff for seconds).
 const METRIC_LINE = /\d{1,10}\/\d{1,10}\s+\[=+>?\.*\]/;
-const KV_PAIR = /(\w{1,64}):\s*([-+]?\d+(?:\.\d+)?(?:[eE][-+]?\d+)?)/g;
+// Keras prints every metric as " - name: value"; the dash is required, as
+// in keras_tensorflow.py. Without it any "word: number" was a metric: the
+// dataset sizes in "Train: 4200 | Val: 800", a tqdm "[00:12" as `00`.
+const KV_PAIR = /(?:^|\s)-\s+([A-Za-z_]\w{0,63}):\s*([-+]?\d+(?:\.\d+)?(?:[eE][-+]?\d+)?)/g;
 
 // Shared table — see neverMetrics.ts. A key filtered in one parser must
 // not leak through another.

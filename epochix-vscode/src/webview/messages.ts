@@ -18,6 +18,10 @@ export interface StoryFrameMsg {
   phase: Phase;
   grade: Grade;
   primaryMetricValue: number;
+  /** The series the value is from. A run's story can move from one to
+   *  another (YOLO's box_loss until the first validation row, then mAP50);
+   *  without the name the dashboard drew and formatted both as one. */
+  primaryMetric: string;
   confidence: number;
   narrative: string;
   taskType: TaskType;

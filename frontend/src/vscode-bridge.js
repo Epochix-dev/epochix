@@ -14,7 +14,7 @@
 import { store, pushFrame, pushMilestone, pushWarning, scrubTo } from './store.js';
 
 /** Map a host StoryFrameMsg (camelCase) → the store's frame shape (snake_case). */
-function mapFrame(f) {
+export function mapFrame(f) {
   return {
     seq: f.seq,
     epoch: f.epoch,
@@ -22,6 +22,9 @@ function mapFrame(f) {
     phase: f.phase,
     grade: f.grade,
     primary_metric_value: f.primaryMetricValue,
+    // The series this value belongs to. Dropped, the dashboard fell back to
+    // the run's metric and formatted a box_loss frame as mAP50.
+    primary_metric: f.primaryMetric,
     confidence: f.confidence,
     narrative: f.narrative,
     task_type: f.taskType,

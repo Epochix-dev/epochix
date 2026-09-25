@@ -35,10 +35,14 @@ interface Run {
   text: string;
 }
 
-function drive(lines: string[], opts: { flush?: boolean } = {}): Run {
+function drive(lines: string[], opts: { flush?: boolean; settleAfter?: number } = {}): Run {
   const engine = new StandaloneEngine();
   const frames: StoryFrameMsg[] = [];
-  for (const line of lines) frames.push(...engine.feed(line + "\n"));
+  lines.forEach((line, i) => {
+    frames.push(...engine.feed(line + "\n"));
+    // What the panel does when a live terminal goes quiet between epochs.
+    if (opts.settleAfter === i + 1) frames.push(...engine.settle());
+  });
   if (opts.flush !== false) frames.push(...engine.flush());
   assert.ok(frames.length > 0, `no story at all for:\n${lines.slice(0, 3).join("\n")}`);
   return {
@@ -196,11 +200,11 @@ suite("Standalone engine — divergence", () => {
   });
 
   test("it is reported WITHOUT an end of stream — a live run never ends", () => {
-    // Enough lines to get past format sniffing (it holds up to six while it
-    // decides), and never flush(): a live terminal run has no end to wait for.
-    const live = [...nanLog, "Epoch 6/9 - loss: nan - val_loss: nan", "Epoch 7/9 - loss: nan - val_loss: nan"];
-    const r = drive(live, { flush: false });
+    // Three real epochs, then the quiet between epochs (where the panel settles
+    // on a parser), then NaN — and never flush(): a live run has no end.
+    const r = drive(nanLog, { flush: false, settleAfter: 3 });
     assert.strictEqual(r.last.grade, "F", "divergence waited for flush()");
+    assert.strictEqual(r.frames.filter((f) => f.grade === "F").length, 1, "reported once");
   });
 
   test("no frame is dated past the last real reading", () => {

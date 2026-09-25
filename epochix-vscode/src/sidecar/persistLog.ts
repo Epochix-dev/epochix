@@ -12,7 +12,6 @@
  * server never needs a route that opens an arbitrary path on the host.
  */
 import * as fs from "fs";
-import * as readline from "readline";
 import { taskHint } from "../config";
 import { StandaloneEngine } from "../webview/StandaloneEngine";
 import type { ServerManager } from "./ServerManager";
@@ -30,13 +29,14 @@ export async function persistLogFile(
   const engine = new StandaloneEngine(hint, locale);
 
   await new Promise<void>((resolve, reject) => {
-    const rl = readline.createInterface({
-      input: fs.createReadStream(filePath, { encoding: "utf-8" }),
-      crlfDelay: Infinity,
-    });
-    rl.on("line", (line) => void engine.feed(line + "\n"));
-    rl.on("error", reject);
-    rl.on("close", () => {
+    // Raw chunks, not readline: readline ends a line at a lone \r too, so every
+    // progress-bar redraw ("\r 1/3 ... 0%\r 1/3 ... 100%") became its own line
+    // and a YOLO epoch was recorded once per redraw. The engine splits on \n
+    // and collapses redraws to their final state, as the Python ingester does.
+    const stream = fs.createReadStream(filePath, { encoding: "utf-8" });
+    stream.on("data", (chunk) => void engine.feed(String(chunk)));
+    stream.on("error", reject);
+    stream.on("end", () => {
       engine.flush();
       engine.finish();
       resolve();

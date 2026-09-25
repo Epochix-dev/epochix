@@ -37,58 +37,21 @@ import {
   resolveLocale,
   type Locale,
 } from "../story/narrator";
-import { NEVER_METRICS } from "../parsers/neverMetrics";
 import type { StoryFrameMsg, MilestoneMsg, WarningMsg, RunSummaryMsg } from "./messages";
 import { parseArchitecture, type ArchLayer } from "../story/architecture";
 import {
-  CANONICAL_MAP,
   ON_SCALE,
   PREFERRED_KEYS,
-  SPLIT_PREFIXES,
+  SNIFF_SAMPLE_LINES,
+  SNIFF_THRESHOLD,
   TASK_SIGNALS,
-  UNIT_SUFFIXES,
-  VALIDATION_PREFIXES,
 } from "../story/engineTables.generated";
+import { canonicalise, isRecognised } from "../story/canonical";
+import { FastAIParser } from "../parsers/fastai";
+import { AccelerateParser } from "../parsers/accelerate";
 
-// ── Canonical key normalisation ───────────────────────────────────────────────
-//
-// The tables are GENERATED from the Python engine (story/engineTables.generated.ts)
-// and this is Python's canonicalize_key, step for step. Both used to be ported by
-// hand: a differential run found 170 of 319 names canonicalised differently —
-// `valid_loss` and `eval_loss` became TRAINING loss here, and `val_mae` merged
-// into training MAE, so the same log got a different primary metric and grade
-// depending on which engine read it.
-
-function stripUnits(key: string): string {
-  for (const suffix of UNIT_SUFFIXES) {
-    if (key.endsWith(suffix) && key.length > suffix.length) return key.slice(0, -suffix.length);
-  }
-  return key;
-}
-
-/**
- * Canonical name for a raw metric key. Unlike Python, which files every
- * unknown key under "custom", an unknown key keeps its own name: this engine
- * narrates a custom run by the metric it actually logged.
- */
-function canonicalise(key: string): string {
-  const k = key.toLowerCase().trim();
-  const direct = CANONICAL_MAP.get(k);
-  if (direct !== undefined) return direct;
-  const base = CANONICAL_MAP.get(stripUnits(k));
-  if (base !== undefined) return base;
-  for (const pre of SPLIT_PREFIXES) {
-    if (k.startsWith(pre)) {
-      const rest = stripUnits(k.slice(pre.length));
-      const held = VALIDATION_PREFIXES.has(pre) ? CANONICAL_MAP.get(`val_${rest}`) : undefined;
-      if (held !== undefined) return held;
-      const plain = CANONICAL_MAP.get(rest);
-      if (plain !== undefined) return plain;
-      break;
-    }
-  }
-  return key;
-}
+// Metric names are canonicalised by story/canonical.ts — Python's
+// canonicalize_key over tables generated from it.
 
 // ── Task detection ────────────────────────────────────────────────────────────
 
@@ -97,12 +60,11 @@ function canonicalise(key: string): string {
 // house-price MAE against bands built for angles in degrees.
 const GAZE_HINT = /gaze|angular|pitch|yaw|eye_|_eye\b|fixation/i;
 
-function detectTask(metrics: readonly RawMetric[]): TaskType {
+function detectTask(keys: ReadonlySet<string>, rawKeys: ReadonlySet<string>): TaskType {
   // First match wins, a run matching nothing is CUSTOM — as in Python.
-  const keys = new Set(metrics.map((m) => canonicalise(m.key)));
   for (const [task, signals] of TASK_SIGNALS) {
     if ([...signals].some((s) => keys.has(s))) {
-      if (task === "regression" && metrics.some((m) => GAZE_HINT.test(m.key))) {
+      if (task === "regression" && [...rawKeys].some((k) => GAZE_HINT.test(k))) {
         return "gaze";
       }
       return task;
@@ -127,59 +89,48 @@ const PAST_PEAK_REL_DROP = 0.01;
 const STALL_MIN_EPOCHS = 3;
 const STALL_REL_IMPROVEMENT = 0.03;
 
-// Logged beside the metrics but never a measure of the model.
-const AUXILIARY = /^(lr|learning_rate|epoch|step|steps|iter|iteration|time|eta|it_s|samples_per_second|grad_norm)$/i;
-
 /**
- * The key this run should be narrated by: the task's first preferred key that
- * was actually logged, compared case-insensitively because canonical names are
- * mixed case ("mIoU") while logs are not. A CUSTOM run with none of them takes
- * the first real metric it logged, by its real name.
+ * The key this run is narrated by — Python's _effective_primary_key: the
+ * task's first preferred key that has been logged; for a CUSTOM run with none
+ * of them, the first metric we do not recognise, under its own name; else the
+ * task's default. `seen` is in the order keys were first logged.
  */
-function primaryMetricFrom(
-  task: TaskType,
-  seen: ReadonlyArray<string>,
-): string {
-  const byLower = new Map<string, string>();
-  for (const k of seen) if (!byLower.has(k.toLowerCase())) byLower.set(k.toLowerCase(), k);
-  for (const key of PREFERRED_KEYS[task]) {
-    const hit = byLower.get(key.toLowerCase());
-    if (hit !== undefined) return hit;
+function primaryMetricFrom(task: TaskType, seen: ReadonlyArray<string>): string {
+  const logged = new Set(seen);
+  for (const key of PREFERRED_KEYS[task]) if (logged.has(key)) return key;
+  if (task === "custom") {
+    const unknown = seen.find((k) => !isRecognised(k));
+    if (unknown !== undefined) return unknown;
   }
-  const real = seen.find((k) => !NEVER_METRICS.has(k.toLowerCase()) && !AUXILIARY.test(k));
-  return real ?? primaryMetricFor(task);
+  return PREFERRED_KEYS[task][0] ?? "val_loss";
 }
 
-function primaryMetricFor(task: TaskType): string {
-  switch (task) {
-    case "detection": return "mAP50";
-    case "nlp": return "perplexity";
-    case "biometric": return "EER";
-    case "gaze": return "MAE";
-    case "segmentation": return "mIoU";
-    case "regression": return "MAE";
-    case "custom": return "val_loss";
-    default: return "val_accuracy";
-  }
+// Python's _clean_line: ANSI escapes and colour codes whose ESC byte was lost
+// go, and a carriage-return redraw collapses to its final state.
+// eslint-disable-next-line no-control-regex -- matching ESC is the point
+const ANSI = /\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])/g;
+const ORPHAN_SGR = /\[(?:\d{1,3}(?:;\d{1,3}){0,8})?m/g;
+const MAX_LINE_LEN = 65536;
+
+function cleanLine(text: string): string {
+  let t = text.length > MAX_LINE_LEN ? text.slice(0, MAX_LINE_LEN) : text;
+  t = t.replace(ANSI, "").replace(ORPHAN_SGR, "");
+  if (t.endsWith("\r")) t = t.slice(0, -1);
+  const cr = t.lastIndexOf("\r");
+  return cr >= 0 ? t.slice(cr + 1) : t;
 }
 
 // ── Engine ────────────────────────────────────────────────────────────────────
 
-// Pick a parser the moment one recognises the format, and stop waiting for a
-// confident answer after this many lines. The bar is 0.45 because that is what
-// Keras scores on a `verbose=2` run — no ASCII progress bar, just "Epoch 1/5"
-// followed by "100/100 - 2s - loss: …", which is what every redirected or
-// non-TTY run prints. Universal floors at 0.10 and is always kept as a
-// fallback alongside the winner, so an early pick is never fatal.
-const CONFIDENT_SNIFF = 0.45;
-// If nothing has recognised the format by now it is a plain key=value log, and
-// universal will handle it — stop holding output back. Kept small because a
-// LIVE run must start drawing during training, not only when it ends.
-const MAX_SNIFF_LINES = 6;
-
-// Metrics needed before the task can be classified. Everything parsed before
-// that is banked and replayed, so no epoch is lost to the warmup.
-const TASK_MIN_METRICS = 4;
+// As the Python pipeline: sample SNIFF_SAMPLE_LINES lines (or everything, at
+// flush()/settle()) before choosing ONE parser. Deciding after six lines chose
+// on a preamble — a Lightning banner, a YOLO model summary — and the old
+// "best parser plus universal on every line" then read that banner's
+// "using: 0" and every tqdm "[00:12" as metrics.
+//
+// Events before the task can first be classified; banked and replayed so no
+// epoch is lost (Python: `_events_count >= 3`).
+const WARMUP_EVENTS = 3;
 
 interface WarmupLine {
   metrics: RawMetric[];
@@ -194,14 +145,25 @@ const _ARCH_SCAN_LINES = 200;
 export class StandaloneEngine {
   private readonly _parsers: Parser[];
   private _activeParsers: Parser[] | null = null;
+  // Reads recognised metrics off a line the chosen parser could not (Python's
+  // _fallback_metrics). Null when the run is on the universal parser.
+  private _fallback: UniversalParser | null = null;
+  // Canonical keys in the order first logged, their raw names, and how many
+  // readings of each — Python's _metric_history, _seen_raw_keys.
+  private _seenKeys: string[] = [];
+  private _rawKeys = new Set<string>();
+  private _keyCounts = new Map<string, number>();
+  private _eventsCount = 0;
+  private _taskLocked = false;
+  private _primaryKeyUsed: string | null = null;
   private _pending: string[] = [];
   private _warmup: WarmupLine[] = [];
   private _taskDetected = false;
   private _ctx: ParserContext = makeContext();
 
   private _runId = generateId();
-  private _task: TaskType = "classification";
-  private _primaryMetric = "val_accuracy";
+  private _task: TaskType = "custom";
+  private _primaryMetric = "val_loss";
   private _baseline: number | null = null;
   private _lastPrimary = 0;
   private _primaryReadings = 0;
@@ -227,16 +189,11 @@ export class StandaloneEngine {
   private _archScan: string[] = [];
   private _architecture: ArchLayer[] = [];
 
-  // A task the user pinned (`epochix.taskHint`). Detection runs after the
-  // first few metrics and used to overwrite it, so the setting did nothing.
-  private readonly _taskHint: TaskType | undefined;
-
   // The language the story is told in (`epochix.locale`). The engine used to
   // have English templates only, whatever the setting said.
   private readonly _locale: Locale;
 
   constructor(taskHint?: TaskType, locale?: string) {
-    this._taskHint = taskHint;
     this._locale = resolveLocale(locale);
     this._parsers = [
       new PytorchLightningParser(),
@@ -244,12 +201,17 @@ export class StandaloneEngine {
       new HuggingFaceParser(),
       new YoloParser(),
       new BoostingParser(),
+      new FastAIParser(),
+      new AccelerateParser(),
       new UniversalParser(),
     ].sort((a, b) => b.priority - a.priority);
 
+    // A task the user pinned (`epochix.taskHint`) is locked in, so detection
+    // cannot overwrite it — it once did, and the setting did nothing.
     if (taskHint) {
       this._task = taskHint;
-      this._primaryMetric = primaryMetricFor(taskHint);
+      this._taskLocked = true;
+      this._primaryMetric = primaryMetricFrom(taskHint, []);
     }
   }
 
@@ -259,8 +221,9 @@ export class StandaloneEngine {
     const newFrames: StoryFrameMsg[] = [];
 
     // Process complete lines
-    const lines = this._buffer.split(/\r?\n/);
-    this._buffer = lines.pop() ?? "";
+    const parts = this._buffer.split(/\r?\n/);
+    this._buffer = parts.pop() ?? "";
+    const lines = parts.map(cleanLine);
 
     // A model summary is printed once, at the top. Scan a bounded window for
     // one and stop as soon as it is found.
@@ -306,21 +269,36 @@ export class StandaloneEngine {
     const newFrames: StoryFrameMsg[] = [];
 
     if (this._buffer.length > 0) {
-      const last = this._buffer;
+      const last = cleanLine(this._buffer);
       this._buffer = "";
       if (this._activeParsers === null) this._pending.push(last);
       else newFrames.push(...this._processLine(last));
     }
 
-    if (this._activeParsers === null && this._pending.length > 0) {
-      this._activeParsers = this._selectParsers(this._pending);
-      const backlog = this._pending;
-      this._pending = [];
-      for (const held of backlog) newFrames.push(...this._processLine(held));
-    }
+    newFrames.push(...this.settle());
+
+    // Metrics that only exist once the stream ends: a cross-validation's mean.
+    const parser = this._activeParsers?.[0];
+    const tail = parser?.flush ? parser.flush(this._ctx) : [];
+    if (tail.length > 0) newFrames.push(...this._handleMetrics(tail));
 
     newFrames.push(...this._drainWarmup(true));
     return newFrames;
+  }
+
+  /**
+   * Choose the parser now, on whatever has been sampled — Python's idle
+   * flush. A live run shorter than the sniff window would otherwise draw
+   * nothing until it ended; callers invoke this when output goes quiet.
+   */
+  settle(): StoryFrameMsg[] {
+    if (this._activeParsers !== null || this._pending.length === 0) return [];
+    this._activeParsers = this._selectParsers(this._pending);
+    const backlog = this._pending;
+    this._pending = [];
+    const out: StoryFrameMsg[] = [];
+    for (const held of backlog) out.push(...this._processLine(held));
+    return out;
   }
 
   /** Finish the run; returns a summary. */
@@ -388,20 +366,9 @@ export class StandaloneEngine {
 
   // ── Private ──────────────────────────────────────────────────────────────────
 
-  /**
-   * Pick parsers as soon as one is confident, or once the sample is big enough
-   * to stop waiting. Returns true when a selection was made.
-   */
+  /** Choose once the sniff window is full, as the Python pipeline does. */
   private _trySelectParsers(): boolean {
-    const scores = this._parsers.map((p) => ({
-      parser: p,
-      score: p.sniff(this._pending),
-    }));
-    scores.sort((a, b) => b.score - a.score);
-
-    if (scores[0].score < CONFIDENT_SNIFF && this._pending.length < MAX_SNIFF_LINES) {
-      return false;
-    }
+    if (this._pending.length < SNIFF_SAMPLE_LINES) return false;
     this._activeParsers = this._selectParsers(this._pending);
     return true;
   }
@@ -409,54 +376,91 @@ export class StandaloneEngine {
   /** Parse one line and turn it into a frame (or bank it during warmup). */
   private _processLine(line: string): StoryFrameMsg[] {
     this._ctx.seq++;
-    const metrics = this._activeParsers!.flatMap((p) =>
-      p.parseLine(line, this._ctx),
-    );
+    let metrics = this._activeParsers![0].parseLine(line, this._ctx);
+    if (metrics.length === 0 && this._fallback !== null) {
+      metrics = this._fallbackMetrics(line);
+    }
+
+    // `loss: nan` never reaches the parsers — none of them reads a non-number.
+    // Checked on the raw line, requiring `:` or `=` so prose cannot trip it.
+    const nonFinite = NON_FINITE_ASSIGNMENT.exec(line);
+    const frames = this._handleMetrics(metrics);
+    if (nonFinite !== null && !this._diverged) {
+      if (!this._taskDetected) frames.push(...this._drainWarmup(true));
+      const frame = this._divergenceFrame(canonicalise(nonFinite[1]), this._ctx.currentEpoch);
+      if (frame !== null) frames.push(this._emit(frame));
+    }
+    return frames;
+  }
+
+  /**
+   * Recognised metrics the chosen parser could not read on this line, read on
+   * a scratch context so prose cannot move the step axis — Python's
+   * _fallback_metrics. A line that carried real metrics also carried their
+   * epoch, and later lines without one belong to it.
+   */
+  private _fallbackMetrics(line: string): RawMetric[] {
+    const scratch: ParserContext = {
+      ...this._ctx,
+      axis: null,
+      heldUnrecognised: new Map(),
+      emittedKeys: new Set(),
+      cvFolds: new Map(),
+      cvCandidates: new Map(),
+    };
+    const metrics = this._fallback!.parseLine(line, scratch).filter((m) => isRecognised(m.key));
+    if (metrics.length > 0) {
+      this._ctx.currentEpoch = scratch.currentEpoch;
+      this._ctx.totalEpochs = scratch.totalEpochs;
+    }
+    return metrics;
+  }
+
+  /** One line's metrics: record them, then warm up or build a frame. */
+  private _handleMetrics(metrics: RawMetric[]): StoryFrameMsg[] {
     this._allMetrics.push(...metrics);
     for (const m of metrics) {
       const key = canonicalise(m.key);
+      if (!this._keyCounts.has(key)) this._seenKeys.push(key);
+      this._keyCounts.set(key, (this._keyCounts.get(key) ?? 0) + 1);
+      this._rawKeys.add(m.key);
       if (key === "train_loss") this._trainLosses.push(m.value);
       else if (key === "val_loss") this._valLosses.push(m.value);
     }
-
-    // `loss: nan` never reaches the parsers — none of them reads a non-number —
-    // so a diverged run's story simply stopped at its last finite epoch and kept
-    // the grade it had earned before blowing up. Checked on the raw line,
-    // requiring `:` or `=` so prose ("info", "inf batches") cannot trip it.
-    const nonFinite = NON_FINITE_ASSIGNMENT.exec(line);
-    if (nonFinite !== null && !this._diverged) {
-      const out: StoryFrameMsg[] = [];
-      if (!this._taskDetected) out.push(...this._drainWarmup(true));
-      const frame = this._divergenceFrame(canonicalise(nonFinite[1]), this._ctx.currentEpoch);
-      if (frame !== null) out.push(this._emit(frame));
-      return out;
-    }
+    this._eventsCount += metrics.length;
+    this._classify();
 
     if (!this._taskDetected) {
       if (metrics.length > 0) {
         // Snapshot the epoch: these frames are built later, by which time the
-        // parser context has moved on to a different epoch.
+        // parser context has moved on.
         this._warmup.push({
           metrics,
           epoch: this._ctx.currentEpoch,
           totalEpochs: this._ctx.totalEpochs,
         });
       }
-      // `=== 10` used to mean a log emitting 3 metrics per line counted
-      // 3,6,9,12 and NEVER hit it — so the task was never detected and not one
-      // frame was ever built.
-      if (this._allMetrics.length >= TASK_MIN_METRICS) {
-        return this._drainWarmup(false);
-      }
-      return [];
+      return this._eventsCount >= WARMUP_EVENTS ? this._drainWarmup(false) : [];
     }
 
-    const frame = this._buildFrame(
-      metrics,
-      this._ctx.currentEpoch,
-      this._ctx.totalEpochs,
-    );
+    if (metrics.length === 0) return [];
+    this._primaryMetric = primaryMetricFrom(this._task, this._seenKeys);
+    const frame = this._buildFrame(metrics, this._ctx.currentEpoch, this._ctx.totalEpochs);
     return frame ? [this._emit(frame)] : [];
+  }
+
+  /**
+   * Classify while the answer is still CUSTOM, locking only on a definite
+   * task — Python's process_all. Locking after the first few metrics
+   * classified a Hugging Face log on `loss` and `learning_rate` alone.
+   */
+  private _classify(force = false): void {
+    if (this._taskLocked || (!force && this._eventsCount < WARMUP_EVENTS)) return;
+    const detected = detectTask(new Set(this._seenKeys), this._rawKeys);
+    if (detected !== "custom") {
+      this._task = detected;
+      this._taskLocked = true;
+    }
   }
 
   /**
@@ -466,13 +470,15 @@ export class StandaloneEngine {
   private _drainWarmup(force: boolean): StoryFrameMsg[] {
     if (this._taskDetected) return [];
     if (this._allMetrics.length === 0) return [];
-    if (!force && this._allMetrics.length < TASK_MIN_METRICS) return [];
+    if (!force && this._eventsCount < WARMUP_EVENTS) return [];
 
-    this._task = this._taskHint ?? detectTask(this._allMetrics);
-    this._primaryMetric = primaryMetricFrom(
-      this._task,
-      [...new Set(this._allMetrics.map((m) => canonicalise(m.key)))],
-    );
+    // Flushed early (a log with fewer than three readings) the task is still
+    // classified, as Python's flush_warmup does — otherwise a one-line result
+    // stayed CUSTOM and found no metric to tell.
+    if (force) this._classify(true);
+    // Every banked line's keys count: Python replays its buffered events
+    // with the whole buffer already in history.
+    this._primaryMetric = primaryMetricFrom(this._task, this._seenKeys);
     this._taskDetected = true;
 
     const out: StoryFrameMsg[] = [];
@@ -491,21 +497,26 @@ export class StandaloneEngine {
     return frame;
   }
 
+  /** detect_parser: the highest score in priority order, universal below the threshold. */
   private _selectParsers(sampleLines: readonly string[]): Parser[] {
-    const scores = this._parsers.map((p) => ({
-      parser: p,
-      score: p.sniff(sampleLines),
-    }));
-    scores.sort((a, b) => b.score - a.score);
-    // Keep top parser plus universal
-    const best = scores[0];
+    let best: Parser | null = null;
+    let bestScore = -1;
+    for (const p of this._parsers) {
+      let score: number;
+      try {
+        score = p.sniff(sampleLines);
+      } catch {
+        score = 0;
+      }
+      if (score > bestScore) {
+        bestScore = score;
+        best = p;
+      }
+    }
     const universal = this._parsers.find((p) => p.name === "universal")!;
-    if (best.parser.name === "universal") return [universal];
-    // A boosting row is read whole by its own parser. Universal alongside it
-    // re-read the same row with its collapsed keys — a duplicate `logloss`
-    // series, and CatBoost's derived `best` column charted as a metric.
-    if (best.parser.name === "boosting") return [best.parser];
-    return [best.parser, universal];
+    const chosen = best === null || bestScore < SNIFF_THRESHOLD ? universal : best;
+    this._fallback = chosen.name === "universal" ? null : new UniversalParser();
+    return [chosen];
   }
 
   private _buildFrame(
@@ -521,6 +532,19 @@ export class StandaloneEngine {
     const primary = primaryMetrics[primaryMetrics.length - 1];
     const value = primary.value;
     const key = this._primaryMetric;
+
+    // The story's metric can change once the task is known (a run whose first
+    // lines were only losses starts on the CUSTOM fallback). Restart the
+    // baseline and best, so trajectory maths never mixes a loss with an
+    // accuracy — as Python does.
+    if (this._primaryKeyUsed !== null && this._primaryKeyUsed !== key) {
+      this._baseline = null;
+      this._best = null;
+      this._bestEpoch = null;
+      this._lastPrimary = value;
+      this._primaryReadings = 0;
+    }
+    this._primaryKeyUsed = key;
 
     if (this._baseline === null) this._baseline = value;
     const delta = value - this._lastPrimary;
@@ -603,6 +627,7 @@ export class StandaloneEngine {
       phase,
       grade,
       primaryMetricValue: value,
+      primaryMetric: key,
       confidence: primary.confidence,
       narrative,
       taskType: this._task,
