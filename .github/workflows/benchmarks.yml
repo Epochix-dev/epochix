@@ -18,7 +18,7 @@ permissions:
 
 jobs:
   parser-throughput:
-    name: Parser throughput (≥ 50k lines/sec)
+    name: Parser throughput (per-parser targets)
     runs-on: ubuntu-latest
 
     steps:

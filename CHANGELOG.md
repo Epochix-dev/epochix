@@ -79,6 +79,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   the W&B offline import and the PDF render check. They skipped everywhere
   before, and the job fails if any of them skips.
 
+### Performance
+
+- **The universal parser is 1.5x faster** (16.7k to 25k lines/sec on CI), with
+  byte-identical output over 644,355 lines from every log in the repository.
+  Each of its patterns was scanning a line twice. The parser benchmark had
+  never run until now; it has per-parser targets, and the universal parser's
+  gap to 50k is recorded in ROADMAP.md rather than hidden.
+
 ### Removed
 
 - `scripts/_gen_templates.py` and `scripts/_gen_i18n_templates.py`: one-shot

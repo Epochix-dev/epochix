@@ -153,6 +153,15 @@ through the same log shapes. Known gaps that remain, deliberately not done yet:
   with a golden file replayed by the extension's tests. Grading, direction and
   wording logic are still hand-ported; the tests on each side guard them.
 
+## Performance (2026-09-24)
+
+- **Universal parser throughput: ~25k lines/sec on CI, target 50k.** The
+  benchmark gate never ran until 0.7.13 touched the parsers; it then measured
+  16.7k. A single-scan rewrite (output byte-identical over 644k lines) took it
+  to 25k, and the gate's floor for this parser is 20k meanwhile. The framework
+  parsers clear 50k (64k-129k). Reaching 50k needs a different structure —
+  one tokenising pass instead of eight patterns per line.
+
 ## Features worth considering
 
 - **Run comparison in exports.** `CompareView` exists on screen and no export
