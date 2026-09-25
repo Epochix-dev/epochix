@@ -5,6 +5,7 @@ from __future__ import annotations
 import re
 from typing import TYPE_CHECKING
 
+from epochix import cross_validation
 from epochix.i18n import t
 from epochix.story_engine.messages import phase_name
 
@@ -165,6 +166,9 @@ def build_markdown(run_id: str, store: RunStore) -> str:
             lines.append(f"| `{_code_safe(key)}` | `{val:.4f}` |")
         lines.append("")
 
+    # ── Cross-validation / parameter search ───────────────────────────────
+    lines.extend(_cv_section(run.config or {}, locale))
+
     # ── Milestones ────────────────────────────────────────────────────────
     milestone_frames = [f for f in frames if f.milestones]
     if milestone_frames:
@@ -173,7 +177,11 @@ def build_markdown(run_id: str, store: RunStore) -> str:
         for frame in milestone_frames:
             for m in frame.milestones:
                 emoji = _MILESTONE_EMOJI.get(m.kind, "📌")
-                epoch_str = f" (epoch {frame.epoch})" if frame.epoch is not None else ""
+                epoch_str = (
+                    f" ({t('cover.epoch_n', locale)} {frame.epoch:g})"
+                    if frame.epoch is not None
+                    else ""
+                )
                 msg = m.message or m.kind.replace("_", " ").title()
                 lines.append(f"- {emoji} **{msg}**{epoch_str}")
         lines.append("")
@@ -199,3 +207,39 @@ def build_markdown(run_id: str, store: RunStore) -> str:
     lines.append("")
 
     return "\n".join(lines)
+
+
+def _cv_section(config: dict[str, object], locale: str) -> list[str]:
+    """Every setting a search tried, or a plain cross-validation's folds.
+
+    Only one number per metric reaches the chart; this is where the rest go,
+    so a search's comparison — the reason to run one — leaves the terminal.
+    """
+    cv = config.get("cross_validation")
+    if not isinstance(cv, dict):
+        return []
+    rows = cross_validation.summarise(cv)
+    if not rows:
+        return []
+    search = cross_validation.is_search(cv)
+    out = [f"## {t('cv.search_title' if search else 'cv.title', locale)}", ""]
+    head = [t("cv.metric", locale), t("cv.mean", locale), t("cv.spread", locale)]
+    head += [t("cv.range", locale), t("cv.folds", locale)]
+    if search:
+        head.insert(0, t("cv.setting", locale))
+    out.append("| " + " | ".join(head) + " |")
+    out.append("|" + "---|" * len(head))
+    for r in rows:
+        cells = [
+            f"`{_code_safe(r.metric)}`",
+            f"**{r.mean:.4g}**" if r.chosen else f"{r.mean:.4g}",
+            "" if r.std is None else f"{r.std:.4g}",
+            f"{r.lowest:.4g} – {r.highest:.4g}",
+            str(r.folds),
+        ]
+        if search:
+            mark = f" ({t('cv.chosen', locale)})" if r.chosen else ""
+            cells.insert(0, f"`{_code_safe(r.setting)}`{mark}")
+        out.append("| " + " | ".join(cells) + " |")
+    out += ["", f"*{t('cv.search_note' if search else 'cv.note', locale)}*", ""]
+    return out

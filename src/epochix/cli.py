@@ -33,6 +33,7 @@ from typing import TYPE_CHECKING, cast
 import typer
 import uvicorn
 
+from epochix import cross_validation
 from epochix.browser import open_in_browser
 from epochix.config import Settings, get_settings
 from epochix.console import console_safe, console_symbols, harden_streams
@@ -889,17 +890,11 @@ def cmd_check(
             (len(v) for metrics in cv_candidates.values() for v in metrics.values()), default=0
         )
         typer.echo(f"  cross-validation  ({len(cv_candidates)} candidates x {folds_each} folds)")
-        for key in sorted(cv_folds):
-            ranked = sorted(
-                ((label, m[key]) for label, m in cv_candidates.items() if key in m),
-                key=lambda pair: fmean(pair[1]),
-                reverse=True,
-            )
-            for rank, (label, values) in enumerate(ranked):
-                spread = f"+/- {stdev(values):.4g}" if len(values) > 1 else ""
-                mark = "  <- charted" if rank == 0 else ""
-                mean = f"{fmean(values):.4g}"
-                typer.echo(f"    {key:<10} {mean:<8} {spread:<14} {label}{mark}")
+        # Ranked by the same code the exports use, so both name one winner.
+        for r in cross_validation.summarise({"folds": cv_folds, "candidates": cv_candidates}):
+            spread = f"+/- {r.std:.4g}" if r.std is not None else ""
+            mark = "  <- charted" if r.chosen else ""
+            typer.echo(f"    {r.metric:<10} {r.mean:<8.4g} {spread:<14} {r.setting}{mark}")
         typer.echo("    only the winning candidate is charted; fold order carries no meaning.")
         typer.echo("")
     elif cv_folds:

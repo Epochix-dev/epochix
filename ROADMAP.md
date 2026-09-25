@@ -202,6 +202,9 @@ an expectation.
   readings or the metric was still setting new bests (`grade_note`), on the
   dashboard and in the Markdown and PDF reports, from both engines. Five is a
   judgement recorded in `FEW_READINGS`, not a statistic.
-- **Separate GridSearchCV candidates properly.** Fold results are grouped by
-  parameter set and the winner is charted, but `epochix check` reports
-  "N candidates x M folds" without per-candidate detail in exports.
+- ~~**Separate GridSearchCV candidates properly.**~~ Done for the reports:
+  the fold readings are kept on the run (`run.config["cross_validation"]`)
+  and every setting is ranked — mean, spread, range, folds, which one was
+  charted — in the Markdown and PDF reports and the JSON export, by the same
+  function `epochix check` now uses. Not yet on the dashboard, and the VS Code
+  extension's engine does not keep them.
