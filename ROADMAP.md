@@ -36,6 +36,14 @@ groups), warning and milestone messages, dashboard UI (54/54 keys, none
 unused — a test fails on a dead or missing key), the CLI, the exports and the
 VS Code extension's own engine all speak English, Farsi and French.
 
+"Complete" was not quite true, and the gaps were found by building features
+over the translated surfaces rather than by any test: the comparison view's
+labels and its narrative, the PDF cover's "since best … worse/better" row
+(its translations existed, unused), the Markdown milestone suffix "(epoch N)",
+and the grade arc's canvas "Waiting for training data…" were all English in
+every locale. All fixed; the dashboard key count above predates the new
+`compare`, `gradeNotes` and empty-dashboard keys.
+
 What was wrong and is now fixed: the CLI had **no `--locale` flag at all**, so
 the translations existed and the primary interface could not reach them; the
 locale was **never stored on the run**, so nothing downstream could know what
