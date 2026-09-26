@@ -189,9 +189,11 @@ an expectation.
 
 ## Features worth considering
 
-- **Run comparison in exports.** `CompareView` exists on screen and no export
-  format includes it, so the one artifact you would want to send someone —
-  "these two runs, side by side" — cannot leave the browser.
+- ~~**Run comparison in exports.**~~ Done as Markdown: `epochix compare`,
+  `/api/export/compare/md` and a download in the comparison view carry the
+  view's narrative and each run's numbers; the race GIF already carried the
+  curves. A PDF comparison is not built. The view's own labels ("Metric",
+  "Smoothing", the buttons) are still English in every locale.
 - ~~**Say what to do next.**~~ Done. Past-peak, stalled and diverged stories
   end with one fixed "Next step:" sentence each, after whichever variant the
   run drew, and the overfitting and plateau warnings say what to try. Both

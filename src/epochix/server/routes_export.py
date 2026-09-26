@@ -59,6 +59,28 @@ async def export_comparison_gif(
     return Response(content=data, media_type="image/gif", headers=_attachment("comparison", "gif"))
 
 
+@router.get("/compare/md", dependencies=[Depends(require_auth)])
+async def export_comparison_markdown(
+    store: StoreDep,
+    runs: Annotated[str, Query(max_length=1024, description="Comma-separated run ids")],
+) -> Response:
+    """The comparison as a document: its narrative and each run's numbers."""
+    from epochix.exporters.compare_export import build_comparison_markdown
+
+    run_ids = [r.strip() for r in runs.split(",") if r.strip()]
+    for rid in run_ids:
+        _require_run(rid, store)
+    try:
+        text = build_comparison_markdown(run_ids, store)
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
+    return Response(
+        content=text,
+        media_type="text/markdown; charset=utf-8",
+        headers=_attachment("comparison", "md"),
+    )
+
+
 @router.get(
     "/{run_id}/html",
     response_class=HTMLResponse,

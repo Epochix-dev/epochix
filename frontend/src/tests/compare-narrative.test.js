@@ -87,3 +87,21 @@ describe('CompareView narrative', () => {
     expect(el.querySelector('.cmp-narrative').textContent).toContain('<img src=x');
   });
 });
+
+describe('CompareView written comparison', () => {
+  // The explanation above and each run's numbers could not leave the browser;
+  // the race GIF carries curves only. This button downloads the Markdown
+  // comparison from /api/export/compare/md.
+  it('offers the download beside the race GIF, for every run on screen', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => ({ ok: true, json: async () => payload(NARRATIVE) })));
+    const { el, view } = mountView();
+    await view.load(['r1', 'r2']);
+    expect(el.querySelector('#cmp-md')).toBeTruthy();
+    expect(el.querySelector('#cmp-race')).toBeTruthy();
+  });
+
+  it('asks for every run, with ids escaped', async () => {
+    const { compareMarkdownUrl } = await import('../visualizations/CompareView.js');
+    expect(compareMarkdownUrl(['r1', 'r2', 'r 3'])).toBe('/api/export/compare/md?runs=r1,r2,r%203');
+  });
+});

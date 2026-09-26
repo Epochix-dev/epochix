@@ -94,6 +94,9 @@ export class CompareView {
         <button id="cmp-race" class="cmp-race" title="Animated GIF of these runs racing">
           Download race GIF
         </button>
+        <button id="cmp-md" class="cmp-race" title="The explanation and each run's numbers, as Markdown">
+          Download comparison (.md)
+        </button>
       </div>
       <div class="cmp-chart-wrap"><canvas id="cmp-canvas"></canvas></div>
       <div class="cmp-legend" id="cmp-legend"></div>
@@ -101,6 +104,14 @@ export class CompareView {
 
     this._canvas = this._el.querySelector('#cmp-canvas');
     this._ctx = this._canvas.getContext('2d');
+
+    // The written comparison: the paragraph above and each run's numbers, the
+    // part a GIF cannot carry. Every run on screen, not the GIF's six.
+    this._el.querySelector('#cmp-md')?.addEventListener('click', () => {
+      const ids = this._runs.map((r) => r.run.id);
+      if (ids.length < 2) return;
+      window.location.href = compareMarkdownUrl(ids);
+    });
 
     // The race GIF is the thing people put in a slide, and until now the only
     // way to reach it was to hand-write the URL.
@@ -286,4 +297,9 @@ function _fmt(v) {
   if (Math.abs(v) >= 100) return v.toFixed(0);
   if (Math.abs(v) >= 1) return v.toFixed(2);
   return v.toFixed(3);
+}
+
+/** Where the written comparison of these runs downloads from. */
+export function compareMarkdownUrl(ids) {
+  return `/api/export/compare/md?runs=${ids.map(encodeURIComponent).join(',')}`;
 }

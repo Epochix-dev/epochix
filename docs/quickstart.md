@@ -128,7 +128,8 @@ epochix --help
 | `epochix serve` | Start the dashboard server only |
 | `epochix list` | List all saved runs |
 | `epochix export <id> --format html` | Export a run |
-| `epochix compare <id1> <id2>` | Side-by-side run comparison |
+| `epochix compare <id1> <id2>` | Side-by-side run comparison, as Markdown |
+| `epochix race <id1> <id2>` | The comparison as an animated GIF |
 | `epochix prune --older-than 30d` | Delete old runs |
 
 ---

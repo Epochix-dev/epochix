@@ -9,6 +9,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added — a comparison you can send
+
+- **The comparison view's explanation could not leave the browser.** The race
+  GIF carried the curves; the paragraph saying who finished ahead and why —
+  or why the runs cannot honestly be ranked — and the numbers behind it
+  existed only on screen. It is now a Markdown document: the same narrative,
+  and each run's grade, metric, final and best value (with its epoch), epoch
+  count and grade note. From `epochix compare <a> <b> [-o file]`,
+  `GET /api/export/compare/md?runs=a,b`, and a *Download comparison* button
+  beside the race GIF. In English, Farsi and French.
+- **`epochix compare` was documented in the quickstart and did not exist.** It
+  does now.
+- The comparison view's narrative was English whatever language the runs were
+  told in; it now uses theirs.
+
 ### Added — every setting a parameter search tried, in the reports
 
 - **GridSearchCV's comparison never left the terminal.** Fold rows were
