@@ -77,5 +77,19 @@
       "few_readings": "Provisoire : cette note repose sur moins de cinq mesures de la métrique.",
       "still_improving": "Encore en progrès à la dernière mesure — la note montre où l'exécution est arrivée, pas où elle allait."
     }
+  },
+  "compare": {
+    "loading": "Chargement des exécutions…",
+    "loadFailed": "Impossible de charger les exécutions :",
+    "noRuns": "Aucune exécution à comparer. Choisissez-en dans la",
+    "runsList": "liste des exécutions",
+    "metric": "Métrique",
+    "smoothing": "Lissage",
+    "runs": "{n} exécutions",
+    "raceGif": "Télécharger le GIF de course",
+    "raceGifTitle": "GIF animé de la course entre ces exécutions",
+    "comparisonMd": "Télécharger la comparaison (.md)",
+    "comparisonMdTitle": "L'explication et les chiffres de chaque exécution, en Markdown",
+    "rendering": "Génération…"
   }
 }

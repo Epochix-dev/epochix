@@ -105,3 +105,36 @@ describe('CompareView written comparison', () => {
     expect(compareMarkdownUrl(['r1', 'r2', 'r 3'])).toBe('/api/export/compare/md?runs=r1,r2,r%203');
   });
 });
+
+describe('CompareView labels', () => {
+  // Every label on this view was an English literal, so a Farsi or French
+  // dashboard showed its comparison controls in English.
+  it('has every label in every locale', async () => {
+    const [en, fa, fr] = await Promise.all(
+      ['en', 'fa', 'fr'].map((l) => import(`../i18n/${l}.json`).then((m) => m.default)),
+    );
+    for (const cat of [fa, fr]) {
+      expect(Object.keys(cat.compare).sort()).toEqual(Object.keys(en.compare).sort());
+    }
+  });
+
+  it('renders in the dashboard language', async () => {
+    const { setActiveI18n } = await import('../i18n/apply.js');
+    const fr = (await import('../i18n/fr.json')).default;
+    setActiveI18n(fr);
+    try {
+      vi.stubGlobal('fetch', vi.fn(async () => ({ ok: true, json: async () => payload(NARRATIVE) })));
+      const { el, view } = mountView();
+      await view.load(['r1', 'r2']);
+      const text = el.querySelector('.cmp-controls').textContent;
+      expect(text).toContain(fr.compare.smoothing);
+      expect(text).toContain('2 exécutions');
+      expect(text).toContain(fr.compare.comparisonMd);
+      for (const english of ['Smoothing', 'Download race GIF', 'runs']) {
+        expect(text).not.toContain(english);
+      }
+    } finally {
+      setActiveI18n(null);
+    }
+  });
+});

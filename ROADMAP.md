@@ -192,8 +192,8 @@ an expectation.
 - ~~**Run comparison in exports.**~~ Done as Markdown: `epochix compare`,
   `/api/export/compare/md` and a download in the comparison view carry the
   view's narrative and each run's numbers; the race GIF already carried the
-  curves. A PDF comparison is not built. The view's own labels ("Metric",
-  "Smoothing", the buttons) are still English in every locale.
+  curves. A PDF comparison is not built. The view's own labels, English in
+  every locale until now, are translated.
 - ~~**Say what to do next.**~~ Done. Past-peak, stalled and diverged stories
   end with one fixed "Next step:" sentence each, after whichever variant the
   run drew, and the overfitting and plateau warnings say what to try. Both

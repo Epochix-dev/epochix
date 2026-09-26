@@ -22,7 +22,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **`epochix compare` was documented in the quickstart and did not exist.** It
   does now.
 - The comparison view's narrative was English whatever language the runs were
-  told in; it now uses theirs.
+  told in; it now uses theirs. The view's own labels — metric, smoothing,
+  run count, both download buttons, loading and error text — were English
+  literals in every locale and are translated.
 
 ### Added — every setting a parameter search tried, in the reports
 
