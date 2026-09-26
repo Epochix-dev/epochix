@@ -7,7 +7,32 @@ follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 The extension version tracks the Python package; bug fixes in the shared
 frontend ship to both at once.
 
+**This file stopped being updated after 0.2.0.** Every release from 0.2.1 to
+0.7.15 is recorded in the
+[project changelog](https://github.com/epochix-dev/epochix/blob/main/CHANGELOG.md),
+which covers the extension too; entries here resume with 0.7.16.
+
 ---
+
+## [0.7.16] — 2026-09-25
+
+### Added
+
+- **An empty dashboard explains itself.** A panel opened with no log and no
+  terminal read "Waiting for training data…" forever. It now says nothing is
+  loaded and offers *Try the demo*, *Open a log file* and *Watch the active
+  terminal* as buttons. A log with no metrics says so instead of waiting.
+- **A run that went wrong is told what to do next** — past its peak, stalled,
+  diverged, overfitting, plateaued — in English, Farsi and French.
+- **A grade says when it is provisional**: fewer than five readings, or a
+  metric still setting new bests. Shown under the grade.
+- **The comparison view can download a written comparison** (Markdown) beside
+  the race GIF, and its labels are translated.
+
+### Fixed
+
+- Frames' `confidence` carried the parser's certainty about a line; it is the
+  run's advancement, as in the Python engine.
 
 ## [0.2.0] — 2026-05-26
 
