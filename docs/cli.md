@@ -92,6 +92,28 @@ epochix export <run_id> --format md --output report.md
 
 PDF needs the extra: `pip install 'epochix[pdf]'`.
 
+## `epochix compare`
+
+Compare two or more saved runs as a Markdown document: the same explanation
+the dashboard's comparison view gives — who finished ahead, or why the runs
+cannot honestly be ranked — and each run's grade, final and best value.
+
+```bash
+epochix compare <run_a> <run_b> --output comparison.md
+```
+
+Without `--output` it prints to the terminal. It is told in the first run's
+language unless `--locale` says otherwise. The comparison view in the
+dashboard has the same download beside its race GIF.
+
+## `epochix race`
+
+Animate several runs racing on one metric, as a GIF for a slide.
+
+```bash
+epochix race <run_a> <run_b> --metric val_accuracy --output race.gif
+```
+
 ## `epochix prune`
 
 Delete runs older than a given age. Check first with `--dry-run`:

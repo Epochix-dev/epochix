@@ -674,6 +674,38 @@ def cmd_race(
     typer.echo(f"  Race GIF -> {output}")
 
 
+@app.command("compare")
+def cmd_compare(
+    run_ids: list[str] = typer.Argument(..., help="Two or more run IDs to compare."),
+    output: Path | None = typer.Option(
+        None, "--output", "-o", help="Write Markdown here instead of printing it."
+    ),
+    locale: str | None = typer.Option(
+        None, "--locale", help="Language (default: the first run's)."
+    ),
+    log_level: str = typer.Option("WARNING", "--log-level"),
+) -> None:
+    """Compare runs as a document: why they differ, and each run's numbers.
+
+    The written counterpart of `race`: the same explanation the dashboard's
+    comparison view gives, with every run's grade, final and best value.
+    """
+    _configure_logging(log_level)
+    store = _open_store(get_settings())
+    from epochix.exporters.compare_export import build_comparison_markdown
+
+    try:
+        text = build_comparison_markdown(list(run_ids), store, locale=locale)
+    except ValueError as exc:
+        typer.echo(f"  Cannot compare these runs: {exc}", err=True)
+        raise typer.Exit(1) from None
+    if output is None:
+        typer.echo(console_safe(text))
+    else:
+        output.write_text(text, encoding="utf-8")
+        typer.echo(f"  Comparison -> {output}")
+
+
 @app.command("prune")
 def cmd_prune(
     older_than: str = typer.Option("30d", "--older-than", help="Delete runs older than N days."),

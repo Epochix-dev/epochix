@@ -19,9 +19,15 @@ from __future__ import annotations
 
 import statistics
 from dataclasses import dataclass
+from typing import TYPE_CHECKING
 
 from epochix.story_engine.grade import metric_lower_better
 from epochix.story_engine.narrator import _load_special
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
+
+    from epochix.models import Run, StoryFrame
 
 # A gap must exceed this multiple of the runs' own median epoch-to-epoch
 # movement before it is called a difference. Two runs of the same config
@@ -242,3 +248,39 @@ def trajectory_from_frames(
         values=values,
         grade=grade,
     )
+
+
+def run_labels(runs: Sequence[Run]) -> list[str]:
+    """A name per run, with a short id suffix only where two names collide.
+
+    Two runs of the same experiment usually carry the same name, and "X
+    finished ahead of X" is correct and unreadable.
+    """
+    seen: dict[str, int] = {}
+    for run in runs:
+        label = run.name or run.id
+        seen[label] = seen.get(label, 0) + 1
+    return [
+        f"{run.name or run.id} ({run.id[-4:]})"
+        if seen[run.name or run.id] > 1
+        else run.name or run.id
+        for run in runs
+    ]
+
+
+def run_trajectories(
+    entries: Sequence[tuple[Run, Sequence[StoryFrame]]],
+) -> list[RunTrajectory | None]:
+    """Each run's trajectory, labelled for a comparison; None where too short."""
+    labels = run_labels([run for run, _ in entries])
+    return [
+        trajectory_from_frames(
+            label,
+            list(frames),
+            grade=run.final_grade.value if run.final_grade else None,
+            # Frames written before the metric name was stored on them carry a
+            # value and no key; the run record still knows what it is.
+            fallback_metric=run.primary_metric,
+        )
+        for (run, frames), label in zip(entries, labels, strict=True)
+    ]
