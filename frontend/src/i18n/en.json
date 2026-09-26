@@ -77,5 +77,19 @@
       "few_readings": "Provisional: this grade rests on fewer than five readings of the metric.",
       "still_improving": "Still improving at the last reading — the grade shows where the run got to, not where it was heading."
     }
+  },
+  "compare": {
+    "loading": "Loading runs…",
+    "loadFailed": "Could not load runs:",
+    "noRuns": "No runs to compare. Pick runs from the",
+    "runsList": "runs list",
+    "metric": "Metric",
+    "smoothing": "Smoothing",
+    "runs": "{n} runs",
+    "raceGif": "Download race GIF",
+    "raceGifTitle": "Animated GIF of these runs racing",
+    "comparisonMd": "Download comparison (.md)",
+    "comparisonMdTitle": "The explanation and each run's numbers, as Markdown",
+    "rendering": "Rendering…"
   }
 }

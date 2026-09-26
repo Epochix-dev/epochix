@@ -9,6 +9,7 @@ import {
   allMetricKeys, emaSmooth, LOWER_IS_BETTER, metricLabel, seriesColor, seriesFromMetrics,
 } from '../viz-util.js';
 import { escapeHtml as _esc } from '../escape.js';
+import { t } from '../i18n/apply.js';
 
 const _PREFERRED = ['val_accuracy', 'accuracy', 'val_loss', 'train_loss', 'mAP50'];
 
@@ -29,14 +30,14 @@ export class CompareView {
   }
 
   async load(runIds) {
-    this._el.innerHTML = `<div class="cmp-loading">Loading runs…</div>`;
+    this._el.innerHTML = `<div class="cmp-loading">${_esc(t('compare.loading', 'Loading runs…'))}</div>`;
     let data;
     try {
       const r = await fetch(`/api/compare?run_ids=${encodeURIComponent(runIds.join(','))}`);
       if (!r.ok) throw new Error(`${r.status}`);
       data = await r.json();
     } catch (err) {
-      this._el.innerHTML = `<div class="cmp-loading">Could not load runs: ${_esc(err.message)}</div>`;
+      this._el.innerHTML = `<div class="cmp-loading">${_esc(t('compare.loadFailed', 'Could not load runs:'))} ${_esc(err.message)}</div>`;
       return;
     }
     this._runs = data.runs ?? [];
@@ -46,8 +47,8 @@ export class CompareView {
     // invisible in the only place a user would look for it.
     this._narrative = data.narrative ?? '';
     if (this._runs.length === 0) {
-      this._el.innerHTML = `<div class="cmp-loading">No runs to compare. Pick runs from the
-        <a href="/">runs list</a>.</div>`;
+      this._el.innerHTML = `<div class="cmp-loading">${_esc(t('compare.noRuns', 'No runs to compare. Pick runs from the'))}
+        <a href="/">${_esc(t('compare.runsList', 'runs list'))}</a>.</div>`;
       return;
     }
     this._runs.forEach((cr, i) => this._color.set(cr.run.id, seriesColor(i)));
@@ -84,18 +85,18 @@ export class CompareView {
     this._el.innerHTML = `
       ${narrative}
       <div class="cmp-controls">
-        <label class="cmp-ctl">Metric
+        <label class="cmp-ctl">${_esc(t('compare.metric', 'Metric'))}
           <select id="cmp-metric">${opts}</select>
         </label>
-        <label class="cmp-ctl">Smoothing
+        <label class="cmp-ctl">${_esc(t('compare.smoothing', 'Smoothing'))}
           <input id="cmp-smooth" type="range" min="0" max="0.95" step="0.05" value="${this._smoothing}">
         </label>
-        <span class="cmp-count">${this._runs.length} runs</span>
-        <button id="cmp-race" class="cmp-race" title="Animated GIF of these runs racing">
-          Download race GIF
+        <span class="cmp-count">${_esc(t('compare.runs', '{n} runs').replace('{n}', String(this._runs.length)))}</span>
+        <button id="cmp-race" class="cmp-race" title="${_esc(t('compare.raceGifTitle', 'Animated GIF of these runs racing'))}">
+          ${_esc(t('compare.raceGif', 'Download race GIF'))}
         </button>
-        <button id="cmp-md" class="cmp-race" title="The explanation and each run's numbers, as Markdown">
-          Download comparison (.md)
+        <button id="cmp-md" class="cmp-race" title="${_esc(t('compare.comparisonMdTitle', "The explanation and each run's numbers, as Markdown"))}">
+          ${_esc(t('compare.comparisonMd', 'Download comparison (.md)'))}
         </button>
       </div>
       <div class="cmp-chart-wrap"><canvas id="cmp-canvas"></canvas></div>
@@ -121,7 +122,7 @@ export class CompareView {
       if (ids.length < 2) return;
       const label = btn.textContent;
       btn.disabled = true;
-      btn.textContent = 'Rendering…';
+      btn.textContent = t('compare.rendering', 'Rendering…');
       try {
         const url = `/api/export/compare/gif?runs=${ids.join(',')}` +
                     `&metric=${encodeURIComponent(this._metric)}`;
