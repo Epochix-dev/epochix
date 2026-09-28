@@ -23,6 +23,7 @@ import { JourneyPanel }                     from './panels/JourneyPanel.js';
 import { SkillsPanel }                      from './panels/SkillsPanel.js';
 import { TechPanel }                        from './panels/TechPanel.js';
 import { TrainingDiagnostics }              from './visualizations/TrainingDiagnostics.js';
+import { ParameterSearch }                  from './visualizations/ParameterSearch.js';
 import { PhaseJourney }                     from './visualizations/PhaseJourney.js';
 import { CompareView }                      from './visualizations/CompareView.js';
 import { Distributions }                    from './visualizations/Distributions.js';
@@ -173,6 +174,9 @@ async function main() {
 
   const diagnosticsEl = document.getElementById('training-diagnostics');
   if (diagnosticsEl) new TrainingDiagnostics(diagnosticsEl).mount(store);
+
+  const cvEl = document.getElementById('parameter-search');
+  if (cvEl) new ParameterSearch(cvEl, document.getElementById('sec-cv')).mount(store);
 
   const distributionsEl = document.getElementById('distributions');
   if (distributionsEl) new Distributions(distributionsEl).mount(store);
@@ -451,7 +455,10 @@ async function main() {
   const inline = readInlineRunData();
   if (inline) {
     const { run, frames = [], events = [] } = inline;
-    store.set({ run, metrics: events, live: false });
+    store.set({
+      run, metrics: events, live: false,
+      crossValidation: run?.config?.cross_validation ?? null,
+    });
     for (const f of frames) pushFrame(f);
     return; // no WS needed
   }
@@ -479,7 +486,8 @@ async function main() {
     // shows real values before any live WS message arrives.
     const architecture = run?.config?.architecture ?? null;
     const activations = run?.config?.activations ?? null;
-    store.set({ run, metrics, architecture, activations });
+    const crossValidation = run?.config?.cross_validation ?? null;
+    store.set({ run, metrics, architecture, activations, crossValidation });
     for (const f of frames) pushFrame(f);
 
     // If run is not finished, open live stream

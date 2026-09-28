@@ -91,5 +91,18 @@
     "comparisonMd": "Download comparison (.md)",
     "comparisonMdTitle": "The explanation and each run's numbers, as Markdown",
     "rendering": "Rendering…"
+  },
+  "cv": {
+    "title_search": "Parameter search",
+    "title_cv": "Cross-validation",
+    "setting": "Setting",
+    "metric": "Metric",
+    "mean": "Mean",
+    "spread": "± std",
+    "range": "Range",
+    "folds": "Folds",
+    "chosen": "chosen",
+    "note_search": "Only the chosen setting is charted and graded: the highest mean, as scikit-learn scorers are higher-is-better. Fold order carries no meaning.",
+    "note_cv": "Folds are reported here rather than charted: their order carries no meaning, so they have no trend."
   }
 }

@@ -308,6 +308,7 @@ export class DashboardPanel {
       metrics: this._engine?.metrics() ?? [],
       hasSidecar,
       attached: this._attached,
+      crossValidation: this._engine?.crossValidation() ?? null,
     });
 
     if (!hasSidecar) {

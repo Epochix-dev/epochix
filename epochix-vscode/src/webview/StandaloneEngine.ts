@@ -38,7 +38,9 @@ import {
   resolveLocale,
   type Locale,
 } from "../story/narrator";
-import type { StoryFrameMsg, MilestoneMsg, WarningMsg, RunSummaryMsg } from "./messages";
+import type {
+  CrossValidation, StoryFrameMsg, MilestoneMsg, WarningMsg, RunSummaryMsg,
+} from "./messages";
 import { parseArchitecture, type ArchLayer } from "../story/architecture";
 import {
   ON_SCALE,
@@ -317,7 +319,29 @@ export class StandaloneEngine {
       taskType: this._task,
       finalGrade: last.grade,
       storySummary: last.narrative,
+      crossValidation: this.crossValidation(),
     };
+  }
+
+  /**
+   * The cross-validation folds the parser collected, or null — mirrors
+   * cross_validation.record in the Python package. Only one number per
+   * metric reaches the chart; the dashboard's Parameter search panel ranks
+   * the rest, and without this the extension had nothing to give it.
+   */
+  crossValidation(): CrossValidation | null {
+    const folds: Record<string, number[]> = {};
+    for (const [key, values] of this._ctx.cvFolds) {
+      if (values.length >= 2) folds[key] = [...values];
+    }
+    if (Object.keys(folds).length === 0) return null;
+    const candidates: Record<string, Record<string, number[]>> = {};
+    for (const [setting, byKey] of this._ctx.cvCandidates) {
+      candidates[setting] = Object.fromEntries(
+        [...byKey].map(([key, values]) => [key, [...values]]),
+      );
+    }
+    return { folds, candidates };
   }
 
   /** Layers detected from a model summary, or an empty list. */

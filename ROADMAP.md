@@ -24,19 +24,11 @@ taught live in [AGENTS.md](AGENTS.md).
 
 ## Open
 
-Gaps left deliberately by the 0.7.16 features, each small and none a bug.
+Known gaps, each deliberate and none a bug.
 
 - **Run comparison as a PDF.** `epochix compare`, `/api/export/compare/md` and
   the comparison view's download produce Markdown; the race GIF carries the
   curves. There is no PDF version of the comparison.
-- **The parameter search on the dashboard.** The Markdown and PDF reports and
-  the JSON export rank every setting a GridSearchCV tried
-  (`run.config["cross_validation"]`); the dashboard still shows only the
-  chosen setting's curve.
-- **Cross-validation folds in the VS Code extension's engine.** Its parser
-  collects every setting's folds (`ctx.cvCandidates`) and charts the chosen
-  one, as the Python engine does, but never hands the rest on — so a search
-  run opened without the Python package has no table to show.
 - **PDFs draw Latin and Arabic script only.** A Farsi report embeds Vazirmatn
   and shapes its text with uharfbuzz (the `pdf` extra); without the shaper it
   falls back to English chrome and says `pip install "epochix[pdf]"`. Any

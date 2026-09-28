@@ -50,13 +50,16 @@ TRUTH: dict[str, dict[str, Any]] = json.loads(TRUTH_FILE.read_text(encoding="utf
 
 
 def test_every_log_has_an_expectation() -> None:
-    assert len(LOGS) >= 38, "the corpus went missing"
+    assert len(LOGS) >= 39, "the corpus went missing"
+    # At least one log must exercise the fold path, or the cross_validation
+    # comparison below passes by comparing None with None everywhere.
+    assert any(t["cross_validation"] for t in TRUTH.values())
     assert set(LOGS) == set(TRUTH)
 
 
 def _run(
     path: Path,
-) -> tuple[str, str | None, int, float | None, tuple[str, ...], float | None, str | None]:
+) -> tuple[str, str | None, int, float | None, tuple[str, ...], float | None, str | None, object]:
     store = RunStore(":memory:")
     run = asyncio.run(
         run_pipeline(ingester=FileBatchIngester("c", str(path)), run_id="c", store=store, hub=Hub())
@@ -77,12 +80,15 @@ def _run(
         # Why the final letter deserves less weight, if it does. Derived, but
         # both engines must reach it from the same log.
         last.grade_note if last else None,
+        # Every setting's folds, kept for the reports and the dashboard's
+        # Parameter search panel; the extension must collect the same.
+        (run.config or {}).get("cross_validation"),
     )
 
 
 @pytest.mark.parametrize("name", sorted(TRUTH))
 def test_the_log_tells_what_it_contains(name: str) -> None:
-    task, metric, frames, last_value, keys, from_epoch, grade_note = _run(LOGS[name])
+    task, metric, frames, last_value, keys, from_epoch, grade_note, cv = _run(LOGS[name])
     want = TRUTH[name]
     assert (ROOT / want["path"]).resolve() == LOGS[name].resolve()
     assert keys == tuple(want["keys"]), f"metrics stored: {keys}"
@@ -91,6 +97,7 @@ def test_the_log_tells_what_it_contains(name: str) -> None:
     assert last_value == want["last_value"]
     assert from_epoch == want["metric_from_epoch"]
     assert grade_note == want["grade_note"]
+    assert cv == want["cross_validation"]
 
 
 def test_one_story_metric_per_run() -> None:

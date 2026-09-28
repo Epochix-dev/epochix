@@ -1015,6 +1015,17 @@ body {
 
 /* The grade is a summary against fixed thresholds, not a measurement of model
    quality relative to the dataset. Stated, not hidden. */
+/* Parameter search / cross-validation table (hidden when a run has none). */
+.cv-row[hidden] { display: none; }
+.cv-title { margin: 0 0 10px; font-family: var(--font-sans); font-size: 15px; color: var(--text-primary); }
+.cv-table-wrap { overflow-x: auto; }
+.cv-table { width: 100%; border-collapse: collapse; font-family: var(--font-sans); font-size: 13px; }
+.cv-table th { text-align: start; font-weight: 600; color: var(--text-secondary); padding: 6px 10px; border-bottom: 1px solid var(--border-default); }
+.cv-table td { padding: 6px 10px; border-bottom: 1px solid var(--border-subtle); color: var(--text-primary); }
+.cv-table .cv-num { font-variant-numeric: tabular-nums; }
+.cv-table tr.is-chosen td { background: color-mix(in srgb, var(--accent-primary) 10%, transparent); font-weight: 600; }
+.cv-chosen { margin-inline-start: 6px; padding: 1px 6px; border-radius: 4px; font-size: 11px; background: var(--accent-primary); color: var(--text-inverse); }
+.cv-note { margin: 10px 0 0; font-size: 12px; color: var(--text-muted); }
 /* Why this letter deserves less weight: few readings, or still improving. */
 .grade-note {
   margin-top: 10px;
