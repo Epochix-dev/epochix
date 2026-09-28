@@ -90,7 +90,9 @@
     "raceGifTitle": "GIF animé de la course entre ces exécutions",
     "comparisonMd": "Télécharger la comparaison (.md)",
     "comparisonMdTitle": "L'explication et les chiffres de chaque exécution, en Markdown",
-    "rendering": "Génération…"
+    "rendering": "Génération…",
+    "comparisonPdf": "Télécharger la comparaison (.pdf)",
+    "comparisonPdfTitle": "L'explication, les courbes superposées et les chiffres de chaque exécution, en PDF"
   },
   "cv": {
     "title_search": "Recherche de paramètres",

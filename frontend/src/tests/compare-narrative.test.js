@@ -97,12 +97,14 @@ describe('CompareView written comparison', () => {
     const { el, view } = mountView();
     await view.load(['r1', 'r2']);
     expect(el.querySelector('#cmp-md')).toBeTruthy();
+    expect(el.querySelector('#cmp-pdf')).toBeTruthy();
     expect(el.querySelector('#cmp-race')).toBeTruthy();
   });
 
   it('asks for every run, with ids escaped', async () => {
     const { compareMarkdownUrl } = await import('../visualizations/CompareView.js');
     expect(compareMarkdownUrl(['r1', 'r2', 'r 3'])).toBe('/api/export/compare/md?runs=r1,r2,r%203');
+    expect(compareMarkdownUrl(['r1', 'r2'], 'pdf')).toBe('/api/export/compare/pdf?runs=r1,r2');
   });
 });
 

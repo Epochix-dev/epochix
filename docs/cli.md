@@ -94,17 +94,21 @@ PDF needs the extra: `pip install 'epochix[pdf]'`.
 
 ## `epochix compare`
 
-Compare two or more saved runs as a Markdown document: the same explanation
-the dashboard's comparison view gives — who finished ahead, or why the runs
+Compare two or more saved runs as a document: the same explanation the
+dashboard's comparison view gives — who finished ahead, or why the runs
 cannot honestly be ranked — and each run's grade, final and best value.
 
 ```bash
 epochix compare <run_a> <run_b> --output comparison.md
+epochix compare <run_a> <run_b> --format pdf --output comparison.pdf
 ```
 
-Without `--output` it prints to the terminal. It is told in the first run's
-language unless `--locale` says otherwise. The comparison view in the
-dashboard has the same download beside its race GIF.
+Markdown prints to the terminal without `--output`. The PDF adds the runs'
+curves overlaid on one chart — only when they measure the same metric, since
+the text refuses to rank runs that do not — and is written to
+`comparison.pdf` without `--output`. It is told in the first run's language
+unless `--locale` says otherwise. The comparison view in the dashboard has
+both downloads beside its race GIF.
 
 ## `epochix race`
 

@@ -90,7 +90,9 @@
     "raceGifTitle": "Animated GIF of these runs racing",
     "comparisonMd": "Download comparison (.md)",
     "comparisonMdTitle": "The explanation and each run's numbers, as Markdown",
-    "rendering": "Rendering…"
+    "rendering": "Rendering…",
+    "comparisonPdf": "Download comparison (.pdf)",
+    "comparisonPdfTitle": "The explanation, the curves overlaid and each run's numbers, as a PDF"
   },
   "cv": {
     "title_search": "Parameter search",

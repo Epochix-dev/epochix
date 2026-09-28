@@ -26,9 +26,6 @@ taught live in [AGENTS.md](AGENTS.md).
 
 Known gaps, each deliberate and none a bug.
 
-- **Run comparison as a PDF.** `epochix compare`, `/api/export/compare/md` and
-  the comparison view's download produce Markdown; the race GIF carries the
-  curves. There is no PDF version of the comparison.
 - **PDFs draw Latin and Arabic script only.** A Farsi report embeds Vazirmatn
   and shapes its text with uharfbuzz (the `pdf` extra); without the shaper it
   falls back to English chrome and says `pip install "epochix[pdf]"`. Any

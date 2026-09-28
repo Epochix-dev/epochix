@@ -677,8 +677,12 @@ def cmd_race(
 @app.command("compare")
 def cmd_compare(
     run_ids: list[str] = typer.Argument(..., help="Two or more run IDs to compare."),
+    fmt: str = typer.Option("md", "--format", "-f", help="Format: md|pdf."),
     output: Path | None = typer.Option(
-        None, "--output", "-o", help="Write Markdown here instead of printing it."
+        None,
+        "--output",
+        "-o",
+        help="Write here. Markdown prints when omitted; a PDF goes to comparison.pdf.",
     ),
     locale: str | None = typer.Option(
         None, "--locale", help="Language (default: the first run's)."
@@ -692,13 +696,27 @@ def cmd_compare(
     """
     _configure_logging(log_level)
     store = _open_store(get_settings())
-    from epochix.exporters.compare_export import build_comparison_markdown
+    from epochix.exporters.compare_export import (
+        build_comparison_markdown,
+        build_comparison_pdf,
+    )
 
+    if fmt not in ("md", "pdf"):
+        typer.echo(f"  Unknown format {fmt!r}: use md or pdf.", err=True)
+        raise typer.Exit(1)
     try:
-        text = build_comparison_markdown(list(run_ids), store, locale=locale)
+        if fmt == "pdf":
+            data = build_comparison_pdf(list(run_ids), store, locale=locale)
+        else:
+            text = build_comparison_markdown(list(run_ids), store, locale=locale)
     except ValueError as exc:
         typer.echo(f"  Cannot compare these runs: {exc}", err=True)
         raise typer.Exit(1) from None
+    if fmt == "pdf":
+        target = output or Path("comparison.pdf")
+        target.write_bytes(data)
+        typer.echo(f"  Comparison -> {target}")
+        return
     if output is None:
         typer.echo(console_safe(text))
     else:
