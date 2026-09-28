@@ -17,6 +17,7 @@ grade, one page per training phase, milestones, and a final-metrics appendix.
 from __future__ import annotations
 
 import importlib.util
+import unicodedata
 from itertools import pairwise
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
@@ -102,8 +103,59 @@ def _text(doc: Any, size: int, colour: tuple[int, int, int], style: str = "") ->
 
 
 def _s(doc: Any, value: object) -> str:  # noqa: ANN401
-    """Text as this document can draw it: as-is with the embedded font."""
-    return str(value) if getattr(doc, "epx_unicode", False) else _ascii(value)
+    """Text as this document can draw it: the core fonts' Latin-1, or with the
+    embedded font, laid out right to left where it is Farsi."""
+    if getattr(doc, "epx_unicode", False):
+        return _rtl_safe(str(value))
+    return _ascii(value)
+
+
+# Zero-width non-joiner and right-to-left mark; see _rtl_safe.
+_ZWNJ, _RLM = "\u200c", "\u200f"
+# Narrow no-break space: the half-space ZWNJ is drawn as in Farsi type.
+_NNBSP = "\u202f"
+
+
+def _rtl_safe(text: str) -> str:
+    """Farsi text as fpdf2 lays it out correctly.
+
+    Two faults scrambled word order in every Farsi PDF since they could be
+    drawn (0.7.15), found by reading a rendered page rather than by a test:
+
+    * **A paragraph's direction comes from its first strong letter**, as the
+      Unicode bidi algorithm says. A Farsi sentence that opens with a run
+      name or a metric — "{a} و {b} …", "{metric} در دوره …" — therefore
+      became a left-to-right paragraph, and every run of Farsi after a
+      number came out in reverse. A right-to-left mark in front makes the
+      paragraph what it is.
+    * **fpdf2 misplaces text around a zero-width non-joiner.** Written
+      Farsi uses one in almost every sentence (می\u200cشود, آن\u200cها), and
+      the pieces it joined were drawn in the wrong place, even on one line.
+      A narrow no-break space does the ZWNJ's job — the letters either side
+      stay unjoined — draws as the half-space Farsi typesetting shows, and
+      cannot break a line inside the word.
+
+    Text with no Arabic-script letter is returned unchanged.
+    """
+    if not any(_is_arabic_script(ch) for ch in text):
+        return text
+    lines = text.replace(_ZWNJ, _NNBSP).split("\n")
+    return "\n".join(_RLM + line if _first_strong_is_ltr(line) else line for line in lines)
+
+
+def _is_arabic_script(ch: str) -> bool:
+    return unicodedata.bidirectional(ch) in ("R", "AL")
+
+
+def _first_strong_is_ltr(line: str) -> bool:
+    """Whether the bidi algorithm would lay this line out left to right."""
+    for ch in line:
+        kind = unicodedata.bidirectional(ch)
+        if kind == "L":
+            return True
+        if kind in ("R", "AL"):
+            return False
+    return False
 
 
 def _lead(locale: str) -> str:
@@ -586,7 +638,7 @@ def _display_title(run: Run, doc: Any = None) -> str:  # noqa: ANN401
     """
     name = run.name or run.id
     if getattr(doc, "epx_unicode", False):
-        return name if len(name) <= 56 else name[:55] + "\u2026"
+        return _rtl_safe(name if len(name) <= 56 else name[:55] + "\u2026")
     rendered = _ascii(name).replace("?", " ").strip()
     rendered = " ".join(rendered.split())
     if sum(ch.isalnum() for ch in rendered) < 2:

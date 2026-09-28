@@ -9,6 +9,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed — Farsi PDFs scrambled their word order
+
+Found by rendering a Farsi page and reading it; every test passed. Two
+faults, present since Farsi PDFs could first be drawn (0.7.15):
+
+- **A Farsi sentence that opened with a run name or a metric was laid out left
+  to right.** fpdf2 takes a paragraph's direction from its first strong
+  letter, as the Unicode bidi algorithm does, and "{a} و {b} …" or
+  "{metric} در دوره …" open with a Latin one — so the Farsi after every
+  number came out in reverse. Such a paragraph now begins with a
+  right-to-left mark.
+- **fpdf2 misplaces text around a zero-width non-joiner**, which written Farsi
+  uses in almost every sentence (می‌شود, آن‌ها): the joined pieces were drawn
+  in the wrong place, even on a single line. The PDF draws it as a narrow
+  no-break space, which keeps the letters unjoined, shows the half-space
+  Farsi type uses, and cannot break a line inside the word.
+
+Every Farsi narrative template, message and export label is checked against
+fpdf2's own bidi algorithm, and a real Farsi report is rendered with every
+string it draws recorded and checked.
+
 ### Added — the parameter search on the dashboard
 
 - **The dashboard showed one setting of a GridSearchCV; its reports showed
