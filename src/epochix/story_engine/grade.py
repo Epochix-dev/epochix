@@ -277,6 +277,17 @@ _DIRECTION_BY_KEY: dict[str, bool] = {
     "kappa": False,
     "explained_variance": False,
     "silhouette": False,
+    # LightGBM's names for MAE / MSE. Canonical keys already map them to
+    # MAE / MSE, but the raw names contain no hint fragment, so anything
+    # asking by the name the log printed got no direction at all. The
+    # extension's engine had pinned these; the pins live here now and are
+    # generated into it (scripts/gen_ts_engine_tables.py).
+    "l1": True,
+    "l2": True,
+    "val_l1": True,
+    "val_l2": True,
+    "train_l1": True,
+    "train_l2": True,
 }
 
 

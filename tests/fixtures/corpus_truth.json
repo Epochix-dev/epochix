@@ -12,7 +12,9 @@
   ],
   "metric_from_epoch": 0.0,
   "grade_note": "few_readings",
-  "cross_validation": null
+  "cross_validation": null,
+  "final_grade": "B+",
+  "final_phase": "awakening"
  },
  "ansi_colors.log": {
   "path": "tests/fixtures/logs/ansi_colors.log",
@@ -26,7 +28,9 @@
   ],
   "metric_from_epoch": 1.0,
   "grade_note": "few_readings",
-  "cross_validation": null
+  "cross_validation": null,
+  "final_grade": "C",
+  "final_phase": "learning"
  },
  "detection_coco.log": {
   "path": "tests/fixtures/logs/detection_coco.log",
@@ -45,7 +49,9 @@
   ],
   "metric_from_epoch": 5.0,
   "grade_note": "still_improving",
-  "cross_validation": null
+  "cross_validation": null,
+  "final_grade": "A",
+  "final_phase": "understanding"
  },
  "diverging_loss.log": {
   "path": "tests/fixtures/logs/diverging_loss.log",
@@ -61,7 +67,9 @@
   ],
   "metric_from_epoch": 1.0,
   "grade_note": null,
-  "cross_validation": null
+  "cross_validation": null,
+  "final_grade": "C-",
+  "final_phase": "learning"
  },
  "empty.log": {
   "path": "tests/fixtures/logs/empty.log",
@@ -72,7 +80,9 @@
   "keys": [],
   "metric_from_epoch": null,
   "grade_note": null,
-  "cross_validation": null
+  "cross_validation": null,
+  "final_grade": null,
+  "final_phase": null
  },
  "fastai_real.log": {
   "path": "tests/fixtures/logs/fastai_real.log",
@@ -87,7 +97,9 @@
   ],
   "metric_from_epoch": 0.0,
   "grade_note": "few_readings",
-  "cross_validation": null
+  "cross_validation": null,
+  "final_grade": "B+",
+  "final_phase": "understanding"
  },
  "fingerprint_matching.log": {
   "path": "demo/fingerprint_matching.log",
@@ -103,7 +115,9 @@
   ],
   "metric_from_epoch": 1.0,
   "grade_note": null,
-  "cross_validation": null
+  "cross_validation": null,
+  "final_grade": "A",
+  "final_phase": "mastering"
  },
  "garbage.log": {
   "path": "tests/fixtures/logs/garbage.log",
@@ -114,7 +128,9 @@
   "keys": [],
   "metric_from_epoch": null,
   "grade_note": null,
-  "cross_validation": null
+  "cross_validation": null,
+  "final_grade": null,
+  "final_phase": null
  },
  "gaze_estimation.log": {
   "path": "demo/gaze_estimation.log",
@@ -129,7 +145,9 @@
   ],
   "metric_from_epoch": 1.0,
   "grade_note": null,
-  "cross_validation": null
+  "cross_validation": null,
+  "final_grade": "A+",
+  "final_phase": "mastering"
  },
  "gridsearch_cv.log": {
   "path": "tests/fixtures/logs/gridsearch_cv.log",
@@ -189,7 +207,9 @@
      ]
     }
    }
-  }
+  },
+  "final_grade": "I",
+  "final_phase": "polishing"
  },
  "hf_classification.log": {
   "path": "tests/fixtures/logs/hf_classification.log",
@@ -205,7 +225,9 @@
   ],
   "metric_from_epoch": 1.0,
   "grade_note": "still_improving",
-  "cross_validation": null
+  "cross_validation": null,
+  "final_grade": "A-",
+  "final_phase": "mastering"
  },
  "huggingface_5ep.log": {
   "path": "tests/fixtures/logs/huggingface_5ep.log",
@@ -221,7 +243,9 @@
   ],
   "metric_from_epoch": 1.0,
   "grade_note": "still_improving",
-  "cross_validation": null
+  "cross_validation": null,
+  "final_grade": "A-",
+  "final_phase": "mastering"
  },
  "huggingface_bert.log": {
   "path": "demo/huggingface_bert.log",
@@ -238,7 +262,9 @@
   ],
   "metric_from_epoch": 1.0,
   "grade_note": "still_improving",
-  "cross_validation": null
+  "cross_validation": null,
+  "final_grade": "B+",
+  "final_phase": "mastering"
  },
  "huggingface_nlp_10ep.log": {
   "path": "tests/fixtures/logs/huggingface_nlp_10ep.log",
@@ -254,7 +280,9 @@
   ],
   "metric_from_epoch": 1.0,
   "grade_note": null,
-  "cross_validation": null
+  "cross_validation": null,
+  "final_grade": "A+",
+  "final_phase": "polishing"
  },
  "interrupted.log": {
   "path": "tests/fixtures/logs/interrupted.log",
@@ -268,7 +296,9 @@
   ],
   "metric_from_epoch": 1.0,
   "grade_note": "few_readings",
-  "cross_validation": null
+  "cross_validation": null,
+  "final_grade": "D",
+  "final_phase": "awakening"
  },
  "keras_100ep.log": {
   "path": "tests/fixtures/logs/keras_100ep.log",
@@ -284,7 +314,9 @@
   ],
   "metric_from_epoch": 1.0,
   "grade_note": null,
-  "cross_validation": null
+  "cross_validation": null,
+  "final_grade": "B+",
+  "final_phase": "mastering"
  },
  "keras_50ep.log": {
   "path": "tests/fixtures/logs/keras_50ep.log",
@@ -300,7 +332,9 @@
   ],
   "metric_from_epoch": 1.0,
   "grade_note": null,
-  "cross_validation": null
+  "cross_validation": null,
+  "final_grade": "B+",
+  "final_phase": "mastering"
  },
  "keras_image_classifier.log": {
   "path": "demo/keras_image_classifier.log",
@@ -316,7 +350,9 @@
   ],
   "metric_from_epoch": 1.0,
   "grade_note": "still_improving",
-  "cross_validation": null
+  "cross_validation": null,
+  "final_grade": "B",
+  "final_phase": "understanding"
  },
  "keras_short.log": {
   "path": "tests/fixtures/logs/keras_short.log",
@@ -332,7 +368,9 @@
   ],
   "metric_from_epoch": 1.0,
   "grade_note": "still_improving",
-  "cross_validation": null
+  "cross_validation": null,
+  "final_grade": "B+",
+  "final_phase": "mastering"
  },
  "mixed_frameworks.log": {
   "path": "tests/fixtures/logs/mixed_frameworks.log",
@@ -349,7 +387,9 @@
   ],
   "metric_from_epoch": 3.0,
   "grade_note": "few_readings",
-  "cross_validation": null
+  "cross_validation": null,
+  "final_grade": "B",
+  "final_phase": "learning"
  },
  "multiline_json.log": {
   "path": "tests/fixtures/logs/multiline_json.log",
@@ -366,7 +406,9 @@
   ],
   "metric_from_epoch": 1.0,
   "grade_note": "few_readings",
-  "cross_validation": null
+  "cross_validation": null,
+  "final_grade": "C+",
+  "final_phase": "understanding"
  },
  "no_val_metrics.log": {
   "path": "tests/fixtures/logs/no_val_metrics.log",
@@ -380,7 +422,9 @@
   ],
   "metric_from_epoch": 1.0,
   "grade_note": "still_improving",
-  "cross_validation": null
+  "cross_validation": null,
+  "final_grade": "C+",
+  "final_phase": "learning"
  },
  "pl_high_accuracy.log": {
   "path": "tests/fixtures/logs/pl_high_accuracy.log",
@@ -396,7 +440,9 @@
   ],
   "metric_from_epoch": 1.0,
   "grade_note": "still_improving",
-  "cross_validation": null
+  "cross_validation": null,
+  "final_grade": "A-",
+  "final_phase": "mastering"
  },
  "plateau.log": {
   "path": "tests/fixtures/logs/plateau.log",
@@ -410,7 +456,9 @@
   ],
   "metric_from_epoch": 1.0,
   "grade_note": null,
-  "cross_validation": null
+  "cross_validation": null,
+  "final_grade": "B+",
+  "final_phase": "learning"
  },
  "pytorch_lightning.log": {
   "path": "demo/pytorch_lightning.log",
@@ -426,7 +474,9 @@
   ],
   "metric_from_epoch": 10.0,
   "grade_note": "still_improving",
-  "cross_validation": null
+  "cross_validation": null,
+  "final_grade": "A-",
+  "final_phase": "understanding"
  },
  "pytorch_lightning_30ep.log": {
   "path": "tests/fixtures/logs/pytorch_lightning_30ep.log",
@@ -442,7 +492,9 @@
   ],
   "metric_from_epoch": 1.0,
   "grade_note": "still_improving",
-  "cross_validation": null
+  "cross_validation": null,
+  "final_grade": "A-",
+  "final_phase": "mastering"
  },
  "pytorch_lightning_long.log": {
   "path": "tests/fixtures/logs/pytorch_lightning_long.log",
@@ -458,7 +510,9 @@
   ],
   "metric_from_epoch": 1.0,
   "grade_note": "still_improving",
-  "cross_validation": null
+  "cross_validation": null,
+  "final_grade": "A-",
+  "final_phase": "mastering"
  },
  "pytorch_lightning_short.log": {
   "path": "tests/fixtures/logs/pytorch_lightning_short.log",
@@ -474,7 +528,9 @@
   ],
   "metric_from_epoch": 1.0,
   "grade_note": "still_improving",
-  "cross_validation": null
+  "cross_validation": null,
+  "final_grade": "A-",
+  "final_phase": "mastering"
  },
  "scientific_notation.log": {
   "path": "tests/fixtures/logs/scientific_notation.log",
@@ -489,7 +545,9 @@
   ],
   "metric_from_epoch": 1.0,
   "grade_note": "still_improving",
-  "cross_validation": null
+  "cross_validation": null,
+  "final_grade": "A+",
+  "final_phase": "understanding"
  },
  "seq2seq_attention.log": {
   "path": "demo/seq2seq_attention.log",
@@ -505,7 +563,9 @@
   ],
   "metric_from_epoch": 4.0,
   "grade_note": "still_improving",
-  "cross_validation": null
+  "cross_validation": null,
+  "final_grade": "B",
+  "final_phase": "understanding"
  },
  "single_epoch.log": {
   "path": "tests/fixtures/logs/single_epoch.log",
@@ -521,7 +581,9 @@
   ],
   "metric_from_epoch": 1.0,
   "grade_note": "few_readings",
-  "cross_validation": null
+  "cross_validation": null,
+  "final_grade": "A-",
+  "final_phase": "mastering"
  },
  "universal_20ep.log": {
   "path": "tests/fixtures/logs/universal_20ep.log",
@@ -538,7 +600,9 @@
   ],
   "metric_from_epoch": 1.0,
   "grade_note": "still_improving",
-  "cross_validation": null
+  "cross_validation": null,
+  "final_grade": "A-",
+  "final_phase": "mastering"
  },
  "universal_kv_colon.log": {
   "path": "tests/fixtures/logs/universal_kv_colon.log",
@@ -555,7 +619,9 @@
   ],
   "metric_from_epoch": 1.0,
   "grade_note": "still_improving",
-  "cross_validation": null
+  "cross_validation": null,
+  "final_grade": "B+",
+  "final_phase": "mastering"
  },
  "vscode-demo.log": {
   "path": "epochix-vscode/media/demo.log",
@@ -572,7 +638,9 @@
   ],
   "metric_from_epoch": 1.0,
   "grade_note": null,
-  "cross_validation": null
+  "cross_validation": null,
+  "final_grade": "A+",
+  "final_phase": "mastering"
  },
  "yolo_100ep.log": {
   "path": "tests/fixtures/logs/yolo_100ep.log",
@@ -591,7 +659,9 @@
   ],
   "metric_from_epoch": 5.0,
   "grade_note": "still_improving",
-  "cross_validation": null
+  "cross_validation": null,
+  "final_grade": "A+",
+  "final_phase": "mastering"
  },
  "yolo_50ep.log": {
   "path": "tests/fixtures/logs/yolo_50ep.log",
@@ -610,7 +680,9 @@
   ],
   "metric_from_epoch": 5.0,
   "grade_note": "still_improving",
-  "cross_validation": null
+  "cross_validation": null,
+  "final_grade": "A+",
+  "final_phase": "mastering"
  },
  "yolo_real_ultralytics.log": {
   "path": "tests/fixtures/logs/yolo_real_ultralytics.log",
@@ -629,7 +701,9 @@
   ],
   "metric_from_epoch": 1.0,
   "grade_note": "few_readings",
-  "cross_validation": null
+  "cross_validation": null,
+  "final_grade": "A",
+  "final_phase": "learning"
  },
  "yolo_short.log": {
   "path": "tests/fixtures/logs/yolo_short.log",
@@ -648,7 +722,9 @@
   ],
   "metric_from_epoch": 5.0,
   "grade_note": "few_readings",
-  "cross_validation": null
+  "cross_validation": null,
+  "final_grade": "A+",
+  "final_phase": "understanding"
  },
  "yolov8_detection.log": {
   "path": "demo/yolov8_detection.log",
@@ -667,6 +743,8 @@
   ],
   "metric_from_epoch": 10.0,
   "grade_note": "still_improving",
-  "cross_validation": null
+  "cross_validation": null,
+  "final_grade": "A",
+  "final_phase": "understanding"
  }
 }

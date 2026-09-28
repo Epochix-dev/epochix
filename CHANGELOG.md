@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [Unreleased]
+
+### Changed — the extension grades from the Python engine's own tables
+
+- **The VS Code extension's grading, direction and phase logic was a hand
+  copy, and had drifted.** It never got the Python engine's fix for a single
+  reading — a bounded metric's first value is read on its own scale rather
+  than as zero improvement — so a one-epoch run, or a fit-once result, ended
+  its story in the wrong phase (`single_epoch.log`: *learning* where Python
+  says *mastering*; a GridSearchCV result: *awakening* where Python says
+  *polishing*). It also left the improvement ratio unclamped, and answered a
+  made-up 0.05 of progress for a run whose length was unknown.
+- Every grading, direction, phase, stall, past-peak and warning threshold is
+  now generated from the Python engine (`grading.generated.ts`); the functions
+  that read them are ported once, line for line, and replay 2,800 of Python's
+  own answers (`grading.golden.json`) — every band edge of every task and
+  metric, every metric name's direction, phases, trajectories, grade notes. A
+  drift fails a test now. The corpus both engines are held to also pins every
+  log's final grade and phase: the extension matches Python on all 39.
+- LightGBM's raw `l1` / `l2` names get their direction pinned in the Python
+  engine too; only the extension had them.
+
 ## [0.7.17] — 2026-09-28
 
 ### Added — the comparison as a PDF

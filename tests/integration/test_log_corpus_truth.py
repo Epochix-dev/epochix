@@ -100,6 +100,28 @@ def test_the_log_tells_what_it_contains(name: str) -> None:
     assert cv == want["cross_validation"]
 
 
+@pytest.mark.parametrize("name", sorted(TRUTH))
+def test_the_final_letter_and_phase(name: str) -> None:
+    """The grade and phase the story ends on — pinned for both engines.
+
+    The extension's grading, direction and phase logic was ported by hand and
+    had drifted (a single bounded reading placed in AWAKENING, an unclamped
+    improvement ratio). Its function-level parity is grading.golden.json;
+    this is the same check through the whole engine, on every real log.
+    """
+    store = RunStore(":memory:")
+    asyncio.run(
+        run_pipeline(
+            ingester=FileBatchIngester("c", str(LOGS[name])), run_id="c", store=store, hub=Hub()
+        )
+    )
+    frames = store.get_story_frames("c")
+    last = frames[-1] if frames else None
+    want = TRUTH[name]
+    assert (last.grade.value if last else None) == want["final_grade"]
+    assert (last.phase.value if last else None) == want["final_phase"]
+
+
 def test_one_story_metric_per_run() -> None:
     """The first frame is not a different series from the rest."""
     for name in ("pytorch_lightning_30ep.log", "keras_short.log", "pl_high_accuracy.log"):

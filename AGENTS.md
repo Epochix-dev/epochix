@@ -68,12 +68,16 @@ cd epochix-vscode && npm test    # launches a real VS Code host
   emitting a frame on an event that may never arrive.
 - **One truth for two engines.** `tests/fixtures/corpus_truth.json` (every
   log in `demo/` and `tests/fixtures/logs/`: task, story metric, frames, last
-  value, metric names, where the story's metric starts, the final grade note)
-  is asserted by both `test_log_corpus_truth.py` and the extension's
-  `corpusParity.test.ts`. A new log fails both until it has an entry. Name
-  tables, templates and messages are generated from Python — after changing
-  them run `make gen-ts-tables` and commit the output;
-  `test_ts_engine_tables_sync.py` fails until you do.
+  value, metric names, where the story's metric starts, the final grade, phase
+  and grade note, the cross-validation folds) is asserted by both
+  `test_log_corpus_truth.py` and the extension's `corpusParity.test.ts`. A new
+  log fails both until it has an entry. Name tables, templates, messages, and
+  every grading, direction, phase and pathology threshold are generated from
+  Python (`grading.generated.ts`); the few functions that read them are ported
+  once and replay `grading.golden.json`, Python's own answers. After changing
+  any of it run `make gen-ts-tables` and commit the output;
+  `test_ts_engine_tables_sync.py` fails until you do. Do not type a threshold
+  into the TypeScript: add it to the Python and the generator.
 - **A task and its primary metric are chosen separately.** The task comes from
   the metric *names* in a log, the primary metric from the first *preferred*
   key actually seen, and they routinely disagree — prose that names its metric

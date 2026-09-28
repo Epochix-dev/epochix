@@ -23,10 +23,22 @@ import {
   computeGrade,
   gradeByTrajectory,
   gradeNote,
+  gradeRank,
   hasAbsoluteScale,
   metricLowerBetter,
   taskLowerBetter,
 } from "../story/grader";
+// Pathology, stall and past-peak thresholds, generated from the Python
+// engine (story_engine/warnings.py and __init__.py) — no longer copied.
+import {
+  DIVERGE_GROWTH,
+  OVERFIT_WINDOW,
+  PAST_PEAK_REL_DROP,
+  PLATEAU_DELTA,
+  PLATEAU_WINDOW,
+  STALL_MIN_EPOCHS,
+  STALL_REL_IMPROVEMENT,
+} from "../story/grading.generated";
 import {
   narrate,
   narrateDiverged,
@@ -82,15 +94,6 @@ function detectTask(keys: ReadonlySet<string>, rawKeys: ReadonlySet<string>): Ta
 const NON_FINITE_ASSIGNMENT =
   /\b([A-Za-z_]\w{0,63})\s*[:=]\s*[-+]?(?:nan|inf(?:inity)?)\b/i;
 
-// Pathology thresholds, mirroring story_engine/warnings.py.
-const OVERFIT_WINDOW = 3;
-const PLATEAU_WINDOW = 5;
-const PLATEAU_DELTA = 0.01;
-const DIVERGE_GROWTH = 10;
-// Stalled / past-peak, mirroring story_engine/__init__.py.
-const PAST_PEAK_REL_DROP = 0.01;
-const STALL_MIN_EPOCHS = 3;
-const STALL_REL_IMPROVEMENT = 0.03;
 
 /**
  * The key this run is narrated by — Python's _effective_primary_key: the
@@ -599,19 +602,26 @@ export class StandaloneEngine {
       this._bestEpoch = epoch;
     }
 
+    // The clock when the run's length is known, else null — as in the Python
+    // engine, whose phase then advances on real improvement alone.
+    const clock = estimateProgress(epoch, totalEpochs);
+    // With one reading, improvement is zero by construction and every run —
+    // however good — was placed in AWAKENING. For a bounded higher-is-better
+    // metric, where the value sits on its own scale is the honest reading
+    // until there is movement to measure. Python's phase_baseline; this
+    // engine never had it.
+    const phaseBaseline =
+      this._primaryReadings < 2 && !lowerBetter && value >= 0 && value <= 1
+        ? 0.0
+        : this._baseline;
+    const phase: Phase = computePhase(clock, value, phaseBaseline, lowerBetter);
     const rel = relativeImprovement(value, this._baseline, lowerBetter);
-    // Honest advancement, as in the Python engine: the clock when the total
-    // length is known, otherwise the fraction of achievable improvement
-    // realised. estimateProgress answers a constant 0.05 when there is no
-    // total, which pinned every such run — boosting rounds, `epoch 3 loss=…`
-    // logs — in its first phase for its whole life: "the model is processing
-    // its first examples at epoch 55".
-    const progress = totalEpochs !== null && totalEpochs > 0
-      ? estimateProgress(epoch, totalEpochs)
-      : (rel ?? 0);
-    const phase: Phase = computePhase(
-      progress, value, this._baseline, lowerBetter ? 0 : 1.0, lowerBetter,
-    );
+    // Honest advancement: the clock when the length is known, otherwise the
+    // fraction of achievable improvement realised. Not a made-up constant,
+    // which pinned runs without a length in their first phase for life.
+    let progress = clock !== null ? clock : rel !== null ? rel : 0.0;
+    if (!Number.isFinite(progress)) progress = 0.0;
+    progress = Math.max(0.0, Math.min(1.0, progress));
     const grade = this._grade(value, lowerBetter);
 
     let pastPeak = false;
@@ -623,7 +633,7 @@ export class StandaloneEngine {
     // exactly as a flat one does, and was told it was "not learning yet".
     const stalled =
       this._primaryReadings >= STALL_MIN_EPOCHS &&
-      rel !== undefined &&
+      rel !== null &&
       rel < STALL_REL_IMPROVEMENT &&
       !pastPeak;
 
@@ -836,13 +846,6 @@ export class StandaloneEngine {
       }
     }
   }
-}
-
-const GRADE_ORDER: Grade[] = ["F", "D", "C-", "C", "C+", "B-", "B", "B+", "A-", "A", "A+"];
-
-/** Higher is better; "I" (incomplete) ranks below everything. */
-function gradeRank(g: Grade): number {
-  return GRADE_ORDER.indexOf(g);
 }
 
 function generateId(): string {

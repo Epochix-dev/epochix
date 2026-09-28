@@ -24,24 +24,22 @@ taught live in [AGENTS.md](AGENTS.md).
 
 ## Open
 
-Known gaps, each deliberate and none a bug.
-
-- **PDFs draw Latin and Arabic script only.** A Farsi report embeds Vazirmatn
-  and shapes its text with uharfbuzz (the `pdf` extra); without the shaper it
-  falls back to English chrome and says `pip install "epochix[pdf]"`. Any
-  other script — CJK in a run name, say — cannot be drawn by either font, and
-  a name made only of such characters is replaced by the run id rather than a
-  row of question marks. `test_pdf_export.py` pins exactly where that line
-  falls. Fixing it means embedding a font per script, or one very large one.
-- **Grading, direction and phase logic are hand-ported to TypeScript.** The
-  name tables, narrative templates and messages are generated from the Python
-  engine (`make gen-ts-tables`); the logic is ported by hand and held to the
-  Python engine by `corpus_truth.json` and each side's tests. Generating it
-  too would remove the last place the two engines can drift unseen.
+Nothing at the moment.
 
 ---
 
 ## Decided — not doing
+
+- **PDFs for scripts beyond Latin and Arabic.** A Farsi report embeds
+  Vazirmatn and shapes its text with uharfbuzz (the `pdf` extra); without the
+  shaper it falls back to English chrome and says `pip install
+  "epochix[pdf]"`. Any other script — CJK in a run name, say — cannot be drawn
+  by either font, and a name made only of such characters is replaced by the
+  run id rather than a row of question marks. `test_pdf_export.py` pins
+  exactly where that line falls. Drawing it would mean bundling a font per
+  script, or one very large one (a full CJK font is 15 MB or more, against
+  Vazirmatn's ~245 KB); decided on 2026-09-28 not to grow the package for it.
+  The HTML and Markdown exports carry every script already.
 
 - **Universal (fallback) parser at 50k lines/sec.** It runs at ~31k on CI. The
   gate never ran until 0.7.13; it then measured 16.7k. Two output-identical
