@@ -98,6 +98,9 @@ export class CompareView {
         <button id="cmp-md" class="cmp-race" title="${_esc(t('compare.comparisonMdTitle', "The explanation and each run's numbers, as Markdown"))}">
           ${_esc(t('compare.comparisonMd', 'Download comparison (.md)'))}
         </button>
+        <button id="cmp-pdf" class="cmp-race" title="${_esc(t('compare.comparisonPdfTitle', 'The explanation, the curves overlaid and each run\'s numbers, as a PDF'))}">
+          ${_esc(t('compare.comparisonPdf', 'Download comparison (.pdf)'))}
+        </button>
       </div>
       <div class="cmp-chart-wrap"><canvas id="cmp-canvas"></canvas></div>
       <div class="cmp-legend" id="cmp-legend"></div>
@@ -112,6 +115,11 @@ export class CompareView {
       const ids = this._runs.map((r) => r.run.id);
       if (ids.length < 2) return;
       window.location.href = compareMarkdownUrl(ids);
+    });
+    this._el.querySelector('#cmp-pdf')?.addEventListener('click', () => {
+      const ids = this._runs.map((r) => r.run.id);
+      if (ids.length < 2) return;
+      window.location.href = compareMarkdownUrl(ids, 'pdf');
     });
 
     // The race GIF is the thing people put in a slide, and until now the only
@@ -301,6 +309,6 @@ function _fmt(v) {
 }
 
 /** Where the written comparison of these runs downloads from. */
-export function compareMarkdownUrl(ids) {
-  return `/api/export/compare/md?runs=${ids.map(encodeURIComponent).join(',')}`;
+export function compareMarkdownUrl(ids, format = 'md') {
+  return `/api/export/compare/${format}?runs=${ids.map(encodeURIComponent).join(',')}`;
 }

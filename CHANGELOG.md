@@ -9,6 +9,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added — the comparison as a PDF
+
+- **`epochix compare --format pdf`**, `GET /api/export/compare/pdf` and a
+  *Download comparison (.pdf)* button in the comparison view. The Markdown
+  comparison carried the explanation and the numbers but no curve, and the
+  race GIF carried curves but no explanation; the PDF has the narrative, the
+  runs' curves overlaid on one chart, and the table. Runs measured on
+  different metrics are not overlaid — the text already refuses to rank them,
+  and a chart would rank them anyway, by eye. Farsi comparisons are drawn in
+  Farsi with the `pdf` extra and fall back to English, saying why, without it.
+  Built from the same comparison as the Markdown, so the two cannot disagree.
+
+### Fixed — comparisons and chart legends
+
+- **With three or more runs, the "no meaningful difference" sentence could
+  name the wrong pair.** It quoted the gap between the best and worst runs
+  but named the first two runs given. It names the two the gap is between.
+- **A long run name in a PDF chart legend ran into the next entry's swatch.**
+  Legend entries were fixed 42 mm slots; each is now as wide as its label.
+
 ### Fixed — Farsi PDFs scrambled their word order
 
 Found by rendering a Farsi page and reading it; every test passed. Two

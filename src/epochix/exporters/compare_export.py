@@ -4,26 +4,75 @@ The comparison view overlays the runs' curves and explains the difference in
 a paragraph, and none of it could leave the browser: the race GIF animates the
 curves, but the explanation and the numbers behind it — each run's grade, its
 final and best values, where the best was — existed only on screen. This is
-the written version, from the same narrative the view shows.
+the written version, from the same narrative the view shows, as Markdown or as
+a PDF. Both are built from one :class:`Comparison`, so they cannot disagree.
 """
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 from epochix.exporters.markdown_export import _code_safe, _md_escape
 from epochix.i18n import t
-from epochix.story_engine.comparison import narrate_comparison, run_trajectories
+from epochix.story_engine.comparison import (
+    RunTrajectory,
+    narrate_comparison,
+    run_labels,
+    run_trajectories,
+)
 
 if TYPE_CHECKING:
     from epochix.models import Run
     from epochix.store.sqlite_store import RunStore
 
 
-def build_comparison_markdown(
-    run_ids: list[str], store: RunStore, locale: str | None = None
-) -> str:
-    """A Markdown comparison of *run_ids*, in *locale* or the first run's language.
+@dataclass(frozen=True)
+class ComparisonRow:
+    """One run's line in the comparison table, as display strings."""
+
+    label: str
+    grade: str
+    metric: str
+    final: str
+    best: str
+    epochs: str
+    # The grade note's sentence in the comparison's language, or "".
+    note: str
+
+
+@dataclass(frozen=True)
+class Comparison:
+    """Everything a comparison document says, in *locale*."""
+
+    locale: str
+    runs: list[Run]
+    narrative: str
+    rows: list[ComparisonRow]
+    # Runs with a curve to draw, labelled as in the rows.
+    trajectories: list[RunTrajectory]
+
+    @property
+    def has_notes(self) -> bool:
+        return any(row.note for row in self.rows)
+
+    def headers(self) -> list[str]:
+        head = [
+            t("cmp.run", self.locale),
+            t("md.grade", self.locale),
+            t("md.primary_metric", self.locale),
+            t("col.final", self.locale),
+            t("cover.best", self.locale),
+            t("md.epochs", self.locale),
+        ]
+        if self.has_notes:
+            head.append(t("md.grade_note", self.locale))
+        # Some of these keys are lower-case column labels elsewhere ("final", "best").
+        return [h[:1].upper() + h[1:] for h in head]
+
+
+def build_comparison(run_ids: list[str], store: RunStore, locale: str | None = None) -> Comparison:
+    """The comparison of *run_ids*, in *locale* or the first run's language.
 
     Raises ValueError for an unknown id or fewer than two runs.
     """
@@ -40,28 +89,11 @@ def build_comparison_markdown(
 
     frames = [store.get_story_frames(run.id) for run in runs]
     trajectories = run_trajectories(list(zip(runs, frames, strict=True)))
+    labels = run_labels(runs)
+    usable = [tr for tr in trajectories if tr is not None]
 
-    lines = [f"# {t('cmp.title', locale)}", ""]
-    # The same paragraph the comparison view shows, including its refusals:
-    # runs on different metrics, or too short to compare, are said to be so.
-    lines += [narrate_comparison([tr for tr in trajectories if tr is not None], locale), ""]
-
-    notes = [f[-1].grade_note if f else None for f in frames]
-    head = [
-        t("cmp.run", locale),
-        t("md.grade", locale),
-        t("md.primary_metric", locale),
-        t("col.final", locale),
-        t("cover.best", locale),
-        t("md.epochs", locale),
-    ]
-    if any(notes):
-        head.append(t("md.grade_note", locale))
-    # Some of these keys are lower-case column labels elsewhere ("final", "best").
-    lines.append("| " + " | ".join(h[:1].upper() + h[1:] for h in head) + " |")
-    lines.append("|" + "---|" * len(head))
-    for run, run_frames, traj, note in zip(runs, frames, trajectories, notes, strict=True):
-        label = traj.name if traj is not None else run.name or run.id
+    rows: list[ComparisonRow] = []
+    for run, run_frames, traj, label in zip(runs, frames, trajectories, labels, strict=True):
         grade = run.final_grade.value if run.final_grade else "—"
         if traj is not None:
             metric = traj.primary_metric
@@ -77,13 +109,63 @@ def build_comparison_markdown(
             best, epochs = "—", str(len(run_frames))
         else:
             metric, final, best, epochs = run.primary_metric, "—", "—", "0"
-        cells = [_md_escape(label), f"**{grade}**", f"`{_code_safe(metric)}`", final, best, epochs]
-        if any(notes):
-            cells.append(t(f"grade_note.{note}", locale) if note else "")
+        note_key = run_frames[-1].grade_note if run_frames else None
+        note = t(f"grade_note.{note_key}", locale) if note_key else ""
+        rows.append(ComparisonRow(label, grade, metric, final, best, epochs, note))
+
+    return Comparison(
+        locale=locale,
+        runs=runs,
+        # The same paragraph the comparison view shows, including its refusals:
+        # runs on different metrics, or too short to compare, are said to be so.
+        narrative=narrate_comparison(usable, locale),
+        rows=rows,
+        trajectories=usable,
+    )
+
+
+def build_comparison_markdown(
+    run_ids: list[str], store: RunStore, locale: str | None = None
+) -> str:
+    """A Markdown comparison of *run_ids*, in *locale* or the first run's language.
+
+    Raises ValueError for an unknown id or fewer than two runs.
+    """
+    cmp = build_comparison(run_ids, store, locale)
+    lines = [f"# {t('cmp.title', cmp.locale)}", "", cmp.narrative, ""]
+    head = cmp.headers()
+    lines.append("| " + " | ".join(head) + " |")
+    lines.append("|" + "---|" * len(head))
+    for row in cmp.rows:
+        cells = [
+            _md_escape(row.label),
+            f"**{row.grade}**",
+            f"`{_code_safe(row.metric)}`",
+            row.final,
+            row.best,
+            row.epochs,
+        ]
+        if cmp.has_notes:
+            cells.append(row.note)
         lines.append("| " + " | ".join(cells) + " |")
 
     lines += ["", "---", ""]
-    ids = ", ".join(f"`{run.id}`" for run in runs)
+    ids = ", ".join(f"`{run.id}`" for run in cmp.runs)
     lines.append(f"*Generated by [epochix](https://github.com/epochix-dev/epochix) · {ids}*")
     lines.append("")
     return "\n".join(lines)
+
+
+def build_comparison_pdf(run_ids: list[str], store: RunStore, locale: str | None = None) -> bytes:
+    """The same comparison as a PDF: the narrative, the curves overlaid, the table.
+
+    Raises ValueError for an unknown id or fewer than two runs.
+    """
+    from epochix.exporters._pdf_render import pdf_can_draw, render_comparison_pdf
+
+    cmp = build_comparison(run_ids, store, locale)
+    if pdf_can_draw(cmp.locale):
+        return render_comparison_pdf(cmp)
+    # Farsi without the text shaper: an English document that says why,
+    # as the single-run report does, rather than a page of question marks.
+    return render_comparison_pdf(build_comparison(run_ids, store, "en"), fell_back=True)

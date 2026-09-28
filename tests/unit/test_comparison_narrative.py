@@ -96,6 +96,27 @@ def test_a_difference_inside_the_noise_is_not_a_winner() -> None:
     assert "ahead of" not in text, "declared a winner inside the noise"
 
 
+def test_the_noise_sentence_names_the_pair_its_gap_is_between() -> None:
+    """With three runs the gap is best-to-worst, so those are the two named.
+
+    It named the first two runs given, which quoted a gap between two runs
+    while naming a different pair whenever the extremes were not listed first.
+    """
+
+    def jitter(name: str, offset: float) -> RunTrajectory:
+        return RunTrajectory(
+            name,
+            "val_accuracy",
+            [(i, 0.80 + offset + 0.01 * i + (0.004 if i % 2 else -0.004)) for i in range(1, 11)],
+        )
+
+    middle, low, high = jitter("middle", 0.001), jitter("low", 0.0), jitter("high", 0.002)
+    text = narrate_comparison([middle, low, high])
+    assert "no meaningful difference" in text.lower()
+    assert text.startswith("low and high finished within 0.0020"), text
+    assert "middle" not in text
+
+
 def test_runs_measuring_different_things_are_refused() -> None:
     gaze = RunTrajectory("gaze", "MAE", [(1, 7.0), (2, 5.1), (3, 4.2)])
     text = narrate_comparison([OVERFIT, gaze]).lower()

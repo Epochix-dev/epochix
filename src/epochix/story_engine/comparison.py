@@ -134,6 +134,10 @@ def narrate_comparison(runs: list[RunTrajectory], locale: str = "en") -> str:
     noise = max(winner.noise, loser.noise)
 
     if gap <= noise * _NOISE_MULTIPLE:
+        # Name the two runs the gap is measured between, in the order given.
+        # This named the first two runs given, so with three the sentence
+        # could quote the best-to-worst gap between a pair it did not describe.
+        pair = [r for r in usable if r is winner or r is loser]
         return _fill(
             _load_special(
                 "_compare_noise",
@@ -142,8 +146,8 @@ def narrate_comparison(runs: list[RunTrajectory], locale: str = "en") -> str:
                 "no larger than the epoch-to-epoch movement in either run. On this "
                 "evidence there is no meaningful difference between them.",
             )[0],
-            a=usable[0].name,
-            b=usable[1].name,
+            a=pair[0].name,
+            b=pair[1].name,
             gap=_fmt(gap),
             metric=winner.primary_metric,
         )

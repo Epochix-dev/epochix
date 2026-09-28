@@ -90,7 +90,9 @@
     "raceGifTitle": "GIF متحرک از مسابقهٔ این اجراها",
     "comparisonMd": "دانلود مقایسه (.md)",
     "comparisonMdTitle": "توضیح و اعداد هر اجرا، به‌صورت Markdown",
-    "rendering": "در حال ساخت…"
+    "rendering": "در حال ساخت…",
+    "comparisonPdf": "دانلود مقایسه (.pdf)",
+    "comparisonPdfTitle": "توضیح، منحنی‌های روی هم و اعداد هر اجرا، به‌صورت PDF"
   },
   "cv": {
     "title_search": "جست‌وجوی پارامتر",

@@ -31,6 +31,7 @@ from epochix.story_engine.messages import phase_name
 if TYPE_CHECKING:
     from collections.abc import Sequence
 
+    from epochix.exporters.compare_export import Comparison
     from epochix.models import MetricEvent, Run, StoryFrame
 
 # Landscape A4 in mm — a report that is read on screen, not printed to be
@@ -313,6 +314,7 @@ def _line_chart(
         doc.set_xy(x + w + 1.0, gy - 2.0)
         doc.cell(16, 4, _s(doc, f"{y_hi - y_span * i / 3.0:.4g}"))
 
+    legend_x = x
     for index, (label, points) in enumerate(series):
         colour = _SERIES_RGB[index % len(_SERIES_RGB)]
         doc.set_draw_color(*colour)
@@ -327,14 +329,18 @@ def _line_chart(
             for (ax, ay), (bx, by) in pairwise(points):
                 doc.line(px(ax), py(ay), px(bx), py(by))
 
-        # Legend swatch, on the line's own colour.
-        lx = x + index * 42.0
+        # Legend swatch, on the line's own colour. Each entry is as wide as its
+        # label: a fixed 42 mm slot ran a run name such as
+        # "pytorch_lightning_30ep.log" into the next entry's swatch.
         ly = top + plot_h + 4.0
         doc.set_line_width(1.2)
-        doc.line(lx, ly + 1.5, lx + 5.0, ly + 1.5)
+        doc.line(legend_x, ly + 1.5, legend_x + 5.0, ly + 1.5)
         _text(doc, 8, _MUTED)
-        doc.set_xy(lx + 6.5, ly - 0.5)
-        doc.cell(34, 4, _s(doc, label))
+        text = _s(doc, label)
+        width = doc.get_string_width(text) + 1.0
+        doc.set_xy(legend_x + 6.5, ly - 0.5)
+        doc.cell(width, 4, text)
+        legend_x += 6.5 + width + 6.0
 
     # x axis extent, so "epoch 1 to 20" is stated rather than assumed.
     _text(doc, 7, _MUTED)
@@ -998,4 +1004,86 @@ def render_pdf(
     _final_metrics_table(doc, events, locale)
     _skills_and_model(doc, run, frames, locale)
 
+    return bytes(doc.output())
+
+
+def pdf_can_draw(locale: str) -> bool:
+    """Whether a PDF can be drawn in *locale* here, rather than falling back to English."""
+    return _drawable_locale(locale) or can_draw_persian()
+
+
+def render_comparison_pdf(cmp: Comparison, *, fell_back: bool = False) -> bytes:
+    """Several runs side by side: the narrative, their curves overlaid, the table.
+
+    The comparison view's content, which could not leave the browser: the race
+    GIF carried the curves and nothing carried the explanation or the numbers.
+    Curves are overlaid only for runs measured on one metric — the narrative
+    already refuses to rank runs that are not, and a chart would rank them
+    anyway, by eye.
+    """
+    locale = cmp.locale
+    unicode = not _drawable_locale(locale)
+    doc = _pdf(unicode=unicode)
+    doc.set_title(t("cmp.title", locale) + ": " + ", ".join(r.label for r in cmp.rows))
+    doc.set_subject("epochix run comparison")
+
+    doc.add_page()
+    _text(doc, 22, _INK, "B")
+    doc.cell(
+        0, 12, _s(doc, t("cmp.title", locale)), align=_lead(locale), new_x="LMARGIN", new_y="NEXT"
+    )
+    if fell_back:
+        _text(doc, 10, _MUTED)
+        doc.multi_cell(0, 5, _s(doc, _UNRENDERABLE_NOTE), align=_lead(locale))
+    doc.ln(2)
+    _text(doc, 12, _INK)
+    doc.multi_cell(0, 6.5, _s(doc, cmp.narrative), align=_lead(locale))
+
+    metrics = {tr.primary_metric for tr in cmp.trajectories}
+    if len(cmp.trajectories) >= 2 and len(metrics) == 1:
+        top = doc.get_y() + 6.0
+        height = min(_H - _MARGIN - top - 10.0, 105.0)
+        if height >= 50.0:
+            _line_chart(
+                doc,
+                _MARGIN,
+                top,
+                _W - 2 * _MARGIN - 18.0,
+                height,
+                [(tr.name, list(tr.values)) for tr in cmp.trajectories],
+                metrics.pop(),
+            )
+
+    doc.add_page()
+    _text(doc, 9, _INK)
+    head = cmp.headers()
+    # The label and note columns take what the numbers leave; a note is a
+    # sentence and wraps inside its cell.
+    widths = [52.0, 18.0, 34.0, 22.0, 38.0, 18.0]
+    if cmp.has_notes:
+        widths.append(_W - 2 * _MARGIN - sum(widths))
+    else:
+        widths[0] += _W - 2 * _MARGIN - sum(widths)
+    with doc.table(
+        col_widths=tuple(widths),
+        width=sum(widths),
+        first_row_as_headings=True,
+        borders_layout="HORIZONTAL_LINES",
+        line_height=5.5,
+    ) as table:
+        header = table.row()
+        for h in head:
+            header.cell(_s(doc, h))
+        for r in cmp.rows:
+            row = table.row()
+            cells = [r.label, r.grade, r.metric, r.final, r.best, r.epochs]
+            if cmp.has_notes:
+                cells.append(r.note)
+            for c in cells:
+                row.cell(_s(doc, c))
+
+    doc.ln(4)
+    _text(doc, 8, _MUTED)
+    ids = ", ".join(run.id for run in cmp.runs)
+    doc.multi_cell(0, 4.5, _s(doc, f"epochix · {ids}"), align=_lead(locale))
     return bytes(doc.output())
