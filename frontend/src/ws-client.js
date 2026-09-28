@@ -129,6 +129,10 @@ function _handleMessage(msg) {
 
     case 'complete':
       store.set({ live: false, connected: false });
+      // Folds are ranked once the stream ends; a live page learns of them here.
+      if (msg.payload?.cross_validation) {
+        store.set({ crossValidation: msg.payload.cross_validation });
+      }
       disconnect();
       break;
 

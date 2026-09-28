@@ -61,6 +61,8 @@ export const store = createStore({
   milestones: [],
   architecture: null,
   activations: null,
+  // run.config.cross_validation: every setting's fold readings, or null.
+  crossValidation: null,
 });
 
 /**

@@ -18,7 +18,7 @@ import * as path from "path";
 import * as vscode from "vscode";
 
 import { StandaloneEngine } from "../../webview/StandaloneEngine";
-import type { StoryFrameMsg } from "../../webview/messages";
+import type { CrossValidation, StoryFrameMsg } from "../../webview/messages";
 
 const EXT_ID = "epochix.epochix";
 
@@ -31,6 +31,7 @@ interface Expectation {
   keys: string[];
   metric_from_epoch: number | null;
   grade_note: string | null;
+  cross_validation: CrossValidation | null;
 }
 
 function repoRoot(): string {
@@ -63,6 +64,7 @@ function run(file: string): Omit<Expectation, "path"> {
     keys: keys.sort((a, b) => (a < b ? -1 : a > b ? 1 : 0)),
     metric_from_epoch: starts.length ? Math.min(...starts) : null,
     grade_note: last ? last.gradeNote : null,
+    cross_validation: engine.crossValidation(),
   };
 }
 
@@ -70,7 +72,7 @@ suite("Corpus parity — the extension reads every log as Python does", () => {
   const expected = truth();
 
   test("the corpus is all there", () => {
-    assert.ok(Object.keys(expected).length >= 38, "corpus_truth.json lost its entries");
+    assert.ok(Object.keys(expected).length >= 39, "corpus_truth.json lost its entries");
     for (const [name, want] of Object.entries(expected)) {
       assert.ok(fs.existsSync(path.join(repoRoot(), want.path)), `${name}: ${want.path} missing`);
     }
@@ -86,6 +88,7 @@ suite("Corpus parity — the extension reads every log as Python does", () => {
       assert.strictEqual(got.last_value, want.last_value, "last value");
       assert.strictEqual(got.metric_from_epoch, want.metric_from_epoch, "story metric starts at");
       assert.strictEqual(got.grade_note, want.grade_note, "grade note");
+      assert.deepStrictEqual(got.cross_validation, want.cross_validation, "folds");
     });
   }
 });

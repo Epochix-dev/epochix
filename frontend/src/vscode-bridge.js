@@ -66,6 +66,7 @@ export function startVscodeBridge(applyTheme) {
           run: null,
           live: !msg.hasSidecar,
           host: 'vscode',
+          crossValidation: msg.crossValidation ?? null,
           // Whether a log or terminal feeds this panel. Opened bare, nothing
           // will ever arrive, and the panel must say so rather than wait.
           attached: msg.attached !== false,
@@ -136,6 +137,7 @@ export function startVscodeBridge(applyTheme) {
             story_summary: r.storySummary,
             finished_at: new Date().toISOString(),
           },
+          crossValidation: r.crossValidation ?? store.get().crossValidation ?? null,
           live: false,
           connected: false,
         });

@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [Unreleased]
+
+### Added — the parameter search on the dashboard
+
+- **The dashboard showed one setting of a GridSearchCV; its reports showed
+  all of them.** A *Parameter search* panel now ranks every setting the search
+  tried — mean, spread, range and folds, with the one that was charted marked —
+  or, for a plain cross-validation, its folds. The section is absent for runs
+  without folds. It reads the run's stored folds on load, and a page watching
+  a run live receives them with the run's `complete` message. In English,
+  Farsi and French.
+- **The VS Code extension shows it too, without the Python package.** Its
+  engine already collected every setting's folds to pick the winner, and
+  never passed the rest on; it now sends them with the panel's `init` and
+  the run's summary.
+- **One ranking, three places.** The dashboard's JavaScript ranking and the
+  reports' Python ranking are held to one fixture generated from Python
+  (`tests/fixtures/cv_ranking.json`), so they cannot name different winners.
+  A GridSearchCV log joins the corpus both engines are tested against, and
+  `corpus_truth.json` now pins every log's fold readings: the extension must
+  collect exactly what the Python pipeline stores.
+
 ## [0.7.16] — 2026-09-25
 
 ### Added — a comparison you can send

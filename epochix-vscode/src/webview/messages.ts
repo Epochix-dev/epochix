@@ -50,6 +50,14 @@ export interface RunSummaryMsg {
   taskType: TaskType;
   finalGrade: Grade | null;
   storySummary: string | null;
+  /** Every setting's fold readings — see StandaloneEngine.crossValidation. */
+  crossValidation: CrossValidation | null;
+}
+
+/** Mirrors run.config["cross_validation"] from the Python pipeline. */
+export interface CrossValidation {
+  folds: Record<string, number[]>;
+  candidates: Record<string, Record<string, number[]>>;
 }
 
 // ── Extension → WebView ───────────────────────────────────────────────────────
@@ -65,6 +73,7 @@ export type ExtToWeb =
       milestones: MilestoneMsg[];
       warnings: WarningMsg[];
       hasSidecar: boolean;
+      crossValidation?: CrossValidation | null;
       /** Whether a log or terminal feeds this panel (see DashboardPanel._attached). */
       attached: boolean;
     }

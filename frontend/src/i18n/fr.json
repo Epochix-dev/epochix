@@ -91,5 +91,18 @@
     "comparisonMd": "Télécharger la comparaison (.md)",
     "comparisonMdTitle": "L'explication et les chiffres de chaque exécution, en Markdown",
     "rendering": "Génération…"
+  },
+  "cv": {
+    "title_search": "Recherche de paramètres",
+    "title_cv": "Validation croisée",
+    "setting": "Réglage",
+    "metric": "Métrique",
+    "mean": "Moyenne",
+    "spread": "± écart-type",
+    "range": "Plage",
+    "folds": "Plis",
+    "chosen": "choisi",
+    "note_search": "Seul le réglage choisi est tracé et noté : la moyenne la plus haute, les scores de scikit-learn étant « plus haut = mieux ». L'ordre des plis n'a pas de sens.",
+    "note_cv": "Les plis sont rapportés ici plutôt que tracés : leur ordre n'a pas de sens, ils n'ont donc pas de tendance."
   }
 }
