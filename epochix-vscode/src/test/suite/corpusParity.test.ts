@@ -32,6 +32,8 @@ interface Expectation {
   metric_from_epoch: number | null;
   grade_note: string | null;
   cross_validation: CrossValidation | null;
+  final_grade: string | null;
+  final_phase: string | null;
 }
 
 function repoRoot(): string {
@@ -65,6 +67,8 @@ function run(file: string): Omit<Expectation, "path"> {
     metric_from_epoch: starts.length ? Math.min(...starts) : null,
     grade_note: last ? last.gradeNote : null,
     cross_validation: engine.crossValidation(),
+    final_grade: last ? last.grade : null,
+    final_phase: last ? last.phase : null,
   };
 }
 
@@ -89,6 +93,8 @@ suite("Corpus parity — the extension reads every log as Python does", () => {
       assert.strictEqual(got.metric_from_epoch, want.metric_from_epoch, "story metric starts at");
       assert.strictEqual(got.grade_note, want.grade_note, "grade note");
       assert.deepStrictEqual(got.cross_validation, want.cross_validation, "folds");
+      assert.strictEqual(got.final_grade, want.final_grade, "final grade");
+      assert.strictEqual(got.final_phase, want.final_phase, "final phase");
     });
   }
 });

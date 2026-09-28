@@ -2,6 +2,18 @@ from __future__ import annotations
 
 from epochix.enums import Phase
 
+# Below this advancement a run is AWAKENING whatever its metric says.
+AWAKENING_BELOW = 0.10
+# Each later phase is entered once BOTH the advancement and the relative
+# improvement reach its bar: (phase before it, advancement bar, improvement
+# bar). Past the last bar a run is POLISHING. A table rather than numbers in
+# the code, so the extension's engine is generated from the same values.
+PHASE_STEPS: tuple[tuple[Phase, float, float], ...] = (
+    (Phase.LEARNING, 0.40, 0.40),
+    (Phase.UNDERSTANDING, 0.70, 0.75),
+    (Phase.MASTERING, 0.95, 0.95),
+)
+
 
 def relative_improvement(
     primary_value: float,
@@ -57,14 +69,11 @@ def compute_phase(
     # Advancement = the clock when we have one, else metric-driven progress.
     adv = progress if progress is not None else relative
 
-    if adv < 0.10:
+    if adv < AWAKENING_BELOW:
         return Phase.AWAKENING
-    if adv < 0.40 or relative < 0.40:
-        return Phase.LEARNING
-    if adv < 0.70 or relative < 0.75:
-        return Phase.UNDERSTANDING
-    if adv < 0.95 or relative < 0.95:
-        return Phase.MASTERING
+    for phase, adv_bar, rel_bar in PHASE_STEPS:
+        if adv < adv_bar or relative < rel_bar:
+            return phase
     return Phase.POLISHING
 
 
