@@ -66,6 +66,39 @@ cd epochix-vscode && npm test    # launches a real VS Code host
 - **Streaming has no end.** The server ingests live runs through
   `StoryEngine.process()`, which never sees an end-of-stream. Do not gate
   emitting a frame on an event that may never arrive.
+- **One truth for two engines.** `tests/fixtures/corpus_truth.json` (every
+  log in `demo/` and `tests/fixtures/logs/`: task, story metric, frames, last
+  value, metric names, where the story's metric starts, the final grade note)
+  is asserted by both `test_log_corpus_truth.py` and the extension's
+  `corpusParity.test.ts`. A new log fails both until it has an entry. Name
+  tables, templates and messages are generated from Python — after changing
+  them run `make gen-ts-tables` and commit the output;
+  `test_ts_engine_tables_sync.py` fails until you do.
+- **A task and its primary metric are chosen separately.** The task comes from
+  the metric *names* in a log, the primary metric from the first *preferred*
+  key actually seen, and they routinely disagree — prose that names its metric
+  was wrong whenever they did. And a metric whose direction is not pinned
+  inherits its task's default silently, so its grade simply comes out
+  inverted. Tests assert the direction of every preferred key; keep it so.
+- **Test what the release builds.** 0.7.5–0.7.10 shipped a blank VS Code panel
+  because the extension tests ran against `frontend/dist` (the server build)
+  while the release packages `build:webview` output. When a release step
+  rebuilds something (`vscode:prepublish`), test the rebuild; before tagging,
+  `npx --no-install vsce package` and look inside the `.vsix`.
+
+## Dependabot
+
+Land Dependabot PRs with `make land PR=<n>` (`scripts/land_dependabot.py`),
+never the GitHub merge button or `gh pr merge`. A squash merge keeps
+`dependabot[bot]` as the commit author, and GitHub builds the Contributors list
+from commit authors — 31 such merges once put the bot on it, and `main`'s
+history was rewritten on 2026-09-23 to re-author them. The script commits the
+same change as the maintainer, closes the PR, and refuses a PR whose CI did not
+run on a base containing current `main`: `main` is not branch-protected, so that
+check is the only gate a direct push has. Security-update PRs come from
+Dependabot too; land them the same way. (Dependabot security updates, secret
+scanning and push protection are on since 2026-09-23; the first full-history
+secret scan found nothing.)
 
 ## Tests must execute the path
 
