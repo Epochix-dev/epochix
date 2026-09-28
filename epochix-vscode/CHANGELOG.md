@@ -14,6 +14,16 @@ which covers the extension too; entries here resume with 0.7.16.
 
 ---
 
+## [0.7.18] — 2026-09-28
+
+### Fixed
+
+- **A one-epoch run, or a fit-once result, ended its story in the wrong
+  phase.** The extension's grading and phase logic was a hand copy of the
+  Python engine's and had drifted; it now grades from tables generated from
+  the Python engine and replays 2,800 of its answers in its tests, so the
+  extension and the Python package tell every run the same way.
+
 ## [0.7.17] — 2026-09-28
 
 ### Added
