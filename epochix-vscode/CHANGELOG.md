@@ -14,6 +14,18 @@ which covers the extension too; entries here resume with 0.7.16.
 
 ---
 
+## [0.7.17] — 2026-09-28
+
+### Added
+
+- **The parameter search on the dashboard.** A GridSearchCV run shows every
+  setting it tried — mean, spread, range and folds, with the one that was
+  charted marked — in a *Parameter search* panel, and a plain
+  cross-validation shows its folds. Works without the Python package: the
+  extension's engine now hands on the folds it collects.
+- **The comparison as a PDF**, beside the Markdown download in the comparison
+  view: the explanation, the runs' curves overlaid, and each run's numbers.
+
 ## [0.7.16] — 2026-09-25
 
 ### Added
