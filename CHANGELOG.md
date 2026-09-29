@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [Unreleased]
+
+### Fixed
+
+- **Piped or redirected output on Windows was garbled.** Python writes a
+  Windows pipe in the ANSI codepage (cp1252) and whatever reads it decodes
+  with its own, so `epochix demo | Out-File demo.txt` turned every "·" and "—"
+  into junk. Redirected output on Windows is now UTF-8, so a Farsi run name
+  survives, and Epochix's own decorations (dots, dashes, arrows) are written
+  as ASCII, so they read cleanly in any codepage. A terminal is unchanged, and
+  an encoding you set yourself with `PYTHONIOENCODING` or `PYTHONUTF8` wins.
+
 ## [0.7.21] — 2026-09-29
 
 ### Removed — the Claude artifact

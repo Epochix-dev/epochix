@@ -12,7 +12,10 @@ Route any user-facing string containing a decoration through
 from __future__ import annotations
 
 import contextlib
+import os
 import sys
+from collections.abc import Iterable
+from typing import TextIO, cast
 
 # Decorations we print, and what to say instead when the console cannot encode
 # them.
@@ -26,6 +29,7 @@ _ASCII_FALLBACKS = {
     "—": "-",  # em dash
     "•": "*",  # bullet
     "⚠": "!",  # warning
+    "·": "-",  # middle dot ("Demo · keras_image_classifier.log")
 }
 
 
@@ -90,3 +94,71 @@ def harden_streams() -> None:
         # A closed or detached stream is not worth failing the command over.
         with contextlib.suppress(ValueError, OSError):
             reconfigure(errors="replace")
+    sys.stdout = _for_windows_redirect(sys.stdout)
+    sys.stderr = _for_windows_redirect(sys.stderr)
+
+
+def _for_windows_redirect(stream: TextIO) -> TextIO:
+    """UTF-8 with ASCII decorations when Windows output is piped or redirected.
+
+    Python writes a Windows pipe in the ANSI codepage (cp1252), while whatever
+    reads it decodes with its own: ``epochix demo | Out-File`` garbled every
+    middle dot and em dash, written in one codepage and read in another. So a
+    redirect gets UTF-8,
+    which keeps user data (a Farsi run name) correct for any reader that
+    speaks it, and our own decorations as ASCII, which read cleanly in any
+    codepage. A terminal is left alone (Python talks to it in Unicode), and so
+    is an encoding the user chose with PYTHONIOENCODING or PYTHONUTF8.
+    """
+    if (
+        isinstance(stream, _AsciiDecorations)
+        or sys.platform != "win32"
+        or os.environ.get("PYTHONIOENCODING")
+        or os.environ.get("PYTHONUTF8")
+    ):
+        return stream
+    try:
+        if stream.isatty():
+            return stream
+    except (AttributeError, ValueError, OSError):
+        return stream  # closed, detached, or not a real stream
+    reconfigure = getattr(stream, "reconfigure", None)
+    if reconfigure is None:
+        return stream
+    with contextlib.suppress(ValueError, OSError):
+        reconfigure(encoding="utf-8", errors="replace")
+    return cast(TextIO, _AsciiDecorations(stream))
+
+
+class _AsciiDecorations:
+    """A text stream that writes our own decorations as ASCII; else delegates."""
+
+    def __init__(self, stream: TextIO) -> None:
+        self._stream = stream
+
+    def write(self, s: str) -> int:
+        return self._stream.write(transliterate(s))
+
+    def writelines(self, lines: Iterable[str]) -> None:
+        for line in lines:
+            self.write(line)
+
+    def flush(self) -> None:
+        self._stream.flush()
+
+    def isatty(self) -> bool:
+        return False
+
+    def fileno(self) -> int:
+        return self._stream.fileno()
+
+    @property
+    def encoding(self) -> str:
+        return self._stream.encoding
+
+    @property
+    def buffer(self) -> object:
+        return self._stream.buffer
+
+    def __getattr__(self, name: str) -> object:
+        return getattr(self._stream, name)
