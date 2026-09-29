@@ -14,6 +14,12 @@ which covers the extension too; entries here resume with 0.7.16.
 
 ---
 
+## [0.7.21] — 2026-09-29
+
+No change to the extension itself; released in step with the Python package,
+whose release withdraws a stale Claude artifact and fixes links and notes
+around the project.
+
 ## [0.7.20] — 2026-09-29
 
 ### Fixed
