@@ -221,10 +221,18 @@ def cmd_run(  # noqa: C901
         if not log_file.exists():
             typer.echo(f"Error: file not found: {log_file}", err=True)
             raise typer.Exit(1)
+        # A folder got as far as opening it: a PermissionError traceback on
+        # Windows, and a run stuck "in progress" in `epochix list`.
+        if log_file.is_dir():
+            typer.echo(f"Error: {log_file} is a folder; give the log file inside it.", err=True)
+            raise typer.Exit(1)
     elif tail is not None:
         source = "file_tail"  # live: poll indefinitely
         source_path = str(tail)
         live = True
+        if tail.is_dir():
+            typer.echo(f"Error: {tail} is a folder; give the log file to follow.", err=True)
+            raise typer.Exit(1)
     elif live or not sys.stdin.isatty():
         source = "stdin"
         source_path = None
@@ -1035,15 +1043,13 @@ def cmd_doctor() -> None:
     """
     import platform
     import sys
-    from importlib.metadata import version as _pkg_version
+
+    # Not importlib.metadata: beside an older installed copy it reports that
+    # copy's number (0.5.94 from a 0.7.22 tree) — wrong in a bug report.
+    from epochix import __version__
 
     lines: list[str] = ["<!-- epochix doctor -->", "```"]
-
-    try:
-        ver = _pkg_version("epochix")
-    except Exception:  # pragma: no cover - source checkout without metadata
-        ver = "unknown (source checkout)"
-    lines.append(f"epochix        {ver}")
+    lines.append(f"epochix        {__version__}")
     lines.append(f"python         {sys.version.split()[0]} ({platform.python_implementation()})")
     lines.append(f"platform       {platform.system()} {platform.release()} {platform.machine()}")
 
@@ -1386,6 +1392,15 @@ def main_entry() -> None:
     # No args, or a top-level help flag → let Typer show the group help.
     if not argv or argv[0] in ("-h", "--help"):
         app()
+        return
+
+    # `--version` is the first thing many people type. With no subcommand it
+    # was routed to `run`, which answered "No such option: --version" under a
+    # "Usage: epochix run" banner.
+    if argv[0] in ("-V", "--version"):
+        from epochix import __version__
+
+        typer.echo(f"epochix {__version__}")
         return
 
     first_positional = next((a for a in argv if not a.startswith("-")), None)

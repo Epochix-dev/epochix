@@ -59,6 +59,8 @@ def parse(
     log_path = Path(path)
     if not log_path.exists():
         raise FileNotFoundError(f"Log file not found: {log_path}")
+    if log_path.is_dir():
+        raise IsADirectoryError(f"Log path is a folder, not a log file: {log_path}")
 
     effective_task: TaskType | None = TaskType(task) if isinstance(task, str) else task
 
