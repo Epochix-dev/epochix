@@ -14,6 +14,15 @@ which covers the extension too; entries here resume with 0.7.16.
 
 ---
 
+## [0.7.19] — 2026-09-29
+
+### Fixed
+
+- The skill radar cut axis names to ten characters ("Val Accura"); they are
+  wrapped whole and fit the panel. The parameter share reads "<1%" for a real
+  layer rather than "0%".
+- The bundled LICENSE is the verbatim Apache 2.0 text; it was a paraphrase.
+
 ## [0.7.18] — 2026-09-28
 
 ### Fixed
