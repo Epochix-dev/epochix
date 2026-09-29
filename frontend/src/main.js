@@ -11,6 +11,7 @@
  *  7. Wire up header controls (theme toggle, export button)
  */
 
+import './themes/fonts.css';
 import './themes/dark.css';
 import './themes/light.css';
 import './themes/base.css';

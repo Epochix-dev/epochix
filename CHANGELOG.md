@@ -7,6 +7,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [Unreleased]
+
+### Fixed — nothing leaves your machine, and the Keras demo is a real run
+
+- **The dashboard fetched its fonts from Google.** Every dashboard, every
+  exported HTML report and every VS Code panel requested DM Sans and
+  Instrument Serif from fonts.googleapis.com — in a product that says it runs
+  locally and sends nothing. Both fonts (SIL OFL 1.1) are bundled now and
+  inlined into the stylesheet by every build, so an exported report carries
+  its fonts and works offline; the VS Code webview's CSP admits fonts only as
+  `data:` URIs. The browser suite now asserts, in Chromium, Firefox and
+  WebKit, that the dashboard makes no request off the machine and that an
+  exported report opened with the network cut still draws its own fonts. The
+  licence texts ship beside the built dashboard, credited in `NOTICE`.
+- **`epochix demo keras` played a hand-written log.** It skipped epochs 6, 7,
+  9, 11, 13, 14, 16, 17 and 19, and its model summary was one Keras cannot
+  print — a Dense layer straight after a pooling layer, with no Flatten. It is
+  now a real run: a small CNN trained on scikit-learn's handwritten digits by
+  `demo/keras_image_classifier_source.py`, every epoch and every number
+  (timings included) from the actual optimisation, reproducible with the same
+  seed. The README's example follows it.
+- **The package's copy of the demos was tied to nothing.** `epochix demo`
+  plays `src/epochix/_demos/`, while the README, the tests and the corpus read
+  `demo/`; regenerating one would have left the other playing the old log.
+  A test now fails if any packaged demo differs from its original.
+
 ## [0.7.19] — 2026-09-29
 
 ### Fixed — the front page told the product's one rule a lie

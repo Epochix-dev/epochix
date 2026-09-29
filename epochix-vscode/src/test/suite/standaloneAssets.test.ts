@@ -162,4 +162,21 @@ suite("Standalone webview assets", () => {
       "main.js never touches the warning strip",
     );
   });
+
+  test("the panel's fonts ship with it, and nothing is fetched from elsewhere", async () => {
+    // The fonts came from fonts.googleapis.com, and the CSP allowed exactly
+    // that — every panel opened a connection to Google. They are inlined into
+    // main.css now, and the CSP admits fonts only as data: URIs.
+    const { html, root } = await standaloneHtml();
+    const csp = /Content-Security-Policy" content="([^"]+)"/.exec(html)?.[1] ?? "";
+    assert.ok(csp, "no CSP on the webview");
+    assert.ok(/font-src data:;/.test(csp), `fonts not limited to data: URIs: ${csp}`);
+    assert.ok(!/googleapis|gstatic/.test(html + csp), "the webview still names Google Fonts");
+    const css = fs.readFileSync(path.join(root, "main.css"), "utf-8");
+    assert.ok(css.includes("data:font/woff2"), "main.css carries no inlined font");
+    assert.ok(!/url\((?!["']?data:)/.test(css), "main.css references a file it does not carry");
+    for (const family of ["DM Sans", "Instrument Serif"]) {
+      assert.ok(css.includes(family), `${family} is not declared in main.css`);
+    }
+  });
 });

@@ -1,5 +1,10 @@
 import { defineConfig } from 'vite';
 
+// Fonts are inlined into the stylesheet in every build: an exported HTML
+// report inlines the stylesheet's text, so a font referenced as a separate
+// file would be missing from it. See src/themes/fonts.css.
+const inlineFonts = (file) => (/\.woff2?$/.test(file) ? true : undefined);
+
 export default defineConfig({
   root: '.',
   base: '/',
@@ -7,6 +12,7 @@ export default defineConfig({
     outDir: 'dist',
     emptyOutDir: true,
     target: 'es2020',
+    assetsInlineLimit: inlineFonts,
     rollupOptions: {
       input: 'index.html',
       output: {

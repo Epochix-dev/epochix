@@ -158,3 +158,98 @@ def test_dashboard_renders_without_errors(
     collapsed = [c for c in canvases if c["w"] == 0 or c["h"] == 0]
     assert not collapsed, f"{browser_name}: canvases rendered with zero size: {collapsed}"
     assert not body_overflows, f"{browser_name}: page overflows horizontally"
+
+
+# Fonts were fetched from fonts.googleapis.com at view time, so every dashboard
+# and every exported report made a request to Google — in a product that says it
+# runs locally and sends nothing. They are bundled now (frontend/src/themes/
+# fonts.css, inlined into the stylesheet by every build).
+_FACES = ('16px "DM Sans"', 'italic 16px "DM Sans"', '16px "Instrument Serif"')
+
+
+def _launch(pw: object, browser_name: str) -> object:
+    browser_type = getattr(pw, browser_name)
+    try:
+        return browser_type.launch()
+    except Exception as exc:  # noqa: BLE001 — engine unavailable, not an app bug
+        if _REQUIRE_ALL:
+            pytest.fail(f"{browser_name} failed to launch: {exc}")
+        pytest.skip(f"{browser_name} unavailable on this host: {exc}")
+
+
+def _faces_loaded(page: object) -> dict[str, bool]:
+    return page.evaluate(  # type: ignore[attr-defined, no-any-return]
+        """async (faces) => {
+            await document.fonts.ready;
+            await Promise.all(faces.map((f) => document.fonts.load(f)));
+            const loaded = [...document.fonts].filter((f) => f.status === 'loaded')
+              .map((f) => f.family.replace(/["']/g, '') + '|' + f.style);
+            return Object.fromEntries(faces.map((f) => {
+              const style = f.startsWith('italic') ? 'italic' : 'normal';
+              const family = f.split('"')[1];
+              return [f, loaded.includes(family + '|' + style)];
+            }));
+        }""",
+        list(_FACES),
+    )
+
+
+@pytest.mark.parametrize("browser_name", BROWSERS)
+def test_the_dashboard_asks_nothing_of_anyone_else(
+    dashboard: tuple[str, str],
+    browser_name: str,
+) -> None:
+    """Every request stays on this machine, and the bundled fonts are the ones drawn."""
+    base_url, run_id = dashboard
+    requested: list[str] = []
+    with sync_playwright() as pw:
+        browser = _launch(pw, browser_name)
+        try:
+            page = browser.new_page()  # type: ignore[attr-defined]
+            page.on("request", lambda req: requested.append(req.url))
+            page.goto(f"{base_url}/v/{run_id}", wait_until="networkidle")
+            faces = _faces_loaded(page)
+        finally:
+            browser.close()  # type: ignore[attr-defined]
+    foreign = [u for u in requested if not u.startswith((base_url, "data:", "blob:"))]
+    assert not foreign, f"{browser_name}: requests left the machine: {foreign}"
+    assert all(faces.values()), f"{browser_name}: bundled fonts not drawn: {faces}"
+
+
+@pytest.mark.parametrize("browser_name", BROWSERS)
+def test_an_exported_report_works_offline_with_its_fonts(
+    dashboard: tuple[str, str],
+    tmp_path: Path,
+    browser_name: str,
+) -> None:
+    """An exported HTML report opened with the network cut still draws its own fonts."""
+    base_url, run_id = dashboard
+    import urllib.request
+
+    with urllib.request.urlopen(f"{base_url}/api/export/{run_id}/html") as resp:  # noqa: S310
+        html = resp.read().decode("utf-8")
+    report = tmp_path / "report.html"
+    report.write_text(html, encoding="utf-8")
+
+    blocked: list[str] = []
+    with sync_playwright() as pw:
+        browser = _launch(pw, browser_name)
+        try:
+            context = browser.new_context()  # type: ignore[attr-defined]
+
+            def _offline(route: object) -> None:
+                url = route.request.url  # type: ignore[attr-defined]
+                if url.startswith(("file:", "data:", "blob:")):
+                    route.continue_()  # type: ignore[attr-defined]
+                else:
+                    blocked.append(url)
+                    route.abort()  # type: ignore[attr-defined]
+
+            context.route("**/*", _offline)
+            page = context.new_page()
+            page.goto(report.as_uri())
+            faces = _faces_loaded(page)
+        finally:
+            browser.close()  # type: ignore[attr-defined]
+    assert not blocked, f"{browser_name}: the offline report reached for the network: {blocked}"
+    assert all(faces.values()), f"{browser_name}: report fonts not drawn offline: {faces}"

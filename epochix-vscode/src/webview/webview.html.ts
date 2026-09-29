@@ -121,7 +121,7 @@ export function buildWebviewHtml(opts: WebviewHtmlOptions): string {
   // Strict CSP + the VS Code API bridge, injected into <head>. `connect-src
   // 'none'` because standalone mode is fed entirely via postMessage. Inline
   // styles (the @property block + Google Fonts) need 'unsafe-inline'.
-  const csp = `<meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src ${webview.cspSource} https: data:; style-src ${webview.cspSource} 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; script-src 'nonce-${nonce}'; connect-src 'none';">`;
+  const csp = `<meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src ${webview.cspSource} https: data:; style-src ${webview.cspSource} 'unsafe-inline'; font-src data:; script-src 'nonce-${nonce}'; connect-src 'none';">`;
   const bridge = `<script nonce="${nonce}">
     const vscode = acquireVsCodeApi();
     window.__EPOCHIX_VSCODE__ = vscode;

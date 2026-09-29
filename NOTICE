@@ -3,5 +3,10 @@ Copyright 2026 Epochix Team
 
 This product is licensed under the Apache License, Version 2.0 (see LICENSE).
 
-It bundles the Vazirmatn font (src/epochix/exporters/fonts/), licensed under
-the SIL Open Font License 1.1; its licence text ships beside the font files.
+It bundles fonts licensed under the SIL Open Font License 1.1, each with its
+licence text beside it:
+
+- Vazirmatn, for Farsi PDF reports (src/epochix/exporters/fonts/OFL.txt).
+- DM Sans, Copyright 2014 The DM Sans Project Authors, and Instrument Serif,
+  Copyright 2022 The Instrument Serif Project Authors, for the dashboard
+  (frontend/public/licenses/, shipped as licenses/ beside the built dashboard).
