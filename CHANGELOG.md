@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [Unreleased]
+## [0.7.20] — 2026-09-29
 
 ### Fixed — nothing leaves your machine, and the Keras demo is a real run
 

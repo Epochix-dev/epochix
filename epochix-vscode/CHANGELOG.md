@@ -14,6 +14,15 @@ which covers the extension too; entries here resume with 0.7.16.
 
 ---
 
+## [0.7.20] — 2026-09-29
+
+### Fixed
+
+- **The panel no longer contacts Google.** Its fonts were fetched from
+  fonts.googleapis.com every time a dashboard opened; they ship inside the
+  extension now, and the panel's Content-Security-Policy admits fonts only as
+  inline data.
+
 ## [0.7.19] — 2026-09-29
 
 ### Fixed
