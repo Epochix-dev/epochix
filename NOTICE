@@ -1,0 +1,7 @@
+Epochix
+Copyright 2026 Epochix Team
+
+This product is licensed under the Apache License, Version 2.0 (see LICENSE).
+
+It bundles the Vazirmatn font (src/epochix/exporters/fonts/), licensed under
+the SIL Open Font License 1.1; its licence text ships beside the font files.

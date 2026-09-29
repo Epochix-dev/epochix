@@ -21,18 +21,26 @@
   <img src="https://raw.githubusercontent.com/epochix-dev/epochix/main/asset/epochix_demo.gif" alt="Epochix turns a training log into an animated dashboard with a plain-English story and a letter grade" width="820">
 </p>
 
-No code changes — it reads your training output as-is:
+No code changes — it reads your training output as-is. This is the bundled
+Keras demo (`epochix demo keras`), its last epoch and what Epochix says about
+it:
 
+<!-- readme-example:keras -->
 ```
-Epoch 7/20  ████████████░░░░  train_loss: 0.312  val_accuracy: 0.847
+Epoch 20/20
+1563/1563 [==============================] - 6s 4ms/step - loss: 0.6012 - accuracy: 0.7923 - val_loss: 0.6543 - val_accuracy: 0.7834
 ```
 ↓
 ```
-⚡ Mastering phase — Grade B+
+💡 Understanding phase — Grade B
 
-The model reaches a significant milestone at epoch 7. Val accuracy 84.7%
-(Δ +3.1%) — the network has stopped memorising and started generalising.
+Deep representations form. Accuracy 78.3% at epoch 20 — the model grasps the underlying structure.
+Still improving at the last reading — the grade shows where the run got to, not where it was heading.
 ```
+<!-- /readme-example:keras -->
+
+The sentence is one of several phrasings for this phase, so yours may be worded
+differently; the phase, the grade and every number come from the log.
 
 ---
 
@@ -104,13 +112,24 @@ validation curves kept apart — the gap between them is the overfitting signal:
 python train_xgb.py 2>&1 | epochix --live
 ```
 
+<!-- readme-example:xgboost -->
 ```
-[0]  validation_0-logloss:0.51987  validation_1-logloss:0.52369
-[1]  validation_0-logloss:0.40326  validation_1-logloss:0.41045
+[0]	validation_0-logloss:0.51987	validation_1-logloss:0.52369
+[1]	validation_0-logloss:0.40326	validation_1-logloss:0.41045
+[2]	validation_0-logloss:0.32871	validation_1-logloss:0.34102
+[3]	validation_0-logloss:0.27544	validation_1-logloss:0.29870
+[4]	validation_0-logloss:0.23610	validation_1-logloss:0.27411
+[5]	validation_0-logloss:0.20412	validation_1-logloss:0.26350
+[6]	validation_0-logloss:0.17905	validation_1-logloss:0.26112
+[7]	validation_0-logloss:0.15833	validation_1-logloss:0.26498
+[8]	validation_0-logloss:0.14002	validation_1-logloss:0.27204
+[9]	validation_0-logloss:0.12455	validation_1-logloss:0.28033
 ```
 ↓
-> **Epoch 39: 0.0804, below the best of 0.0781 at epoch 32. The model has
-> passed its peak — the earlier checkpoint is the better one.**
+> **Past its best: 0.2611 at epoch 6, now 0.2803. The later epochs are not
+> improving on it. Next step: keep the checkpoint from epoch 6 if one was
+> saved, and use early stopping on this metric so the next run ends there.**
+<!-- /readme-example:xgboost -->
 
 scikit-learn works too. A loop printing whatever you already print is enough —
 no delimiter required, and the estimator's own `repr()` is not mistaken for
@@ -161,14 +180,21 @@ epochix serve
 
 ### Python SDK
 
+Parse a finished log:
+
+<!-- readme-example:sdk -->
 ```python
-from epochix import parse, LiveReporter
+from epochix import parse
 
-# Parse a finished log
-result = parse("training.log")
-print(result.final_grade, result.summary)
+run = parse("training.log")
+print(run.final_grade.value, run.story_summary)
+```
+<!-- /readme-example:sdk -->
 
-# Stream live during training (PyTorch Lightning)
+Stream live during training (PyTorch Lightning):
+
+```python
+import lightning as pl
 from epochix.integrations.lightning import StoryCallback
 
 trainer = pl.Trainer(callbacks=[StoryCallback()])
@@ -326,7 +352,7 @@ lower_better:
 Install from the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=epochix.epochix)
 or search **"Epochix"** in the Extensions panel.
 
-- Open the **Epochix Runs** tree view in the Explorer sidebar
+- Click the **Epochix** icon in the activity bar for the **Runs** view and **▶ Try a Demo Run**
 - Press `Ctrl+Alt+M` (`Cmd+Alt+M` on macOS) to open the dashboard panel
 - Works in standalone mode (no Python required) or sidecar mode with the Python package
 
@@ -356,9 +382,11 @@ Full docs at **[epochix.dev](https://epochix.dev)**
 ```bash
 git clone https://github.com/epochix-dev/epochix
 cd epochix
-pip install -e ".[dev]"
-pytest tests/unit tests/integration
+uv run --extra dev pytest tests/unit tests/integration
 ```
+
+Use `uv run`, as CI does: a bare `pytest` on a machine that also has epochix
+installed tests that copy instead of your checkout.
 
 Please read [CONTRIBUTING.md](CONTRIBUTING.md) before opening a pull request.
 

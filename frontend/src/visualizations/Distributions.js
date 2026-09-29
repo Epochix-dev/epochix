@@ -56,6 +56,18 @@ export class Distributions {
 
 // ── section: parameter share by layer ───────────────────────────────────────
 
+/**
+ * A layer's share of the parameters, rounded without lying at either end.
+ * A real 896-parameter layer read "0%" beside a dense layer reading "100%" —
+ * two rounded numbers that together claim the small layers do not exist.
+ * @param {number} pct 0–100
+ */
+export function sharePct(pct) {
+  if (pct > 0 && pct < 1) return '<1%';
+  if (pct > 99 && pct < 100) return '>99%';
+  return `${pct.toFixed(0)}%`;
+}
+
 function _paramSection(arch) {
   const withParams = arch.filter((l) => (l.params ?? 0) > 0);
   if (withParams.length === 0) return '';
@@ -72,7 +84,7 @@ function _paramSection(arch) {
         <div class="dist-bar-track">
           <div class="dist-bar-fill" style="width:${w.toFixed(1)}%;background:${col}"></div>
         </div>
-        <span class="dist-row-val">${_fmt(l.params)} <span class="dist-pct">${pct.toFixed(0)}%</span></span>
+        <span class="dist-row-val">${_fmt(l.params)} <span class="dist-pct">${sharePct(pct)}</span></span>
       </div>`;
   }).join('');
 

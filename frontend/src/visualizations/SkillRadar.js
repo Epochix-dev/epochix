@@ -10,6 +10,26 @@ const MARGIN = 40;
 const R = (SIZE - MARGIN * 2) / 2;
 const CX = SIZE / 2;
 const CY = SIZE / 2;
+// Horizontal room either side of the plot for its axis labels.
+const LABEL_ROOM = 50;
+
+/**
+ * An axis name on at most two lines of about eleven characters, split at
+ * word boundaries; a single long word stays whole rather than being cut.
+ * @param {string} key e.g. "val_accuracy"
+ * @returns {string[]}
+ */
+export function radarLabelLines(key) {
+  const words = key.replace(/_/g, ' ').trim().split(/\s+/);
+  const lines = [];
+  for (const word of words) {
+    const last = lines[lines.length - 1];
+    if (last !== undefined && (last + ' ' + word).length <= 11) lines[lines.length - 1] = `${last} ${word}`;
+    else lines.push(word);
+  }
+  if (lines.length <= 2) return lines;
+  return [lines[0], lines.slice(1).join(' ')];
+}
 
 const ACCENT = getComputedStyle(document.documentElement)
   .getPropertyValue('--accent-primary').trim() || '#7c6dff';
@@ -50,7 +70,10 @@ export class SkillRadar {
   _build() {
     const svgNS = 'http://www.w3.org/2000/svg';
     const svg = document.createElementNS(svgNS, 'svg');
-    svg.setAttribute('viewBox', `0 0 ${SIZE} ${SIZE}`);
+    // Wider than tall: side labels ("Generalisation", "Val Accuracy") grow
+    // outward from the plot and need room the square box did not have — they
+    // were cut to ten characters, then clipped at the panel's edge.
+    svg.setAttribute('viewBox', `${-LABEL_ROOM} 0 ${SIZE + LABEL_ROOM * 2} ${SIZE}`);
     svg.style.width  = '100%';
     svg.style.height = '100%';
 
@@ -173,11 +196,26 @@ export class SkillRadar {
         const txt = document.createElementNS(svgNS, 'text');
         txt.setAttribute('x', lx);
         txt.setAttribute('y', ly + 4);
-        txt.setAttribute('text-anchor', 'middle');
+        // Side labels grow outward from the chart, so a long name does not run
+        // back over the plot and the value printed at its vertex.
+        const cos = Math.cos(angle);
+        txt.setAttribute('text-anchor', cos > 0.3 ? 'start' : cos < -0.3 ? 'end' : 'middle');
         txt.setAttribute('font-size', '9');
         txt.setAttribute('fill', 'currentColor');
         txt.setAttribute('opacity', '0.5');
-        txt.textContent = key.replace(/_/g, ' ').slice(0, 10);
+        // Wrapped, not cut: "Val Accura" and "Generalisa" were what a reader
+        // got for val_accuracy and generalisation. The full name is the tooltip.
+        const lines = radarLabelLines(key);
+        lines.forEach((part, li) => {
+          const span = document.createElementNS(svgNS, 'tspan');
+          span.setAttribute('x', lx);
+          span.setAttribute('dy', li === 0 ? `${-(lines.length - 1) * 5}` : '10');
+          span.textContent = part;
+          txt.appendChild(span);
+        });
+        const tip = document.createElementNS(svgNS, 'title');
+        tip.textContent = key.replace(/_/g, ' ');
+        txt.appendChild(tip);
         this._labelsG.appendChild(txt);
       });
     }
