@@ -174,9 +174,19 @@ jobs:
           skipped = int(suite.get("skipped", 0))
           bad = int(suite.get("failures", 0)) + int(suite.get("errors", 0))
           passed = total - skipped - bad
-          print(f"engines rendered: {passed} (skipped={skipped}, failed={bad})")
-          if passed != 3 or bad:
-              sys.exit("::error::expected 3 passing engine renders (chromium, firefox, webkit)")
+          print(f"browser tests: {passed} passed (skipped={skipped}, failed={bad})")
+          # Every test must pass on every engine: a count of exactly 3 broke the
+          # day a second browser test was added. Check the engines by name.
+          ran = {
+              engine
+              for case in suite.iter("testcase")
+              if case.find("skipped") is None and case.find("failure") is None
+              and case.find("error") is None
+              for engine in ("chromium", "firefox", "webkit")
+              if f"[{engine}]" in case.get("name", "")
+          }
+          if bad or skipped or passed == 0 or ran != {"chromium", "firefox", "webkit"}:
+              sys.exit(f"::error::every browser test must pass on chromium, firefox and webkit (ran: {sorted(ran)})")
           PY
 
   integrations:
