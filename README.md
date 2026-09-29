@@ -22,19 +22,21 @@
 </p>
 
 No code changes — it reads your training output as-is. This is the bundled
-Keras demo (`epochix demo keras`), its last epoch and what Epochix says about
-it:
+Keras-style demo (`epochix demo keras`) — a real CNN trained on scikit-learn's
+handwritten digits by
+[`demo/keras_image_classifier_source.py`](demo/keras_image_classifier_source.py)
+— its last epoch and what Epochix says about it:
 
 <!-- readme-example:keras -->
 ```
 Epoch 20/20
-1563/1563 [==============================] - 6s 4ms/step - loss: 0.6012 - accuracy: 0.7923 - val_loss: 0.6543 - val_accuracy: 0.7834
+43/43 [==============================] - 0s 5ms/step - loss: 0.1959 - accuracy: 0.9480 - val_loss: 0.2098 - val_accuracy: 0.9511
 ```
 ↓
 ```
-💡 Understanding phase — Grade B
+⚡ Mastering phase — Grade A+
 
-Deep representations form. Accuracy 78.3% at epoch 20 — the model grasps the underlying structure.
+Near-expert performance at 95.1%. Epoch 20 — the model has mastered the fundamentals.
 Still improving at the last reading — the grade shows where the run got to, not where it was heading.
 ```
 <!-- /readme-example:keras -->

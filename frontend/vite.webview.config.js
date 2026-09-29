@@ -1,5 +1,10 @@
 import { defineConfig } from 'vite';
 
+// Fonts are inlined into the stylesheet in every build: an exported HTML
+// report inlines the stylesheet's text, so a font referenced as a separate
+// file would be missing from it. See src/themes/fonts.css.
+const inlineFonts = (file) => (/\.woff2?$/.test(file) ? true : undefined);
+
 /**
  * Webview build for the VS Code extension.
  *
@@ -22,6 +27,8 @@ export default defineConfig({
     outDir: '../epochix-vscode/webview-dist',
     emptyOutDir: true,
     target: 'es2020',
+    // The webview's CSP admits fonts only as data: URIs (webview.html.ts).
+    assetsInlineLimit: inlineFonts,
     cssCodeSplit: false,
     rollupOptions: {
       input: 'index.html',

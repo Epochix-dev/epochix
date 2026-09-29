@@ -340,8 +340,8 @@
   "path": "demo/keras_image_classifier.log",
   "task": "classification",
   "metric": "val_accuracy",
-  "frames": 11,
-  "last_value": 0.7834,
+  "frames": 20,
+  "last_value": 0.9511,
   "keys": [
    "accuracy",
    "train_loss",
@@ -351,8 +351,8 @@
   "metric_from_epoch": 1.0,
   "grade_note": "still_improving",
   "cross_validation": null,
-  "final_grade": "B",
-  "final_phase": "understanding"
+  "final_grade": "A+",
+  "final_phase": "mastering"
  },
  "keras_short.log": {
   "path": "tests/fixtures/logs/keras_short.log",

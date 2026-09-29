@@ -118,5 +118,8 @@ def test_the_sdk_example_runs_as_written(tmp_path: Path, monkeypatch: pytest.Mon
     with contextlib.redirect_stdout(out):
         exec(compile(code, "README.md", "exec"), {})  # noqa: S102 - the README's own snippet
     printed = out.getvalue().strip()
-    assert printed.startswith("B "), printed
-    assert "78.3%" in printed
+    # What the same log grades as, read independently of the snippet.
+    (tmp_path / "check").mkdir()
+    last = _frames(tmp_path / "check", (tmp_path / "training.log").read_text(encoding="utf-8"))[-1]
+    assert printed.startswith(f"{last.grade.value} "), printed
+    assert f"{last.primary_metric_value * 100:.1f}%" in printed, printed
