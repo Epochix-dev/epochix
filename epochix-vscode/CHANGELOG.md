@@ -14,6 +14,11 @@ which covers the extension too; entries here resume with 0.7.16.
 
 ---
 
+## [0.7.22] — 2026-09-29
+
+No change to the extension itself; released in step with the Python package,
+whose release fixes garbled piped output on Windows.
+
 ## [0.7.21] — 2026-09-29
 
 No change to the extension itself; released in step with the Python package,
