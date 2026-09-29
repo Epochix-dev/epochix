@@ -7,6 +7,8 @@ If the dashboard looks empty or the grade looks wrong, start with
 [`epochix check`](#epochix-check). It reports what the parsers can and cannot
 read from your log and tells you what to add.
 
+`epochix --version` prints the installed version.
+
 ---
 
 ## `epochix run`
@@ -133,4 +135,37 @@ Show or set configuration values. See [Configuration](config.md).
 ```bash
 epochix config show
 epochix config set port 8080
+```
+
+## `epochix import-tensorboard`
+
+Tell the story of a run you already logged to TensorBoard. The scalars are
+read straight off disk: no account, no network. See
+[Already using W&B, TensorBoard, or plain logs?](existing-runs.md).
+
+```bash
+epochix import-tensorboard runs/exp1
+```
+
+## `epochix import-wandb`
+
+Tell the story of a Weights & Biases run. Give it your local `wandb/`
+directory, one run directory inside it, or a `.wandb` file, and nothing
+leaves your machine. Give it `entity/project/run_id` to fetch from the W&B
+servers instead, which needs your API key in `WANDB_API_KEY`.
+
+```bash
+epochix import-wandb wandb/
+epochix import-wandb my-team/my-project/abc123
+```
+
+## `epochix doctor`
+
+Print diagnostics to paste into a bug report: versions, which optional
+features are installed, your accelerator and whether activation capture works
+on it, whether the dashboard shipped, and how many runs are stored. It prints
+no run names, file paths or log contents.
+
+```bash
+epochix doctor
 ```

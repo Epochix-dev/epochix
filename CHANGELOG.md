@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.7.23] — 2026-09-29
+
+### Fixed — found by installing from PyPI and using it as a newcomer
+
+- **`epochix --version` failed.** It was handed to `run`, which answered "No
+  such option: --version" under a "Usage: epochix run" banner. It prints the
+  version now (`-V` too).
+- **Giving `epochix` a folder instead of a log file** crashed with a Python
+  traceback (a `PermissionError` on Windows) and left a run stuck "in
+  progress" in `epochix list` for good. It is refused up front, with a
+  one-line message, before anything is stored; the same goes for `--tail` and
+  the SDK's `parse()`, which raises `IsADirectoryError`.
+- **`epochix doctor` could report the wrong version** — that of an older copy
+  installed beside the one running. It reports the running one.
+- **The CLI reference left out three commands**: `doctor`,
+  `import-tensorboard` and `import-wandb`. They are documented, with
+  `--version`, and a test now fails if a command is missing from it.
+
 ## [0.7.22] — 2026-09-29
 
 ### Fixed
