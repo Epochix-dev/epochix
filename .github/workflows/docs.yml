@@ -10,12 +10,14 @@ on:
     branches: [main]
     paths:
       - "docs/**"
+      - "overrides/**" # link-preview tags (theme override)
       - "mkdocs.yml"
       - "src/epochix/**/*.py" # mkdocstrings renders API docs from source
       - ".github/workflows/docs.yml"
   pull_request:
     paths:
       - "docs/**"
+      - "overrides/**"
       - "mkdocs.yml"
   workflow_dispatch:
 

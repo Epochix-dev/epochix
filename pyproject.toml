@@ -136,7 +136,6 @@ packages = ["src/epochix"]
 # emits "Duplicate name" warnings at build time.
 exclude = [
   "src/epochix/story_engine/templates/**",
-  "src/epochix/_artifacts/**",
   "src/epochix/_demos/**",
   "src/epochix/_frontend/dist/**",
   "src/epochix/_brand/**",
@@ -151,7 +150,6 @@ exclude = [
 # Narrative templates (text files alongside the story_engine package).
 "src/epochix/story_engine/templates" = "epochix/story_engine/templates"
 # Claude artifact (JSX).
-"src/epochix/_artifacts" = "epochix/_artifacts"
 # Bundled demo logs — used by `epochix demo` so newcomers can see
 # the dashboard without bringing their own training log.
 "src/epochix/_demos" = "epochix/_demos"

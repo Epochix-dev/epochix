@@ -7,6 +7,39 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [Unreleased]
+
+### Removed — the Claude artifact
+
+- **`src/epochix/_artifacts/epochix.artifact.jsx` is withdrawn**, with its
+  README section. It was a third, hand-written engine last touched in 0.3.0:
+  it graded regression and generative runs on perplexity bands, had no notion
+  of a metric's direction, and animated neuron "activations" from
+  `Math.random()`. Anyone following the README could get a different grade
+  from the product for the same log. Rebuilding it would mean generating it
+  from the Python engine's tables, as the VS Code extension's engine is now.
+
+### Fixed — what a visitor meets outside the code
+
+- **Every GitHub release had an empty body** — all 136. The "Latest" link on
+  the repository opened a page with files and no words. All are now filled
+  from their CHANGELOG sections (five early ones that never had a section say
+  so), and the release workflow publishes the version's section as its notes
+  from now on — `scripts/release_notes.py`, failing the release if the
+  section is missing.
+- **Three README links were broken on PyPI** (the licence, CONTRIBUTING and
+  the demo's source), because PyPI resolves relative links against pypi.org.
+  They are absolute now.
+- **A link to epochix.dev unfurled as a bare title** on LinkedIn, Slack or X:
+  the docs site had no link-preview tags. Every page now carries Open Graph
+  and Twitter tags with a preview image.
+- **The social preview image was cropped mid-sentence** and half empty. It is
+  regenerated from the real dashboard on the real Keras demo run
+  (`asset/epochix_social.png`, 1280x640 at 2x).
+- Added a `CODE_OF_CONDUCT.md` (the Contributor Covenant 2.1, by reference,
+  with a private reporting route) and a pull-request template carrying the
+  project's gate.
+
 ## [0.7.20] — 2026-09-29
 
 ### Fixed — nothing leaves your machine, and the Keras demo is a real run

@@ -139,10 +139,18 @@ jobs:
           if n < 10:
               sys.exit(f"::error::SBOM has {n} components; epochix alone has 10 runtime deps")
           PY
-      - name: Attach SBOM to GitHub Release
+      # Every release went out with an empty body — 136 of them — so the
+      # "Latest" link on the repository opened a page with files and no words.
+      # The version's CHANGELOG section is the release notes; no section fails
+      # the step, so a release cannot ship without notes.
+      - name: Release notes from CHANGELOG.md
+        run: python scripts/release_notes.py "${GITHUB_REF_NAME}" > release-notes.md
+
+      - name: Attach SBOM and notes to GitHub Release
         uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3
         with:
           files: sbom.cyclonedx.json
+          body_path: release-notes.md
           fail_on_unmatched_files: true
 
   # ── .vsix build (archive copy; full publish via vscode-release.yml) ────────
