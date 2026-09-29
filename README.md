@@ -11,7 +11,7 @@
 [![Python](https://img.shields.io/pypi/pyversions/epochix.svg)](https://pypi.org/project/epochix/)
 [![CI](https://github.com/epochix-dev/epochix/actions/workflows/ci.yml/badge.svg)](https://github.com/epochix-dev/epochix/actions/workflows/ci.yml)
 [![VS Code Marketplace](https://img.shields.io/visual-studio-marketplace/v/epochix.epochix?label=VS%20Code)](https://marketplace.visualstudio.com/items?itemName=epochix.epochix)
-[![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-green.svg)](LICENSE)
+[![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-green.svg)](https://github.com/Epochix-dev/epochix/blob/main/LICENSE)
 
 </p>
 
@@ -24,7 +24,7 @@
 No code changes — it reads your training output as-is. This is the bundled
 Keras-style demo (`epochix demo keras`) — a real CNN trained on scikit-learn's
 handwritten digits by
-[`demo/keras_image_classifier_source.py`](demo/keras_image_classifier_source.py)
+[`demo/keras_image_classifier_source.py`](https://github.com/Epochix-dev/epochix/blob/main/demo/keras_image_classifier_source.py)
 — its last epoch and what Epochix says about it:
 
 <!-- readme-example:keras -->
@@ -360,13 +360,6 @@ or search **"Epochix"** in the Extensions panel.
 
 ---
 
-## Claude Artifact
-
-Copy the content of `src/epochix/_artifacts/epochix.artifact.jsx` into a Claude
-conversation artifact to get a fully interactive training story viewer — no server, no install.
-
----
-
 ## Documentation
 
 Full docs at **[epochix.dev](https://epochix.dev)**
@@ -390,10 +383,10 @@ uv run --extra dev pytest tests/unit tests/integration
 Use `uv run`, as CI does: a bare `pytest` on a machine that also has epochix
 installed tests that copy instead of your checkout.
 
-Please read [CONTRIBUTING.md](CONTRIBUTING.md) before opening a pull request.
+Please read [CONTRIBUTING.md](https://github.com/Epochix-dev/epochix/blob/main/CONTRIBUTING.md) before opening a pull request.
 
 ---
 
 ## License
 
-[Apache 2.0](LICENSE) — © 2026 Epochix Team
+[Apache 2.0](https://github.com/Epochix-dev/epochix/blob/main/LICENSE) — © 2026 Epochix Team

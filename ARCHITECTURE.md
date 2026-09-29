@@ -1936,6 +1936,15 @@ Cursor and Windsurf are VS Code forks and accept the same `.vsix`. No code chang
 
 ### 27.2 Claude Artifact
 
+> **Withdrawn in 0.7.21.** The shipped artifact was a third, hand-written
+> engine last touched in 0.3.0: it graded regression and generative runs on
+> perplexity bands, had no metric-direction logic, and animated neuron
+> "activations" from `Math.random()`. A user pasting a log into it could get a
+> different grade from the product for the same run. It was removed rather than
+> advertised; rebuilding it would mean generating it from the Python engine's
+> tables, as the VS Code extension's engine now is. The design below is kept
+> for that purpose.
+
 A Claude artifact is a single HTML/React file that runs entirely in the browser. There is no backend, no Python, no install. The user pastes their training log into a textarea and the dashboard renders.
 
 This surface is the **lowest-friction proof of concept** — useful for demos, screenshots, and for non-technical stakeholders who don't want to install anything.

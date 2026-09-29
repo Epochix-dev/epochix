@@ -8,6 +8,7 @@ edit_uri: edit/main/docs/
 
 theme:
   name: material
+  custom_dir: overrides
   logo: _assets/epochix_mark.png
   favicon: _assets/epochix_appicon.png
   palette:

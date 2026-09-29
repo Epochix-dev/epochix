@@ -1,7 +1,8 @@
 # Contributing to Epochix
 
 Thanks for taking the time to contribute. Epochix lives by clear narratives,
-honest metrics, and reproducible builds — your patches should match.
+honest metrics, and reproducible builds — your patches should match. Everyone
+taking part follows the [Code of Conduct](CODE_OF_CONDUCT.md).
 
 ## Quick start
 

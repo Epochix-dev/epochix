@@ -30,6 +30,12 @@ Nothing at the moment.
 
 ## Decided — not doing
 
+- **A Claude artifact.** One shipped until 0.7.21 and was withdrawn: a third,
+  hand-written engine (last touched in 0.3.0) that graded regression on
+  perplexity bands and animated random "activations". A new one is worth
+  building only if it is generated from the Python engine's tables and
+  replays `grading.golden.json` like the extension's engine — otherwise it is
+  a fourth copy to drift.
 - **PDFs for scripts beyond Latin and Arabic.** A Farsi report embeds
   Vazirmatn and shapes its text with uharfbuzz (the `pdf` extra); without the
   shaper it falls back to English chrome and says `pip install
