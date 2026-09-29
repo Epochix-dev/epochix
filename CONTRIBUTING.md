@@ -8,16 +8,19 @@ honest metrics, and reproducible builds — your patches should match.
 ```bash
 git clone https://github.com/epochix-dev/epochix
 cd epochix
-pip install -e ".[dev]"
-pre-commit install
-pytest tests/unit tests/integration
+uv run --extra dev pytest tests/unit tests/integration
 ```
+
+Use `uv run`, exactly as CI does. A bare `pytest` on a machine that also has
+epochix installed resolves the package from site-packages, and your edits
+appear to do nothing. [AGENTS.md](AGENTS.md) collects the other traps this
+repository has taught — read it before a non-trivial change.
 
 For the frontend or the VS Code extension:
 
 ```bash
 cd frontend           && npm ci && npm test
-cd ../epochix-vscode  && npm ci && npx tsc --noEmit
+cd ../epochix-vscode  && npm ci && npm test   # launches a real VS Code host
 ```
 
 ## Branching + commits
@@ -29,13 +32,17 @@ cd ../epochix-vscode  && npm ci && npx tsc --noEmit
 
 ## Coding standards
 
-| Layer        | Tool                  | Run                                   |
-|--------------|-----------------------|---------------------------------------|
-| Python lint  | `ruff`                | `ruff check src tests`                |
-| Python type  | `mypy --strict`       | `mypy --strict src/epochix`           |
-| Python tests | `pytest`              | `pytest tests/unit tests/integration` |
-| Frontend     | `vitest`              | `cd frontend && npm test`             |
-| VS Code      | `tsc --noEmit`        | `cd epochix-vscode && npx tsc --noEmit` |
+| Layer         | Run                                                      |
+|---------------|----------------------------------------------------------|
+| Python lint   | `uv run --extra dev ruff check src tests`                |
+| Python format | `uv run --extra dev ruff format --check src tests`       |
+| Python type   | `uv run --extra dev mypy --strict src/epochix`           |
+| Python tests  | `uv run --extra dev pytest tests/unit tests/integration` |
+| Frontend      | `cd frontend && npm test`                                |
+| VS Code       | `cd epochix-vscode && npm test`                          |
+
+Run them separately: chained with `&&`, an early failure silently skips the
+rest.
 
 CI runs all of the above on Linux / macOS / Windows × Python 3.10–3.13.
 A patch is mergeable when every check passes locally and in CI.

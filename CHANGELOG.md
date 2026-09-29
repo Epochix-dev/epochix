@@ -7,6 +7,42 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [Unreleased]
+
+### Fixed — the front page told the product's one rule a lie
+
+A launch-readiness pass, reading everything a first visitor meets:
+
+- **The README's headline example was invented.** "⚡ Mastering phase — Grade
+  B+ … the network has stopped memorising and started generalising" — no
+  version of the engine could produce it: epoch 7 of 20 is *learning*, and no
+  template contains those words. It is now the bundled Keras demo, verbatim —
+  its last epoch and what Epochix says about it — reproducible with
+  `epochix demo keras`.
+- **The XGBoost example quoted a retired template** — "below the best of
+  0.0781" for a log loss that had got *worse* — and the **SDK example
+  crashed**: it printed `result.summary`, an attribute `parse()`'s result does
+  not have, and used `pl` without importing it. Both replaced with real output
+  and working code.
+- `tests/unit/test_readme_examples.py` now runs each marked README example
+  through the real engine — the quoted story must be one of the phrasings the
+  engine chooses between for exactly those numbers — and executes the SDK
+  snippet as written. Verified to fail on the old sentence.
+- **LICENSE was a paraphrase of Apache 2.0, not its text**, so GitHub listed
+  the licence as "Other" while the README, PyPI and the Marketplace all said
+  Apache-2.0. Both copies (repository and extension) are now the verbatim
+  licence; the copyright line moves to `NOTICE`, which also credits the
+  bundled Vazirmatn font (SIL OFL).
+- The dashboard's parameter share read "0%" for real layers (896 and 650
+  parameters in the demo) beside "100%" for the rest; it reads "<1%" and
+  ">99%". The skill radar cut axis names to ten characters ("Val Accura",
+  "Generalisa"); they are wrapped whole, grow outward from the plot, and fit
+  their panel at phone width.
+- `CONTRIBUTING.md` and the README told contributors to run a bare `pytest`,
+  which AGENTS.md warns can silently test an installed copy; both use
+  `uv run`, as CI does. The stale v0.1 planning list `TASKS.md` is gone from
+  the repository root — `ROADMAP.md` and this changelog replaced it long ago.
+
 ## [0.7.18] — 2026-09-28
 
 ### Changed — the extension grades from the Python engine's own tables
