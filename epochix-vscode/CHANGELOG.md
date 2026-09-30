@@ -25,6 +25,8 @@ which covers the extension too; entries here resume with 0.7.16.
   is a stem, eight residual blocks and a classifier, not its stages and their
   blocks mixed together — and layers are labelled from the Python engine's
   table, generated rather than hand-copied.
+- A warning message from a log can no longer name an object key in the
+  dashboard (a CodeQL finding on the release's pull request).
 - The warning strip no longer lists planned learning-rate drops; the grade
   card no longer repeats the grade; the learning-curve legend no longer sits
   on the curve.
