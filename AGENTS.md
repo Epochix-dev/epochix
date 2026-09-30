@@ -45,8 +45,8 @@ Both ruff commands matter. `format` alone once let an undefined name ship.
 Frontend and extension have their own suites:
 
 ```bash
-cd frontend && npm test
-cd epochix-vscode && npm test    # launches a real VS Code host
+npm --prefix frontend test
+npm --prefix epochix-vscode test    # launches a real VS Code host
 ```
 
 ## Traps specific to this repo

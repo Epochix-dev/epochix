@@ -354,7 +354,7 @@ deactivate
    npm --prefix epochix-vscode install --package-lock-only
    ```
 4. Optionally dry-run with a `test/vX.Y.Z` tag.
-5. `git tag vX.Y.Z && git push origin vX.Y.Z`. Done.
+5. `git tag -a vX.Y.Z -m vX.Y.Z`, then `git push origin vX.Y.Z`. Done.
 
 ---
 
