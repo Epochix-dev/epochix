@@ -28,6 +28,7 @@ sys.path.insert(0, str(REPO / "src"))
 import epochix.story_engine as engine  # noqa: E402
 from epochix.enums import Grade, Phase, TaskType  # noqa: E402
 from epochix.normalizer import canonical_keys as ck  # noqa: E402
+from epochix.parsers import architecture_parser as arch  # noqa: E402
 from epochix.parsers._never_metrics import NEVER_METRICS  # noqa: E402
 from epochix.parsers.registry import SNIFF_SAMPLE_LINES, SNIFF_THRESHOLD  # noqa: E402
 from epochix.parsers.universal import _NN_REPR_KWARGS  # noqa: E402
@@ -147,8 +148,104 @@ def render() -> str:
         f"export const SNIFF_SAMPLE_LINES = {SNIFF_SAMPLE_LINES};",
         f"export const SNIFF_THRESHOLD = {SNIFF_THRESHOLD};",
         "",
+        "/** Layer-type keyword -> [tech label, plain label, visual type], most",
+        " *  specific first (parsers/architecture_parser.py). The extension's copy",
+        " *  was a hand-kept subset with no ResNet, VGG or YOLO entries. */",
+        "export const ARCH_TYPE_MAP: ReadonlyArray<readonly [string, readonly [string, string, string]]> = [",
+    ]
+    lines += [
+        f"  [{_js(k)}, [{_js(m['tech_label'])}, {_js(m['plain_label'])}, {_js(m['visual_type'])}]],"
+        for k, m in arch._TYPE_MAP
+    ]
+    fb = arch._FALLBACK_META
+    lines += [
+        "];",
+        "",
+        "export const ARCH_FALLBACK: readonly [string, string, string] = "
+        f"[{_js(fb['tech_label'])}, {_js(fb['plain_label'])}, {_js(fb['visual_type'])}];",
+        "",
+        "/** Layers left out of the diagram when richer ones exist. */",
+        f"export const ARCH_TRIVIAL: readonly string[] = {_js(list(arch._TRIVIAL))};",
+        "",
+        "/** `print(model)` containers opened one level instead of listed. */",
+        f"export const ARCH_REPR_CONTAINERS: ReadonlySet<string> = new Set({_js(sorted(arch._REPR_CONTAINERS))});",
+        "",
+        f"export const ARCH_MAX_LAYERS = {arch._MAX_LAYERS};",
+        "",
     ]
     return "\n".join(lines)
+
+
+# Every corpus log whose architecture Python reads from a `print(model)` dump —
+# the format the extension's parser shares with it — and what Python makes of
+# it. The extension's test replays each log through its own parser.
+ARCH_GOLDEN = REPO / "epochix-vscode" / "src" / "test" / "fixtures" / "architecture.golden.json"
+
+
+def _arch_rows(layers: list[arch.ArchLayer]) -> list[list[str]]:
+    return [
+        [lyr.name, lyr.layer_type, lyr.tech_label, lyr.plain_label, lyr.visual_type]
+        for lyr in layers
+    ]
+
+
+# `print(model)` shapes the corpus lacks: a model that is itself a Sequential,
+# a recurrent model, containers inside containers, a ModuleList.
+_ARCH_SAMPLES: dict[str, list[str]] = {
+    "sequential_root": [
+        "Sequential(",
+        "  (0): Conv2d(1, 32, kernel_size=(3, 3), stride=(1, 1))",
+        "  (1): ReLU()",
+        "  (2): MaxPool2d(kernel_size=2, stride=2, padding=0, dilation=1, ceil_mode=False)",
+        "  (3): Flatten(start_dim=1, end_dim=-1)",
+        "  (4): Linear(in_features=5408, out_features=10, bias=True)",
+        ")",
+    ],
+    "bilstm": [
+        "SeqClassifier(",
+        "  (embedding): Embedding(10000, 300)",
+        "  (lstm): LSTM(300, 256, num_layers=2, bidirectional=True)",
+        "  (fc): Linear(in_features=512, out_features=5, bias=True)",
+        ")",
+    ],
+    "nested_containers": [
+        "Net(",
+        "  (features): Sequential(",
+        "    (0): Conv2d(3, 16, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))",
+        "    (1): BatchNorm2d(16, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)",
+        "    (2): Sequential(",
+        "      (0): Conv2d(16, 32, kernel_size=(3, 3), stride=(1, 1))",
+        "    )",
+        "  )",
+        "  (blocks): ModuleList(",
+        "    (0-3): 4 x TransformerEncoderLayer(",
+        "      (self_attn): MultiheadAttention(",
+        "      )",
+        "    )",
+        "  )",
+        "  (head): Linear(in_features=32, out_features=10, bias=True)",
+        ")",
+    ],
+}
+
+
+def render_arch_golden() -> str:
+    logs = sorted(
+        [*(REPO / "demo").glob("*.log"), *(REPO / "tests" / "fixtures" / "logs").glob("*.log")]
+    )
+    from_logs: dict[str, list[list[str]]] = {}
+    for path in logs:
+        lines = path.read_text(encoding="utf-8", errors="replace").splitlines()
+        best = arch.parse_architecture(lines)
+        repr_only = arch._clean(arch._parse_module_repr(lines))
+        if best and _arch_rows(best) == _arch_rows(repr_only):
+            from_logs[path.relative_to(REPO).as_posix()] = _arch_rows(best)
+    samples = {
+        name: {"lines": lines, "layers": _arch_rows(arch.parse_architecture(lines))}
+        for name, lines in _ARCH_SAMPLES.items()
+    }
+    golden = {"logs": from_logs, "samples": samples}
+    return json.dumps(golden, indent=1, ensure_ascii=False, sort_keys=True) + "\n"
 
 
 def render_narratives() -> str:
@@ -415,6 +512,7 @@ def main() -> int:
         GOLDEN: render_golden(),
         GRADING: render_grading(),
         GRADING_GOLDEN: render_grading_golden(),
+        ARCH_GOLDEN: render_arch_golden(),
     }
     if "--check" in sys.argv:
         stale = [

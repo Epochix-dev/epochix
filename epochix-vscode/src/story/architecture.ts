@@ -8,8 +8,19 @@
  * summary. The demo command's comment even claimed the panel "lights up".
  *
  * Covers the two formats people actually paste into a log: Keras
- * `model.summary()` and a plain torch `print(model)` module repr.
+ * `model.summary()` and a plain torch `print(model)` module repr. The layer
+ * labels, the trivial-layer list and the layer cap are generated from
+ * parsers/architecture_parser.py; the `print(model)` answers are pinned by
+ * src/test/fixtures/architecture.golden.json, which Python writes.
  */
+
+import {
+  ARCH_FALLBACK,
+  ARCH_MAX_LAYERS,
+  ARCH_REPR_CONTAINERS,
+  ARCH_TRIVIAL,
+  ARCH_TYPE_MAP,
+} from "./engineTables.generated";
 
 /** One layer, shaped exactly like the Python `ArchLayer.to_dict()`. */
 export interface ArchLayer {
@@ -23,50 +34,23 @@ export interface ArchLayer {
   visual_type: "conv" | "dense" | "recurrent" | "attention" | "norm" | "generic";
 }
 
-const MAX_LAYERS = 24;
-
-/** Ordered most-specific first; matched as a substring of the lowered type. */
-const TYPE_MAP: [string, [string, string, ArchLayer["visual_type"]]][] = [
-  ["convtranspose", ["UPCONV", "Upsampler", "conv"]],
-  ["separableconv", ["CONV", "Spatial patterns", "conv"]],
-  ["depthwiseconv", ["CONV", "Spatial patterns", "conv"]],
-  ["conv3d", ["CONV", "Volumetric patterns", "conv"]],
-  ["conv2d", ["CONV", "Spatial patterns", "conv"]],
-  ["conv1d", ["CONV", "Sequence patterns", "conv"]],
-  ["conv", ["CONV", "Pattern finder", "conv"]],
-  ["bilstm", ["MEMORY", "Bi-directional memory", "recurrent"]],
-  ["lstm", ["MEMORY", "Remembers context", "recurrent"]],
-  ["gru", ["MEMORY", "Remembers context", "recurrent"]],
-  ["rnn", ["MEMORY", "Sequence memory", "recurrent"]],
-  ["multiheadattention", ["FOCUS", "Multi-head attention", "attention"]],
-  ["attention", ["FOCUS", "Reads full context", "attention"]],
-  ["transformer", ["FOCUS", "Transformer", "attention"]],
-  ["embedding", ["EMBED", "Turns tokens into vectors", "dense"]],
-  ["batchnorm", ["NORM", "Keeps signals stable", "norm"]],
-  ["layernorm", ["NORM", "Keeps signals stable", "norm"]],
-  ["groupnorm", ["NORM", "Keeps signals stable", "norm"]],
-  ["instancenorm", ["NORM", "Keeps signals stable", "norm"]],
-  ["normalization", ["NORM", "Keeps signals stable", "norm"]],
-  ["maxpool", ["POOL", "Keeps the strongest signal", "norm"]],
-  ["avgpool", ["POOL", "Averages the signal", "norm"]],
-  ["pooling", ["POOL", "Shrinks the picture", "norm"]],
-  ["dropout", ["DROP", "Prevents memorising", "norm"]],
-  ["flatten", ["SHAPE", "Reshapes the data", "generic"]],
-  ["linear", ["DENSE", "Combines everything", "dense"]],
-  ["dense", ["DENSE", "Combines everything", "dense"]],
-];
+/** Python's `_norm`: lower-cased, without spaces, dashes or underscores. */
+function norm(layerType: string): string {
+  return layerType.toLowerCase().replace(/[ _-]/g, "");
+}
 
 function classify(layerType: string): Pick<
   ArchLayer,
   "tech_label" | "plain_label" | "visual_type"
 > {
-  const key = layerType.toLowerCase().replace(/[\s_-]/g, "");
-  for (const [needle, [tech, plain, visual]] of TYPE_MAP) {
+  const key = norm(layerType);
+  for (const [needle, [tech, plain, visual]] of ARCH_TYPE_MAP) {
     if (key.includes(needle)) {
-      return { tech_label: tech, plain_label: plain, visual_type: visual };
+      return { tech_label: tech, plain_label: plain, visual_type: visual as ArchLayer["visual_type"] };
     }
   }
-  return { tech_label: "LAYER", plain_label: "Processing step", visual_type: "generic" };
+  const [tech, plain, visual] = ARCH_FALLBACK;
+  return { tech_label: tech, plain_label: plain, visual_type: visual as ArchLayer["visual_type"] };
 }
 
 /** "23.5 M" / "2.1 K" / "25,728" -> integer. Empty string means "unknown". */
@@ -131,19 +115,29 @@ function parseKeras(lines: string[]): ArchLayer[] {
     out.push(
       makeLayer(out.length, m[1], m[2] ?? m[1], nums ? nums[nums.length - 1] : "0"),
     );
-    if (out.length >= MAX_LAYERS) break;
   }
   return out;
 }
 
 // ── torch print(model) ───────────────────────────────────────────────────────
-// `  (0): Conv2d(1, 32, kernel_size=(3, 3), stride=(1, 1))`
-const REPR_CHILD = /^\s{2,4}\(([\w.]+)\):\s*([A-Za-z][\w.]*)\s*\(/;
+// A child at any depth:  `  (encoder): ResNet(`  /  `    (0): BasicBlock(`, and
+// PyTorch's folded repeats:  `    (0-3): 4 x TransformerEncoderLayer(`
+const REPR_CHILD = /^( {1,32})\(([\w.-]{1,64})\):\s*(?:\d{1,6} x )?([A-Za-z][\w.]{0,64})\s*\(/;
 const REPR_OPEN = /^[A-Za-z][\w.]*\s*\(\s*$/;
 
+/**
+ * Top-level modules of a `print(model)` dump, containers opened one level.
+ *
+ * Any child indented two to four spaces used to count, so a torchvision
+ * ResNet-18 listed its stages *and* the blocks inside them. Only the first
+ * child's depth is the top level; a `Sequential` there is replaced by its own
+ * children — a stem, eight BasicBlocks, a classifier.
+ */
 function parseModuleRepr(lines: string[]): ArchLayer[] {
   const out: ArchLayer[] = [];
   let seenOpen = false;
+  let top: number | null = null;
+  let container: [string, number] | null = null;
   for (const raw of lines) {
     if (!seenOpen) {
       if (REPR_OPEN.test(raw.trim())) seenOpen = true;
@@ -151,22 +145,64 @@ function parseModuleRepr(lines: string[]): ArchLayer[] {
     }
     const m = REPR_CHILD.exec(raw);
     if (!m) continue;
-    let type = m[2];
+    const indent = m[1].length;
+    let name = m[2];
+    let type = m[3];
+    if (top === null) {
+      if (indent > 4) continue;
+      top = indent;
+    }
+    if (indent === top) {
+      container = null;
+      if (ARCH_REPR_CONTAINERS.has(type.toLowerCase()) && raw.trimEnd().endsWith("(")) {
+        container = [name, indent];
+        continue;
+      }
+    } else if (container !== null && indent === container[1] + 2) {
+      name = `${container[0]}.${name}`;
+    } else {
+      continue; // inside a module: its parts, not the model's
+    }
     if (/bidirectional=true/i.test(raw) && /^(lstm|gru|rnn)$/i.test(type)) {
       type = `Bi${type}`;
     }
     // A repr carries no parameter counts, and an invented 0 would be a false
     // claim — the Python side derives them from the layer's own shapes; here we
     // report the count as unknown rather than guess.
-    out.push(makeLayer(out.length, m[1], type, ""));
-    if (out.length >= MAX_LAYERS) break;
+    out.push(makeLayer(out.length, name, type, ""));
   }
   return out;
 }
 
-/** Best-effort architecture from log lines; empty when nothing is recognised. */
+/** Python's round(): halves go to the even neighbour. */
+function pyRound(x: number): number {
+  const f = Math.floor(x);
+  const diff = x - f;
+  if (diff > 0.5) return f + 1;
+  if (diff < 0.5) return f;
+  return f % 2 === 0 ? f : f + 1;
+}
+
+/** Python's `_clean`: drop trivial layers (unless that empties it), then cap
+ *  the count by keeping evenly spaced layers, first and last included. */
+function clean(layers: ArchLayer[]): ArchLayer[] {
+  if (!layers.length) return layers;
+  const filtered = layers.filter((l) => !ARCH_TRIVIAL.some((k) => norm(l.layer_type).includes(k)));
+  let kept = filtered.length ? filtered : layers;
+  if (kept.length > ARCH_MAX_LAYERS) {
+    const n = kept.length;
+    const k = ARCH_MAX_LAYERS;
+    const idxs = [...new Set(Array.from({ length: k }, (_, i) => pyRound((i * (n - 1)) / (k - 1))))]
+      .sort((a, b) => a - b);
+    kept = idxs.map((i) => kept[i]);
+  }
+  return kept.map((l, i) => ({ ...l, idx: i }));
+}
+
+/** Best-effort architecture from log lines; empty when nothing is recognised.
+ *  Like Python, the richer of the two readings wins. */
 export function parseArchitecture(lines: string[]): ArchLayer[] {
-  const keras = parseKeras(lines);
-  if (keras.length) return keras;
-  return parseModuleRepr(lines);
+  const keras = clean(parseKeras(lines));
+  const repr = clean(parseModuleRepr(lines));
+  return repr.length > keras.length ? repr : keras;
 }

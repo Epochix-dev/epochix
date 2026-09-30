@@ -1,0 +1,215 @@
+{
+ "logs": {
+  "tests/fixtures/logs/resnet18_cifar10.log": [
+   [
+    "conv1",
+    "Conv2d",
+    "CONV",
+    "Spatial patterns",
+    "conv"
+   ],
+   [
+    "bn1",
+    "BatchNorm2d",
+    "NORM",
+    "Stabiliser",
+    "norm"
+   ],
+   [
+    "layer1.0",
+    "BasicBlock",
+    "BLOCK",
+    "Residual block",
+    "conv"
+   ],
+   [
+    "layer1.1",
+    "BasicBlock",
+    "BLOCK",
+    "Residual block",
+    "conv"
+   ],
+   [
+    "layer2.0",
+    "BasicBlock",
+    "BLOCK",
+    "Residual block",
+    "conv"
+   ],
+   [
+    "layer2.1",
+    "BasicBlock",
+    "BLOCK",
+    "Residual block",
+    "conv"
+   ],
+   [
+    "layer3.0",
+    "BasicBlock",
+    "BLOCK",
+    "Residual block",
+    "conv"
+   ],
+   [
+    "layer3.1",
+    "BasicBlock",
+    "BLOCK",
+    "Residual block",
+    "conv"
+   ],
+   [
+    "layer4.0",
+    "BasicBlock",
+    "BLOCK",
+    "Residual block",
+    "conv"
+   ],
+   [
+    "layer4.1",
+    "BasicBlock",
+    "BLOCK",
+    "Residual block",
+    "conv"
+   ],
+   [
+    "avgpool",
+    "AdaptiveAvgPool2d",
+    "POOL",
+    "Compressor",
+    "norm"
+   ],
+   [
+    "fc",
+    "Linear",
+    "HEAD",
+    "Decision maker",
+    "dense"
+   ]
+  ]
+ },
+ "samples": {
+  "bilstm": {
+   "layers": [
+    [
+     "embedding",
+     "Embedding",
+     "EMBED",
+     "Symbol mapper",
+     "dense"
+    ],
+    [
+     "lstm",
+     "BiLSTM",
+     "MEMORY",
+     "Bi-directional memory",
+     "recurrent"
+    ],
+    [
+     "fc",
+     "Linear",
+     "HEAD",
+     "Decision maker",
+     "dense"
+    ]
+   ],
+   "lines": [
+    "SeqClassifier(",
+    "  (embedding): Embedding(10000, 300)",
+    "  (lstm): LSTM(300, 256, num_layers=2, bidirectional=True)",
+    "  (fc): Linear(in_features=512, out_features=5, bias=True)",
+    ")"
+   ]
+  },
+  "nested_containers": {
+   "layers": [
+    [
+     "features.0",
+     "Conv2d",
+     "CONV",
+     "Spatial patterns",
+     "conv"
+    ],
+    [
+     "features.1",
+     "BatchNorm2d",
+     "NORM",
+     "Stabiliser",
+     "norm"
+    ],
+    [
+     "features.2",
+     "Sequential",
+     "LAYER",
+     "Processing unit",
+     "generic"
+    ],
+    [
+     "blocks.0-3",
+     "TransformerEncoderLayer",
+     "FOCUS",
+     "Transformer encoder",
+     "attention"
+    ],
+    [
+     "head",
+     "Linear",
+     "HEAD",
+     "Decision maker",
+     "dense"
+    ]
+   ],
+   "lines": [
+    "Net(",
+    "  (features): Sequential(",
+    "    (0): Conv2d(3, 16, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))",
+    "    (1): BatchNorm2d(16, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)",
+    "    (2): Sequential(",
+    "      (0): Conv2d(16, 32, kernel_size=(3, 3), stride=(1, 1))",
+    "    )",
+    "  )",
+    "  (blocks): ModuleList(",
+    "    (0-3): 4 x TransformerEncoderLayer(",
+    "      (self_attn): MultiheadAttention(",
+    "      )",
+    "    )",
+    "  )",
+    "  (head): Linear(in_features=32, out_features=10, bias=True)",
+    ")"
+   ]
+  },
+  "sequential_root": {
+   "layers": [
+    [
+     "0",
+     "Conv2d",
+     "CONV",
+     "Spatial patterns",
+     "conv"
+    ],
+    [
+     "2",
+     "MaxPool2d",
+     "POOL",
+     "Compressor",
+     "norm"
+    ],
+    [
+     "4",
+     "Linear",
+     "HEAD",
+     "Decision maker",
+     "dense"
+    ]
+   ],
+   "lines": [
+    "Sequential(",
+    "  (0): Conv2d(1, 32, kernel_size=(3, 3), stride=(1, 1))",
+    "  (1): ReLU()",
+    "  (2): MaxPool2d(kernel_size=2, stride=2, padding=0, dilation=1, ceil_mode=False)",
+    "  (3): Flatten(start_dim=1, end_dim=-1)",
+    "  (4): Linear(in_features=5408, out_features=10, bias=True)",
+    ")"
+   ]
+  }
+ }
+}

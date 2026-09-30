@@ -8,7 +8,7 @@ from typing import Literal
 from epochix.models import Warning
 from epochix.story_engine.messages import message
 
-WarningKind = Literal["overfit", "plateau", "divergence", "lr_drop"]
+WarningKind = Literal["overfit", "overfit_cleared", "plateau", "divergence", "lr_drop"]
 
 _OVERFIT_WINDOW = 3  # val_loss must rise for N consecutive epochs
 _PLATEAU_WINDOW = 5  # <1% improvement over N epochs
@@ -32,6 +32,10 @@ class WarningDetector:
     _primary: deque[float] = field(default_factory=lambda: deque(maxlen=10), init=False)
     _lr_prev: float | None = field(default=None, init=False)
     _best_train_loss: float | None = field(default=None, init=False)
+    _best_val_loss: float | None = field(default=None, init=False)
+    # The best validation loss when the overfit warning fired. Beating it later
+    # disproves the warning; see the overfit block below.
+    _overfit_mark: float | None = field(default=None, init=False)
     _fired: set[str] = field(default_factory=set, init=False)
 
     def update(
@@ -104,6 +108,7 @@ class WarningDetector:
             )
             if val_rising and train_falling:
                 self._fired.add("overfit")
+                self._overfit_mark = self._best_val_loss
                 warnings.append(
                     Warning(
                         kind="overfit",
@@ -111,6 +116,34 @@ class WarningDetector:
                         message=message("warn_overfit", self.locale),
                     )
                 )
+
+        # A validation loss that later beats its best from before the rise was
+        # a blip, not memorising. A ResNet-18 on CIFAR-10 rose 0.862 -> 0.867 ->
+        # 1.229 during its learning-rate warm-up, fell to a new best the next
+        # epoch and kept falling to its lowest at the last one — while the
+        # dashboard still told the reader to "stop at the best validation
+        # epoch". Withdraw the warning, and let it fire again if it recurs.
+        if (
+            val_loss is not None
+            and self._overfit_mark is not None
+            and "overfit" in self._fired
+            and val_loss < self._overfit_mark
+        ):
+            self._fired.discard("overfit")
+            self._overfit_mark = None
+            warnings.append(
+                Warning(
+                    kind="overfit_cleared",
+                    epoch=epoch,
+                    message=message("warn_overfit_cleared", self.locale),
+                )
+            )
+        if (
+            val_loss is not None
+            and math.isfinite(val_loss)
+            and (self._best_val_loss is None or val_loss < self._best_val_loss)
+        ):
+            self._best_val_loss = val_loss
 
         # Plateau: <1% improvement in primary metric over N epochs
         if len(self._primary) >= _PLATEAU_WINDOW and "plateau" not in self._fired:

@@ -197,6 +197,10 @@ export class StandaloneEngine {
   private _valLosses: number[] = [];
   private _bestTrainLoss: number | null = null;
   private _trainSeen = 0;
+  private _bestValLoss: number | null = null;
+  private _valSeen = 0;
+  /** Best validation loss when the overfit warning fired; beating it withdraws the warning. */
+  private _overfitMark: number | null = null;
   private _allMetrics: RawMetric[] = [];
   private _frames: StoryFrameMsg[] = [];
   private _milestones: MilestoneMsg[] = [];
@@ -817,8 +821,32 @@ export class StandaloneEngine {
       const vw = v.slice(-OVERFIT_WINDOW);
       const valRising = vw.every((x, i) => i === 0 || x > vw[i - 1]);
       const trainFalling = tw.every((x, i) => i === 0 || x < tw[i - 1]);
-      if (valRising && trainFalling) {
+      if (valRising && trainFalling && !this._seenMilestones.has("overfit_warning")) {
+        this._overfitMark = this._bestValLoss;
         warn("overfit_warning", "overfit", message("warn_overfit", this._locale));
+      }
+    }
+
+    // A validation loss that later beats its best from before the rise was a
+    // blip, not memorising: withdraw the warning, and let it fire again if it
+    // recurs. Mirrors story_engine/warnings.py.
+    for (; this._valSeen < v.length; this._valSeen++) {
+      const x = v[this._valSeen];
+      if (
+        this._overfitMark !== null &&
+        this._seenMilestones.has("overfit_warning") &&
+        x < this._overfitMark
+      ) {
+        this._seenMilestones.delete("overfit_warning");
+        this._overfitMark = null;
+        this._warnings.push({
+          kind: "overfit_cleared",
+          epoch,
+          message: message("warn_overfit_cleared", this._locale),
+        });
+      }
+      if (Number.isFinite(x) && (this._bestValLoss === null || x < this._bestValLoss)) {
+        this._bestValLoss = x;
       }
     }
 

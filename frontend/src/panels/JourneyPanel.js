@@ -110,7 +110,9 @@ export class JourneyPanel {
       }
     }
 
-    // ── Stat row (epoch / accuracy / progress / grade) ──────────────────────
+    // ── Stat row (epoch / metric / progress) ─────────────────────────────────
+    // No grade tile: the letter is printed large directly above it, and a
+    // metaphor card below names it again.
     // Stable DOM nodes + animated count-up so the numbers feel alive.
     const statRow = document.getElementById('stat-row');
     if (statRow && frame) {
@@ -118,14 +120,12 @@ export class JourneyPanel {
         statRow.innerHTML = `
           <span class="stat"><span class="stat-label">Epoch</span><span class="stat-val" data-k="epoch">—</span></span>
           <span class="stat"><span class="stat-label" data-l="metric">Accuracy</span><span class="stat-val" data-k="acc">—</span></span>
-          <span class="stat"><span class="stat-label">Progress</span><span class="stat-val" data-k="prog">—</span></span>
-          <span class="stat"><span class="stat-label">Grade</span><span class="stat-val" data-k="grade">—</span></span>`;
+          <span class="stat"><span class="stat-label">Progress</span><span class="stat-val" data-k="prog">—</span></span>`;
         this._statEls = {
           epoch:  statRow.querySelector('[data-k="epoch"]'),
           acc:    statRow.querySelector('[data-k="acc"]'),
           accLbl: statRow.querySelector('[data-l="metric"]'),
           prog:   statRow.querySelector('[data-k="prog"]'),
-          grade:  statRow.querySelector('[data-k="grade"]'),
         };
       }
       if (frame.epoch != null) _countUp(this._statEls.epoch, frame.epoch, { decimals: 0 });
@@ -150,7 +150,6 @@ export class JourneyPanel {
       }
       if (frame.progress != null)
         _countUp(this._statEls.prog, frame.progress * 100, { decimals: 0, suffix: '% done' });
-      if (frame.grade) this._statEls.grade.textContent = frame.grade;
     }
 
     // ── Grade note ──────────────────────────────────────────────────────────

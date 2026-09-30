@@ -58,6 +58,9 @@ export const store = createStore({
   theme: 'dark',
   scrubEpoch: -1,
   warnings: [],
+  // message -> kind for each shown warning, so a later `overfit_cleared` knows
+  // which messages it withdraws.
+  warningKinds: {},
   milestones: [],
   architecture: null,
   activations: null,
@@ -82,21 +85,47 @@ export function pushFrame(frame) {
   // showed none of them: the engine had detected the overfitting, stored it on
   // the frame, and the dashboard displayed nothing. Taking them from the frame
   // covers the snapshot, the export and the live stream in one place.
-  const seen = new Set(s.warnings);
-  const added = [];
-  for (const w of frame?.warnings ?? []) {
-    const message = typeof w === 'string' ? w : w?.message;
-    if (message && !seen.has(message)) {
-      seen.add(message);
-      added.push(message);
-    }
-  }
-
   store.set({
     frames,
     currentFrame,
-    ...(added.length ? { warnings: [...s.warnings, ...added] } : {}),
+    ..._withWarnings(s, frame?.warnings ?? []),
   });
+}
+
+/**
+ * The warning list after `incoming` arrives, or {} when nothing changed.
+ *
+ * An `overfit_cleared` warning is not shown: it withdraws the overfit warning
+ * before it. The engine sends it when validation loss beats its best from
+ * before the rise — a ResNet-18 run's warm-up blip at epoch 5 otherwise told
+ * the reader, at epoch 30, to "stop at the best validation epoch", which was
+ * epoch 30.
+ * @param {{warnings: string[], warningKinds?: Object<string,string>}} s
+ * @param {Array<string|{kind?: string, message?: string}>} incoming
+ */
+function _withWarnings(s, incoming) {
+  let warnings = s.warnings;
+  let kinds = s.warningKinds ?? {};
+  let changed = false;
+  for (const w of incoming) {
+    const message = typeof w === 'string' ? w : w?.message;
+    const kind = typeof w === 'string' ? undefined : w?.kind;
+    if (kind === 'overfit_cleared') {
+      const kept = warnings.filter((m) => kinds[m] !== 'overfit');
+      if (kept.length !== warnings.length) {
+        kinds = Object.fromEntries(Object.entries(kinds).filter(([, k]) => k !== 'overfit'));
+        warnings = kept;
+        changed = true;
+      }
+      continue;
+    }
+    if (message && !warnings.includes(message)) {
+      warnings = [...warnings, message];
+      if (kind) kinds = { ...kinds, [message]: kind };
+      changed = true;
+    }
+  }
+  return changed ? { warnings, warningKinds: kinds } : {};
 }
 
 /**
@@ -109,13 +138,13 @@ export function pushMilestone(milestone) {
 }
 
 /**
- * Push a warning message (deduped by message text).
- * @param {string} message
+ * Push a warning (deduped by message text). Pass the whole warning, not only
+ * its message: its kind is what lets `overfit_cleared` withdraw an overfit.
+ * @param {string|{kind?: string, message?: string}} warning
  */
-export function pushWarning(message) {
-  const s = store.get();
-  if (s.warnings.includes(message)) return;
-  store.set({ warnings: [...s.warnings, message] });
+export function pushWarning(warning) {
+  const update = _withWarnings(store.get(), [warning]);
+  if (Object.keys(update).length) store.set(update);
 }
 
 /**

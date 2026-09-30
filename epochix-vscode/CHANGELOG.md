@@ -14,6 +14,21 @@ which covers the extension too; entries here resume with 0.7.16.
 
 ---
 
+## [0.7.24] — 2026-09-30
+
+### Fixed
+
+- **A warm-up blip in validation loss was reported as overfitting for the
+  rest of the run.** The warning is withdrawn when validation loss reaches a
+  new best, and fires again if the run really overfits later.
+- **A `print(model)` architecture reads as the model is built** — a ResNet-18
+  is a stem, eight residual blocks and a classifier, not its stages and their
+  blocks mixed together — and layers are labelled from the Python engine's
+  table, generated rather than hand-copied.
+- The warning strip no longer lists planned learning-rate drops; the grade
+  card no longer repeats the grade; the learning-curve legend no longer sits
+  on the curve.
+
 ## [0.7.23] — 2026-09-30
 
 No change to the extension itself; released in step with the Python package,

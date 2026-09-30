@@ -201,7 +201,10 @@ export class GradeArcChart {
     }
 
     // Layout margins
-    const ML = 44, MR = 20, MT = 16, MB = 28;
+    // The legend has its own strip above the plot. Inside it, top right, it
+    // sat on exactly the spot a good run's curve ends, and its loss label ran
+    // past the edge ("val loss (inverted — ↑ = low").
+    const ML = 44, MR = 20, MT = 30, MB = 28;
     const cw = w - ML - MR;
     const ch = h - MT - MB;
 
@@ -400,26 +403,29 @@ export class GradeArcChart {
     }
 
     // ── Legend ────────────────────────────────────────────────────────────
-    const lx = ML + cw - 130;
+    // One row in the strip above the plot, right-aligned to the plot's edge.
     ctx.font = '10px DM Sans, sans-serif';
     ctx.textAlign = 'left';
-
-    ctx.beginPath();
-    ctx.moveTo(lx, MT + 10); ctx.lineTo(lx + 18, MT + 10);
-    ctx.strokeStyle = '#60a5fa'; ctx.lineWidth = 2; ctx.setLineDash([]); ctx.stroke();
-    ctx.fillStyle = 'rgba(148,163,184,0.8)';
-    // The real metric, not a hardcoded "val accuracy" — this chart plots
-    // whatever the run's primary metric is, and labelling MAE or perplexity
-    // as accuracy is a lie the reader has no way to catch.
-    ctx.fillText(metricLabel(this._primaryKey || 'metric'), lx + 22, MT + 14);
-
-    if (lossData.length >= 2) {
+    const ly = 12;
+    const items = [{ label: metricLabel(this._primaryKey || 'metric'), loss: false }];
+    if (lossData.length >= 2) items.push({ label: lossLabel, loss: true });
+    let lgX = ML + cw;
+    for (const item of items.reverse()) {
+      lgX -= ctx.measureText(item.label).width + 22;
       ctx.beginPath();
-      ctx.moveTo(lx, MT + 24); ctx.lineTo(lx + 18, MT + 24);
-      ctx.strokeStyle = 'rgba(239,68,68,0.6)'; ctx.lineWidth = 1.5;
-      ctx.setLineDash([4, 3]); ctx.stroke(); ctx.setLineDash([]);
+      ctx.moveTo(lgX, ly); ctx.lineTo(lgX + 18, ly);
+      if (item.loss) {
+        ctx.strokeStyle = 'rgba(239,68,68,0.6)'; ctx.lineWidth = 1.5; ctx.setLineDash([4, 3]);
+      } else {
+        // The real metric, not a hardcoded "val accuracy" — this chart plots
+        // whatever the run's primary metric is, and labelling MAE or
+        // perplexity as accuracy is a lie the reader has no way to catch.
+        ctx.strokeStyle = '#60a5fa'; ctx.lineWidth = 2; ctx.setLineDash([]);
+      }
+      ctx.stroke(); ctx.setLineDash([]);
       ctx.fillStyle = 'rgba(148,163,184,0.8)';
-      ctx.fillText(lossLabel, lx + 22, MT + 28);
+      ctx.fillText(item.label, lgX + 22, ly + 4);
+      lgX -= 16;
     }
   }
 }

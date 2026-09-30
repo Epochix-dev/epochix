@@ -14,6 +14,7 @@ const MILESTONE_EMOJIS = {
   best_so_far:       '✅',
   biggest_jump:      '⚡',
   overfit_warning:   '⚠️',
+  overfit_cleared:   '✅',
   plateau:           '😴',
   lr_drop:           '📉',
   divergence:        '💥',
