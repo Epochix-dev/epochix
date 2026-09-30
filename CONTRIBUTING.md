@@ -17,11 +17,16 @@ epochix installed resolves the package from site-packages, and your edits
 appear to do nothing. [AGENTS.md](AGENTS.md) collects the other traps this
 repository has taught — read it before a non-trivial change.
 
-For the frontend or the VS Code extension:
+For the frontend or the VS Code extension, one command per line — Windows
+PowerShell 5.1 rejects `&&`:
 
 ```bash
-cd frontend           && npm ci && npm test
-cd ../epochix-vscode  && npm ci && npm test   # launches a real VS Code host
+cd frontend
+npm ci
+npm test
+cd ../epochix-vscode
+npm ci
+npm test   # launches a real VS Code host
 ```
 
 ## Branching + commits
@@ -39,11 +44,11 @@ cd ../epochix-vscode  && npm ci && npm test   # launches a real VS Code host
 | Python format | `uv run --extra dev ruff format --check src tests`       |
 | Python type   | `uv run --extra dev mypy --strict src/epochix`           |
 | Python tests  | `uv run --extra dev pytest tests/unit tests/integration` |
-| Frontend      | `cd frontend && npm test`                                |
-| VS Code       | `cd epochix-vscode && npm test`                          |
+| Frontend      | `npm test` in `frontend/`                                |
+| VS Code       | `npm test` in `epochix-vscode/`                          |
 
-Run them separately: chained with `&&`, an early failure silently skips the
-rest.
+Run them separately. Chained with `&&`, an early failure silently skips the
+rest — and Windows PowerShell 5.1 does not accept `&&` at all.
 
 CI runs all of the above on Linux / macOS / Windows × Python 3.10–3.13.
 A patch is mergeable when every check passes locally and in CI.
