@@ -37,6 +37,21 @@ suite("A withdrawn overfit warning", () => {
     ]);
   });
 
+  test("a loss printed after the story's metric counts for its own epoch", () => {
+    // Mirrors tests/unit/test_process_line.py: val_accuracy first, val_loss
+    // after it. Python fed events one at a time and warned a line late (5).
+    const lines: Array<[number, number, number, number]> = [
+      [1, 0.6, 0.9, 1.0], [2, 0.7, 0.7, 0.8], [3, 0.72, 0.75, 0.6],
+      [4, 0.71, 0.82, 0.45], [5, 0.7, 0.9, 0.35],
+    ];
+    const engine = new StandaloneEngine();
+    for (const [e, acc, vl, tl] of lines) {
+      engine.feed(`Epoch ${e}/5 val_accuracy=${acc} val_loss=${vl} train_loss=${tl}\n`);
+    }
+    engine.flush();
+    assert.deepStrictEqual(overfitEvents(engine), [[4, "overfit"]]);
+  });
+
   test("it fires again if the run overfits later", () => {
     const rows: Array<[number, number]> = [
       [1.5462, 1.3929], [1.0401, 0.9918], [0.8426, 0.8622], [0.6934, 0.8667],

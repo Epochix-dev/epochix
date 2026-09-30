@@ -8,7 +8,7 @@ Architecture (§6.2)::
     BaseIngester.lines()
         → parser.parse_line(line, ctx)     # RawMetric list
         → normalizer.normalize(raw)        # MetricEvent
-        → story_engine.process(event)      # StoryFrame | None
+        → story_engine.process_line(events) # StoryFrames, once the line is in
         → store.append_*(…)               # durable write
         → hub.publish(run_id, msg)         # fan-out to WS/SSE clients
 """
@@ -235,36 +235,34 @@ def _emit_metrics(
             events.append(normalize(raw, run_id=run_id, timestamp=timestamp))
         except ValueError:
             continue
-    # The whole batch is one line: let the engine see every name on it before
-    # choosing which one tells the story (see StoryEngine.announce).
-    engine.announce({event.canonical_key for event in events})
-
     for event in events:
         store.append_metric_event(event)
 
-        # process_all (not process) so a warmup backfill — where the buffered
-        # early epochs are replayed at once — persists every frame, not just the
-        # last, keeping the first epoch(s) in the story.
-        for frame in engine.process_all(event):
-            last_epoch = frame.epoch
-            store.append_story_frame(frame)
+    # The whole batch is one line: the engine sees every name and value on it
+    # before building a frame, so a metric printed after the story's metric
+    # belongs to this frame, not the next (see StoryEngine.process_line). Every
+    # frame is persisted, including a warmup backfill that replays the first
+    # epochs at once.
+    for frame in engine.process_line(events):
+        last_epoch = frame.epoch
+        store.append_story_frame(frame)
 
-            msg = hub.make_message(
-                msg_type="story_frame",
+        msg = hub.make_message(
+            msg_type="story_frame",
+            run_id=run_id,
+            seq=frame.seq,
+            payload=frame.model_dump(mode="json"),
+        )
+        hub.publish(run_id, msg)
+
+        for ms in frame.milestones:
+            ms_msg = hub.make_message(
+                msg_type="milestone",
                 run_id=run_id,
-                seq=frame.seq,
-                payload=frame.model_dump(mode="json"),
+                seq=ms.seq,
+                payload=ms.model_dump(mode="json"),
             )
-            hub.publish(run_id, msg)
-
-            for ms in frame.milestones:
-                ms_msg = hub.make_message(
-                    msg_type="milestone",
-                    run_id=run_id,
-                    seq=ms.seq,
-                    payload=ms.model_dump(mode="json"),
-                )
-                hub.publish(run_id, ms_msg)
+            hub.publish(run_id, ms_msg)
 
     return last_epoch
 

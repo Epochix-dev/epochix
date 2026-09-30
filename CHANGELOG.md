@@ -36,6 +36,18 @@ produced it — showed the dashboard contradicting itself.
 - **A planned learning-rate decay filled the warning strip** with three amber
   warnings. A learning-rate drop is not a problem; the strip shows problems,
   and the learning-rate chart shows the schedule.
+- **A metric printed after the story's metric on a line counted for the
+  next epoch.** The engine built a frame when the story's metric arrived and
+  read the rest from history, so on `... val_accuracy=0.9357 lr=0.00442` the
+  learning-rate drop at epoch 28 reported the epoch 26 -> 27 change, the last
+  line's never reached any frame, and a log printing `val_acc` before
+  `val_loss` had its overfit check a line late. The pipeline now hands the
+  engine each line whole (`StoryEngine.process_line`); the extension's engine
+  already worked a line at a time, and both agree in the tests.
+- **A warning message could name an object key in the dashboard** (CodeQL
+  js/remote-property-injection, found on this release's pull request before
+  it shipped). Warning text comes from log files; the kinds are kept in a
+  `Map` now.
 - The grade was shown three times in one card; the stat tile repeating the
   large letter above it is gone. The learning-curve legend sat on the spot a
   good run's curve ends, and its loss label ran off the edge; it has its own

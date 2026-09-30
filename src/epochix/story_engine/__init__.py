@@ -329,7 +329,34 @@ class StoryEngine:
         Usually 0 or 1 frame. The exception is the moment the task-detection
         warmup ends: the buffered early events are replayed so the first epoch(s)
         aren't dropped from the story, which can yield several frames at once.
+
+        An event on its own is its own line. Callers that have a whole log line
+        should use :meth:`process_line`.
         """
+        self._record(event)
+        return self._advance(event)
+
+    def process_line(self, events: list[MetricEvent]) -> list[StoryFrame]:
+        """Process every event of one log line; return the frames they produce.
+
+        The whole line is recorded before any frame is built. A frame is built
+        when the story's metric arrives and reads the rest from history, so on
+        `... val_accuracy=0.9357 lr=0.00442 epoch_time=5.6s` the learning rate
+        used to reach the NEXT frame: a ResNet-18's lr_drop at epoch 28
+        reported its epoch 26 -> 27 change, and the last line's never arrived.
+        The end of a line always arrives with the line, so this waits on
+        nothing that might not come.
+        """
+        self.announce({event.canonical_key for event in events})
+        for event in events:
+            self._record(event)
+        frames: list[StoryFrame] = []
+        for event in events:
+            frames.extend(self._advance(event))
+        return frames
+
+    def _record(self, event: MetricEvent) -> None:
+        """Count the event, keep its value, and classify the task."""
         self._events_count += 1
         self._seen_keys.add(event.canonical_key)
         if event.raw_key:
@@ -364,6 +391,8 @@ class StoryEngine:
                     run_id=self.run_id, task=self.task, locale=self.locale
                 )
 
+    def _advance(self, event: MetricEvent) -> list[StoryFrame]:
+        """Warm up, or build the frame this event triggers (see process_all)."""
         # Warmup: buffer events until the task-detection window (≥3 events) is
         # satisfied, then start emitting. On the first emit, replay the buffered
         # events so early primary-metric epochs produce frames too (previously
