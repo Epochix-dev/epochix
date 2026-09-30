@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [0.7.23] — 2026-09-29
+## [0.7.23] — 2026-09-30
 
 ### Fixed — found by installing from PyPI and using it as a newcomer
 
