@@ -27,7 +27,7 @@ const INITIAL_STATE = {
   theme: 'dark',
   scrubEpoch: -1,
   warnings: [],
-  warningKinds: {},
+  warningKinds: new Map(),
   milestones: [],
 };
 
@@ -251,6 +251,17 @@ describe('overfit_cleared', () => {
     pushWarning(cleared);
     pushWarning({ ...overfit, epoch: 20 });
     expect(store.get().warnings).toEqual([overfit.message]);
+  });
+
+  it('a message named __proto__ is data, not a prototype key', () => {
+    // CodeQL js/remote-property-injection: message text comes from log files.
+    pushWarning({ kind: 'overfit', message: '__proto__' });
+    pushWarning({ kind: 'plateau', message: 'constructor' });
+    expect(store.get().warnings).toEqual(['__proto__', 'constructor']);
+    expect(({}).polluted).toBeUndefined();
+    expect(Object.getPrototypeOf(store.get().warningKinds)).toBe(Map.prototype);
+    pushWarning({ kind: 'overfit_cleared', message: 'x' });
+    expect(store.get().warnings).toEqual(['constructor']);
   });
 
   it('leaves a plain string warning alone', () => {

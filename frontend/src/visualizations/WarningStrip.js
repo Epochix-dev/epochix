@@ -58,8 +58,8 @@ export class WarningStrip {
   }
 }
 
-/** @param {{warnings?: string[], warningKinds?: Object<string,string>}} s */
+/** @param {{warnings?: string[], warningKinds?: Map<string,string>}} s */
 function problems(s) {
-  const kinds = s.warningKinds ?? {};
-  return (s.warnings ?? []).filter((m) => !NOT_A_PROBLEM.has(kinds[m]));
+  const kinds = s.warningKinds instanceof Map ? s.warningKinds : new Map();
+  return (s.warnings ?? []).filter((m) => !NOT_A_PROBLEM.has(kinds.get(m)));
 }

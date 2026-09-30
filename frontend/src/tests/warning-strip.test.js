@@ -68,7 +68,7 @@ describe('WarningStrip', () => {
     // A ResNet-18's planned one-cycle decay filled the strip with three amber
     // warnings. The learning-rate chart shows the schedule.
     const store = fakeStore(['Learning rate decreased from 1e-2 to 5e-3.', 'Loss diverged.']);
-    store.set({ warningKinds: { 'Learning rate decreased from 1e-2 to 5e-3.': 'lr_drop' } });
+    store.set({ warningKinds: new Map([['Learning rate decreased from 1e-2 to 5e-3.', 'lr_drop']]) });
     new WarningStrip(el).mount(store);
     expect(el.querySelectorAll('.warn-item')).toHaveLength(1);
     expect(el.textContent).toContain('Loss diverged');
@@ -77,7 +77,7 @@ describe('WarningStrip', () => {
 
   it('stays hidden when the only warning is a learning-rate drop', () => {
     const store = fakeStore(['Learning rate decreased.']);
-    store.set({ warningKinds: { 'Learning rate decreased.': 'lr_drop' } });
+    store.set({ warningKinds: new Map([['Learning rate decreased.', 'lr_drop']]) });
     new WarningStrip(el).mount(store);
     expect(el.hidden).toBe(true);
   });

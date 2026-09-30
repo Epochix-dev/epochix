@@ -59,8 +59,9 @@ export const store = createStore({
   scrubEpoch: -1,
   warnings: [],
   // message -> kind for each shown warning, so a later `overfit_cleared` knows
-  // which messages it withdraws.
-  warningKinds: {},
+  // which messages it withdraws. A Map, not an object: the message text comes
+  // from log files, and a message named `__proto__` must not become a key.
+  warningKinds: new Map(),
   milestones: [],
   architecture: null,
   activations: null,
@@ -100,20 +101,20 @@ export function pushFrame(frame) {
  * before the rise — a ResNet-18 run's warm-up blip at epoch 5 otherwise told
  * the reader, at epoch 30, to "stop at the best validation epoch", which was
  * epoch 30.
- * @param {{warnings: string[], warningKinds?: Object<string,string>}} s
+ * @param {{warnings: string[], warningKinds?: Map<string,string>}} s
  * @param {Array<string|{kind?: string, message?: string}>} incoming
  */
 function _withWarnings(s, incoming) {
   let warnings = s.warnings;
-  let kinds = s.warningKinds ?? {};
+  let kinds = s.warningKinds instanceof Map ? s.warningKinds : new Map();
   let changed = false;
   for (const w of incoming) {
     const message = typeof w === 'string' ? w : w?.message;
     const kind = typeof w === 'string' ? undefined : w?.kind;
     if (kind === 'overfit_cleared') {
-      const kept = warnings.filter((m) => kinds[m] !== 'overfit');
+      const kept = warnings.filter((m) => kinds.get(m) !== 'overfit');
       if (kept.length !== warnings.length) {
-        kinds = Object.fromEntries(Object.entries(kinds).filter(([, k]) => k !== 'overfit'));
+        kinds = new Map([...kinds].filter(([, k]) => k !== 'overfit'));
         warnings = kept;
         changed = true;
       }
@@ -121,7 +122,7 @@ function _withWarnings(s, incoming) {
     }
     if (message && !warnings.includes(message)) {
       warnings = [...warnings, message];
-      if (kind) kinds = { ...kinds, [message]: kind };
+      if (kind) kinds = new Map(kinds).set(message, kind);
       changed = true;
     }
   }
