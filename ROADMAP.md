@@ -24,7 +24,13 @@ taught live in [AGENTS.md](AGENTS.md).
 
 ## Open
 
-Nothing at the moment.
+- **Metrics printed after the story's metric on a line are one frame late.**
+  Both engines build a frame when the primary metric's event arrives, so on
+  `... val_accuracy=0.9357 lr=0.00442 ...` the learning rate (and anything
+  else after it) belongs to the next frame; the lr_drop message at epoch 28
+  of `tests/fixtures/logs/resnet18_cifar10.log` reports the epoch 26 -> 27
+  change. Fix: let a frame see its whole line in both engines, and review the
+  corpus-truth entries it changes. Filed 2026-09-30.
 
 ---
 

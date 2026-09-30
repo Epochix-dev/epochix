@@ -22,6 +22,8 @@ MESSAGES: dict[str, dict[str, str]] = {
         "warn_overfit": "The model may be memorising the study material "
         "instead of understanding it. Next step: stop at the best validation epoch, "
         "add regularisation (dropout, weight decay) or augmentation, or collect more data.",
+        "warn_overfit_cleared": "Validation loss reached a new low again, so the "
+        "earlier rise was a blip, not memorising.",
         "warn_plateau": "Learning has slowed. The model has stopped finding new patterns. "
         "Next step: a lower learning rate (for example a reduce-on-plateau schedule) "
         "may restart progress; otherwise more epochs at this rate are unlikely to help.",
@@ -58,6 +60,8 @@ MESSAGES: dict[str, dict[str, str]] = {
         "warn_overfit": "شاید مدل به‌جای فهمیدن مطالب، آن‌ها را حفظ می‌کند. "
         "گام بعدی: در بهترین دورهٔ اعتبارسنجی متوقف شوید، منظم‌سازی (dropout، weight decay) "
         "یا داده‌افزایی اضافه کنید، یا دادهٔ بیشتری جمع کنید.",
+        "warn_overfit_cleared": "خطای اعتبارسنجی دوباره به کمترین مقدار خود رسید؛ "
+        "پس افزایش قبلی یک نوسان گذرا بود، نه حفظ کردن.",
         "warn_plateau": "یادگیری کند شده است. مدل دیگر الگوی تازه‌ای پیدا نمی‌کند. "
         "گام بعدی: کاهش نرخ یادگیری (مثلاً با زمان‌بندی reduce-on-plateau) ممکن است "
         "پیشرفت را از سر بگیرد؛ وگرنه ادامهٔ آموزش با همین نرخ احتمالاً کمکی نمی‌کند.",
@@ -94,6 +98,8 @@ MESSAGES: dict[str, dict[str, str]] = {
         "Étape suivante : arrêtez-vous à la meilleure époque de validation, ajoutez de la "
         "régularisation (dropout, weight decay) ou de l'augmentation de données, ou "
         "collectez plus de données.",
+        "warn_overfit_cleared": "La perte de validation a de nouveau atteint un minimum : "
+        "la hausse précédente était passagère, pas de la mémorisation.",
         "warn_plateau": "L'apprentissage ralentit. Le modèle ne trouve plus de nouveaux "
         "motifs. Étape suivante : baisser le taux d'apprentissage (par exemple un "
         "planificateur reduce-on-plateau) peut relancer la progression ; sinon, continuer "

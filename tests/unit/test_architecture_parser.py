@@ -159,6 +159,49 @@ class TestModuleRepr:
         assert layers[1].visual_type == "recurrent"
         assert types[2] == "Linear"
 
+    def test_a_torchvision_resnet_is_its_stem_blocks_and_head(self) -> None:
+        """Stages and the blocks inside them were both listed: "Conv2d +
+        BatchNorm2d + Sequential + BasicBlock x2 + Sequential + ...". A real
+        ResNet-18 (tests/fixtures/logs/resnet18_cifar10.log) is a stem, eight
+        residual blocks and a classifier."""
+        from pathlib import Path
+
+        log = Path(__file__).resolve().parents[1] / "fixtures" / "logs" / "resnet18_cifar10.log"
+        layers = parse_architecture(log.read_text(encoding="utf-8").splitlines())
+        assert [(lyr.name, lyr.layer_type) for lyr in layers] == [
+            ("conv1", "Conv2d"),
+            ("bn1", "BatchNorm2d"),
+            *[(f"layer{s}.{b}", "BasicBlock") for s in range(1, 5) for b in range(2)],
+            ("avgpool", "AdaptiveAvgPool2d"),
+            ("fc", "Linear"),
+        ]
+        assert {lyr.plain_label for lyr in layers if lyr.layer_type == "BasicBlock"} == {
+            "Residual block"
+        }
+        # Parameters derivable from the repr are exact; a block's are not given.
+        assert layers[0].params == 3 * 64 * 3 * 3
+        assert layers[-1].params == 512 * 10 + 10
+        assert layers[2].params_str == ""
+
+    def test_folded_repeats_are_kept(self) -> None:
+        """PyTorch prints repeated modules as `(0-3): 4 x Type(`; they vanished."""
+        lines = [
+            "Encoder(",
+            "  (blocks): ModuleList(",
+            "    (0-3): 4 x TransformerEncoderLayer(",
+            "      (self_attn): MultiheadAttention(",
+            "      )",
+            "    )",
+            "  )",
+            "  (head): Linear(in_features=32, out_features=10, bias=True)",
+            ")",
+        ]
+        layers = parse_architecture(lines)
+        assert [(lyr.name, lyr.layer_type) for lyr in layers] == [
+            ("blocks.0-3", "TransformerEncoderLayer"),
+            ("head", "Linear"),
+        ]
+
 
 class TestRobustness:
     def test_empty_and_garbage(self) -> None:

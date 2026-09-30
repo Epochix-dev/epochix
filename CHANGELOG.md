@@ -7,9 +7,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [Unreleased]
+## [0.7.24] — 2026-09-30
 
-### Fixed
+### Fixed — found by running a real ResNet-18 on CIFAR-10 through it
+
+Every demo is a small model. A standard benchmark run — ResNet-18, 30 epochs,
+93.9% validation accuracy, now in the test corpus with the script that
+produced it — showed the dashboard contradicting itself.
+
+- **A warm-up blip was reported as overfitting, for good.** Validation loss
+  rose twice while the one-cycle learning rate climbed, then set a new best
+  the next epoch and fell to its lowest at the last one. The warning fired at
+  epoch 5 and stood to the end, telling the reader to "stop at the best
+  validation epoch" — epoch 30 — while the plain-English panel below said the
+  model had learned rather than memorised. Both engines now withdraw the
+  warning when validation loss beats its best from before the rise, and let
+  it fire again if the run really does overfit later.
+- **A `print(model)` architecture listed stages and the blocks inside them**:
+  "Conv2d + BatchNorm2d + Sequential + BasicBlock ×2 + Sequential + …". Only
+  the top level counts now, with `Sequential`/`ModuleList` opened one level,
+  so a ResNet-18 reads as it is built: a stem, eight residual blocks, a
+  classifier. PyTorch's folded repeats (`(0-3): 4 x TransformerEncoderLayer`)
+  were skipped entirely; they are kept.
+- **The extension labelled layers from a hand-kept subset** of the Python
+  table (no ResNet, VGG or YOLO entries) and kept trivial layers the Python
+  side drops. The table is generated from Python now, and both engines are
+  pinned to Python's answers on every `print(model)` shape in the tests.
+- **A planned learning-rate decay filled the warning strip** with three amber
+  warnings. A learning-rate drop is not a problem; the strip shows problems,
+  and the learning-rate chart shows the schedule.
+- The grade was shown three times in one card; the stat tile repeating the
+  large letter above it is gone. The learning-curve legend sat on the spot a
+  good run's curve ends, and its loss label ran off the edge; it has its own
+  row above the plot.
+
+### Fixed — docs
 
 - **A Windows contributor's first command failed.** CONTRIBUTING.md opened
   with `cd frontend && npm ci && npm test`, and Windows PowerShell 5.1 rejects

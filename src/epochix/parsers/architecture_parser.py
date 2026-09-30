@@ -84,6 +84,8 @@ _TYPE_MAP: list[tuple[str, _LayerMeta]] = [
     ("sppf", {"tech_label": "POOL", "plain_label": "Pyramid pooling", "visual_type": "norm"}),
     ("spp", {"tech_label": "POOL", "plain_label": "Pyramid pooling", "visual_type": "norm"}),
     ("bottleneck", {"tech_label": "BLOCK", "plain_label": "Residual block", "visual_type": "conv"}),
+    # ResNet-18/34's block, as torchvision names it in print(model).
+    ("basicblock", {"tech_label": "BLOCK", "plain_label": "Residual block", "visual_type": "conv"}),
     ("c2f", {"tech_label": "BLOCK", "plain_label": "Feature block", "visual_type": "conv"}),
     ("c3", {"tech_label": "BLOCK", "plain_label": "Feature block", "visual_type": "conv"}),
     ("detect", {"tech_label": "DETECT", "plain_label": "Object detector", "visual_type": "dense"}),
@@ -281,12 +283,19 @@ def _norm(layer_type: str) -> str:
     return layer_type.lower().replace(" ", "").replace("-", "").replace("_", "")
 
 
+_FALLBACK_META: _LayerMeta = {
+    "tech_label": "LAYER",
+    "plain_label": "Processing unit",
+    "visual_type": "generic",
+}
+
+
 def _classify(layer_type: str) -> _LayerMeta:
     lt = _norm(layer_type)
     for keyword, meta in _TYPE_MAP:
         if keyword in lt:
             return meta
-    return {"tech_label": "LAYER", "plain_label": "Processing unit", "visual_type": "generic"}
+    return _FALLBACK_META
 
 
 def _is_trivial(layer_type: str) -> bool:
@@ -465,9 +474,15 @@ def _parse_torchinfo(lines: list[str]) -> list[ArchLayer]:
 
 # ── Plain print(model) module repr ───────────────────────────────────────────
 
-# Top-level child:  `  (encoder): ResNet(`  /  `  (lstm): LSTM(256, 512, ...)`
-_REPR_CHILD = re.compile(r"^\s{2,4}\(([\w.]+)\):\s*([A-Za-z][\w.]*)\s*\(")
+# A child at any depth:  `  (encoder): ResNet(`  /  `    (0): BasicBlock(`, and
+# PyTorch's folded repeats:  `    (0-3): 4 x TransformerEncoderLayer(`
+_REPR_CHILD = re.compile(
+    r"^( {1,32})\(([\w.-]{1,64})\):\s*(?:\d{1,6} x )?([A-Za-z][\w.]{0,64})\s*\("
+)
 _REPR_OPEN = re.compile(r"^[A-Za-z][\w.]*\s*\(\s*$")
+# Containers that only group other modules. Their name says nothing about the
+# model ("Sequential"), so they are opened one level and their children listed.
+_REPR_CONTAINERS = frozenset({"sequential", "modulelist", "moduledict"})
 
 # `print(model)` prints no parameter counts — but a module's repr carries the
 # shapes its parameters are built from, so for the layer types that hold
@@ -680,9 +695,19 @@ def _params_from_repr(layer_type: str, raw: str) -> int | None:  # noqa: PLR0911
 
 
 def _parse_module_repr(lines: list[str]) -> list[ArchLayer]:
+    """Top-level modules of a ``print(model)`` dump, containers opened one level.
+
+    Any child indented two to four spaces used to count, so a torchvision
+    ResNet-18 listed its stages *and* the blocks inside them: "Conv2d +
+    BatchNorm2d + Sequential + BasicBlock ×2 + Sequential + ...". Only the
+    first child's depth is the top level; a ``Sequential`` there is replaced by
+    its own children, which reads as the model is built — a stem, eight
+    BasicBlocks, a classifier.
+    """
     result: list[ArchLayer] = []
     seen_open = False
-    idx = 0
+    top: int | None = None
+    container: tuple[str, int] | None = None  # (name, indent) of an opened container
     for raw in lines:
         if not seen_open:
             if _REPR_OPEN.match(raw.strip()):
@@ -691,16 +716,30 @@ def _parse_module_repr(lines: list[str]) -> list[ArchLayer]:
         m = _REPR_CHILD.match(raw)
         if not m:
             continue
-        name, layer_type = m.group(1), m.group(2)
+        indent, name, layer_type = len(m.group(1)), m.group(2), m.group(3)
+        if top is None:
+            if indent > 4:
+                continue
+            top = indent
+        if indent == top:
+            container = None
+            if layer_type.lower() in _REPR_CONTAINERS and raw.rstrip().endswith("("):
+                container = (name, indent)
+                continue
+        elif container is not None and indent == container[1] + 2:
+            name = f"{container[0]}.{name}"
+        else:
+            continue  # inside a module: its parts, not the model's
         # Detect bi-directional recurrent layers for a richer label.
         if "bidirectional=true" in raw.lower() and layer_type.lower() in ("lstm", "gru", "rnn"):
             layer_type = "Bi" + layer_type
         # Derived from the repr's own shapes. None = not derivable, which is
         # shown as nothing rather than as "0 params" — the panel used to
         # report 0 for every layer of a ~207K-parameter model.
-        exact = _params_from_repr(m.group(2), raw)
-        result.append(_make_layer(idx, name, layer_type, "" if exact is None else str(exact)))
-        idx += 1
+        exact = _params_from_repr(m.group(3), raw)
+        result.append(
+            _make_layer(len(result), name, layer_type, "" if exact is None else str(exact))
+        )
     return result
 
 

@@ -158,3 +158,55 @@ class TestHealthyRun:
                 )
             )
         assert fired == [], f"a healthy run was warned about: {fired}"
+
+
+class TestOverfitWithdrawn:
+    """A warm-up blip is not memorising.
+
+    A real ResNet-18 on CIFAR-10 (tests/fixtures/logs/resnet18_cifar10.log)
+    rose 0.862 -> 0.867 -> 1.229 in validation loss while the one-cycle
+    learning rate climbed, set a new best at epoch 6 and fell to its lowest at
+    epoch 30. The warning fired at epoch 5 and stood for the rest of the run,
+    telling the reader to "stop at the best validation epoch" — epoch 30.
+    """
+
+    # train_loss, val_loss for epochs 1-8 of that run.
+    RUN = [
+        (1.5462, 1.3929),
+        (1.0401, 0.9918),
+        (0.8426, 0.8622),
+        (0.6934, 0.8667),
+        (0.6003, 1.2294),
+        (0.5384, 0.6369),
+        (0.4830, 0.6396),
+        (0.4398, 0.5680),
+    ]
+
+    def _replay(self, rows: list[tuple[float, float]]) -> list[tuple[int, str]]:
+        det = WarningDetector()
+        fired: list[tuple[int, str]] = []
+        for epoch, (train, val) in enumerate(rows, start=1):
+            fired += [(epoch, k) for k in _kinds(det.update(epoch, train, val))]
+        return fired
+
+    def test_a_new_best_withdraws_the_warning(self) -> None:
+        assert self._replay(self.RUN) == [(5, "overfit"), (6, "overfit_cleared")]
+
+    def test_it_fires_again_if_the_run_overfits_later(self) -> None:
+        later = [(0.40, 0.60), (0.38, 0.62), (0.36, 0.65)]
+        # Epochs 8 -> 9 -> 10 rise (0.568, 0.60, 0.62) while training loss falls.
+        assert self._replay(self.RUN + later) == [
+            (5, "overfit"),
+            (6, "overfit_cleared"),
+            (10, "overfit"),
+        ]
+
+    def test_a_real_overfit_is_not_withdrawn(self) -> None:
+        rows = [(1.0, 0.50), (0.8, 0.45), (0.6, 0.47), (0.4, 0.52), (0.3, 0.58), (0.2, 0.64)]
+        assert self._replay(rows) == [(4, "overfit")]
+
+    def test_the_withdrawal_is_in_every_language(self) -> None:
+        from epochix.story_engine.messages import MESSAGES
+
+        for locale, table in MESSAGES.items():
+            assert table.get("warn_overfit_cleared"), locale

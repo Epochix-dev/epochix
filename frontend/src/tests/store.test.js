@@ -27,6 +27,7 @@ const INITIAL_STATE = {
   theme: 'dark',
   scrubEpoch: -1,
   warnings: [],
+  warningKinds: {},
   milestones: [],
 };
 
@@ -215,6 +216,47 @@ describe('pushWarning', () => {
     const before = store.get().warnings;
     pushWarning('new warning');
     expect(store.get().warnings).not.toBe(before);
+  });
+});
+
+// ── a withdrawn overfit warning ───────────────────────────────────────────────
+//
+// A ResNet-18 on CIFAR-10 had one warm-up blip in validation loss at epoch 5,
+// then set a new best at epoch 6 and kept falling. The engine withdraws its
+// overfit warning with `overfit_cleared`; the dashboard must stop showing it.
+
+describe('overfit_cleared', () => {
+  beforeEach(resetStore);
+
+  const overfit = { kind: 'overfit', epoch: 5, message: 'The model may be memorising.' };
+  const cleared = { kind: 'overfit_cleared', epoch: 6, message: 'It was a blip.' };
+  const lrDrop = { kind: 'lr_drop', epoch: 28, message: 'Learning rate decreased.' };
+
+  it('withdraws the overfit warning and shows nothing in its place', () => {
+    pushWarning(overfit);
+    pushWarning(lrDrop);
+    pushWarning(cleared);
+    expect(store.get().warnings).toEqual(['Learning rate decreased.']);
+  });
+
+  it('works when the warnings ride on frames, as in a finished run', () => {
+    pushFrame({ seq: 1, epoch: 5, warnings: [overfit] });
+    expect(store.get().warnings).toEqual([overfit.message]);
+    pushFrame({ seq: 2, epoch: 6, warnings: [cleared] });
+    expect(store.get().warnings).toEqual([]);
+  });
+
+  it('lets the warning come back if the run overfits again', () => {
+    pushWarning(overfit);
+    pushWarning(cleared);
+    pushWarning({ ...overfit, epoch: 20 });
+    expect(store.get().warnings).toEqual([overfit.message]);
+  });
+
+  it('leaves a plain string warning alone', () => {
+    pushWarning('Plateau detected');
+    pushWarning(cleared);
+    expect(store.get().warnings).toEqual(['Plateau detected']);
   });
 });
 

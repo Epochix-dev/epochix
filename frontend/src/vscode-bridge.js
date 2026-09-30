@@ -79,6 +79,7 @@ export function startVscodeBridge(applyTheme) {
           frames: [],
           milestones: [],
           warnings: [],
+          warningKinds: {},
           currentFrame: null,
           metrics: Array.isArray(msg.metrics) ? msg.metrics : [],
           architecture: Array.isArray(msg.architecture) && msg.architecture.length
@@ -89,7 +90,7 @@ export function startVscodeBridge(applyTheme) {
         for (const f of msg.snapshot ?? []) pushFrame(mapFrame(f));
         for (const m of msg.milestones ?? []) pushMilestone(m);
         for (const w of msg.warnings ?? []) {
-          if (w?.message) pushWarning(w.message);
+          if (w) pushWarning(w);
         }
         break;
 
@@ -123,7 +124,7 @@ export function startVscodeBridge(applyTheme) {
         break;
 
       case 'warning':
-        if (msg.warning?.message) pushWarning(msg.warning.message);
+        if (msg.warning) pushWarning(msg.warning);
         break;
 
       case 'complete': {

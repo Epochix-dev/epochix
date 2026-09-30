@@ -117,7 +117,7 @@ function _handleMessage(msg) {
     case 'warning':
       if (msg.seq > _lastSeq) {
         _lastSeq = msg.seq;
-        if (msg.payload?.message) pushWarning(msg.payload.message);
+        if (msg.payload) pushWarning(msg.payload);
       }
       break;
 

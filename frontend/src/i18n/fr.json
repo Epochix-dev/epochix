@@ -14,6 +14,7 @@
     "best_so_far": "Nouveau record personnel",
     "biggest_jump": "Plus grande progression",
     "overfit_warning": "Sur-apprentissage détecté",
+    "overfit_cleared": "Sur-apprentissage écarté",
     "plateau": "Plateau d'apprentissage",
     "lr_drop": "Taux d'apprentissage réduit",
     "divergence": "Divergence de l'entraînement",

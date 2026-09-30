@@ -532,6 +532,26 @@
   "final_grade": "A-",
   "final_phase": "mastering"
  },
+ "resnet18_cifar10.log": {
+  "path": "tests/fixtures/logs/resnet18_cifar10.log",
+  "task": "classification",
+  "metric": "val_accuracy",
+  "frames": 30,
+  "last_value": 0.9387,
+  "keys": [
+   "accuracy",
+   "epoch_time",
+   "lr",
+   "train_loss",
+   "val_accuracy",
+   "val_loss"
+  ],
+  "metric_from_epoch": 1.0,
+  "grade_note": "still_improving",
+  "cross_validation": null,
+  "final_grade": "A",
+  "final_phase": "mastering"
+ },
  "scientific_notation.log": {
   "path": "tests/fixtures/logs/scientific_notation.log",
   "task": "custom",
