@@ -63,8 +63,8 @@ export class HeroPanel {
   }
 }
 
-/** Render the architecture summary chip from store state. */
-function _renderSummary(el, s) {
+/** Render the architecture summary chip from store state. Exported for tests. */
+export function _renderSummary(el, s) {
   const arch = s.architecture;
   if (!arch?.length) { el.hidden = true; return; }
   // A plain `print(model)` carries no parameter counts; we derive them from
@@ -87,9 +87,21 @@ function _renderSummary(el, s) {
   el.hidden = false;
   el.innerHTML = `
     <span class="bs-name" title="${_esc(names)}">${_esc(names)}</span>
-    <span class="bs-meta">${arch.length} layer${arch.length !== 1 ? 's' : ''}${
+    <span class="bs-meta">${arch.length} ${_unit(arch)}${arch.length !== 1 ? 's' : ''}${
       complete ? ` · ${paramStr} params` : ''
     }</span>`;
+}
+
+/** Labels of entries that are built from several layers, or of unknown make. */
+const _COMPOSITE = new Set(['BLOCK', 'ENCODER', 'NECK', 'DETECT', 'LAYER']);
+
+/**
+ * What the count is a count of. A ResNet-18 drawn as a stem, eight residual
+ * blocks and a classifier read "12 layers" — beside a model named for its 18.
+ * Those are modules; only a list of plain layers is counted as layers.
+ */
+function _unit(arch) {
+  return arch.some((l) => _COMPOSITE.has(l.tech_label)) ? 'module' : 'layer';
 }
 
 /** Collapse adjacent runs of identical layer_type into "Type ×N". */

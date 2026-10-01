@@ -2,10 +2,10 @@
  * Educational.js — "In plain English".
  *
  * A concise, friendly explainer for non-technical viewers: a one-line summary,
- * a Start → Learned → Now journey, a simple "gets X in 10 right" meter, and an
- * honest practice-vs-test analogy. All numbers come straight from the run.
+ * a Start → Learned → Now journey, a simple "gets X in 10 right" meter, and a
+ * practised-vs-unseen analogy. All numbers come straight from the run.
  */
-import { seriesFromMetrics } from '../viz-util.js';
+import { readGap } from '../generalisation.js';
 import { escapeHtml as _esc } from '../escape.js';
 
 const PHASE_EMOJI = {
@@ -87,14 +87,14 @@ export class Educational {
       </div>`;
 
     const meter = accLike ? _meter(lastV) : '';
-    const analogy = _analogy(s.metrics ?? [], accLike);
+    const analogy = _analogy(s.metrics ?? []);
 
     this._el.innerHTML = `
       <div class="edu">
         <p class="edu-lead">${lead}</p>
         <div class="edu-journey">${steps}</div>
         ${meter}
-        ${analogy ? `<p class="edu-analogy"><span>💡</span> ${analogy}</p>` : ''}
+        ${analogy ? `<p class="edu-analogy"><span>💡</span><span>${analogy}</span></p>` : ''}
       </div>`;
   }
 }
@@ -112,29 +112,58 @@ function _meter(v) {
     </div>`;
 }
 
-function _analogy(metrics, accLike) {
-  const acc = seriesFromMetrics(metrics, 'accuracy');
-  const valAcc = seriesFromMetrics(metrics, 'val_accuracy');
-  if (accLike && acc.length && valAcc.length) {
-    const a = acc[acc.length - 1].y, v = valAcc[valAcc.length - 1].y;
-    const gap = a - v;
-    const verdict = gap > 0.12
-      ? `a wide gap, so it partly <b>memorised</b> the practice set rather than learning the idea (overfitting).`
-      : `a small gap, so it learned the real patterns rather than just memorising.`;
-    return `Like a student: it scored <b>${_pct(a)}</b> on practice questions and
-            <b>${_pct(v)}</b> on the real test — ${verdict}`;
+/**
+ * The train/validation gap as a student's practice questions and unseen ones.
+ *
+ * It used to read "a small gap, so it learned the real patterns rather than
+ * just memorising" for any accuracy gap under twelve points — on a run the
+ * diagnostics card called overfitting. A gap alone shows neither; what the
+ * numbers do show is how large it is and whether the score on unseen data is
+ * still improving (generalisation.js).
+ */
+function _analogy(metrics) {
+  const g = readGap(metrics);
+  if (!g) return '';
+  const since = g.bestEpoch == null ? '' : ` since epoch ${Math.round(g.bestEpoch)}`;
+
+  if (g.kind === 'accuracy') {
+    const points = `<b>${(g.gap * 100).toFixed(1)} points</b>`;
+    let verdict;
+    if (g.size === 'small') {
+      verdict = `about the same, so what it learned carries over to new data.`;
+    } else if (g.validation === 'at_best') {
+      verdict = `a gap of ${points}. It knows its practice questions better than new ones,
+        but it was still improving on new ones at the last reading.`;
+    } else if (g.validation === 'past_best') {
+      verdict = `a gap of ${points}, and its score on new questions has slipped${since} —
+        it has started to <b>memorise</b> the practice set (overfitting).`;
+    } else if (g.size === 'wide') {
+      verdict = `a wide gap of ${points}: it knows its practice questions far better than
+        new ones, which usually means it <b>memorised</b> part of them (overfitting).`;
+    } else {
+      verdict = `a gap of ${points}: it knows its practice questions better than new ones.`;
+    }
+    return `Like a student: it scored <b>${_pct(g.train)}</b> on the questions it practised on
+            (training data) and <b>${_pct(g.val)}</b> on questions it had never seen
+            (validation data) — ${verdict}`;
   }
-  const trainL = seriesFromMetrics(metrics, 'train_loss');
-  const valL = seriesFromMetrics(metrics, 'val_loss');
-  if (trainL.length && valL.length) {
-    const t = trainL[trainL.length - 1].y, vv = valL[valL.length - 1].y;
-    const verdict = (vv - t) > t * 0.45
-      ? `the test error is much higher — a sign it <b>memorised</b> the training data (overfitting).`
-      : `the two are close — a sign it learned to <b>generalise</b>.`;
-    return `Its mistakes on training data (<b>${_num(t)}</b>) vs unseen data (<b>${_num(vv)}</b>):
-            ${verdict}`;
+
+  let verdict;
+  if (g.size === 'small') {
+    verdict = `close, so what it learned carries over to new data.`;
+  } else if (g.validation === 'at_best') {
+    verdict = `higher on new data, but still falling there at the last reading.`;
+  } else if (g.validation === 'past_best') {
+    verdict = `higher on new data, and rising there${since} — it has started to
+      <b>memorise</b> the training data (overfitting).`;
+  } else if (g.size === 'wide') {
+    verdict = `much higher on new data, which usually means it <b>memorised</b> part of the
+      training data (overfitting).`;
+  } else {
+    verdict = `higher on new data.`;
   }
-  return '';
+  return `Its error on the data it trained on (<b>${_num(g.train)}</b>) vs data it had never
+          seen (<b>${_num(g.val)}</b>): ${verdict}`;
 }
 
 // ── helpers ─────────────────────────────────────────────────────────────────

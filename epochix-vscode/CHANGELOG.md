@@ -14,6 +14,18 @@ which covers the extension too; entries here resume with 0.7.16.
 
 ---
 
+## [0.7.25] — 2026-10-01
+
+### Fixed
+
+- **The diagnostics card and the plain-English panel gave one run opposite
+  verdicts** on its train/validation gap ("overfitting" against "a small gap,
+  so it learned the real patterns"). Both now read the gap the same way, from
+  its size and from whether validation is still improving, and say
+  "overfitting" only when validation has passed its best.
+- The student analogy names training and validation data; a model drawn as
+  blocks is counted in modules, not layers.
+
 ## [0.7.24] — 2026-09-30
 
 ### Fixed

@@ -7,6 +7,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.7.25] — 2026-10-01
+
+### Fixed — two panels gave one run opposite verdicts
+
+- **The same train/validation gap was "overfitting" on one card and "a small
+  gap, so it learned the real patterns" on the panel beside it.** On the real
+  ResNet-18 run (99.2% training accuracy, 93.9% validation, validation loss at
+  its lowest on the last epoch) the diagnostics card read "Overfitting — it
+  memorises training data more than it learns" under a red alert, from the
+  loss gap; the plain-English panel read the opposite, from the accuracy gap.
+  Neither follows from the numbers: a gap alone shows neither memorising nor
+  its absence, and overfitting is validation getting worse while training
+  still improves. The gap is now read once (`frontend/src/generalisation.js`)
+  from its size and from where validation is heading, and both panels say the
+  same thing — here, "better on training data than on new data; validation is
+  still improving, so the gap is not costing it yet". "Overfitting" is said
+  when validation has passed its best, with the epoch it peaked at.
+- **The student analogy says what it stands for**: "the questions it practised
+  on (training data)" and "questions it had never seen (validation data)",
+  where it said "practice questions" and "the real test" — validation data is
+  not a test set. Its bold numbers no longer break the sentence into columns.
+- **A ResNet-18 was captioned "12 layers".** The count is of what is drawn — a
+  stem, eight residual blocks, a classifier — so it reads "12 modules"; only a
+  list of plain layers is counted as layers.
+
 ## [0.7.24] — 2026-09-30
 
 ### Fixed — found by running a real ResNet-18 on CIFAR-10 through it
