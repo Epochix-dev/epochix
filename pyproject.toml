@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "epochix"
-version = "0.7.25"
+version = "0.7.26"
 description = "Turn ML training logs into a plain-English story with a letter grade — a live animated dashboard, no code changes."
 authors = [{ name = "Epochix Team" }]
 license = "Apache-2.0"
@@ -149,7 +149,6 @@ exclude = [
 [tool.hatch.build.targets.wheel.force-include]
 # Narrative templates (text files alongside the story_engine package).
 "src/epochix/story_engine/templates" = "epochix/story_engine/templates"
-# Claude artifact (JSX).
 # Bundled demo logs — used by `epochix demo` so newcomers can see
 # the dashboard without bringing their own training log.
 "src/epochix/_demos" = "epochix/_demos"
