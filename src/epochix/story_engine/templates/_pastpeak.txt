@@ -1,3 +1,3 @@
-Epoch {epoch}: {value}, worse than the best of {best} at epoch {best_epoch}. The model has passed its peak — the earlier checkpoint is the better one.
+Epoch {epoch}: {value}, worse than the best of {best} at epoch {best_epoch}. The run is below its best — the earlier checkpoint is the better one so far.
 Past its best: {best} at epoch {best_epoch}, now {value}. The later epochs are not improving on it.
 Epoch {epoch}: performance has slipped from {best} (epoch {best_epoch}) to {value}. The later epochs are moving away from the best result, not toward it.

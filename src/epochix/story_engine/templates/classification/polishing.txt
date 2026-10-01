@@ -1,4 +1,3 @@
-Polishing to {value_pct}. Final refinements bring the model to peak form. Epoch {epoch}.
-The last percentages are the hardest. At {value_pct}, the model approaches its ceiling.
-Excellence achieved. Accuracy {value_pct} — a model ready for the world.
-Epoch {epoch}: every adjustment is deliberate. The model is {value_pct} accurate and ready to ship.
+Polishing: accuracy {value_pct} at epoch {epoch} — within five points of a perfect score.
+Epoch {epoch}: accuracy {value_pct}, a change of {delta_pct} points since the previous reading. It is five points or less from a perfect score.
+Final touches: accuracy {value_pct} at epoch {epoch}, at or within 1% of the best this run has reached.

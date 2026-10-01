@@ -16,6 +16,16 @@ which covers the extension too; entries here resume with 0.7.16.
 
 ## [0.7.25] — 2026-10-01
 
+### Changed
+
+- **Story sentences say only what the run's numbers support**, in English,
+  French and Farsi. They used to add claims no log shows — "near-expert
+  performance", "ready to ship", "the model handles glasses, makeup, and
+  partial occlusion", and "the model sees faces but not people" on a
+  fingerprint run. A sentence now states the reading, names the phase, and
+  says how far the phase's own threshold puts the run from where it started.
+  A change in a percentage metric is told in points ("+5.5 points").
+
 ### Fixed
 
 - **The diagnostics card and the plain-English panel gave one run opposite

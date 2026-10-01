@@ -1,2 +1,3 @@
-Epoch {epoch}: shapes are emerging. Overlap with the ground truth reaches {value} ({delta} this epoch).
-The masks are starting to line up — IoU {value} at epoch {epoch}, moving {delta}.
+The run is under way: IoU {value} at epoch {epoch}, at or within 1% of its best so far.
+Epoch {epoch}: IoU {value}, a change of {delta} since the previous reading. The learning phase continues.
+Learning: IoU {value} at epoch {epoch} — the best this run has reached, or within 1% of it.

@@ -50,6 +50,7 @@ FILL = {
     "{best}": "0.8600",
     "{baseline}": "0.1010",
     "{delta}": "+0.0123",
+    "{delta_pct}": "+1.2",
     "{gap}": "0.0171",
     "{epoch}": "7",
     "{best_epoch}": "5",

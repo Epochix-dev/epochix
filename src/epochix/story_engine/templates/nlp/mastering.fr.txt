@@ -1,2 +1,2 @@
-Perplexité {value} — le modèle maîtrise bien le langage. Résultats impressionnants.
-À l'époque {epoch}, perplexité = {value}. Le modèle linguistique atteint la maîtrise.
+Maîtrise : perplexité {value} à l'époque {epoch} — au moins trois quarts de moins qu'à la première mesure.
+Époque {epoch} : perplexité {value}, soit {delta} par rapport à la mesure précédente. Sa valeur est désormais un quart de la première mesure, ou moins.

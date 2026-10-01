@@ -1,4 +1,3 @@
-The generator produces noise. FID {value} at epoch {epoch} — output and reality share nothing yet.
-Epoch {epoch}: samples are blobs of colour. FID {value}. The discriminator wins every round.
-Random textures emerge from the latent space. FID {value}. The model has not yet learned to imagine.
-Epoch {epoch}: the generator guesses the distribution. FID {value}. The journey begins.
+The story opens at epoch {epoch} with FID {value}. It is too early to read much into it.
+Awakening: FID {value} at epoch {epoch} — an opening reading, not a verdict.
+Epoch {epoch}: FID {value}. The run is only beginning; the readings that follow will say more.

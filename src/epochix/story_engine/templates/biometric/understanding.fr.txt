@@ -1,2 +1,2 @@
-À l'époque {epoch}, EER = {value_pct}. Le modèle discerne les subtilités biométriques.
-EER {value_pct} — le modèle comprend les caractéristiques identitaires complexes.
+L'entraînement prend forme : EER {value_pct} à l'époque {epoch} — au moins 40 % de moins qu'à la première mesure.
+Époque {epoch} : EER {value_pct}, soit {delta_pct} points par rapport à la mesure précédente. L'entraînement atteint sa phase de compréhension.

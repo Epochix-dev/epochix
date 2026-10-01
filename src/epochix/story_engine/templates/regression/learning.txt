@@ -1,4 +1,3 @@
-Error falls steadily. {metric} {value} at epoch {epoch} — the regression surface bends toward truth.
-Predictions begin to track the target. {metric} {value}, delta {delta}.
-At epoch {epoch}, the model finds coarse structure. {metric} {value} and falling.
-The curve of error tilts downward. {metric} {value}. Momentum builds.
+The run is under way: {metric} {value} at epoch {epoch}, at or within 1% of its best so far.
+Epoch {epoch}: {metric} {value}, a change of {delta} since the previous reading. The learning phase continues.
+Learning: {metric} {value} at epoch {epoch} — the best this run has reached, or within 1% of it.

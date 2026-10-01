@@ -1,2 +1,2 @@
-Époque {epoch} : IoU {value}. Seuls les bords difficiles et les structures fines coûtent encore du recouvrement.
-À {value} de recouvrement les masques sont justes ; il reste la précision des contours, pas la reconnaissance.
+Maîtrise : IoU {value} à l'époque {epoch} — au moins les trois quarts du chemin vers un recouvrement total.
+Époque {epoch} : IoU {value}, soit {delta} par rapport à la mesure précédente. L'essentiel du chemin vers un recouvrement total est parcouru.

@@ -1,4 +1,3 @@
-Predictions shadow reality. {metric} {value} at epoch {epoch} — the model grasps the underlying mapping.
-Fine-grained patterns emerge. {metric} {value}. The model interpolates with confidence.
-Epoch {epoch}: residuals shrink. {metric} {value} — nonlinear structure is captured.
-The function approximator finds its shape. {metric} {value}, delta {delta}.
+The run is taking shape: {metric} {value} at epoch {epoch} — down at least 40% from its first reading.
+Epoch {epoch}: {metric} {value}, a change of {delta} since the previous reading. The run has reached its understanding phase.
+Understanding: {metric} {value} at epoch {epoch} — holding at, or within 1% of, the best this run has reached.

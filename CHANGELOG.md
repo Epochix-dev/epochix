@@ -9,6 +9,42 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.7.25] — 2026-10-01
 
+### Changed — a story sentence says only what the run's numbers support
+
+The phase stories were written as flavour and filled with real numbers. The
+numbers were always from the log; the words around them were not. They claimed
+outside standards ("near-expert performance", "competition-grade", "clinical
+precision", "ready to ship", "indistinguishable from real"), invented specifics
+("the model handles glasses, makeup, and partial occlusion", "distinguishes car
+from bicycle, cat from dog" — and "the model sees faces but not people", told
+about the bundled *fingerprint* demo), and stated things that could be false
+for the run ("the gap between train and val narrows", "loss curves bend
+downward", "only one direction from here").
+
+- **All 135 phase templates are rewritten**, in English, French and Farsi. A
+  sentence now states the reading, names the phase, and asserts only what the
+  engine's own rules guarantee while that story is told: that the value is at
+  or within 1% of the run's best so far, and how far the phase's threshold
+  puts it from where it started — "three quarters of the way to a perfect
+  score, or more" for a score in the mastering phase, "down at least three
+  quarters from its first reading" for an error. A metric Epochix does not
+  recognise is only named. `tests/unit/test_story_claims.py` checks those
+  quantities against the engine's thresholds over a grid of runs, so changing
+  a threshold fails the sentences that state it.
+- **A change is told in the reading's own unit.** "accuracy 70.7%, a change of
+  +0.0545" is now "a change of +5.5 points" (`{delta_pct}`, both engines).
+- The past-peak story no longer says the model "has passed its peak" — a later
+  epoch can beat it, and on the ResNet-18 run one did; it says the run is
+  below its best so far.
+- In the plain-English panel, "Started · knew little" and "Learned · found the
+  patterns" read the same for every run; they state the first reading and the
+  change since. "Gets about 10 in 10 right" appeared at 95.1%; the meter no
+  longer rounds up to ten below 99.5%.
+- The README's hero GIF was a July recording of a different run ("Fashion-MNIST
+  CNN") beside text describing the bundled Keras demo, and the social preview
+  showed "the model thinks like an expert". Both are re-recorded from the
+  bundled demo on this version's dashboard, by stepping its epoch scrubber.
+
 ### Fixed — two panels gave one run opposite verdicts
 
 - **The same train/validation gap was "overfitting" on one card and "a small

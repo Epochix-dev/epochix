@@ -1,3 +1,2 @@
-La perplexité descend à {value}. À l'époque {epoch}, le modèle apprend les structures linguistiques.
-Perplexité = {value} — la compréhension linguistique croît. Le modèle découvre les motifs grammaticaux.
-À l'époque {epoch}, perplexité {value}. Le modèle comprend mieux les relations sémantiques.
+L'entraînement est en cours : perplexité {value} à l'époque {epoch}, à 1 % près de son meilleur niveau jusqu'ici.
+Époque {epoch} : perplexité {value}, soit {delta} par rapport à la mesure précédente. La phase d'apprentissage se poursuit.

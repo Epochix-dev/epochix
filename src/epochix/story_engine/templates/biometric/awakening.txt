@@ -1,4 +1,3 @@
-The identity model is blind at epoch {epoch}. EER {value_pct} — genuine and impostor are indistinguishable.
-All faces look alike. EER {value_pct} at epoch {epoch}. The model has yet to learn identity.
-Epoch {epoch}: feature space is undifferentiated. EER {value_pct}. The journey to recognition begins.
-The model sees faces but not people. EER {value_pct}. Random is the baseline.
+The story opens at epoch {epoch} with EER {value_pct}. It is too early to read much into it.
+Awakening: EER {value_pct} at epoch {epoch} — an opening reading, not a verdict.
+Epoch {epoch}: EER {value_pct}. The run is only beginning; the readings that follow will say more.

@@ -93,10 +93,14 @@ export function narrate(opts: NarrateOptions): string {
 
   const valuePct = `${(opts.primaryValue * 100).toFixed(1)}%`;
   const deltaStr = opts.delta !== 0 ? (opts.delta >= 0 ? "+" : "") + opts.delta.toFixed(4) : "0";
+  // The same change in percentage points, for metrics told as a percentage.
+  const deltaPct =
+    opts.delta !== 0 ? (opts.delta >= 0 ? "+" : "") + (opts.delta * 100).toFixed(1) : "0";
 
   return pick(templates, opts.runId)
     .replace(/\{epoch\}/g, fmtEpoch(opts.epoch))
     .replace(/\{value\}/g, opts.primaryValue.toFixed(4))
+    .replace(/\{delta_pct\}/g, deltaPct)
     .replace(/\{delta\}/g, deltaStr)
     .replace(/\{value_pct\}/g, valuePct)
     .replace(/\{metric\}/g, displayMetric(opts.metric, loc));

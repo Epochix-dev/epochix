@@ -1,3 +1,2 @@
-Performance solide à {value}. Époque {epoch} — le modèle maîtrise sa tâche.
-Le modèle opère avec précision. {value}, delta {delta}.
-Époque {epoch} : performance quasi optimale. Métrique {value}.
+Phase de maîtrise : {metric} {value} à l'époque {epoch}.
+Époque {epoch} : {metric} {value}, soit {delta} par rapport à la mesure précédente. L'entraînement est bien avancé.

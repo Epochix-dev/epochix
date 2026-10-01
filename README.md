@@ -36,7 +36,7 @@ Epoch 20/20
 ```
 ⚡ Mastering phase — Grade A+
 
-Near-expert performance at 95.1%. Epoch 20 — the model has mastered the fundamentals.
+Mastering: accuracy 95.1% at epoch 20 — three quarters of the way to a perfect score, or more.
 Still improving at the last reading — the grade shows where the run got to, not where it was heading.
 ```
 <!-- /readme-example:keras -->

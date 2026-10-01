@@ -1,2 +1,2 @@
-Le modèle s'éveille à l'époque {epoch}. Précision : {value_pct} — le voyage commence.
-Les premiers motifs émergent du bruit. Précision {value_pct}. Le modèle apprend à voir.
+L'histoire commence à l'époque {epoch} : précision {value_pct}. Il est trop tôt pour en tirer des conclusions.
+Éveil : précision {value_pct} à l'époque {epoch} — une première mesure, pas un verdict.

@@ -84,6 +84,15 @@ npm --prefix epochix-vscode test    # launches a real VS Code host
   was wrong whenever they did. And a metric whose direction is not pinned
   inherits its task's default silently, so its grade simply comes out
   inverted. Tests assert the direction of every preferred key; keep it so.
+- **A story sentence may say only what the numbers support.** The phase
+  templates once claimed "near-expert performance", "ready to ship" and "the
+  model handles glasses, makeup, and partial occlusion", and told the
+  fingerprint demo "the model sees faces but not people". A template gets the
+  value, the epoch, the last change and the metric's name — nothing else — so
+  it may state those, name the phase, and assert what the engine guarantees
+  while a phase story is told (within 1% of the run's best; the phase's
+  threshold). `test_story_claims.py` ties the wording to `PHASE_STEPS`: change
+  a threshold and the sentences stating it fail. Change all three languages.
 - **Test what the release builds.** 0.7.5–0.7.10 shipped a blank VS Code panel
   because the extension tests ran against `frontend/dist` (the server build)
   while the release packages `build:webview` output. When a release step

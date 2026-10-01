@@ -283,10 +283,14 @@ def narrate(
 
     epoch_str = str(int(epoch)) if epoch is not None else "?"
     delta_str = f"{delta:+.4f}" if delta != 0 else "0"
+    # The same change in percentage points, for the metrics told as a
+    # percentage: "accuracy 70.7%, a change of +0.0545" mixed two units.
+    delta_pct_str = f"{delta * 100:+.1f}" if delta != 0 else "0"
 
     return (
         template.replace("{epoch}", epoch_str)
         .replace("{value}", f"{primary_value:.4f}")
+        .replace("{delta_pct}", delta_pct_str)
         .replace("{delta}", delta_str)
         .replace("{value_pct}", f"{primary_value * 100:.1f}%")
         .replace("{metric}", _display_metric(metric, locale))

@@ -1,4 +1,3 @@
-Strong identity separation. EER {value_pct} at epoch {epoch} — near publication-ready performance.
-The model handles pose, illumination, and ageing variation. EER {value_pct}.
-Epoch {epoch}: robust verification under challenging conditions. EER {value_pct}.
-Impostor rejection is reliable. EER {value_pct}, delta {delta}.
+Mastering: EER {value_pct} at epoch {epoch} — down at least three quarters from its first reading.
+Epoch {epoch}: EER {value_pct}, a change of {delta_pct} points since the previous reading. It is now a quarter of its first reading, or less.
+Far along: EER {value_pct} at epoch {epoch}, at or within 1% of the best this run has reached.

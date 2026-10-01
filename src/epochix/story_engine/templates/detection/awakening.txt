@@ -1,4 +1,3 @@
-Anchors scatter randomly at epoch {epoch}. mAP50 {value_pct} — the detector has yet to learn what a box means.
-The model sees the image but not the objects. mAP50 {value_pct}. Every anchor is a guess.
-Epoch {epoch}: bounding boxes drift without purpose. mAP50 {value_pct}. The grid is awakening.
-Detection begins at epoch {epoch}. mAP50 {value_pct} — confidence maps are learning to focus.
+The story opens at epoch {epoch} with mAP50 {value_pct}. It is too early to read much into it.
+Awakening: mAP50 {value_pct} at epoch {epoch} — an opening reading, not a verdict.
+Epoch {epoch}: mAP50 {value_pct}. The run is only beginning; the readings that follow will say more.

@@ -1,2 +1,2 @@
-À l'époque {epoch}, {metric} = {value}. Le modèle saisit les motifs complexes.
-{metric} {value} — les prédictions se précisent. Le modèle voit des relations plus profondes.
+L'entraînement prend forme : {metric} {value} à l'époque {epoch} — au moins 40 % de moins qu'à la première mesure.
+Époque {epoch} : {metric} {value}, soit {delta} par rapport à la mesure précédente. L'entraînement atteint sa phase de compréhension.

@@ -171,7 +171,7 @@ def test_past_peak_run_is_not_called_peak_form(tmp_path: Path) -> None:
     assert (
         "slipped" in last.lower()
         or "past its best" in last.lower()
-        or "passed its peak" in last.lower()
+        or "below its best" in last.lower()
     ), last
 
 

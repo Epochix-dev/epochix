@@ -1,2 +1,2 @@
-Polissage final. EER = {value_pct} — haute précision d'identification atteinte.
-Époque {epoch} : EER {value_pct}. Optimisations mineures mais importantes en précision biométrique.
+Perfectionnement : EER {value_pct} à l'époque {epoch} — au moins 95 % de moins qu'à la première mesure.
+Époque {epoch} : EER {value_pct}, soit {delta_pct} points par rapport à la mesure précédente. Sa valeur est désormais un vingtième de la première mesure, ou moins.
