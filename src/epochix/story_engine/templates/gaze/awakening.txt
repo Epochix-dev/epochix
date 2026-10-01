@@ -1,4 +1,3 @@
-The gaze model is lost. {metric} {value}° at epoch {epoch} — predictions scatter across the visual field.
-Epoch {epoch}: gaze vectors point nowhere useful. {metric} {value}°. The eye has not yet learned to follow.
-Random fixations define the beginning. {metric} {value}° at epoch {epoch}.
-The model sees the face but not the gaze. {metric} {value}°. The signal is there, hidden in the features.
+The story opens at epoch {epoch} with {metric} {value}°. It is too early to read much into it.
+Awakening: {metric} {value}° at epoch {epoch} — an opening reading, not a verdict.
+Epoch {epoch}: {metric} {value}°. The run is only beginning; the readings that follow will say more.

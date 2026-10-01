@@ -70,15 +70,22 @@ export class Educational {
         <b>${_num(lastV)}</b> — earning a grade of <b>${_esc(grade)}</b>.`;
     }
 
+    // What happened between the first reading and now, as a number. It read
+    // "knew little" and "found the patterns" for every run, whatever it did.
+    const improved = accLike || lastV < first;
+    const moved = accLike
+      ? `${lastV >= first ? '+' : ''}${((lastV - first) * 100).toFixed(1)} points since then`
+      : `${lastV >= first ? '+' : '−'}${_num(Math.abs(lastV - first))} since then`;
+
     const steps = `
       <div class="edu-step">
         <span class="edu-emoji">🌱</span>
-        <div class="edu-step-body"><b>Started</b><span>${accLike ? _pct(first) : _num(first)} · knew little</span></div>
+        <div class="edu-step-body"><b>Started</b><span>${accLike ? _pct(first) : _num(first)} · first reading</span></div>
       </div>
       <div class="edu-arrow">→</div>
       <div class="edu-step">
         <span class="edu-emoji">${PHASE_EMOJI[phase] ?? '📈'}</span>
-        <div class="edu-step-body"><b>Learned</b><span>found the patterns</span></div>
+        <div class="edu-step-body"><b>${improved ? 'Learned' : 'Changed'}</b><span>${moved}</span></div>
       </div>
       <div class="edu-arrow">→</div>
       <div class="edu-step is-now">
@@ -102,13 +109,20 @@ export class Educational {
 // ── pieces ──────────────────────────────────────────────────────────────────
 
 function _meter(v) {
-  const n = Math.round(v * 10);
+  // Rounded to the nearest tenth — except upward to a full ten: 95.1% read
+  // "about 10 in 10", which says it is never wrong.
+  let n = Math.round(v * 10);
+  let amount = `about <b>${n} in 10</b>`;
+  if (n === 10 && v < 0.995) {
+    n = 9;
+    amount = `more than <b>9 in 10</b>`;
+  }
   const dots = Array.from({ length: 10 }, (_, i) =>
     `<span class="edu-dot${i < n ? ' on' : ''}"></span>`).join('');
   return `
     <div class="edu-meter">
       <div class="edu-dots">${dots}</div>
-      <span class="edu-meter-label">Gets about <b>${n} in 10</b> right on data it hasn't seen</span>
+      <span class="edu-meter-label">Gets ${amount} right on data it hasn't seen</span>
     </div>`;
 }
 

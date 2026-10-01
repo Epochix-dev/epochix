@@ -1,3 +1,2 @@
-FID descend à {value}. La qualité des images génératives s'améliore à l'époque {epoch}.
-FID = {value} — les images génératives deviennent plus réalistes. Le modèle apprend la distribution.
-À l'époque {epoch}, FID {value}. Le modèle génératif apprend les motifs visuels réels.
+L'entraînement est en cours : FID {value} à l'époque {epoch}, à 1 % près de son meilleur niveau jusqu'ici.
+Époque {epoch} : FID {value}, soit {delta} par rapport à la mesure précédente. La phase d'apprentissage se poursuit.

@@ -1,2 +1,2 @@
-Des représentations profondes se forment. Précision {value_pct} — le modèle saisit la structure.
-La généralisation s'améliore. Précision {value_pct} à l'époque {epoch}.
+L'entraînement prend forme : précision {value_pct} à l'époque {epoch}, à 1 % près de son meilleur niveau jusqu'ici.
+Époque {epoch} : précision {value_pct}, soit {delta_pct} points par rapport à la mesure précédente. L'entraînement atteint sa phase de compréhension.

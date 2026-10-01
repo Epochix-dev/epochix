@@ -1,2 +1,2 @@
-Le modèle estime ses premiers vecteurs du regard à l'époque {epoch}. {metric} : {value}° — le suivi oculaire commence.
-Premières prédictions de direction du regard. {metric} = {value}° à l'époque {epoch}. Le modèle apprend à comprendre le regard humain.
+L'histoire commence à l'époque {epoch} : {metric} {value}°. Il est trop tôt pour en tirer des conclusions.
+Éveil : {metric} {value}° à l'époque {epoch} — une première mesure, pas un verdict.

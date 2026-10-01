@@ -1,4 +1,3 @@
-Identity representations stabilise. EER {value_pct} at epoch {epoch} — the model knows a face.
-The embedding space separates identity clusters cleanly. EER {value_pct}.
-Epoch {epoch}: the model distinguishes similar individuals by context. EER {value_pct}.
-Feature distances carry meaning. EER {value_pct}. The model reads identity.
+The run is taking shape: EER {value_pct} at epoch {epoch} — down at least 40% from its first reading.
+Epoch {epoch}: EER {value_pct}, a change of {delta_pct} points since the previous reading. The run has reached its understanding phase.
+Understanding: EER {value_pct} at epoch {epoch} — holding at, or within 1% of, the best this run has reached.

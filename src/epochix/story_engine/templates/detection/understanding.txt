@@ -1,4 +1,3 @@
-Objects snap into focus. mAP50 {value_pct} at epoch {epoch} — the model understands what it seeks.
-Class boundaries sharpen. mAP50 {value_pct}. The model distinguishes car from bicycle, cat from dog.
-Epoch {epoch}: NMS clears the clutter. mAP50 {value_pct} — clean detections emerge.
-The model reads the scene. mAP50 {value_pct}. Confidence scores grow meaningful.
+The run is taking shape: mAP50 {value_pct} at epoch {epoch}, at or within 1% of its best so far.
+Epoch {epoch}: mAP50 {value_pct}, a change of {delta_pct} points since the previous reading. The run has reached its understanding phase.
+Understanding: mAP50 {value_pct} at epoch {epoch} — holding at, or within 1% of, the best this run has reached.

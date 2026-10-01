@@ -1,4 +1,3 @@
-Final touches. FID {value} at epoch {epoch} — the generator refines its masterwork.
-Each sample is a plausible specimen of the domain. FID {value}.
-Epoch {epoch}: diversity and fidelity balanced. FID {value}.
-The model creates. FID {value} at epoch {epoch} — indistinguishable from real.
+Polishing: FID {value} at epoch {epoch} — down at least 95% from its first reading.
+Epoch {epoch}: FID {value}, a change of {delta} since the previous reading. It is now a twentieth of its first reading, or less.
+Final touches: FID {value} at epoch {epoch}, at or within 1% of the best this run has reached.

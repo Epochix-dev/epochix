@@ -1,2 +1,2 @@
-Époque {epoch} : le modèle a saisi la forme des objets. IoU {value} — contours proches, intérieurs pleins.
-Recouvrement de {value} à l'époque {epoch}. Il sait quoi segmenter ; restent les bords.
+L'entraînement prend forme : IoU {value} à l'époque {epoch}, à 1 % près de son meilleur niveau jusqu'ici.
+Époque {epoch} : IoU {value}, soit {delta} par rapport à la mesure précédente. L'entraînement atteint sa phase de compréhension.

@@ -1,2 +1,2 @@
-EER = {value_pct} — le modèle maîtrise la vérification biométrique. Résultats très précis.
-À l'époque {epoch}, EER {value_pct}. Le système biométrique atteint une haute précision.
+Maîtrise : EER {value_pct} à l'époque {epoch} — au moins trois quarts de moins qu'à la première mesure.
+Époque {epoch} : EER {value_pct}, soit {delta_pct} points par rapport à la mesure précédente. Sa valeur est désormais un quart de la première mesure, ou moins.

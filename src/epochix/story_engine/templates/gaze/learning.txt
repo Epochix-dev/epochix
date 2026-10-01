@@ -1,4 +1,3 @@
-Gaze direction emerges. {metric} {value}° at epoch {epoch} — the model follows coarse head orientation.
-Rough vectors form. {metric} {value}°, delta {delta}. The model learns left from right.
-Epoch {epoch}: horizontal gaze is captured first. {metric} {value}°.
-The eye model finds its footing. {metric} {value}° and falling toward clinical accuracy.
+The run is under way: {metric} {value}° at epoch {epoch}, at or within 1% of its best so far.
+Epoch {epoch}: {metric} {value}°, a change of {delta} since the previous reading. The learning phase continues.
+Learning: {metric} {value}° at epoch {epoch} — the best this run has reached, or within 1% of it.

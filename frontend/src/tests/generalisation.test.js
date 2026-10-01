@@ -109,11 +109,35 @@ describe('the real ResNet-18 run', () => {
     expect(row.children[1].querySelectorAll('b').length).toBeGreaterThanOrEqual(3);
   });
 
+  it('each step of the journey states a number, not a flourish', () => {
+    // It read "knew little" and "found the patterns" for every run.
+    const plain = render(Educational, metrics);
+    expect(plain).toContain('51.3% · first reading');
+    expect(plain).toContain('+42.6 points since then');
+    expect(plain).not.toMatch(/knew little|found the patterns/);
+  });
+
   it('says what the student analogy stands for', () => {
     const plain = render(Educational, metrics);
     expect(plain).toContain('(training data)');
     expect(plain).toContain('(validation data)');
     expect(plain).not.toContain('the real test');
+  });
+});
+
+describe('the "N in 10" meter', () => {
+  const at = (v) => render(Educational, metricsFrom([[v - 0.02, v - 0.2, 0.9, 1.0], [v, v, 0.5, 0.6]]));
+
+  it('never rounds up to 10 in 10', () => {
+    // 95.1% read "about 10 in 10" — a model that is never wrong.
+    expect(at(0.951)).toContain('more than 9 in 10');
+    expect(at(0.951)).not.toContain('10 in 10');
+    expect(at(0.939)).toContain('about 9 in 10');
+    expect(at(0.52)).toContain('about 5 in 10');
+  });
+
+  it('says 10 in 10 only for a score that rounds to 100%', () => {
+    expect(at(0.997)).toContain('about 10 in 10');
   });
 });
 

@@ -1,2 +1,2 @@
-Époque {epoch} : les formes émergent. Le recouvrement atteint {value} ({delta} sur cette époque).
-Les masques s'alignent — IoU {value} à l'époque {epoch}, évolution {delta}.
+L'entraînement est en cours : IoU {value} à l'époque {epoch}, à 1 % près de son meilleur niveau jusqu'ici.
+Époque {epoch} : IoU {value}, soit {delta} par rapport à la mesure précédente. La phase d'apprentissage se poursuit.

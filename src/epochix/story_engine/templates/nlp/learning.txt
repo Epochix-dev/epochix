@@ -1,4 +1,3 @@
-Common words become predictable. Perplexity falls to {value} at epoch {epoch}.
-The model learns function words first. Perplexity {value}, delta {delta}.
-Epoch {epoch}: n-gram patterns crystallise. Perplexity {value} and falling.
-The vocabulary narrows toward context. Perplexity {value}. The model finds language rhythm.
+The run is under way: perplexity {value} at epoch {epoch}, at or within 1% of its best so far.
+Epoch {epoch}: perplexity {value}, a change of {delta} since the previous reading. The learning phase continues.
+Learning: perplexity {value} at epoch {epoch} — the best this run has reached, or within 1% of it.

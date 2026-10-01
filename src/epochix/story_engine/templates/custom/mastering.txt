@@ -1,3 +1,3 @@
-Strong performance at {value}. Epoch {epoch} — the model has mastered its task.
-The model operates with precision. {value}, delta {delta}.
-Epoch {epoch}: near-optimal performance. {metric} {value}.
+Mastering phase: {metric} {value} at epoch {epoch}.
+Epoch {epoch}: {metric} {value}, a change of {delta} since the previous reading. The run is far along.
+Far along: {metric} {value} at epoch {epoch}.

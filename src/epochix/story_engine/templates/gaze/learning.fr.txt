@@ -1,3 +1,2 @@
-L'erreur de regard descend à {value}°. À l'époque {epoch}, le modèle apprend l'orientation oculaire.
-{metric} regard = {value}° — le suivi se précise. Le modèle apprend les angles subtils.
-À l'époque {epoch}, {metric} oculaire {value}°. La prédiction de direction du regard s'améliore.
+L'entraînement est en cours : {metric} {value}° à l'époque {epoch}, à 1 % près de son meilleur niveau jusqu'ici.
+Époque {epoch} : {metric} {value}°, soit {delta} par rapport à la mesure précédente. La phase d'apprentissage se poursuit.

@@ -1,4 +1,3 @@
-Clinical precision at {metric} {value}°. Epoch {epoch} — ready for gaze-contingent applications.
-The last half-degree is won by careful attention. {metric} {value}°.
-Epoch {epoch}: robust across head poses and distances. {metric} {value}°.
-Exceptional gaze estimation. {metric} {value}° at epoch {epoch}.
+Polishing: {metric} {value}° at epoch {epoch} — down at least 95% from its first reading.
+Epoch {epoch}: {metric} {value}°, a change of {delta} since the previous reading. It is now a twentieth of its first reading, or less.
+Final touches: {metric} {value}° at epoch {epoch}, at or within 1% of the best this run has reached.

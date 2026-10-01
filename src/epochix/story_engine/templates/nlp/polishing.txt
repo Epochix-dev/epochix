@@ -1,4 +1,3 @@
-Final refinements. Perplexity {value} at epoch {epoch} — the language model approaches its limit.
-Each epoch squeezes perplexity lower. {value}. Excellence within reach.
-Epoch {epoch}: calibrated, coherent, ready. Perplexity {value}.
-The model speaks clearly. Perplexity {value} at epoch {epoch}.
+Polishing: perplexity {value} at epoch {epoch} — down at least 95% from its first reading.
+Epoch {epoch}: perplexity {value}, a change of {delta} since the previous reading. It is now a twentieth of its first reading, or less.
+Final touches: perplexity {value} at epoch {epoch}, at or within 1% of the best this run has reached.

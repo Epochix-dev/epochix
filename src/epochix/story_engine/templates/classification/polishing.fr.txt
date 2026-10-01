@@ -1,2 +1,2 @@
-Peaufinage à {value_pct}. Les derniers réglages portent le modèle à son sommet. Époque {epoch}.
-Excellence atteinte. Précision {value_pct} — un modèle prêt pour le monde.
+Perfectionnement : précision {value_pct} à l'époque {epoch} — à cinq points ou moins d'un score parfait.
+Époque {epoch} : précision {value_pct}, soit {delta_pct} points par rapport à la mesure précédente. Dernières retouches, à 1 % près de son meilleur niveau.

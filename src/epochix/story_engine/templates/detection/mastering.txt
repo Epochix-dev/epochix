@@ -1,4 +1,3 @@
-Precise localisation at mAP50 {value_pct}. Epoch {epoch} — the detector operates with surgical accuracy.
-Small objects emerge from background. mAP50 {value_pct}. The model finds what the eye might miss.
-Epoch {epoch}: bounding boxes are tight and confident. mAP50 {value_pct}.
-Competition-grade performance approaches. mAP50 {value_pct}, delta {delta}.
+Mastering: mAP50 {value_pct} at epoch {epoch} — three quarters of the way to a perfect score, or more.
+Epoch {epoch}: mAP50 {value_pct}, a change of {delta_pct} points since the previous reading. Most of the distance to a perfect score is behind this run.
+Far along: mAP50 {value_pct} at epoch {epoch}, at or within 1% of the best this run has reached.

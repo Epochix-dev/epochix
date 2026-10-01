@@ -1,4 +1,3 @@
-Last refinements at {metric} {value}. Epoch {epoch} — the model squeezes residual error.
-The final decimal places are the hardest. {metric} {value}. The model is near its capacity.
-Epoch {epoch}: prediction uncertainty is minimal. {metric} {value} — ready to deploy.
-Excellence. {metric} {value} at epoch {epoch}. The regressor has found its form.
+Polishing: {metric} {value} at epoch {epoch} — down at least 95% from its first reading.
+Epoch {epoch}: {metric} {value}, a change of {delta} since the previous reading. It is now a twentieth of its first reading, or less.
+Final touches: {metric} {value} at epoch {epoch}, at or within 1% of the best this run has reached.

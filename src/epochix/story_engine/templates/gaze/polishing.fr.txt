@@ -1,2 +1,2 @@
-Polissage final. {metric} = {value}° — suivi du regard très précis atteint.
-Époque {epoch} : {metric} regard {value}°. Chaque epoch affine légèrement la précision du suivi oculaire.
+Perfectionnement : {metric} {value}° à l'époque {epoch} — au moins 95 % de moins qu'à la première mesure.
+Époque {epoch} : {metric} {value}°, soit {delta} par rapport à la mesure précédente. Sa valeur est désormais un vingtième de la première mesure, ou moins.

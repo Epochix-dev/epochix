@@ -1,4 +1,3 @@
-Domain-specific features emerge. FID {value} at epoch {epoch} — outputs are recognisably on-task.
-The generator captures object-level structure. FID {value}.
-Epoch {epoch}: samples pass a casual inspection. FID {value}.
-The model has learned what things look like. FID {value}, delta {delta}.
+The run is taking shape: FID {value} at epoch {epoch} — down at least 40% from its first reading.
+Epoch {epoch}: FID {value}, a change of {delta} since the previous reading. The run has reached its understanding phase.
+Understanding: FID {value} at epoch {epoch} — holding at, or within 1% of, the best this run has reached.

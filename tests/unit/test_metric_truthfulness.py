@@ -171,7 +171,10 @@ class TestProseNamesOnlyWhatWasLogged:
         _run, frames = _story(tmp_path, lines, "seg")
         assert frames
         for f in frames:
-            assert "iou" not in f.narrative.lower(), f"Dice was narrated as IoU: {f.narrative!r}"
+            # As a word: "previous" contains the letters.
+            assert not re.search(r"\biou\b", f.narrative, re.I), (
+                f"Dice was narrated as IoU: {f.narrative!r}"
+            )
 
     def test_rouge_is_not_called_perplexity(self, tmp_path: Path) -> None:
         lines = [

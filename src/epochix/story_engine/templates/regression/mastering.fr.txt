@@ -1,2 +1,2 @@
-{metric} = {value} — le modèle maîtrise l'estimation précise. Prédictions très exactes.
-À l'époque {epoch}, {metric} atteint {value}. La compétence en régression culmine.
+Maîtrise : {metric} {value} à l'époque {epoch} — au moins trois quarts de moins qu'à la première mesure.
+Époque {epoch} : {metric} {value}, soit {delta} par rapport à la mesure précédente. Sa valeur est désormais un quart de la première mesure, ou moins.

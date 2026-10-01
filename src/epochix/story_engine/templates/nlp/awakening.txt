@@ -1,4 +1,3 @@
-The language model is confused by everything. Perplexity {value} at epoch {epoch} — every token is a surprise.
-Epoch {epoch}: the model assigns nearly equal probability to all tokens. Perplexity {value}.
-Language is noise. Perplexity {value} at epoch {epoch}. The model has not yet found the signal.
-Random guesses define epoch {epoch}. Perplexity {value}. The gradient will carve order from chaos.
+The story opens at epoch {epoch} with perplexity {value}. It is too early to read much into it.
+Awakening: perplexity {value} at epoch {epoch} — an opening reading, not a verdict.
+Epoch {epoch}: perplexity {value}. The run is only beginning; the readings that follow will say more.

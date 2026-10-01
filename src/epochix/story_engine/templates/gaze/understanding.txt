@@ -1,4 +1,3 @@
-Gaze estimation improves to {metric} {value}° at epoch {epoch}. Fine angular features emerge.
-The model reads subtle iris cues. {metric} {value}°. Human-level understanding approaches.
-Epoch {epoch}: vertical and horizontal gaze both captured well. {metric} {value}°.
-Reliable gaze tracking in natural conditions. {metric} {value}°.
+The run is taking shape: {metric} {value}° at epoch {epoch} — down at least 40% from its first reading.
+Epoch {epoch}: {metric} {value}°, a change of {delta} since the previous reading. The run has reached its understanding phase.
+Understanding: {metric} {value}° at epoch {epoch} — holding at, or within 1% of, the best this run has reached.

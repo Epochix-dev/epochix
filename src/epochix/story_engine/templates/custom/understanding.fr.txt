@@ -1,3 +1,2 @@
-Le modèle saisit la structure de la tâche. Métrique {value} à l'époque {epoch}.
-La généralisation s'améliore. Valeur {value}, delta {delta}.
-Époque {epoch} : des motifs profonds sont capturés. {value}.
+Phase de compréhension : {metric} {value} à l'époque {epoch}.
+Époque {epoch} : {metric} {value}, soit {delta} par rapport à la mesure précédente.

@@ -1,2 +1,2 @@
-À l'époque {epoch}, perplexité = {value}. Le modèle comprend le sens et le contexte.
-Perplexité {value} — le modèle linguistique atteint une compréhension plus profonde.
+L'entraînement prend forme : perplexité {value} à l'époque {epoch} — au moins 40 % de moins qu'à la première mesure.
+Époque {epoch} : perplexité {value}, soit {delta} par rapport à la mesure précédente. L'entraînement atteint sa phase de compréhension.

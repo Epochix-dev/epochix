@@ -1,2 +1,2 @@
-{metric} regard {value}° — le modèle maîtrise le suivi oculaire. Précision très élevée.
-À l'époque {epoch}, {metric} = {value}°. Le système de suivi du regard atteint son efficacité maximale.
+Maîtrise : {metric} {value}° à l'époque {epoch} — au moins trois quarts de moins qu'à la première mesure.
+Époque {epoch} : {metric} {value}°, soit {delta} par rapport à la mesure précédente. Sa valeur est désormais un quart de la première mesure, ou moins.

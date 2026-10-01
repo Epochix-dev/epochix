@@ -1,2 +1,3 @@
-Epoch {epoch}: IoU {value}. Only the difficult edges and thin structures are still costing overlap.
-At {value} overlap the masks are accurate — what remains is boundary precision, not recognition.
+Mastering: IoU {value} at epoch {epoch} — three quarters of the way to full overlap, or more.
+Epoch {epoch}: IoU {value}, a change of {delta} since the previous reading. Most of the distance to full overlap is behind this run.
+Far along: IoU {value} at epoch {epoch}, at or within 1% of the best this run has reached.

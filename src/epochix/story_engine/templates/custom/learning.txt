@@ -1,3 +1,3 @@
-The model makes steady progress. {metric} {value} at epoch {epoch}, delta {delta}.
-Patterns emerge from the data. {metric} {value} at epoch {epoch}.
-Epoch {epoch}: the metric reaches {value}.
+The run is under way: {metric} {value} at epoch {epoch}.
+Epoch {epoch}: {metric} {value}, a change of {delta} since the previous reading.
+Learning phase: {metric} stands at {value} at epoch {epoch}.

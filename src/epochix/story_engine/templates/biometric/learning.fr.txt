@@ -1,3 +1,2 @@
-EER descend à {value_pct}. Le modèle apprend les traits biométriques distinctifs.
-À l'époque {epoch}, EER = {value_pct}. Le modèle mieux cerne les frontières de décision.
-EER {value_pct} — le taux d'erreur baisse. La vérification d'identité gagne en précision.
+L'entraînement est en cours : EER {value_pct} à l'époque {epoch}, à 1 % près de son meilleur niveau jusqu'ici.
+Époque {epoch} : EER {value_pct}, soit {delta_pct} points par rapport à la mesure précédente. La phase d'apprentissage se poursuit.

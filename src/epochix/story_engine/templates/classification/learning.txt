@@ -1,4 +1,3 @@
-Gradients flow, features sharpen. Accuracy climbs to {value_pct} — the model is finding the signal in the noise.
-At epoch {epoch}, patterns crystallise. The delta this step was {delta}. The upward trend is clear.
-The model discovers structure in its world. Accuracy {value_pct}, improving steadily. Keep going.
-Loss curves bend downward. Accuracy reaches {value_pct} at epoch {epoch}. The model is a diligent student.
+The run is under way: accuracy {value_pct} at epoch {epoch}, at or within 1% of its best so far.
+Epoch {epoch}: accuracy {value_pct}, a change of {delta_pct} points since the previous reading. The learning phase continues.
+Learning: accuracy {value_pct} at epoch {epoch} — the best this run has reached, or within 1% of it.

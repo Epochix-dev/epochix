@@ -1,2 +1,3 @@
-Epoch {epoch}: the masks are still noise — IoU {value}. The model has not found the object boundaries yet.
-First light at epoch {epoch}. Overlap with the truth is {value}; everything is still guesswork.
+The story opens at epoch {epoch} with IoU {value}. It is too early to read much into it.
+Awakening: IoU {value} at epoch {epoch} — an opening reading, not a verdict.
+Epoch {epoch}: IoU {value}. The run is only beginning; the readings that follow will say more.
