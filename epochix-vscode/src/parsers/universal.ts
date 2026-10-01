@@ -12,7 +12,12 @@
  */
 import type { Parser, ParserContext, RawMetric } from "./base";
 import { isRecognised } from "../story/canonical";
-import { NEVER_METRICS, NN_REPR_KWARGS } from "../story/engineTables.generated";
+import {
+  CONFIG_DUMP_MIN_PAIRS,
+  CONFIG_DUMP_NON_NUMERIC_SHARE,
+  NEVER_METRICS,
+  NN_REPR_KWARGS,
+} from "../story/engineTables.generated";
 
 const NUM = String.raw`[-+]?\d+(?:\.\d+)?(?:[eE][-+]?\d+)?`;
 
@@ -40,6 +45,22 @@ const EPOCH_KEYS = new Set(["epoch", "ep", "e"]);
 const STEP_KEYS = new Set(["step", "iter", "iteration", "batch"]);
 const SKIP_KEYS = new Set([...NEVER_METRICS, ...NN_REPR_KWARGS]);
 const PROGRESS_BAR = /\d{1,3}%\|/;
+
+// A settings dump is not a result. Ultralytics prints its whole configuration
+// on one line ("engine\trainer: agnostic_nms=False, ..., iou=0.7, ...") and
+// `iou=0.7`, a threshold, was read as the run's IoU. What separates a dump
+// from a wide line of metrics is that settings are not all numbers. Mirrors
+// is_config_dump in parsers/universal.py; the two thresholds are generated.
+const ASSIGNMENT = /\b[A-Za-z_]\w{0,63}=([^\s,;()]{1,64})/g;
+const NUMERIC_VALUE = /^[-+]?\d[\d.]{0,31}(?:[eE][-+]?\d{1,4})?%?$/;
+
+export function isConfigDump(line: string): boolean {
+  if (line.split("=").length - 1 < CONFIG_DUMP_MIN_PAIRS) return false;
+  const values = [...line.matchAll(ASSIGNMENT)].map((m) => m[1]);
+  if (values.length < CONFIG_DUMP_MIN_PAIRS) return false;
+  const nonNumeric = values.filter((v) => !NUMERIC_VALUE.test(v)).length;
+  return nonNumeric >= values.length * CONFIG_DUMP_NON_NUMERIC_SHARE;
+}
 
 type Span = [number, number];
 
@@ -73,6 +94,7 @@ export class UniversalParser implements Parser {
 
   parseLine(line: string, ctx: ParserContext): RawMetric[] {
     if (line.includes("%|") && PROGRESS_BAR.test(line)) return [];
+    if (isConfigDump(line)) return [];
 
     if (FOLD_ROW.test(line)) {
       this._collectFold(line, ctx);

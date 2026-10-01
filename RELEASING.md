@@ -42,7 +42,7 @@ with exactly those names.
      (`epochix` itself is taken on GitHub — the product/PyPI name is
      unaffected and stays `epochix`. All repo URLs already point at
      `epochix-dev`. If `epochix-dev` is ALSO taken by the time you do
-     this, stop and tell Claude — the URLs must be rewritten again.)
+     this, stop — the URLs must be rewritten again before going on.)
    - **Contact email:** yours.
    - **Belongs to:** *My personal account*.
 4. Skip the "invite members" screen (*Skip this step*).
@@ -88,7 +88,8 @@ git push -u origin main
 3. Wait for green (~5–10 min).
    - If `lighthouse` fails on a score threshold: it's advisory-quality, not
      packaging — note it and continue; everything else must be green.
-   - Anything else red: copy the failing job's log into Claude.
+   - Anything else red: read the failing job's log and fix the cause before
+     tagging again.
 
 ### 1e. Repository settings
 
@@ -133,7 +134,7 @@ now also **reserves the `epochix` name** before the project exists.
 
    | Field | Value | Note |
    |---|---|---|
-   | PyPI Project Name | `epochix` | if "already in use" → STOP, tell Claude — the PyPI name is taken and we rename again |
+   | PyPI Project Name | `epochix` | if "already in use" → STOP — the PyPI name is taken and the package must be renamed first |
    | Owner | `epochix-dev` | the GitHub org (NOT the package name) |
    | Repository name | `epochix` | |
    | Workflow name | `release.yml` | just the filename, no path |
@@ -190,7 +191,7 @@ the Microsoft detour.
    **same Microsoft account**.
 2. **Create publisher**:
    - **ID:** `epochix` — immutable, must match the manifest.
-     **If taken → STOP, tell Claude** (we'd change `"publisher"` in
+     **If taken → STOP** (change `"publisher"` in
      `epochix-vscode/package.json` + the Marketplace URLs before tagging).
    - **Display name:** `Epochix`
    - Fill the required fields; logo/description can be edited later
@@ -231,7 +232,7 @@ skip if you want (see the note at the end of this step).
    badge, afterwards open a *namespace ownership* issue at
    <https://github.com/EclipseFdn/open-vsx.org/issues/new/choose>.
 
-> **Skipping Open VSX?** Tell Claude to remove the `publish-openvsx` job
+> **Skipping Open VSX?** Remove the `publish-openvsx` job
 > from `.github/workflows/vscode-release.yml` (and its entry in
 > `attach-release-asset.needs`) — otherwise every release shows one failed
 > job for the missing secret.
@@ -365,7 +366,7 @@ deactivate
 | `git push` → 403 / auth loop | Credential Manager cached a wrong account | Windows Credential Manager → remove `git:https://github.com` entries → push again |
 | PyPI job: "invalid-publisher" / OIDC error | Pending-publisher fields don't match | Re-check owner/repo/workflow/environment spelling on pypi.org — must be `epochix`/`epochix`/`release.yml`/`pypi` |
 | `vsce publish` → 401 | PAT scoped to one org instead of **All accessible organizations**, or expired | Regenerate the PAT correctly, update the `VSCE_PAT` secret, re-run the job |
-| `vsce publish` → publisher mismatch | Marketplace publisher ID ≠ `epochix` | The ID is immutable — if you created a different ID, tell Claude to change `"publisher"` in the manifest |
+| `vsce publish` → publisher mismatch | Marketplace publisher ID ≠ `epochix` | The ID is immutable — if you created a different ID, change `"publisher"` in the manifest to match |
 | Open VSX job fails, everything else fine | `OVSX_PAT` missing or agreement unsigned | Finish Step 4, re-run just that job — or remove the job if skipping Open VSX |
 | Docs workflow green but no site | Pages source not set to GitHub Actions | Step 1e #1, then re-run the Docs workflow |
 

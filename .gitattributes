@@ -4,3 +4,4 @@
 # their line endings.
 tests/fixtures/logs/*.log -text
 src/epochix/_demos/*.log  -text
+demo/*.log                -text

@@ -7,6 +7,55 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.7.26] — 2026-10-01
+
+### Fixed — real PyTorch Lightning and Ultralytics output was misread
+
+Two of the three demos `epochix demo` plays had been written by hand, in the
+shape the parsers expected. Recording real runs to replace them showed what
+that had hidden.
+
+- **A real PyTorch Lightning log produced nothing** — no metric, no frame, no
+  architecture. The parser accepted only `Epoch 3/10:`, which Lightning does
+  not print; it prints `Epoch 3:`, counting from 0, and the universal parser
+  skips progress bars by design. Lightning's own bar is now read, with the
+  epoch it belongs to: the bar for epoch N carries the results logged at the
+  end of the epoch before it, and the last epoch's results arrive on a redraw
+  of its own line. `v_num` and the stopping condition are not metrics; the
+  run's length is taken from `max_epochs` when Lightning reports it. A
+  hand-written `Epoch 3/10:` tqdm loop reads as before.
+- **Lightning's model summary was not read** in its current forms — a `Mode`
+  column since 2.2, a boxed table with FLOPs in 2.6. All are read now.
+- **A real Ultralytics run was told as a segmentation run on one reading.**
+  Ultralytics prints its whole configuration on one line, and `iou=0.7`, a
+  threshold, was taken as the run's IoU. A line of a dozen or more assignments
+  whose values are not all numbers is a settings dump and carries no metric
+  (an argparse `Namespace(...)` too).
+- **The validation of `best.pt` after training was counted as another epoch**:
+  a 3-epoch run was told "after 4 epochs". It is a second measurement of an
+  epoch already told, and is no longer read as one.
+- **The VS Code extension drew no model for Lightning or Ultralytics runs** —
+  its architecture reader knew Keras and `print(model)` only. It reads both
+  now, and replays Python's answer for every log in the corpus.
+
+### Changed — the bundled demos are recorded runs
+
+- **`epochix demo` (seq2seq) and `epochix demo yolov8` are real runs**: a GRU
+  encoder-decoder with attention translating French to English with PyTorch
+  Lightning, and YOLOv8n fine-tuned on COCO128 with Ultralytics. Their logs
+  are the libraries' console output, byte for byte, with the scripts that
+  produced them in `demo/`. The ones they replace were written by hand
+  ("Instances 12345"). `demo/README.md` says which logs are recordings and
+  which are format samples for the tests.
+
+### Fixed — machine paths in two fixtures
+
+- A byte-exact Ultralytics capture and an offline W&B run in `tests/fixtures`
+  had been recorded from a scratch folder and carried its full path, Windows
+  user name included. Both are recorded again from a neutral folder (the W&B
+  one with its machine metadata off), and a test now checks every tracked
+  file, binary ones too, for a user's profile path.
+
 ## [0.7.25] — 2026-10-01
 
 ### Changed — a story sentence says only what the run's numbers support

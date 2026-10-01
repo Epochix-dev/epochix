@@ -356,11 +356,19 @@ def _make_layer(idx: int, name: str, layer_type: str, params_str: str) -> ArchLa
 # ── PyTorch Lightning ModelSummary ──────────────────────────────────────────────
 
 _PL_HEADER = re.compile(r"\|\s*Name\s*\|\s*Type\s*\|\s*Params", re.IGNORECASE)
+# Every Lightning version's row:
+#   0 | encoder | ResNet50 | 23.5 M                          (1.x)
+#   0 | encoder | ResNet50 | 23.5 M | train                  (2.2+, a Mode column)
+#   | 0 | encoder | GRU    |  394 K | train |     0 |        (2.6 with rich: boxed, FLOPs)
+# Only the first three columns after the index are read; a real 2.6 summary
+# matched nothing while only the 1.x shape was accepted.
 _PL_ROW = re.compile(
-    r"^\s*(\d+)\s*\|\s*([\w][\w.\-/]*)\s*\|\s*([\w.\-/]+"
-    r"(?:\s+[\w.\-/]+)*)\s*\|\s*([\d,.]+\s*[KMBGkmb]?)\s*$"
+    r"^\s*\|?\s*(\d{1,4})\s*\|\s*([\w][\w.\-/]{0,120})\s*\|\s*([\w.\-/]{1,120}"
+    r"(?:\s+[\w.\-/]{1,120}){0,6})\s*\|\s*([\d,.]{1,24}\s*[KMBGkmb]?)\s*(?:\|.{0,200})?$"
 )
-_SEPARATOR = re.compile(r"^\s*-{5,}")
+# A rule between header and rows, in any of those styles: "-----", "|---+---|",
+# "+--------+".
+_SEPARATOR = re.compile(r"^\s*[|+]?-{3,}")
 
 
 def _parse_pytorch_lightning(lines: list[str]) -> list[ArchLayer]:

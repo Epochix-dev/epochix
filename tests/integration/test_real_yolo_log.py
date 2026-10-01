@@ -32,9 +32,11 @@ if TYPE_CHECKING:
 
 LOG = Path(__file__).parents[1] / "fixtures" / "logs" / "yolo_real_ultralytics.log"
 
-# What the real run actually reported (ultralytics 8.4.55, coco8, 3 epochs).
+# What the real run actually reported (ultralytics 8.4.171, coco8, 3 epochs on
+# CPU, captured with demo/yolov8_detection_source.py). The capture it replaced
+# was recorded from a scratch folder and carried that folder's path.
 EPOCHS = 3
-FINAL_MAP50 = 0.688
+FINAL_MAP50 = 0.62
 
 
 def test_the_fixture_still_has_its_carriage_returns() -> None:

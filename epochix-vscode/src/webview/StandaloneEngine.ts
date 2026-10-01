@@ -447,6 +447,9 @@ export class StandaloneEngine {
         emittedKeys: new Set(),
         cvFolds: new Map(),
         cvCandidates: new Map(),
+        plPrinted: null,
+        plValues: null,
+        yoloFinalValidation: false,
       };
       const metrics = fallback.parseLine(line, scratch).filter((m) => isRecognised(m.key));
       if (metrics.length > 0) {

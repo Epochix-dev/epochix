@@ -37,6 +37,11 @@ export interface ParserContext {
   /** Cross-validation folds by metric, and by parameter-search candidate. */
   cvFolds: Map<string, number[]>;
   cvCandidates: Map<string, Map<string, number[]>>;
+  /** Lightning: the last complete "Epoch N" bar read, and its values. */
+  plPrinted: number | null;
+  plValues: string | null;
+  /** Ultralytics: the post-training validation of best.pt has begun. */
+  yoloFinalValidation: boolean;
 }
 
 export function makeContext(): ParserContext {
@@ -51,6 +56,9 @@ export function makeContext(): ParserContext {
     emittedKeys: new Set(),
     cvFolds: new Map(),
     cvCandidates: new Map(),
+    plPrinted: null,
+    plValues: null,
+    yoloFinalValidation: false,
   };
 }
 

@@ -119,6 +119,84 @@ function parseKeras(lines: string[]): ArchLayer[] {
   return out;
 }
 
+// ── PyTorch Lightning ModelSummary ───────────────────────────────────────────
+// Every Lightning version's row (mirrors _parse_pytorch_lightning):
+//   0 | encoder | ResNet50 | 23.5 M                          (1.x)
+//   0 | encoder | ResNet50 | 23.5 M | train                  (2.2+, a Mode column)
+//   | 0 | encoder | GRU    |  394 K | train |     0 |        (2.6 with rich: boxed, FLOPs)
+const PL_HEADER = /\|\s*Name\s*\|\s*Type\s*\|\s*Params/i;
+const PL_ROW =
+  /^\s*\|?\s*(\d{1,4})\s*\|\s*([\w][\w.\-/]{0,120})\s*\|\s*([\w.\-/]{1,120}(?:\s+[\w.\-/]{1,120}){0,6})\s*\|\s*([\d,.]{1,24}\s*[KMBGkmb]?)\s*(?:\|.{0,200})?$/;
+const PL_SEPARATOR = /^\s*[|+]?-{3,}/;
+const PL_TOTALS = /^\s*[\d,.]+\s*(K|M|B|G|Trainable|Non|Total)/i;
+
+function parseLightning(lines: string[]): ArchLayer[] {
+  let out: ArchLayer[] = [];
+  let inTable = false;
+  let separators = 0;
+  for (const line of lines) {
+    if (PL_HEADER.test(line)) {
+      inTable = true;
+      separators = 0;
+      out = [];
+      continue;
+    }
+    if (!inTable) continue;
+    if (PL_SEPARATOR.test(line)) {
+      separators += 1;
+      if (separators >= 2 && out.length) break;
+      continue;
+    }
+    const m = PL_ROW.exec(line);
+    if (m) {
+      out.push(makeLayer(parseInt(m[1], 10), m[2].trim(), m[3].trim(), m[4]));
+    } else if (out.length && !PL_TOTALS.test(line)) {
+      inTable = false;
+    }
+  }
+  return out;
+}
+
+// ── Ultralytics YOLO verbose layer table ─────────────────────────────────────
+//                    from  n    params  module                          arguments
+//   0                  -1  1       928  ultralytics.nn.modules.conv.Conv [3, 32, 3, 2]
+//  22        [15, 18, 21]  1    751507  ultralytics.nn.modules.head.Detect ...
+const ULTRA_HEADER = /\bfrom\s+n\s+params\s+module/i;
+const ULTRA_ROW = /^\s*(\d+)\s+(?:-?\d+|\[[\d,\s]+\])\s+\d+\s+(\d+)\s+([\w.]+)/;
+
+function parseUltralytics(lines: string[]): ArchLayer[] {
+  let out: ArchLayer[] = [];
+  let inTable = false;
+  for (const raw of lines) {
+    if (ULTRA_HEADER.test(raw)) {
+      inTable = true;
+      out = [];
+      continue;
+    }
+    if (!inTable) continue;
+    const m = ULTRA_ROW.exec(raw);
+    if (!m) {
+      if (out.length && raw.trim()) break; // table ended
+      continue;
+    }
+    const module = m[3].split(".").pop() ?? m[3]; // ...modules.head.Detect -> Detect
+    out.push(makeLayer(out.length, module, module, m[2]));
+  }
+  return out;
+}
+
+// "Ultralytics YOLOv8n summary: 225 layers, 3157200 parameters" — names the
+// model when no per-layer table is present.
+const SUMMARY_LINE = /([A-Za-z][\w/+-]{0,80})\s+summary:.*?([\d,]+)\s+param/i;
+
+function parseSummaryLine(lines: string[]): ArchLayer[] {
+  for (const raw of lines) {
+    const m = SUMMARY_LINE.exec(raw);
+    if (m) return [makeLayer(0, m[1], m[1], m[2])];
+  }
+  return [];
+}
+
 // ── torch print(model) ───────────────────────────────────────────────────────
 // A child at any depth:  `  (encoder): ResNet(`  /  `    (0): BasicBlock(`, and
 // PyTorch's folded repeats:  `    (0-3): 4 x TransformerEncoderLayer(`
@@ -199,10 +277,18 @@ function clean(layers: ArchLayer[]): ArchLayer[] {
   return kept.map((l, i) => ({ ...l, idx: i }));
 }
 
+// Longest summary line scanned; real table rows are short (as in Python).
+const MAX_ARCH_LINE = 2048;
+
 /** Best-effort architecture from log lines; empty when nothing is recognised.
- *  Like Python, the richer of the two readings wins. */
+ *  Like Python, every format is tried and the richest reading wins (the first
+ *  on a tie); a one-line summary names the model when no table is present. */
 export function parseArchitecture(lines: string[]): ArchLayer[] {
-  const keras = clean(parseKeras(lines));
-  const repr = clean(parseModuleRepr(lines));
-  return repr.length > keras.length ? repr : keras;
+  const short = lines.map((l) => l.slice(0, MAX_ARCH_LINE));
+  let best: ArchLayer[] = [];
+  for (const parse of [parseLightning, parseKeras, parseUltralytics, parseModuleRepr]) {
+    const layers = clean(parse(short));
+    if (layers.length > best.length) best = layers;
+  }
+  return best.length ? best : parseSummaryLine(short);
 }

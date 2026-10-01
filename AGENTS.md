@@ -93,6 +93,16 @@ npm --prefix epochix-vscode test    # launches a real VS Code host
   while a phase story is told (within 1% of the run's best; the phase's
   threshold). `test_story_claims.py` ties the wording to `PHASE_STEPS`: change
   a threshold and the sentences stating it fail. Change all three languages.
+- **A demo or a "real" fixture is a recording, made from a neutral folder.**
+  Two bundled demos were written by hand in the shape the parsers expected,
+  and real PyTorch Lightning output (`Epoch 3:`, not `Epoch 3/10:`) went
+  unread for the life of the project; a real Ultralytics run was told as
+  segmentation off its settings line. A demo ships with the script that
+  produced it (`demo/*_source.py`, `demo/README.md`). The libraries print the
+  paths they use, so record from somewhere like `C:\tmp\epochix_demos` or
+  `/tmp/epochix_demos`: two fixtures were committed carrying a scratch
+  folder's path and a user name. `test_no_machine_paths.py` scans every
+  tracked file. Do not edit a capture afterwards; record it again.
 - **Test what the release builds.** 0.7.5–0.7.10 shipped a blank VS Code panel
   because the extension tests ran against `frontend/dist` (the server build)
   while the release packages `build:webview` output. When a release step

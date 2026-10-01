@@ -11,6 +11,11 @@ const TRAIN_ROW =
 const VAL_ROW =
   /^\s*all\s+\d+\s+\d+\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)/;
 
+// After the last epoch Ultralytics validates the best checkpoint once more
+// ("Validating runs/detect/train/weights/best.pt..."). That row is a second
+// measurement of an epoch already told, not another epoch.
+const FINAL_VALIDATION = /^Validating\s.{1,400}\.pt\b/;
+
 export class YoloParser implements Parser {
   readonly name = "ultralytics_yolo";
   readonly priority = 88;
@@ -34,7 +39,13 @@ export class YoloParser implements Parser {
       ];
     }
 
+    if (FINAL_VALIDATION.test(line)) {
+      ctx.yoloFinalValidation = true;
+      return [];
+    }
+
     m = VAL_ROW.exec(line);
+    if (m && ctx.yoloFinalValidation) return [];
     if (m) {
       return [
         this._metric(ctx, "precision", parseFloat(m[1])),
