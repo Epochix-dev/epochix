@@ -24,7 +24,23 @@ taught live in [AGENTS.md](AGENTS.md).
 
 ## Open
 
-Nothing at the moment.
+- **A bounded metric with no bands of its own is graded on improvement, and
+  that can read as harsh.** A real LightGBM classifier
+  (`tests/fixtures/logs/lightgbm_real_classifier.log`) ends at a validation
+  AUC of 0.9836 and is graded **C−**: only accuracy has classification bands,
+  so AUC is scored by how far it moved from its first reading (0.9631, a 2.1%
+  gain). The letter is the improvement rule working as written, and the card
+  now says a grade may come from improvement — but a reader sees 98.4% beside
+  a C−. AUC, F1 and mAP outside their own task are the same. This needs a
+  decision, not a patch: give AUC (0.5 is chance, 1.0 perfect) and F1 bands of
+  their own in `grade._METRIC_THRESHOLDS`, as R² has, or keep grading them on
+  improvement. Bands are a judgement and must be written down as one.
+- **Say which way this run was graded.** The sentence under the grade names
+  both ways a grade is reached (fixed thresholds, or improvement since the
+  first reading) because a frame does not record which applied. Carry it on
+  the frame — a `grade_basis` beside `grade_note`: model, store column and
+  migration, the TypeScript engine and its goldens, the exports — and show
+  only the sentence that is true of the run.
 
 ---
 
