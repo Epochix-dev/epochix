@@ -141,7 +141,10 @@ class TestMetricDirection:
         run, frames = _story(tmp_path, lines, "rouge")
         assert frames
         last = frames[-1].narrative.lower()
-        assert "past its best" not in last, f"rising ROUGE called a decline: {last!r}"
+        # Every phrasing of the past-peak story (templates/_pastpeak.txt).
+        assert not any(p in last for p in ("slipped", "past its best", "below its best")), (
+            f"rising ROUGE called a decline: {last!r}"
+        )
         assert "stopping earlier" not in last, last
         assert "early stopping" not in last, last
         assert str(run.final_grade) != "Grade.F", "an improving run graded F"
