@@ -249,7 +249,14 @@ class TestWSMessage:
 
 class TestWarning:
     def test_valid_kinds(self) -> None:
-        for kind in ("overfit", "plateau", "divergence", "lr_drop"):
+        for kind in (
+            "overfit",
+            "overfit_cleared",
+            "plateau",
+            "plateau_cleared",
+            "divergence",
+            "lr_drop",
+        ):
             w = Warning(kind=kind, message="msg")  # type: ignore[arg-type]
             assert w.kind == kind
 

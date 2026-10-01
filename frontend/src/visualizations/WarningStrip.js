@@ -17,6 +17,7 @@
 const NOT_A_PROBLEM = new Set(['lr_drop']);
 
 import { escapeHtml } from '../escape.js';
+import { warningsInView } from '../store.js';
 
 export class WarningStrip {
   /** @param {HTMLElement} el */
@@ -58,8 +59,12 @@ export class WarningStrip {
   }
 }
 
-/** @param {{warnings?: string[], warningKinds?: Map<string,string>}} s */
+/**
+ * The warnings to show: those standing at the frame being viewed, so a
+ * scrubbed-back view is not headed by a warning from later in the run.
+ * @param {{warnings?: string[], warningKinds?: Map<string,string>}} s
+ */
 function problems(s) {
-  const kinds = s.warningKinds instanceof Map ? s.warningKinds : new Map();
-  return (s.warnings ?? []).filter((m) => !NOT_A_PROBLEM.has(kinds.get(m)));
+  const { warnings, warningKinds } = warningsInView(s);
+  return warnings.filter((m) => !NOT_A_PROBLEM.has(warningKinds.get(m)));
 }

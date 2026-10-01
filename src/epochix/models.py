@@ -71,7 +71,9 @@ class Milestone(BaseModel):
 
 
 class Warning(BaseModel):
-    kind: Literal["overfit", "overfit_cleared", "plateau", "divergence", "lr_drop"]
+    kind: Literal[
+        "overfit", "overfit_cleared", "plateau", "plateau_cleared", "divergence", "lr_drop"
+    ]
     epoch: float | None = None
     message: str
 

@@ -26,6 +26,20 @@ which covers the extension too; entries here resume with 0.7.16.
   after training is not counted as another epoch.
 - **The model is drawn for Lightning and Ultralytics runs.** The panel read
   Keras and `print(model)` summaries only.
+- **Keras 3, Hugging Face and LightGBM output is read correctly.** Keras 3's
+  per-update progress lines are no longer readings; the `Trainer`'s quoted
+  numbers (`'loss': '1.925'`) are read and its timing fields are not metrics;
+  a LightGBM run is told on its validation AUC, and its `best gain: -inf` and
+  early-stopping summary are not misread.
+- **Warnings say what was measured.** The plateau warning states that the
+  metric moved less than 1% over the last 5 readings, is withdrawn when that
+  stops being true, and no longer sits above epochs it does not describe when
+  you scrub back through a run.
+
+### Changed
+
+- **"Try a Demo Run" plays Keras's own output**: a recorded Keras 3 run with a
+  cosine learning-rate schedule, unedited.
 
 ## [0.7.25] — 2026-10-01
 

@@ -16,6 +16,7 @@
     "overfit_warning": "Overfitting detected",
     "overfit_cleared": "Overfitting ruled out",
     "plateau": "Learning plateau",
+    "plateau_cleared": "Progress resumed",
     "lr_drop": "Learning rate reduced",
     "divergence": "Training diverged",
     "training_complete": "Training complete",

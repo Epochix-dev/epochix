@@ -284,6 +284,25 @@
   "final_grade": "A+",
   "final_phase": "polishing"
  },
+ "huggingface_real_trainer.log": {
+  "path": "tests/fixtures/logs/huggingface_real_trainer.log",
+  "task": "classification",
+  "metric": "val_accuracy",
+  "frames": 11,
+  "last_value": 0.9444,
+  "keys": [
+   "grad_norm",
+   "lr",
+   "train_loss",
+   "val_accuracy",
+   "val_loss"
+  ],
+  "metric_from_epoch": 1.0,
+  "grade_note": null,
+  "cross_validation": null,
+  "final_grade": "A",
+  "final_phase": "understanding"
+ },
  "interrupted.log": {
   "path": "tests/fixtures/logs/interrupted.log",
   "task": "classification",
@@ -341,7 +360,25 @@
   "task": "classification",
   "metric": "val_accuracy",
   "frames": 20,
-  "last_value": 0.9511,
+  "last_value": 0.9578,
+  "keys": [
+   "accuracy",
+   "train_loss",
+   "val_accuracy",
+   "val_loss"
+  ],
+  "metric_from_epoch": 1.0,
+  "grade_note": "still_improving",
+  "cross_validation": null,
+  "final_grade": "A+",
+  "final_phase": "mastering"
+ },
+ "keras_real_verbose2.log": {
+  "path": "tests/fixtures/logs/keras_real_verbose2.log",
+  "task": "classification",
+  "metric": "val_accuracy",
+  "frames": 20,
+  "last_value": 0.9578,
   "keys": [
    "accuracy",
    "train_loss",
@@ -371,6 +408,42 @@
   "cross_validation": null,
   "final_grade": "B+",
   "final_phase": "mastering"
+ },
+ "lightgbm_real_classifier.log": {
+  "path": "tests/fixtures/logs/lightgbm_real_classifier.log",
+  "task": "classification",
+  "metric": "val_AUC",
+  "frames": 60,
+  "last_value": 0.9836,
+  "keys": [
+   "AUC",
+   "log_loss",
+   "val_AUC",
+   "val_log_loss"
+  ],
+  "metric_from_epoch": 1.0,
+  "grade_note": null,
+  "cross_validation": null,
+  "final_grade": "C-",
+  "final_phase": "understanding"
+ },
+ "lightgbm_real_early_stopping.log": {
+  "path": "tests/fixtures/logs/lightgbm_real_early_stopping.log",
+  "task": "regression",
+  "metric": "val_MAE",
+  "frames": 29,
+  "last_value": 45.1215,
+  "keys": [
+   "MAE",
+   "MSE",
+   "val_MAE",
+   "val_MSE"
+  ],
+  "metric_from_epoch": 1.0,
+  "grade_note": null,
+  "cross_validation": null,
+  "final_grade": "B-",
+  "final_phase": "learning"
  },
  "mixed_frameworks.log": {
   "path": "tests/fixtures/logs/mixed_frameworks.log",
@@ -648,7 +721,7 @@
   "task": "classification",
   "metric": "val_accuracy",
   "frames": 20,
-  "last_value": 0.98,
+  "last_value": 0.9844,
   "keys": [
    "accuracy",
    "lr",
@@ -661,6 +734,24 @@
   "cross_validation": null,
   "final_grade": "A+",
   "final_phase": "mastering"
+ },
+ "xgboost_real_classifier.log": {
+  "path": "tests/fixtures/logs/xgboost_real_classifier.log",
+  "task": "classification",
+  "metric": "val_log_loss",
+  "frames": 60,
+  "last_value": 0.1514,
+  "keys": [
+   "error_rate",
+   "log_loss",
+   "val_error_rate",
+   "val_log_loss"
+  ],
+  "metric_from_epoch": 0.0,
+  "grade_note": null,
+  "cross_validation": null,
+  "final_grade": "A+",
+  "final_phase": "understanding"
  },
  "yolo_100ep.log": {
   "path": "tests/fixtures/logs/yolo_100ep.log",

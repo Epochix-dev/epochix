@@ -16,6 +16,7 @@
     "overfit_warning": "بیش‌برازش تشخیص داده شد",
     "overfit_cleared": "بیش‌برازش منتفی شد",
     "plateau": "توقف یادگیری",
+    "plateau_cleared": "پیشرفت از سر گرفته شد",
     "lr_drop": "کاهش نرخ یادگیری",
     "divergence": "واگرایی آموزش",
     "training_complete": "آموزش کامل شد",

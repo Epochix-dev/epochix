@@ -59,4 +59,25 @@ CONFIG_KEYS = frozenset(
 # Units that appear as `key: value` in progress lines ("32ms/step").
 UNIT_KEYS = frozenset({"s", "ms", "us", "ns"})
 
-NEVER_METRICS = MODEL_SUMMARY_KEYS | CONFIG_KEYS | UNIT_KEYS
+# How long something took and how fast it went. The Hugging Face Trainer puts
+# these in the same dict as the evaluation metrics, and a real log's
+# `eval_samples_per_second` was charted beside its accuracy.
+TIMING_KEYS = frozenset(
+    {
+        "runtime",
+        "train_runtime",
+        "eval_runtime",
+        "test_runtime",
+        "samples_per_second",
+        "train_samples_per_second",
+        "eval_samples_per_second",
+        "test_samples_per_second",
+        "steps_per_second",
+        "train_steps_per_second",
+        "eval_steps_per_second",
+        "test_steps_per_second",
+        "total_flos",
+    }
+)
+
+NEVER_METRICS = MODEL_SUMMARY_KEYS | CONFIG_KEYS | UNIT_KEYS | TIMING_KEYS

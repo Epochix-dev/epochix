@@ -1,7 +1,7 @@
 /**
  * TypeScript port of src/epochix/parsers/ultralytics_yolo.py
  */
-import type { Parser, ParserContext, RawMetric } from "./base";
+import { claim, type Parser, type ParserContext, type RawMetric } from "./base";
 
 // Training row: "      1/50     1.23G   0.456   0.234   0.123   128"
 const TRAIN_ROW =
@@ -45,7 +45,7 @@ export class YoloParser implements Parser {
     }
 
     m = VAL_ROW.exec(line);
-    if (m && ctx.yoloFinalValidation) return [];
+    if (m && ctx.yoloFinalValidation) return claim(ctx);
     if (m) {
       return [
         this._metric(ctx, "precision", parseFloat(m[1])),

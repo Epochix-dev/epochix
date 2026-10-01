@@ -3,7 +3,7 @@ from __future__ import annotations
 import re
 
 from epochix.models import RawMetric
-from epochix.parsers.base import ParserContext
+from epochix.parsers.base import ParserContext, claim
 from epochix.parsers.registry import register_parser
 
 # Training row: "      1/50     1.23G   0.456   0.234   0.123   128"
@@ -85,7 +85,7 @@ class YOLOParser:
 
         m = _VAL_ROW.match(line)
         if m and ctx.extra.get("yolo_final_validation"):
-            return []
+            return claim(ctx)
         if m:
             return [
                 RawMetric(

@@ -11,7 +11,7 @@
  * skips progress bars by design: no metric, no frame, no story.
  *   Epoch 3/10: 100%|████| 250/250 [00:12<00:00, loss=0.432, acc=0.867]
  */
-import type { Parser, ParserContext, RawMetric } from "./base";
+import { claim, type Parser, type ParserContext, type RawMetric } from "./base";
 
 const EPOCH_HEADER = /Epoch\s+(\d{1,7})(?:\/(\d{1,7})|(?=:))/;
 const PROGRESS_LINE = /Epoch\s+\d{1,7}(?:\/\d{1,7})?:.{0,400}\|/;
@@ -74,7 +74,7 @@ export class PytorchLightningParser implements Parser {
     if (handWritten) {
       epoch = printed;
     } else {
-      if (bar !== null && bar[2] !== bar[3]) return []; // caught mid-epoch
+      if (bar !== null && bar[2] !== bar[3]) return claim(ctx); // caught mid-epoch
       // Lightning's bar for epoch N carries the values logged at the end of
       // the epoch before it: validation runs after the bar reaches 100%. So
       // counted from 0 as printed, "Epoch N" shows epoch N-1's results —
@@ -83,7 +83,7 @@ export class PytorchLightningParser implements Parser {
       // second complete "Epoch N" with different values is N+1.
       const values = JSON.stringify(pairs);
       if (ctx.plPrinted === printed) {
-        if (ctx.plValues === values) return []; // the same line, drawn again
+        if (ctx.plValues === values) return claim(ctx); // the same line, drawn again
         epoch = printed + 1;
       } else {
         epoch = printed;

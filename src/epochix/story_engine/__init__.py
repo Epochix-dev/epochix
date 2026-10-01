@@ -45,11 +45,15 @@ _PREFERRED_KEYS_FOR_TASK: dict[TaskType, tuple[str, ...]] = {
     TaskType.CLASSIFICATION: (
         "val_accuracy",
         "accuracy",
-        "AUC",
+        # Validation before training, for every metric that has both. AUC and
+        # f1 were listed the other way round, so a real LightGBM run that
+        # logged `training's auc` and `valid_1's auc` was told on the training
+        # one: "AUC 1.0000" for a model at 0.984 on held-out data.
         "val_AUC",
+        "AUC",
         "PR_AUC",
-        "f1",
         "val_f1",
+        "f1",
         "top5_accuracy",
         "balanced_accuracy",
         "MCC",
@@ -467,6 +471,10 @@ class StoryEngine:
         training accuracy outright.
         """
         self._announced_keys |= keys
+
+    def has_logged(self, name: str) -> bool:
+        """Whether the run has reported a metric under *name* (raw or canonical)."""
+        return name in self._seen_raw_keys or name in self._seen_keys
 
     def note_non_finite(self, key: str, epoch: float | None) -> None:
         """Record that the log reported a non-numeric value (NaN/inf) for *key*.

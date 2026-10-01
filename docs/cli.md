@@ -59,7 +59,7 @@ epochix demo keras
 |---|---|
 | `seq2seq` (default) | A GRU encoder-decoder with attention translating French to English, trained with PyTorch Lightning. It overfits mildly towards the end, and the dashboard says so. |
 | `yolov8` | YOLOv8n fine-tuned with Ultralytics on COCO128, the 128-image tutorial set. Its validation images are its training images, so the mAP shows fit, not generalisation. |
-| `keras` | A small CNN on scikit-learn's handwritten digits. |
+| `keras` | A small CNN on scikit-learn's handwritten digits, trained with Keras 3. It is still setting new bests at its last epoch, and the grade says so. |
 
 ## `epochix check`
 

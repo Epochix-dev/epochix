@@ -80,6 +80,7 @@ export function startVscodeBridge(applyTheme) {
           milestones: [],
           warnings: [],
           warningKinds: new Map(),
+          warningLog: [],
           currentFrame: null,
           metrics: Array.isArray(msg.metrics) ? msg.metrics : [],
           architecture: Array.isArray(msg.architecture) && msg.architecture.length

@@ -4,7 +4,7 @@ import contextlib
 import re
 
 from epochix.models import RawMetric
-from epochix.parsers.base import ParserContext
+from epochix.parsers.base import ParserContext, claim
 from epochix.parsers.registry import register_parser
 
 # Two shapes of progress line.
@@ -79,7 +79,7 @@ class PLParser:
             epoch = float(printed)
         else:
             if bar is not None and bar.group(2) != bar.group(3):
-                return []  # a bar caught mid-epoch is not an epoch's result
+                return claim(ctx)  # a bar caught mid-epoch is not an epoch's result
             # Lightning's bar for epoch N carries the values logged at the end
             # of the epoch before it: validation runs after the bar reaches
             # 100%, and epoch-level training metrics are logged after that. So
@@ -90,7 +90,7 @@ class PLParser:
             values = tuple(pairs)
             if ctx.extra.get("pl_printed") == printed:
                 if ctx.extra.get("pl_values") == values:
-                    return []  # the same line, drawn again
+                    return claim(ctx)  # the same line, drawn again
                 epoch = float(printed + 1)
             else:
                 epoch = float(printed)

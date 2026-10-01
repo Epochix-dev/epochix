@@ -38,8 +38,54 @@ that had hidden.
   its architecture reader knew Keras and `print(model)` only. It reads both
   now, and replays Python's answer for every log in the corpus.
 
+### Fixed — real Keras 3, Hugging Face and LightGBM output was misread
+
+The same exercise for the other libraries: train something real, keep the
+console output, read it. XGBoost read correctly. The others did not.
+
+- **Keras 3 written to a file gave dozens of readings per epoch.** Redirected,
+  Keras prints every progress update on its own line, and each partial bar
+  (`12/43 ━━━ … accuracy: 0.1172`) was taken as a reading; it also prints the
+  finished bar twice when there is validation data. One reading per epoch is
+  kept, from the finished bar, in Keras 2's `[====]` layout, Keras 3's `━━━`
+  and `verbose=2`'s single line alike.
+- **A real Hugging Face `Trainer` log produced no metric at all.** transformers
+  5 prints its numbers as strings (`{'loss': '1.925', 'epoch': '1'}`) and only
+  bare numbers were accepted. Quoted numbers are read; `eval_runtime` and the
+  per-second rates are not metrics; and the end-of-run summary, whose
+  `train_loss` is the run's *average*, is no longer an extra reading.
+- **A LightGBM classifier's story was told on its training AUC.** Both
+  `AUC` and `val_AUC` were in the log and the training one was preferred; the
+  validation metric is now chosen first, as for accuracy (`val_f1` likewise).
+- **LightGBM's `best gain: -inf` raised a divergence warning.** It is a tree
+  that could not be split, not a metric gone non-finite. Only a name the run
+  has logged as a metric, or one Epochix knows, counts.
+- **LightGBM's early-stopping summary was read as one more round.** The line
+  after `Early stopping, best iteration is:` repeats the best round.
+- **A line a parser has recognised and declined is not handed to the fallback
+  parsers.** The Keras parser skipping a partial bar was undone by the
+  universal parser reading the same line.
+
+### Fixed — warnings say what was measured, and are withdrawn when it stops being true
+
+- **The plateau warning said the model "has stopped finding new patterns"**
+  beside a grade card reading "still improving at the last reading". It now
+  states its measurement — the metric moved less than 1% over the last 5
+  readings — and is withdrawn when that is no longer so, as the overfit
+  warning already was. It can fire again.
+- **The overfit warning states its measurement too**: validation loss rose
+  twice in a row while training loss fell, so the model *may* be memorising.
+- **Scrubbing back through a run showed the final warnings over every epoch** —
+  "progress has slowed" above epoch 1. The strip shows what stood at the epoch
+  being viewed.
+- **The Markdown report listed a withdrawn warning, and then its withdrawal**,
+  both under a warning sign. It lists the warnings that stand at the end.
+
 ### Changed — the bundled demos are recorded runs
 
+- **`epochix demo keras` and the extension's "Try a Demo Run" are Keras's own
+  output.** They were real training runs whose script printed Keras 2's lines
+  itself; they are now Keras 3's progress bar and model summary, unedited.
 - **`epochix demo` (seq2seq) and `epochix demo yolov8` are real runs**: a GRU
   encoder-decoder with attention translating French to English with PyTorch
   Lightning, and YOLOv8n fine-tuned on COCO128 with Ultralytics. Their logs

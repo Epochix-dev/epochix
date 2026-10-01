@@ -101,7 +101,7 @@
    ],
    [
     "max_pooling2d",
-    "max_pooling2d",
+    "MaxPooling2D",
     "POOL",
     "Compressor",
     "norm"
@@ -286,10 +286,43 @@
   "tests/fixtures/logs/hf_classification.log": [],
   "tests/fixtures/logs/huggingface_5ep.log": [],
   "tests/fixtures/logs/huggingface_nlp_10ep.log": [],
+  "tests/fixtures/logs/huggingface_real_trainer.log": [],
   "tests/fixtures/logs/interrupted.log": [],
   "tests/fixtures/logs/keras_100ep.log": [],
   "tests/fixtures/logs/keras_50ep.log": [],
+  "tests/fixtures/logs/keras_real_verbose2.log": [
+   [
+    "conv2d",
+    "Conv2D",
+    "CONV",
+    "Spatial patterns",
+    "conv"
+   ],
+   [
+    "max_pooling2d",
+    "MaxPooling2D",
+    "POOL",
+    "Compressor",
+    "norm"
+   ],
+   [
+    "dense",
+    "Dense",
+    "HEAD",
+    "Decision maker",
+    "dense"
+   ],
+   [
+    "dense_1",
+    "Dense",
+    "HEAD",
+    "Decision maker",
+    "dense"
+   ]
+  ],
   "tests/fixtures/logs/keras_short.log": [],
+  "tests/fixtures/logs/lightgbm_real_classifier.log": [],
+  "tests/fixtures/logs/lightgbm_real_early_stopping.log": [],
   "tests/fixtures/logs/mixed_frameworks.log": [],
   "tests/fixtures/logs/multiline_json.log": [],
   "tests/fixtures/logs/no_val_metrics.log": [],
@@ -388,6 +421,7 @@
   "tests/fixtures/logs/single_epoch.log": [],
   "tests/fixtures/logs/universal_20ep.log": [],
   "tests/fixtures/logs/universal_kv_colon.log": [],
+  "tests/fixtures/logs/xgboost_real_classifier.log": [],
   "tests/fixtures/logs/yolo_100ep.log": [],
   "tests/fixtures/logs/yolo_50ep.log": [],
   "tests/fixtures/logs/yolo_real_ultralytics.log": [

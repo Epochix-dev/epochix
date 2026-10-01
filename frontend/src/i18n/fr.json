@@ -16,6 +16,7 @@
     "overfit_warning": "Sur-apprentissage détecté",
     "overfit_cleared": "Sur-apprentissage écarté",
     "plateau": "Plateau d'apprentissage",
+    "plateau_cleared": "Progression relancée",
     "lr_drop": "Taux d'apprentissage réduit",
     "divergence": "Divergence de l'entraînement",
     "training_complete": "Entraînement terminé",
