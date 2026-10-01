@@ -131,7 +131,7 @@ suite("Standalone engine — metric direction and prose", () => {
     const r = drive(range(10, (e) =>
       `Epoch ${e}/10 train_loss=${(4.2 * 0.88 ** e).toFixed(4)} rouge=${(0.2 + 0.03 * e).toFixed(4)}`));
     assert.notStrictEqual(r.last.grade, "F");
-    assert.ok(!/perplexity|past its best|slipped/i.test(r.text), r.last.narrative);
+    assert.ok(!/perplexity|below its best|past its best|slipped/i.test(r.text), r.last.narrative);
   });
 
   test("Dice is not narrated as IoU", () => {

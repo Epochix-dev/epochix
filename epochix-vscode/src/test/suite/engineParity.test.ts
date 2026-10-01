@@ -92,7 +92,7 @@ suite("Engine parity with Python", () => {
     assert.ok(first > 0 && metrics[0] === "box_loss", `expected a switch, got ${metrics.join(",")}`);
     const switched = frames[first];
     assert.ok(
-      !/best of|past its best|slipped from/i.test(switched.narrative),
+      !/best of|below its best|past its best|slipped from/i.test(switched.narrative),
       `the first mAP50 frame was judged against box_loss: ${switched.narrative}`,
     );
   });

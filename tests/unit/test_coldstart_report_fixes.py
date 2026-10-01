@@ -197,7 +197,8 @@ def test_a_still_improving_run_keeps_its_positive_story(tmp_path: Path) -> None:
     ]
     _, frames = _frames(tmp_path, lines)
     last = frames[-1].narrative.lower()
-    assert "slipped" not in last and "past its best" not in last, last
+    # Every phrasing of the past-peak story (templates/_pastpeak.txt).
+    assert not any(p in last for p in ("slipped", "past its best", "below its best")), last
 
 
 def test_past_peak_message_is_localised(tmp_path: Path) -> None:

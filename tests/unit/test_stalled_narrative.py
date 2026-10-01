@@ -115,9 +115,24 @@ def test_every_stalled_variant_is_actionable() -> None:
 # a learning-rate or data-pipeline bug that was not there.
 
 _DECLINE_PHRASES = re.compile(
-    r"passed its peak|past its best|slipped from|not improving on it",
+    r"below its best|past its best|slipped from|not improving on it",
     re.IGNORECASE,
 )
+
+
+def test_the_decline_phrases_cover_every_past_peak_variant() -> None:
+    """The story below is one variant drawn by run id. When a variant was
+    reworded, this file still passed wherever another one was drawn and failed
+    on the one CI job that drew it. Check the list against all of them."""
+    from pathlib import Path
+
+    templates = Path(__file__).parents[2] / "src" / "epochix" / "story_engine" / "templates"
+    variants = [
+        ln for ln in (templates / "_pastpeak.txt").read_text(encoding="utf-8").splitlines() if ln
+    ]
+    assert len(variants) >= 3
+    for variant in variants:
+        assert _DECLINE_PHRASES.search(variant), variant
 
 
 def _overfitting_lines() -> list[str]:
