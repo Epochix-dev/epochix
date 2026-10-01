@@ -87,6 +87,390 @@
    ]
   ]
  },
+ "pipeline": {
+  "demo/fingerprint_matching.log": [],
+  "demo/gaze_estimation.log": [],
+  "demo/huggingface_bert.log": [],
+  "demo/keras_image_classifier.log": [
+   [
+    "conv2d",
+    "Conv2D",
+    "CONV",
+    "Spatial patterns",
+    "conv"
+   ],
+   [
+    "max_pooling2d",
+    "max_pooling2d",
+    "POOL",
+    "Compressor",
+    "norm"
+   ],
+   [
+    "dense",
+    "Dense",
+    "HEAD",
+    "Decision maker",
+    "dense"
+   ],
+   [
+    "dense_1",
+    "Dense",
+    "HEAD",
+    "Decision maker",
+    "dense"
+   ]
+  ],
+  "demo/pytorch_lightning.log": [
+   [
+    "encoder",
+    "ResNet50",
+    "ENCODER",
+    "Feature extractor",
+    "conv"
+   ],
+   [
+    "head",
+    "Linear",
+    "HEAD",
+    "Decision maker",
+    "dense"
+   ]
+  ],
+  "demo/seq2seq_attention.log": [
+   [
+    "src_embedding",
+    "Embedding",
+    "EMBED",
+    "Symbol mapper",
+    "dense"
+   ],
+   [
+    "encoder",
+    "GRU",
+    "MEMORY",
+    "Remembers context",
+    "recurrent"
+   ],
+   [
+    "tgt_embedding",
+    "Embedding",
+    "EMBED",
+    "Symbol mapper",
+    "dense"
+   ],
+   [
+    "attention",
+    "BahdanauAttention",
+    "FOCUS",
+    "Reads full context",
+    "attention"
+   ],
+   [
+    "decoder",
+    "GRU",
+    "MEMORY",
+    "Remembers context",
+    "recurrent"
+   ],
+   [
+    "head",
+    "Linear",
+    "HEAD",
+    "Decision maker",
+    "dense"
+   ],
+   [
+    "dropout",
+    "Dropout",
+    "DROP",
+    "Regulariser",
+    "norm"
+   ]
+  ],
+  "demo/yolov8_detection.log": [
+   [
+    "Conv",
+    "Conv",
+    "CONV",
+    "Pattern finder",
+    "conv"
+   ],
+   [
+    "Conv",
+    "Conv",
+    "CONV",
+    "Pattern finder",
+    "conv"
+   ],
+   [
+    "C2f",
+    "C2f",
+    "BLOCK",
+    "Feature block",
+    "conv"
+   ],
+   [
+    "Conv",
+    "Conv",
+    "CONV",
+    "Pattern finder",
+    "conv"
+   ],
+   [
+    "C2f",
+    "C2f",
+    "BLOCK",
+    "Feature block",
+    "conv"
+   ],
+   [
+    "Conv",
+    "Conv",
+    "CONV",
+    "Pattern finder",
+    "conv"
+   ],
+   [
+    "C2f",
+    "C2f",
+    "BLOCK",
+    "Feature block",
+    "conv"
+   ],
+   [
+    "Conv",
+    "Conv",
+    "CONV",
+    "Pattern finder",
+    "conv"
+   ],
+   [
+    "C2f",
+    "C2f",
+    "BLOCK",
+    "Feature block",
+    "conv"
+   ],
+   [
+    "SPPF",
+    "SPPF",
+    "POOL",
+    "Pyramid pooling",
+    "norm"
+   ],
+   [
+    "Upsample",
+    "Upsample",
+    "UPSAMP",
+    "Upsampler",
+    "norm"
+   ]
+  ],
+  "tests/fixtures/logs/accelerate_real.log": [],
+  "tests/fixtures/logs/ansi_colors.log": [],
+  "tests/fixtures/logs/detection_coco.log": [
+   [
+    "YOLOv8n",
+    "YOLOv8n",
+    "ENCODER",
+    "Feature extractor",
+    "conv"
+   ]
+  ],
+  "tests/fixtures/logs/diverging_loss.log": [],
+  "tests/fixtures/logs/empty.log": [],
+  "tests/fixtures/logs/fastai_real.log": [],
+  "tests/fixtures/logs/garbage.log": [],
+  "tests/fixtures/logs/gridsearch_cv.log": [],
+  "tests/fixtures/logs/hf_classification.log": [],
+  "tests/fixtures/logs/huggingface_5ep.log": [],
+  "tests/fixtures/logs/huggingface_nlp_10ep.log": [],
+  "tests/fixtures/logs/interrupted.log": [],
+  "tests/fixtures/logs/keras_100ep.log": [],
+  "tests/fixtures/logs/keras_50ep.log": [],
+  "tests/fixtures/logs/keras_short.log": [],
+  "tests/fixtures/logs/mixed_frameworks.log": [],
+  "tests/fixtures/logs/multiline_json.log": [],
+  "tests/fixtures/logs/no_val_metrics.log": [],
+  "tests/fixtures/logs/pl_high_accuracy.log": [],
+  "tests/fixtures/logs/plateau.log": [],
+  "tests/fixtures/logs/pytorch_lightning_30ep.log": [],
+  "tests/fixtures/logs/pytorch_lightning_long.log": [],
+  "tests/fixtures/logs/pytorch_lightning_short.log": [],
+  "tests/fixtures/logs/resnet18_cifar10.log": [
+   [
+    "conv1",
+    "Conv2d",
+    "CONV",
+    "Spatial patterns",
+    "conv"
+   ],
+   [
+    "bn1",
+    "BatchNorm2d",
+    "NORM",
+    "Stabiliser",
+    "norm"
+   ],
+   [
+    "layer1.0",
+    "BasicBlock",
+    "BLOCK",
+    "Residual block",
+    "conv"
+   ],
+   [
+    "layer1.1",
+    "BasicBlock",
+    "BLOCK",
+    "Residual block",
+    "conv"
+   ],
+   [
+    "layer2.0",
+    "BasicBlock",
+    "BLOCK",
+    "Residual block",
+    "conv"
+   ],
+   [
+    "layer2.1",
+    "BasicBlock",
+    "BLOCK",
+    "Residual block",
+    "conv"
+   ],
+   [
+    "layer3.0",
+    "BasicBlock",
+    "BLOCK",
+    "Residual block",
+    "conv"
+   ],
+   [
+    "layer3.1",
+    "BasicBlock",
+    "BLOCK",
+    "Residual block",
+    "conv"
+   ],
+   [
+    "layer4.0",
+    "BasicBlock",
+    "BLOCK",
+    "Residual block",
+    "conv"
+   ],
+   [
+    "layer4.1",
+    "BasicBlock",
+    "BLOCK",
+    "Residual block",
+    "conv"
+   ],
+   [
+    "avgpool",
+    "AdaptiveAvgPool2d",
+    "POOL",
+    "Compressor",
+    "norm"
+   ],
+   [
+    "fc",
+    "Linear",
+    "HEAD",
+    "Decision maker",
+    "dense"
+   ]
+  ],
+  "tests/fixtures/logs/scientific_notation.log": [],
+  "tests/fixtures/logs/single_epoch.log": [],
+  "tests/fixtures/logs/universal_20ep.log": [],
+  "tests/fixtures/logs/universal_kv_colon.log": [],
+  "tests/fixtures/logs/yolo_100ep.log": [],
+  "tests/fixtures/logs/yolo_50ep.log": [],
+  "tests/fixtures/logs/yolo_real_ultralytics.log": [
+   [
+    "Conv",
+    "Conv",
+    "CONV",
+    "Pattern finder",
+    "conv"
+   ],
+   [
+    "Conv",
+    "Conv",
+    "CONV",
+    "Pattern finder",
+    "conv"
+   ],
+   [
+    "C2f",
+    "C2f",
+    "BLOCK",
+    "Feature block",
+    "conv"
+   ],
+   [
+    "Conv",
+    "Conv",
+    "CONV",
+    "Pattern finder",
+    "conv"
+   ],
+   [
+    "C2f",
+    "C2f",
+    "BLOCK",
+    "Feature block",
+    "conv"
+   ],
+   [
+    "Conv",
+    "Conv",
+    "CONV",
+    "Pattern finder",
+    "conv"
+   ],
+   [
+    "C2f",
+    "C2f",
+    "BLOCK",
+    "Feature block",
+    "conv"
+   ],
+   [
+    "Conv",
+    "Conv",
+    "CONV",
+    "Pattern finder",
+    "conv"
+   ],
+   [
+    "C2f",
+    "C2f",
+    "BLOCK",
+    "Feature block",
+    "conv"
+   ],
+   [
+    "SPPF",
+    "SPPF",
+    "POOL",
+    "Pyramid pooling",
+    "norm"
+   ],
+   [
+    "Upsample",
+    "Upsample",
+    "UPSAMP",
+    "Upsampler",
+    "norm"
+   ]
+  ],
+  "tests/fixtures/logs/yolo_short.log": []
+ },
  "samples": {
   "bilstm": {
    "layers": [

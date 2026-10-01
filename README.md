@@ -88,10 +88,14 @@ pip install "epochix[all]"       # both of the above
 ### Try it instantly — no log of your own needed
 
 ```bash
-epochix demo            # seq2seq + attention narrative
-epochix demo yolov8     # YOLO object detection
+epochix demo            # seq2seq + attention, PyTorch Lightning
+epochix demo yolov8     # YOLOv8n object detection, Ultralytics
 epochix demo keras      # Keras image classifier
 ```
+
+Each demo is the recorded console output of a real training run; the script
+that produced it sits beside the log in
+[`demo/`](https://github.com/Epochix-dev/epochix/tree/main/demo).
 
 ### One-liner: pipe any training log
 

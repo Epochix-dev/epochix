@@ -38,6 +38,19 @@ def test_each_packaged_demo_is_the_repository_demo(packaged: Path) -> None:
     assert _text(packaged) == _text(source), f"src/epochix/_demos/{packaged.name} drifted"
 
 
+@pytest.mark.parametrize("packaged", PACKAGED, ids=[p.name for p in PACKAGED])
+def test_each_packaged_demo_has_the_script_that_recorded_it(packaged: Path) -> None:
+    """Two of the three demos were written by hand ("Instances 12345"), in the
+    shape the parsers expected — which is how real Lightning and Ultralytics
+    output went unread. A demo ships with the script that produced it, and
+    demo/README.md says what the run is."""
+    source = REPO / "demo" / f"{packaged.stem}_source.py"
+    assert source.is_file(), f"{packaged.name} has no {source.name}"
+    assert source.read_text(encoding="utf-8").strip()
+    readme = (REPO / "demo" / "README.md").read_text(encoding="utf-8")
+    assert packaged.name in readme and source.name in readme
+
+
 def test_the_keras_demo_is_a_complete_real_run() -> None:
     """Every epoch present, and the model summary Keras could actually print."""
     text = _text(REPO / "demo" / "keras_image_classifier.log")

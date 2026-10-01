@@ -56,8 +56,15 @@ class TestHFParserSniff:
 
 class TestYOLOParserSniff:
     def test_detects_yolo_log(self) -> None:
-        lines = _load_lines("yolov8_detection.log")
-        assert YOLOParser().sniff(lines[:50]) > 0.3
+        # Sampled as the pipeline samples it: a real run's preamble — settings,
+        # the layer table, the dataset scan — is longer than fifty lines, and
+        # its rows carry progress-bar redraws until they are cleaned.
+        from epochix.parsers.registry import SNIFF_SAMPLE_LINES
+        from epochix.pipeline import _clean_line
+
+        raw = (DEMO / "yolov8_detection.log").read_bytes().decode("utf-8")
+        lines = [c for c in (_clean_line(ln) for ln in raw.split("\n")) if c.strip()]
+        assert YOLOParser().sniff(lines[:SNIFF_SAMPLE_LINES]) > 0.3
 
 
 # ------------------------------------------------------------------ parse

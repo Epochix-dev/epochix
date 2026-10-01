@@ -573,18 +573,18 @@
   "path": "demo/seq2seq_attention.log",
   "task": "classification",
   "metric": "val_accuracy",
-  "frames": 8,
-  "last_value": 0.771,
+  "frames": 20,
+  "last_value": 0.823,
   "keys": [
    "accuracy",
    "train_loss",
    "val_accuracy",
    "val_loss"
   ],
-  "metric_from_epoch": 4.0,
-  "grade_note": "still_improving",
+  "metric_from_epoch": 1.0,
+  "grade_note": null,
   "cross_validation": null,
-  "final_grade": "B",
+  "final_grade": "B+",
   "final_phase": "understanding"
  },
  "single_epoch.log": {
@@ -708,8 +708,8 @@
   "path": "tests/fixtures/logs/yolo_real_ultralytics.log",
   "task": "detection",
   "metric": "mAP50",
-  "frames": 5,
-  "last_value": 0.688,
+  "frames": 4,
+  "last_value": 0.62,
   "keys": [
    "box_loss",
    "cls_loss",
@@ -722,7 +722,7 @@
   "metric_from_epoch": 1.0,
   "grade_note": "few_readings",
   "cross_validation": null,
-  "final_grade": "A",
+  "final_grade": "A-",
   "final_phase": "learning"
  },
  "yolo_short.log": {
@@ -750,8 +750,8 @@
   "path": "demo/yolov8_detection.log",
   "task": "detection",
   "metric": "mAP50",
-  "frames": 11,
-  "last_value": 0.663,
+  "frames": 31,
+  "last_value": 0.816,
   "keys": [
    "box_loss",
    "cls_loss",
@@ -761,10 +761,10 @@
    "precision",
    "recall"
   ],
-  "metric_from_epoch": 10.0,
+  "metric_from_epoch": 1.0,
   "grade_note": "still_improving",
   "cross_validation": null,
-  "final_grade": "A",
+  "final_grade": "A+",
   "final_phase": "understanding"
  }
 }

@@ -106,9 +106,6 @@ render.xml
 !.vscode/extensions.json
 !.vscode/launch.json
 
-# Claude Code local (personal) settings
-.claude/settings.local.json
-
 # PyCharm
 .idea/
 

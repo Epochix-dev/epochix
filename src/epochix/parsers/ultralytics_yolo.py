@@ -27,6 +27,15 @@ _VAL_ROW = re.compile(
 )
 
 
+# After the last epoch Ultralytics validates the best checkpoint once more:
+#   Validating runs\detect\train\weights\best.pt...
+#                    all        128        929      0.808      0.732      0.814      0.638
+# That row is a second measurement of an epoch already told, not another
+# epoch. Read as one, a 3-epoch run was told "after 4 epochs", and a 30-epoch
+# run ended on "a change of -0.2 points since the previous reading".
+_FINAL_VALIDATION = re.compile(r"^Validating\s.{1,400}\.pt\b")
+
+
 @register_parser
 class YOLOParser:
     name = "ultralytics_yolo"
@@ -70,7 +79,13 @@ class YOLOParser:
                 ),
             ]
 
+        if _FINAL_VALIDATION.match(line):
+            ctx.extra["yolo_final_validation"] = True
+            return []
+
         m = _VAL_ROW.match(line)
+        if m and ctx.extra.get("yolo_final_validation"):
+            return []
         if m:
             return [
                 RawMetric(

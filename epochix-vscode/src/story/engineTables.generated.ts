@@ -352,3 +352,8 @@ export const ARCH_TRIVIAL: readonly string[] = ["flatten", "identity", "reshape"
 export const ARCH_REPR_CONTAINERS: ReadonlySet<string> = new Set(["moduledict", "modulelist", "sequential"]);
 
 export const ARCH_MAX_LAYERS = 24;
+
+/** A line with this many assignments, this share of them not numbers, is a
+ *  settings dump and carries no metric (parsers/universal.py). */
+export const CONFIG_DUMP_MIN_PAIRS = 12;
+export const CONFIG_DUMP_NON_NUMERIC_SHARE = 0.25;

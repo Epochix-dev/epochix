@@ -203,6 +203,29 @@ _SKIP_KEYS = NEVER_METRICS | _NN_REPR_KWARGS
 # yielded bogus "Downloading=100" and "00=3" metrics. Whole line is noise.
 _PROGRESS_BAR = re.compile(r"\d{1,3}%\|")
 
+# A settings dump is not a result. Ultralytics prints its whole configuration
+# on one line — "engine\trainer: agnostic_nms=False, amp=False, ..., iou=0.7,
+# ..." — and `iou=0.7`, a threshold, was read as the run's IoU: a real
+# detection run became a segmentation run told on one reading. argparse's
+# `Namespace(lr=0.1, ...)` is the same shape. What separates a dump from a wide
+# line of metrics is that settings are not all numbers.
+_ASSIGNMENT = re.compile(r"\b[A-Za-z_]\w{0,63}=([^\s,;()]{1,64})")
+_NUMERIC_VALUE = re.compile(r"[-+]?\d[\d.]{0,31}(?:[eE][-+]?\d{1,4})?%?$")
+CONFIG_DUMP_MIN_PAIRS = 12
+# At least this share of the values are not numbers.
+CONFIG_DUMP_NON_NUMERIC_SHARE = 0.25
+
+
+def is_config_dump(line: str) -> bool:
+    """Whether *line* is a one-line dump of settings rather than of metrics."""
+    if line.count("=") < CONFIG_DUMP_MIN_PAIRS:
+        return False
+    values = _ASSIGNMENT.findall(line)
+    if len(values) < CONFIG_DUMP_MIN_PAIRS:
+        return False
+    non_numeric = sum(1 for v in values if not _NUMERIC_VALUE.match(v))
+    return non_numeric >= len(values) * CONFIG_DUMP_NON_NUMERIC_SHARE
+
 
 def _blanked(text: str, spans: list[tuple[int, int]]) -> str:
     """*text* with each (start, end) span replaced by as many spaces.
@@ -236,6 +259,8 @@ class UniversalParser:
         # Cheap membership tests gate the regexes: each pattern below needs a
         # character the line may simply not contain.
         if "%|" in line and _PROGRESS_BAR.search(line):
+            return []
+        if is_config_dump(line):
             return []
 
         if _FOLD_ROW.match(line):

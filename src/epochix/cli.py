@@ -783,10 +783,11 @@ def cmd_demo(
 ) -> None:
     """Visualise a bundled demo log — no training of your own needed.
 
-    Newcomers can see the dashboard in one command::
+    Newcomers can see the dashboard in one command. Each demo is the recorded
+    output of a real training run::
 
-        epochix demo            # seq2seq + attention (NLP)
-        epochix demo yolov8     # YOLO object detection
+        epochix demo            # seq2seq + attention, PyTorch Lightning
+        epochix demo yolov8     # YOLOv8n object detection, Ultralytics
         epochix demo keras      # Keras image classifier
     """
     from importlib.resources import files

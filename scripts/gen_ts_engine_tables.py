@@ -31,6 +31,7 @@ from epochix.normalizer import canonical_keys as ck  # noqa: E402
 from epochix.parsers import architecture_parser as arch  # noqa: E402
 from epochix.parsers._never_metrics import NEVER_METRICS  # noqa: E402
 from epochix.parsers.registry import SNIFF_SAMPLE_LINES, SNIFF_THRESHOLD  # noqa: E402
+from epochix.parsers import universal as universal_parser  # noqa: E402
 from epochix.parsers.universal import _NN_REPR_KWARGS  # noqa: E402
 from epochix.story_engine import (  # noqa: E402  # noqa: E402  # noqa: E402
     _ON_SCALE_KEYS,
@@ -172,6 +173,12 @@ def render() -> str:
         "",
         f"export const ARCH_MAX_LAYERS = {arch._MAX_LAYERS};",
         "",
+        "/** A line with this many assignments, this share of them not numbers, is a",
+        " *  settings dump and carries no metric (parsers/universal.py). */",
+        f"export const CONFIG_DUMP_MIN_PAIRS = {universal_parser.CONFIG_DUMP_MIN_PAIRS};",
+        "export const CONFIG_DUMP_NON_NUMERIC_SHARE = "
+        f"{universal_parser.CONFIG_DUMP_NON_NUMERIC_SHARE};",
+        "",
     ]
     return "\n".join(lines)
 
@@ -244,8 +251,46 @@ def render_arch_golden() -> str:
         name: {"lines": lines, "layers": _arch_rows(arch.parse_architecture(lines))}
         for name, lines in _ARCH_SAMPLES.items()
     }
-    golden = {"logs": from_logs, "samples": samples}
+    golden = {"logs": from_logs, "samples": samples, "pipeline": _pipeline_architectures(logs)}
     return json.dumps(golden, indent=1, ensure_ascii=False, sort_keys=True) + "\n"
+
+
+def _pipeline_architectures(logs: list[Path]) -> dict[str, list[list[str]]]:
+    """What the whole Python pipeline makes of each corpus log's architecture.
+
+    The extension's engine replays the same logs and must draw the same model:
+    it read Keras and `print(model)` only, so a Lightning or Ultralytics run
+    had an architecture in the browser and none in VS Code.
+    """
+    import asyncio
+
+    from epochix.ingester.file_batch import FileBatchIngester
+    from epochix.pipeline import run_pipeline
+    from epochix.server.hub import Hub
+    from epochix.store.sqlite_store import RunStore
+
+    out: dict[str, list[list[str]]] = {}
+    for path in logs:
+        run = asyncio.run(
+            run_pipeline(
+                ingester=FileBatchIngester("g", str(path)),
+                run_id="g",
+                store=RunStore(":memory:"),
+                hub=Hub(),
+            )
+        )
+        layers = (run.config or {}).get("architecture") or []
+        out[path.relative_to(REPO).as_posix()] = [
+            [
+                lyr["name"],
+                lyr["layer_type"],
+                lyr["tech_label"],
+                lyr["plain_label"],
+                lyr["visual_type"],
+            ]
+            for lyr in layers
+        ]
+    return out
 
 
 def render_narratives() -> str:

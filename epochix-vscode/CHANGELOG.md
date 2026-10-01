@@ -14,6 +14,19 @@ which covers the extension too; entries here resume with 0.7.16.
 
 ---
 
+## [0.7.26] — 2026-10-01
+
+### Fixed
+
+- **Real PyTorch Lightning output was not read at all**, and a real
+  Ultralytics run was told as segmentation: the parsers had only met
+  hand-written logs. Lightning's own progress bar (`Epoch 3:`, counted from 0)
+  and its current model summaries are read; Ultralytics' one-line settings
+  dump is no longer mistaken for metrics, and the validation of `best.pt`
+  after training is not counted as another epoch.
+- **The model is drawn for Lightning and Ultralytics runs.** The panel read
+  Keras and `print(model)` summaries only.
+
 ## [0.7.25] — 2026-10-01
 
 ### Changed
