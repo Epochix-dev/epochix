@@ -36,8 +36,14 @@ class TestPLParserSniff:
 
 class TestKerasParserSniff:
     def test_detects_keras_log(self) -> None:
-        lines = _load_lines("keras_image_classifier.log")
-        assert KerasParser().sniff(lines[:50]) > 0.5
+        # Sampled as the pipeline samples it: real Keras output colours its
+        # progress bar, and the summary table comes before the first epoch.
+        from epochix.parsers.registry import SNIFF_SAMPLE_LINES
+        from epochix.pipeline import _clean_line
+
+        raw = (DEMO / "keras_image_classifier.log").read_bytes().decode("utf-8")
+        lines = [c for c in (_clean_line(ln) for ln in raw.split("\n")) if c.strip()]
+        assert KerasParser().sniff(lines[:SNIFF_SAMPLE_LINES]) > 0.5
 
     def test_rejects_hf(self) -> None:
         lines = _load_lines("huggingface_bert.log")

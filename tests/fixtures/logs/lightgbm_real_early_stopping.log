@@ -1,0 +1,66 @@
+[LightGBM] [Info] Auto-choosing col-wise multi-threading, the overhead of testing was 0.000183 seconds.
+You can set `force_col_wise=true` to remove the overhead.
+[LightGBM] [Info] Total Bins 567
+[LightGBM] [Info] Number of data points in the train set: 331, number of used features: 10
+[LightGBM] [Info] Start training from score 153.184290
+[LightGBM] [Warning] No further splits with positive gain, best gain: -inf
+[1]	train's l2: 5504.7	train's l1: 63.8357	valid's l2: 4840.47	valid's l1: 59.2228
+Training until validation scores don't improve for 10 rounds
+[LightGBM] [Warning] No further splits with positive gain, best gain: -inf
+[2]	train's l2: 4945.23	train's l1: 60.5665	valid's l2: 4489.18	valid's l1: 57.0756
+[LightGBM] [Warning] No further splits with positive gain, best gain: -inf
+[3]	train's l2: 4463.37	train's l1: 57.569	valid's l2: 4226.66	valid's l1: 55.1964
+[LightGBM] [Warning] No further splits with positive gain, best gain: -inf
+[4]	train's l2: 4078.65	train's l1: 55.2281	valid's l2: 4018.6	valid's l1: 53.5305
+[LightGBM] [Warning] No further splits with positive gain, best gain: -inf
+[5]	train's l2: 3768.74	train's l1: 53.1475	valid's l2: 3869.79	valid's l1: 52.3689
+[LightGBM] [Warning] No further splits with positive gain, best gain: -inf
+[6]	train's l2: 3485.05	train's l1: 51.0398	valid's l2: 3763.24	valid's l1: 51.4893
+[LightGBM] [Warning] No further splits with positive gain, best gain: -inf
+[7]	train's l2: 3244.57	train's l1: 49.2141	valid's l2: 3648.54	valid's l1: 50.4115
+[LightGBM] [Warning] No further splits with positive gain, best gain: -inf
+[8]	train's l2: 3044.99	train's l1: 47.5961	valid's l2: 3559.47	valid's l1: 49.3897
+[LightGBM] [Warning] No further splits with positive gain, best gain: -inf
+[9]	train's l2: 2872.63	train's l1: 46.1789	valid's l2: 3490.54	valid's l1: 48.6058
+[LightGBM] [Warning] No further splits with positive gain, best gain: -inf
+[10]	train's l2: 2705.69	train's l1: 44.6472	valid's l2: 3458.99	valid's l1: 48.2115
+[LightGBM] [Warning] No further splits with positive gain, best gain: -inf
+[11]	train's l2: 2575.23	train's l1: 43.4698	valid's l2: 3430.8	valid's l1: 47.7895
+[LightGBM] [Warning] No further splits with positive gain, best gain: -inf
+[12]	train's l2: 2465.03	train's l1: 42.3497	valid's l2: 3403.59	valid's l1: 47.4173
+[LightGBM] [Warning] No further splits with positive gain, best gain: -inf
+[13]	train's l2: 2374.08	train's l1: 41.3861	valid's l2: 3392.04	valid's l1: 47.2932
+[LightGBM] [Warning] No further splits with positive gain, best gain: -inf
+[14]	train's l2: 2283.96	train's l1: 40.4811	valid's l2: 3326.04	valid's l1: 46.617
+[LightGBM] [Warning] No further splits with positive gain, best gain: -inf
+[15]	train's l2: 2201.39	train's l1: 39.6043	valid's l2: 3320.66	valid's l1: 46.4163
+[LightGBM] [Warning] No further splits with positive gain, best gain: -inf
+[16]	train's l2: 2123.34	train's l1: 38.7568	valid's l2: 3326.57	valid's l1: 46.3701
+[LightGBM] [Warning] No further splits with positive gain, best gain: -inf
+[17]	train's l2: 2046.32	train's l1: 37.8508	valid's l2: 3291.08	valid's l1: 45.9424
+[LightGBM] [Warning] No further splits with positive gain, best gain: -inf
+[18]	train's l2: 1983.94	train's l1: 37.1122	valid's l2: 3270.69	valid's l1: 45.6371
+[LightGBM] [Warning] No further splits with positive gain, best gain: -inf
+[19]	train's l2: 1923.19	train's l1: 36.515	valid's l2: 3270.66	valid's l1: 45.5945
+[LightGBM] [Warning] No further splits with positive gain, best gain: -inf
+[20]	train's l2: 1870.95	train's l1: 35.9228	valid's l2: 3278.58	valid's l1: 45.529
+[LightGBM] [Warning] No further splits with positive gain, best gain: -inf
+[21]	train's l2: 1818.85	train's l1: 35.3582	valid's l2: 3309.84	valid's l1: 45.6696
+[LightGBM] [Warning] No further splits with positive gain, best gain: -inf
+[22]	train's l2: 1771.88	train's l1: 34.8417	valid's l2: 3329.92	valid's l1: 45.7325
+[LightGBM] [Warning] No further splits with positive gain, best gain: -inf
+[23]	train's l2: 1733.04	train's l1: 34.3809	valid's l2: 3314.62	valid's l1: 45.5588
+[LightGBM] [Warning] No further splits with positive gain, best gain: -inf
+[24]	train's l2: 1691.52	train's l1: 33.9688	valid's l2: 3310.34	valid's l1: 45.4419
+[LightGBM] [Warning] No further splits with positive gain, best gain: -inf
+[25]	train's l2: 1657.72	train's l1: 33.5562	valid's l2: 3303.99	valid's l1: 45.3584
+[LightGBM] [Warning] No further splits with positive gain, best gain: -inf
+[26]	train's l2: 1619.11	train's l1: 33.1449	valid's l2: 3284.98	valid's l1: 45.114
+[LightGBM] [Warning] No further splits with positive gain, best gain: -inf
+[27]	train's l2: 1582.5	train's l1: 32.7245	valid's l2: 3284.6	valid's l1: 44.9725
+[LightGBM] [Warning] No further splits with positive gain, best gain: -inf
+[28]	train's l2: 1545.19	train's l1: 32.2644	valid's l2: 3286.88	valid's l1: 45.0444
+[LightGBM] [Warning] No further splits with positive gain, best gain: -inf
+[29]	train's l2: 1506.56	train's l1: 31.774	valid's l2: 3294.17	valid's l1: 45.1215
+Early stopping, best iteration is:
+[19]	train's l2: 1923.19	train's l1: 36.515	valid's l2: 3270.66	valid's l1: 45.5945

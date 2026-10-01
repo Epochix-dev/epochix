@@ -28,7 +28,7 @@ from epochix.enums import TaskType
 from epochix.models import RawMetric, Run
 from epochix.normalizer import normalize
 from epochix.normalizer.canonical_keys import canonicalize_key, is_recognised
-from epochix.parsers.base import ParserContext
+from epochix.parsers.base import LINE_CLAIMED, ParserContext
 from epochix.parsers.registry import SNIFF_SAMPLE_LINES, detect_parser, get_registry
 from epochix.scrub import scrub_secrets
 from epochix.story_engine import StoryEngine
@@ -167,13 +167,29 @@ def _emit_line(
     Returns the epoch from the last frame emitted (or None if no frame).
     """
     raw_metrics = parser.parse_line(text, ctx)
-    if not raw_metrics and fallback:
+    # A parser that recognises a line as its own and reads no result from it —
+    # a progress bar caught mid-epoch, the reprint of a round already told —
+    # says so (LINE_CLAIMED). Without that the line went on to the fallback
+    # parsers, and the universal one read the very numbers the run's own parser
+    # had just declined: Keras 3's partial bars came back as readings.
+    claimed = bool(ctx.extra.pop(LINE_CLAIMED, False))
+    if not raw_metrics and fallback and not claimed:
         raw_metrics = _fallback_metrics(fallback, text, ctx)
 
     # No parser can return this as a metric, so look for it on the raw line.
     non_finite = _NON_FINITE_ASSIGNMENT.search(text)
     if non_finite is not None:
-        engine.note_non_finite(canonicalize_key(non_finite.group(1)), ctx.current_epoch)
+        name = non_finite.group(1)
+        key = canonicalize_key(name)
+        # Only a metric can diverge. LightGBM routinely warns "No further
+        # splits with positive gain, best gain: -inf"; `gain: -inf` was taken
+        # for one, and a healthy run got a divergence warning and an F frame at
+        # its first round. It has to be a name we recognise or one this run has
+        # already reported.
+        if is_recognised(key) or engine.has_logged(name):
+            engine.note_non_finite(key, ctx.current_epoch)
+        else:
+            non_finite = None
 
     # Keep the story engine's total-epochs hint in sync with whatever the
     # parser has discovered (e.g. "Epoch 30/30" → total_epochs=30). Without

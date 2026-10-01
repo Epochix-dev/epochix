@@ -18,7 +18,7 @@
  * The round number is the x-axis: not an epoch in the neural-network sense,
  * but structurally the same — one more unit of fitting.
  */
-import type { Parser, ParserContext, RawMetric } from "./base";
+import { claim, type Parser, type ParserContext, type RawMetric } from "./base";
 import { NEVER_METRICS } from "./neverMetrics";
 
 // Bounded quantifiers throughout: an unbounded run before a delimiter is
@@ -27,6 +27,10 @@ const ROUND = /^\s*(?:\[(\d{1,9})\]|(\d{1,9}):)\s/;
 const PAIR =
   /([A-Za-z][\w'-]{0,48}(?:\s[A-Za-z][\w'-]{0,24})?)\s*:\s*([-+]?\d+(?:\.\d+)?(?:[eE][-+]?\d+)?)/g;
 const DERIVED = new Set(["best", "bestiteration", "best_iteration", "remaining", "total", "elapsed"]);
+// When training stops the libraries print the best round once more ("Early
+// stopping, best iteration is:" / "Stopping. Best iteration:"); the row after
+// it is a round already told, not a new measurement.
+const BEST_ITERATION = /best iteration(?: is)?:\s*$/i;
 const VALIDATION_TOKENS = ["validation", "valid", "eval", "test", "holdout", "dev"];
 const TRAIN_TOKENS = ["training", "train", "learn", "fit"];
 
@@ -116,7 +120,14 @@ export class BoostingParser implements Parser {
 
   parseLine(line: string, ctx: ParserContext): RawMetric[] {
     const m = ROUND.exec(line);
-    if (m === null) return [];
+    if (m === null) {
+      if (BEST_ITERATION.test(line)) ctx.boostingReprintNext = true;
+      return [];
+    }
+    if (ctx.boostingReprintNext) {
+      ctx.boostingReprintNext = false;
+      return claim(ctx);
+    }
     const round = parseFloat(m[1] ?? m[2]);
     ctx.currentEpoch = round;
     ctx.currentStep = Math.round(round);

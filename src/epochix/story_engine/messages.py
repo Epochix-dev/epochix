@@ -19,14 +19,19 @@ MESSAGES: dict[str, dict[str, str]] = {
         "The model may have stepped too far in one direction.",
         "warn_climb": "The loss is climbing away from where it started. "
         "The teacher may need to lower the learning rate.",
-        "warn_overfit": "The model may be memorising the study material "
-        "instead of understanding it. Next step: stop at the best validation epoch, "
-        "add regularisation (dropout, weight decay) or augmentation, or collect more data.",
+        "warn_overfit": "Validation loss has risen for two readings in a row while "
+        "training loss kept falling, so the model may be memorising "
+        "its training data. Next step: stop at the best validation "
+        "epoch, add regularisation (dropout, weight decay) or "
+        "augmentation, or collect more data.",
         "warn_overfit_cleared": "Validation loss reached a new low again, so the "
         "earlier rise was a blip, not memorising.",
-        "warn_plateau": "Learning has slowed. The model has stopped finding new patterns. "
-        "Next step: a lower learning rate (for example a reduce-on-plateau schedule) "
-        "may restart progress; otherwise more epochs at this rate are unlikely to help.",
+        "warn_plateau": "Progress has slowed: the metric moved less than 1% over "
+        "the last 5 readings. Next step: a lower learning rate (for "
+        "example a reduce-on-plateau schedule) may restart "
+        "progress; otherwise more epochs at this rate may add "
+        "little.",
+        "warn_plateau_cleared": "The metric is moving again: at least 1% over the last 5 readings.",
         # The sentence after a past-peak, stalled or diverged story: what to do
         # about it. Appended to every variant, so no run draws one without it.
         "next_pastpeak": "Next step: keep the checkpoint from epoch {best_epoch} if one "
@@ -57,14 +62,19 @@ MESSAGES: dict[str, dict[str, str]] = {
         "warn_spike": "loss ناگهان جهش کرد. شاید مدل در یک جهت بیش از حد پیش رفته باشد.",
         "warn_climb": "loss از نقطه‌ی شروعش دور می‌شود و بالا می‌رود. "
         "شاید معلم باید نرخ یادگیری را پایین بیاورد.",
-        "warn_overfit": "شاید مدل به‌جای فهمیدن مطالب، آن‌ها را حفظ می‌کند. "
-        "گام بعدی: در بهترین دورهٔ اعتبارسنجی متوقف شوید، منظم‌سازی (dropout، weight decay) "
-        "یا داده‌افزایی اضافه کنید، یا دادهٔ بیشتری جمع کنید.",
+        "warn_overfit": "خطای اعتبارسنجی دو اندازه‌گیری پیاپی افزایش یافته، در حالی "
+        "که خطای آموزش همچنان کاهش می‌یافت؛ شاید مدل داده‌های "
+        "آموزشی را حفظ می‌کند. گام بعدی: در بهترین دورهٔ اعتبارسنجی "
+        "متوقف شوید، منظم‌سازی (dropout، weight decay) یا "
+        "داده‌افزایی اضافه کنید، یا دادهٔ بیشتری جمع کنید.",
         "warn_overfit_cleared": "خطای اعتبارسنجی دوباره به کمترین مقدار خود رسید؛ "
         "پس افزایش قبلی یک نوسان گذرا بود، نه حفظ کردن.",
-        "warn_plateau": "یادگیری کند شده است. مدل دیگر الگوی تازه‌ای پیدا نمی‌کند. "
-        "گام بعدی: کاهش نرخ یادگیری (مثلاً با زمان‌بندی reduce-on-plateau) ممکن است "
-        "پیشرفت را از سر بگیرد؛ وگرنه ادامهٔ آموزش با همین نرخ احتمالاً کمکی نمی‌کند.",
+        "warn_plateau": "پیشرفت کند شده است: سنجه در ۵ اندازه‌گیری اخیر کمتر از ۱٪ "
+        "تغییر کرده است. گام بعدی: کاهش نرخ یادگیری (مثلاً با "
+        "زمان‌بندی reduce-on-plateau) ممکن است پیشرفت را از سر "
+        "بگیرد؛ وگرنه ادامهٔ آموزش با همین نرخ شاید چیز زیادی اضافه "
+        "نکند.",
+        "warn_plateau_cleared": "سنجه دوباره در حال تغییر است: دست‌کم ۱٪ در ۵ اندازه‌گیری اخیر.",
         "next_pastpeak": "گام بعدی: اگر نقطهٔ ذخیرهٔ دوره {best_epoch} را دارید همان را "
         "نگه دارید، و برای این سنجه توقف زودهنگام (early stopping) بگذارید تا اجرای "
         "بعدی همان‌جا متوقف شود.",
@@ -94,16 +104,22 @@ MESSAGES: dict[str, dict[str, str]] = {
         "Le modèle a peut-être fait un pas trop grand dans une direction.",
         "warn_climb": "La loss remonte et s'éloigne de son point de départ. "
         "Le professeur devrait peut-être baisser le taux d'apprentissage.",
-        "warn_overfit": "Le modèle mémorise peut-être la matière au lieu de la comprendre. "
-        "Étape suivante : arrêtez-vous à la meilleure époque de validation, ajoutez de la "
-        "régularisation (dropout, weight decay) ou de l'augmentation de données, ou "
-        "collectez plus de données.",
+        "warn_overfit": "La perte de validation a augmenté deux mesures de suite "
+        "alors que la perte d'entraînement continuait de baisser : "
+        "le modèle mémorise peut-être ses données d'entraînement. "
+        "Étape suivante : arrêtez-vous à la meilleure époque de "
+        "validation, ajoutez de la régularisation (dropout, weight "
+        "decay) ou de l'augmentation de données, ou collectez plus "
+        "de données.",
         "warn_overfit_cleared": "La perte de validation a de nouveau atteint un minimum : "
         "la hausse précédente était passagère, pas de la mémorisation.",
-        "warn_plateau": "L'apprentissage ralentit. Le modèle ne trouve plus de nouveaux "
-        "motifs. Étape suivante : baisser le taux d'apprentissage (par exemple un "
-        "planificateur reduce-on-plateau) peut relancer la progression ; sinon, continuer "
-        "à ce taux a peu de chances d'aider.",
+        "warn_plateau": "La progression ralentit : la métrique a varié de moins de "
+        "1 % sur les 5 dernières mesures. Étape suivante : baisser "
+        "le taux d'apprentissage (par exemple un planificateur "
+        "reduce-on-plateau) peut relancer la progression ; sinon, "
+        "d'autres époques à ce taux risquent d'apporter peu.",
+        "warn_plateau_cleared": "La métrique évolue de nouveau : au moins 1 % sur les 5 "
+        "dernières mesures.",
         "next_pastpeak": "Étape suivante : conservez le point de contrôle de l'époque "
         "{best_epoch} s'il a été enregistré, et activez l'arrêt anticipé (early stopping) "
         "sur cette métrique pour que la prochaine exécution s'arrête là.",

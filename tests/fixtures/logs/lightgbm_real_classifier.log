@@ -1,0 +1,69 @@
+[LightGBM] [Info] Number of positive: 267, number of negative: 159
+[LightGBM] [Info] Auto-choosing col-wise multi-threading, the overhead of testing was 0.000341 seconds.
+You can set `force_col_wise=true` to remove the overhead.
+[LightGBM] [Info] Total Bins 4266
+[LightGBM] [Info] Number of data points in the train set: 426, number of used features: 30
+[LightGBM] [Info] [binary:BoostFromScore]: pavg=0.626761 -> initscore=0.518344
+[LightGBM] [Info] Start training from score 0.518344
+[LightGBM] [Warning] No further splits with positive gain, best gain: -inf
+[1]	training's binary_logloss: 0.58005	training's auc: 0.99066	valid_1's binary_logloss: 0.583386	valid_1's auc: 0.963103
+[LightGBM] [Warning] No further splits with positive gain, best gain: -inf
+[2]	training's binary_logloss: 0.515775	training's auc: 0.993098	valid_1's binary_logloss: 0.523669	valid_1's auc: 0.957757
+[3]	training's binary_logloss: 0.459262	training's auc: 0.995206	valid_1's binary_logloss: 0.472254	valid_1's auc: 0.967925
+[4]	training's binary_logloss: 0.413613	training's auc: 0.996302	valid_1's binary_logloss: 0.43286	valid_1's auc: 0.969706
+[5]	training's binary_logloss: 0.373621	training's auc: 0.996679	valid_1's binary_logloss: 0.397801	valid_1's auc: 0.969602
+[6]	training's binary_logloss: 0.33938	training's auc: 0.996879	valid_1's binary_logloss: 0.369981	valid_1's auc: 0.96499
+[7]	training's binary_logloss: 0.308094	training's auc: 0.997091	valid_1's binary_logloss: 0.343012	valid_1's auc: 0.965828
+[8]	training's binary_logloss: 0.282396	training's auc: 0.996879	valid_1's binary_logloss: 0.322945	valid_1's auc: 0.968973
+[9]	training's binary_logloss: 0.257719	training's auc: 0.99735	valid_1's binary_logloss: 0.302755	valid_1's auc: 0.969602
+[10]	training's binary_logloss: 0.236675	training's auc: 0.997491	valid_1's binary_logloss: 0.286014	valid_1's auc: 0.970231
+[11]	training's binary_logloss: 0.218337	training's auc: 0.997739	valid_1's binary_logloss: 0.270652	valid_1's auc: 0.971698
+[12]	training's binary_logloss: 0.200755	training's auc: 0.998045	valid_1's binary_logloss: 0.258104	valid_1's auc: 0.979665
+[13]	training's binary_logloss: 0.186317	training's auc: 0.998116	valid_1's binary_logloss: 0.245122	valid_1's auc: 0.978512
+[14]	training's binary_logloss: 0.172264	training's auc: 0.998257	valid_1's binary_logloss: 0.235498	valid_1's auc: 0.978931
+[15]	training's binary_logloss: 0.160016	training's auc: 0.998563	valid_1's binary_logloss: 0.227995	valid_1's auc: 0.978931
+[16]	training's binary_logloss: 0.147056	training's auc: 0.998846	valid_1's binary_logloss: 0.220084	valid_1's auc: 0.977883
+[17]	training's binary_logloss: 0.135982	training's auc: 0.998799	valid_1's binary_logloss: 0.212062	valid_1's auc: 0.977778
+[18]	training's binary_logloss: 0.125704	training's auc: 0.999011	valid_1's binary_logloss: 0.205125	valid_1's auc: 0.980713
+[19]	training's binary_logloss: 0.117329	training's auc: 0.999011	valid_1's binary_logloss: 0.201702	valid_1's auc: 0.980294
+[20]	training's binary_logloss: 0.109266	training's auc: 0.999034	valid_1's binary_logloss: 0.195002	valid_1's auc: 0.980922
+[21]	training's binary_logloss: 0.102048	training's auc: 0.999081	valid_1's binary_logloss: 0.192037	valid_1's auc: 0.979245
+[22]	training's binary_logloss: 0.0938454	training's auc: 0.999411	valid_1's binary_logloss: 0.186802	valid_1's auc: 0.979665
+[23]	training's binary_logloss: 0.0862679	training's auc: 0.999552	valid_1's binary_logloss: 0.18555	valid_1's auc: 0.979455
+[24]	training's binary_logloss: 0.079794	training's auc: 0.999717	valid_1's binary_logloss: 0.180678	valid_1's auc: 0.979665
+[25]	training's binary_logloss: 0.0736704	training's auc: 0.999788	valid_1's binary_logloss: 0.178863	valid_1's auc: 0.979036
+[26]	training's binary_logloss: 0.0677473	training's auc: 0.999835	valid_1's binary_logloss: 0.179895	valid_1's auc: 0.978616
+[27]	training's binary_logloss: 0.0628976	training's auc: 0.999882	valid_1's binary_logloss: 0.177929	valid_1's auc: 0.979455
+[28]	training's binary_logloss: 0.0586157	training's auc: 0.999953	valid_1's binary_logloss: 0.173547	valid_1's auc: 0.980922
+[29]	training's binary_logloss: 0.0544022	training's auc: 1	valid_1's binary_logloss: 0.170517	valid_1's auc: 0.98239
+[30]	training's binary_logloss: 0.0505148	training's auc: 1	valid_1's binary_logloss: 0.170545	valid_1's auc: 0.981761
+[31]	training's binary_logloss: 0.0466057	training's auc: 1	valid_1's binary_logloss: 0.170464	valid_1's auc: 0.980922
+[32]	training's binary_logloss: 0.0430618	training's auc: 1	valid_1's binary_logloss: 0.1717	valid_1's auc: 0.980922
+[33]	training's binary_logloss: 0.039983	training's auc: 1	valid_1's binary_logloss: 0.172319	valid_1's auc: 0.980503
+[34]	training's binary_logloss: 0.0374956	training's auc: 1	valid_1's binary_logloss: 0.170721	valid_1's auc: 0.980503
+[35]	training's binary_logloss: 0.0353912	training's auc: 1	valid_1's binary_logloss: 0.171084	valid_1's auc: 0.980503
+[36]	training's binary_logloss: 0.0322675	training's auc: 1	valid_1's binary_logloss: 0.169961	valid_1's auc: 0.980503
+[37]	training's binary_logloss: 0.0300943	training's auc: 1	valid_1's binary_logloss: 0.168927	valid_1's auc: 0.981132
+[38]	training's binary_logloss: 0.0273882	training's auc: 1	valid_1's binary_logloss: 0.168801	valid_1's auc: 0.981551
+[39]	training's binary_logloss: 0.0250741	training's auc: 1	valid_1's binary_logloss: 0.170135	valid_1's auc: 0.981551
+[40]	training's binary_logloss: 0.0229894	training's auc: 1	valid_1's binary_logloss: 0.170154	valid_1's auc: 0.981551
+[41]	training's binary_logloss: 0.0211201	training's auc: 1	valid_1's binary_logloss: 0.171795	valid_1's auc: 0.981551
+[42]	training's binary_logloss: 0.0197057	training's auc: 1	valid_1's binary_logloss: 0.175607	valid_1's auc: 0.981132
+[43]	training's binary_logloss: 0.0185378	training's auc: 1	valid_1's binary_logloss: 0.177229	valid_1's auc: 0.981132
+[44]	training's binary_logloss: 0.0173569	training's auc: 1	valid_1's binary_logloss: 0.178397	valid_1's auc: 0.981342
+[45]	training's binary_logloss: 0.0161174	training's auc: 1	valid_1's binary_logloss: 0.18014	valid_1's auc: 0.981132
+[46]	training's binary_logloss: 0.0150824	training's auc: 1	valid_1's binary_logloss: 0.181067	valid_1's auc: 0.981551
+[47]	training's binary_logloss: 0.0141109	training's auc: 1	valid_1's binary_logloss: 0.180389	valid_1's auc: 0.981132
+[48]	training's binary_logloss: 0.0132317	training's auc: 1	valid_1's binary_logloss: 0.182923	valid_1's auc: 0.981761
+[49]	training's binary_logloss: 0.0122078	training's auc: 1	valid_1's binary_logloss: 0.182528	valid_1's auc: 0.98239
+[50]	training's binary_logloss: 0.0113022	training's auc: 1	valid_1's binary_logloss: 0.183681	valid_1's auc: 0.98239
+[51]	training's binary_logloss: 0.0104336	training's auc: 1	valid_1's binary_logloss: 0.185985	valid_1's auc: 0.98239
+[52]	training's binary_logloss: 0.00981648	training's auc: 1	valid_1's binary_logloss: 0.187557	valid_1's auc: 0.982809
+[53]	training's binary_logloss: 0.00912704	training's auc: 1	valid_1's binary_logloss: 0.186304	valid_1's auc: 0.983019
+[54]	training's binary_logloss: 0.00862508	training's auc: 1	valid_1's binary_logloss: 0.189238	valid_1's auc: 0.9826
+[55]	training's binary_logloss: 0.00808598	training's auc: 1	valid_1's binary_logloss: 0.189037	valid_1's auc: 0.982809
+[56]	training's binary_logloss: 0.00756472	training's auc: 1	valid_1's binary_logloss: 0.186963	valid_1's auc: 0.983648
+[57]	training's binary_logloss: 0.00700705	training's auc: 1	valid_1's binary_logloss: 0.189432	valid_1's auc: 0.984067
+[58]	training's binary_logloss: 0.00656061	training's auc: 1	valid_1's binary_logloss: 0.191663	valid_1's auc: 0.983857
+[59]	training's binary_logloss: 0.00602791	training's auc: 1	valid_1's binary_logloss: 0.19378	valid_1's auc: 0.983648
+[60]	training's binary_logloss: 0.0055848	training's auc: 1	valid_1's binary_logloss: 0.195273	valid_1's auc: 0.983648

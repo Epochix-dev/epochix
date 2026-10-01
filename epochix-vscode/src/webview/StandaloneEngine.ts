@@ -414,13 +414,27 @@ export class StandaloneEngine {
   private _processLine(line: string): StoryFrameMsg[] {
     this._ctx.seq++;
     let metrics = this._activeParsers![0].parseLine(line, this._ctx);
-    if (metrics.length === 0 && this._fallbacks.length > 0) {
+    // A parser that recognised the line and read no result from it says so;
+    // the fallbacks must not read what it declined (as in pipeline.py).
+    const claimed = this._ctx.lineClaimed;
+    this._ctx.lineClaimed = false;
+    if (metrics.length === 0 && !claimed && this._fallbacks.length > 0) {
       metrics = this._fallbackMetrics(line);
     }
 
     // `loss: nan` never reaches the parsers — none of them reads a non-number.
     // Checked on the raw line, requiring `:` or `=` so prose cannot trip it.
-    const nonFinite = NON_FINITE_ASSIGNMENT.exec(line);
+    // Only a metric can diverge: LightGBM's routine "best gain: -inf" warning
+    // is not one. The name must be recognised or already reported by this run
+    // (checked before this line's own metrics are recorded, as in Python).
+    const assigned = NON_FINITE_ASSIGNMENT.exec(line);
+    const nonFinite =
+      assigned !== null &&
+      (isRecognised(canonicalise(assigned[1])) ||
+        this._rawKeys.has(assigned[1]) ||
+        this._keyCounts.has(assigned[1]))
+        ? assigned
+        : null;
     const frames = this._handleMetrics(metrics);
     if (nonFinite !== null && !this._diverged) {
       if (!this._taskDetected) frames.push(...this._drainWarmup(true));
@@ -450,6 +464,10 @@ export class StandaloneEngine {
         plPrinted: null,
         plValues: null,
         yoloFinalValidation: false,
+        boostingReprintNext: false,
+        kerasTold: new Map(),
+        kerasToldEpoch: null,
+        lineClaimed: false,
       };
       const metrics = fallback.parseLine(line, scratch).filter((m) => isRecognised(m.key));
       if (metrics.length > 0) {
@@ -807,12 +825,22 @@ export class StandaloneEngine {
     };
 
     // Plateau: the primary metric's span over the window is under 1% of where
-    // the window began. Direction-free, which is what makes it correct.
+    // the window began. Direction-free, which is what makes it correct. The
+    // warning describes those readings, so it is withdrawn once the window is
+    // no longer flat, and may fire again. Mirrors story_engine/warnings.py.
     if (this._frames.length >= PLATEAU_WINDOW) {
       const w = this._frames.slice(-PLATEAU_WINDOW).map((f) => f.primaryMetricValue);
       const span = Math.max(...w) - Math.min(...w);
-      if (span / (Math.abs(w[0]) + 1e-9) < PLATEAU_DELTA) {
+      const flat = span / (Math.abs(w[0]) + 1e-9) < PLATEAU_DELTA;
+      if (flat) {
         warn("plateau_warning", "plateau", message("warn_plateau", this._locale));
+      } else if (this._seenMilestones.has("plateau_warning")) {
+        this._seenMilestones.delete("plateau_warning");
+        this._warnings.push({
+          kind: "plateau_cleared",
+          epoch,
+          message: message("warn_plateau_cleared", this._locale),
+        });
       }
     }
 

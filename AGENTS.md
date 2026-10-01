@@ -103,6 +103,17 @@ npm --prefix epochix-vscode test    # launches a real VS Code host
   `/tmp/epochix_demos`: two fixtures were committed carrying a scratch
   folder's path and a user name. `test_no_machine_paths.py` scans every
   tracked file. Do not edit a capture afterwards; record it again.
+- **A parser that recognises a line and reads nothing from it must claim it.**
+  Returning `[]` hands the line to the fallback parsers: the Keras parser
+  skipped a partial progress bar and the universal parser read it anyway.
+  `return claim(ctx)` (Python and TypeScript) says the line is accounted for.
+- **A warning states its measurement and stands only while it is true.** The
+  plateau warning said the model "has stopped finding new patterns" beside a
+  grade card reading "still improving". It now quotes the detector's own
+  numbers (`test_warning_detector.py` ties the sentence to the constants), a
+  `<kind>_cleared` withdraws a `<kind>` everywhere warnings are shown — the
+  store, the report (`standing_warnings`) — and a scrubbed view shows what
+  stood at that frame (`warningsInView`), not the run's final warnings.
 - **Test what the release builds.** 0.7.5–0.7.10 shipped a blank VS Code panel
   because the extension tests ran against `frontend/dist` (the server build)
   while the release packages `build:webview` output. When a release step

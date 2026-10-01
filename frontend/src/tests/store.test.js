@@ -12,6 +12,7 @@ import {
   pushMilestone,
   pushWarning,
   scrubTo,
+  warningsInView,
 } from '../store.js';
 
 // ── helpers ───────────────────────────────────────────────────────────────────
@@ -28,6 +29,7 @@ const INITIAL_STATE = {
   scrubEpoch: -1,
   warnings: [],
   warningKinds: new Map(),
+  warningLog: [],
   milestones: [],
 };
 
@@ -268,6 +270,138 @@ describe('overfit_cleared', () => {
     pushWarning('Plateau detected');
     pushWarning(cleared);
     expect(store.get().warnings).toEqual(['Plateau detected']);
+  });
+});
+
+// ── a withdrawn plateau warning ───────────────────────────────────────────────
+//
+// A real Keras run moved less than 1% over five epochs mid-way, then climbed
+// to its best at the last one. The banner still said progress had slowed,
+// beside a grade card saying "still improving at the last reading".
+
+describe('plateau_cleared', () => {
+  beforeEach(resetStore);
+
+  const plateau = { kind: 'plateau', epoch: 12, message: 'Progress has slowed.' };
+  const cleared = { kind: 'plateau_cleared', epoch: 15, message: 'Moving again.' };
+  const overfit = { kind: 'overfit', epoch: 9, message: 'The model may be memorising.' };
+
+  it('withdraws the plateau warning and nothing else', () => {
+    pushWarning(overfit);
+    pushWarning(plateau);
+    pushWarning(cleared);
+    expect(store.get().warnings).toEqual([overfit.message]);
+  });
+
+  it('works when the warnings ride on frames, as in a finished run', () => {
+    pushFrame({ seq: 1, epoch: 12, warnings: [plateau] });
+    expect(store.get().warnings).toEqual([plateau.message]);
+    pushFrame({ seq: 2, epoch: 15, warnings: [cleared] });
+    expect(store.get().warnings).toEqual([]);
+  });
+
+  it('lets the warning come back if the run flattens again', () => {
+    pushWarning(plateau);
+    pushWarning(cleared);
+    pushWarning({ ...plateau, epoch: 19 });
+    expect(store.get().warnings).toEqual([plateau.message]);
+  });
+
+  it('an overfit withdrawal does not touch a plateau', () => {
+    pushWarning(plateau);
+    pushWarning({ kind: 'overfit_cleared', epoch: 13, message: 'It was a blip.' });
+    expect(store.get().warnings).toEqual([plateau.message]);
+  });
+
+  it('a withdrawal with nothing to withdraw is never shown', () => {
+    pushWarning(cleared);
+    expect(store.get().warnings).toEqual([]);
+  });
+});
+
+// ── warnings follow the frame in view ─────────────────────────────────────────
+//
+// The README's GIF steps the scrubber through the Keras demo. Every frame was
+// headed by the run's *final* warning: "moved less than 1% over the last 5
+// readings" over epoch 1, and over epochs where it had been withdrawn.
+
+describe('warningsInView', () => {
+  beforeEach(resetStore);
+
+  const plateau = { kind: 'plateau', epoch: 3, message: 'Progress has slowed.' };
+  const cleared = { kind: 'plateau_cleared', epoch: 4, message: 'Moving again.' };
+  const shown = () => warningsInView(store.get()).warnings;
+
+  function finishedRun() {
+    pushFrame({ seq: 1, epoch: 1 });
+    pushFrame({ seq: 2, epoch: 2 });
+    pushFrame({ seq: 3, epoch: 3, warnings: [plateau] });
+    pushFrame({ seq: 4, epoch: 4, warnings: [cleared] });
+    pushFrame({ seq: 5, epoch: 5 });
+    pushFrame({ seq: 6, epoch: 6, warnings: [{ ...plateau, epoch: 6 }] });
+  }
+
+  it('is the standing warnings at the latest frame', () => {
+    finishedRun();
+    expect(shown()).toEqual([plateau.message]);
+    expect(shown()).toEqual(store.get().warnings);
+  });
+
+  it('shows nothing before the warning fired', () => {
+    finishedRun();
+    scrubTo(0);
+    expect(shown()).toEqual([]);
+    scrubTo(1);
+    expect(shown()).toEqual([]);
+  });
+
+  it('shows the warning at the frame it fired on', () => {
+    finishedRun();
+    scrubTo(2);
+    expect(shown()).toEqual([plateau.message]);
+  });
+
+  it('shows nothing where it had been withdrawn', () => {
+    finishedRun();
+    scrubTo(3);
+    expect(shown()).toEqual([]);
+    scrubTo(4);
+    expect(shown()).toEqual([]);
+  });
+
+  it('returning to the latest frame shows what stands now', () => {
+    finishedRun();
+    scrubTo(0);
+    scrubTo(-1);
+    expect(shown()).toEqual([plateau.message]);
+  });
+
+  it('carries the kinds, so a learning-rate drop can still be told apart', () => {
+    pushFrame({ seq: 1, epoch: 1, warnings: [{ kind: 'lr_drop', epoch: 1, message: 'lr fell' }] });
+    pushFrame({ seq: 2, epoch: 2 });
+    scrubTo(0);
+    expect(warningsInView(store.get()).warningKinds.get('lr fell')).toBe('lr_drop');
+  });
+
+  it('places a warning that arrived by itself by its epoch', () => {
+    // The extension sends its engine's warnings beside the frames, not on them.
+    for (let e = 1; e <= 5; e++) pushFrame({ seq: e, epoch: e });
+    pushWarning(plateau);
+    pushWarning(cleared);
+    scrubTo(1);
+    expect(shown()).toEqual([]);
+    scrubTo(2);
+    expect(shown()).toEqual([plateau.message]);
+    scrubTo(3);
+    expect(shown()).toEqual([]);
+  });
+
+  it('keeps a warning it cannot place', () => {
+    pushFrame({ seq: 1, epoch: 1 });
+    pushFrame({ seq: 2, epoch: 2 });
+    pushWarning('no epoch on this one');
+    scrubTo(0);
+    expect(shown()).toEqual(['no epoch on this one']);
   });
 });
 

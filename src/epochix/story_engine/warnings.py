@@ -2,13 +2,16 @@ from __future__ import annotations
 
 import math
 from collections import deque
+from collections.abc import Iterable
 from dataclasses import dataclass, field
 from typing import Literal
 
 from epochix.models import Warning
 from epochix.story_engine.messages import message
 
-WarningKind = Literal["overfit", "overfit_cleared", "plateau", "divergence", "lr_drop"]
+WarningKind = Literal[
+    "overfit", "overfit_cleared", "plateau", "plateau_cleared", "divergence", "lr_drop"
+]
 
 _OVERFIT_WINDOW = 3  # val_loss must rise for N consecutive epochs
 _PLATEAU_WINDOW = 5  # <1% improvement over N epochs
@@ -20,6 +23,24 @@ _PLATEAU_DELTA = 0.01
 # epochs before it finally prints `nan`, and `nan` itself never reaches this
 # detector because the log parser will not read a non-numeric value.
 _DIVERGE_GROWTH = 10.0
+
+_CLEARED = "_cleared"
+
+
+def standing_warnings(warnings: Iterable[Warning]) -> list[Warning]:
+    """The warnings still in force once every withdrawal has been applied.
+
+    A `<kind>_cleared` warning is not one to show: it withdraws the `<kind>`
+    warnings before it. The dashboard's store does the same as frames arrive.
+    """
+    standing: list[Warning] = []
+    for warning in warnings:
+        if warning.kind.endswith(_CLEARED):
+            withdrawn = warning.kind[: -len(_CLEARED)]
+            standing = [w for w in standing if w.kind != withdrawn]
+        elif all(w.message != warning.message for w in standing):
+            standing.append(warning)
+    return standing
 
 
 @dataclass
@@ -145,18 +166,34 @@ class WarningDetector:
         ):
             self._best_val_loss = val_loss
 
-        # Plateau: <1% improvement in primary metric over N epochs
-        if len(self._primary) >= _PLATEAU_WINDOW and "plateau" not in self._fired:
+        # Plateau: the primary metric moved less than 1% over the last N
+        # readings. The warning describes those N readings, so it stands only
+        # while it is true of them: a real Keras run flattened for five epochs
+        # in the middle, then climbed again to its best at the last one, and
+        # the banner still said it had stopped while the grade card beside it
+        # said "still improving". Withdraw it when the window is no longer
+        # flat, and let it fire again if the run flattens later.
+        if primary_value is not None and len(self._primary) >= _PLATEAU_WINDOW:
             window = list(self._primary)[-_PLATEAU_WINDOW:]
             span = max(window) - min(window)
             ref = abs(window[0]) + 1e-9
-            if span / ref < _PLATEAU_DELTA:
+            flat = span / ref < _PLATEAU_DELTA
+            if flat and "plateau" not in self._fired:
                 self._fired.add("plateau")
                 warnings.append(
                     Warning(
                         kind="plateau",
                         epoch=epoch,
                         message=message("warn_plateau", self.locale),
+                    )
+                )
+            elif not flat and "plateau" in self._fired:
+                self._fired.discard("plateau")
+                warnings.append(
+                    Warning(
+                        kind="plateau_cleared",
+                        epoch=epoch,
+                        message=message("warn_plateau_cleared", self.locale),
                     )
                 )
 

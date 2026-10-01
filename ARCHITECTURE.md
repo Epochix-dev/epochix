@@ -770,8 +770,8 @@ Detected milestones (each fires at most once per run):
 | `first_above_25/50/75/90`  | primary metric crosses threshold         |
 | `best_so_far`              | new max (or min for loss/EER)            |
 | `biggest_jump`             | top-1 single-epoch Δ at end of run       |
-| `overfit_warning`          | val_loss rising 3 epochs while train↓    |
-| `plateau`                  | <1% improvement over last 5 epochs       |
+| `overfit_warning`          | val_loss rising twice in a row while train↓; withdrawn by a new best |
+| `plateau`                  | <1% movement over the last 5 readings; withdrawn when it moves again |
 | `lr_drop`                  | learning rate decreased                  |
 | `divergence`               | loss NaN or >10× previous                |
 | `training_complete`        | end-of-stream                            |
@@ -780,8 +780,8 @@ Detected milestones (each fires at most once per run):
 
 Warnings appear as amber cards in the timeline. Examples:
 
-- *"The model may be memorising the study material instead of understanding it. Next step: stop at the best validation epoch, add regularisation (dropout, weight decay) or augmentation, or collect more data."* — overfit
-- *"Learning has slowed. The model has stopped finding new patterns. Next step: a lower learning rate (for example a reduce-on-plateau schedule) may restart progress; otherwise more epochs at this rate are unlikely to help."* — plateau
+- *"Validation loss has risen for two readings in a row while training loss kept falling, so the model may be memorising its training data. Next step: stop at the best validation epoch, add regularisation (dropout, weight decay) or augmentation, or collect more data."* — overfit
+- *"Progress has slowed: the metric moved less than 1% over the last 5 readings. Next step: a lower learning rate (for example a reduce-on-plateau schedule) may restart progress; otherwise more epochs at this rate may add little."* — plateau
 - *"Something went wrong — the model's score has spiked. The teacher may need to lower the learning rate."* — divergence
 
 A story that finds the run past its peak, stalled or diverged ends with one

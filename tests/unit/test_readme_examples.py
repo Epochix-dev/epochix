@@ -61,9 +61,15 @@ def _phrasings(make: object) -> set[str]:
 
 def test_the_keras_example_is_the_demo_and_what_it_says(tmp_path: Path) -> None:
     source, output = _blocks(_example("keras"))
-    demo = (REPO / "demo" / "keras_image_classifier.log").read_text(encoding="utf-8")
+    raw = (REPO / "demo" / "keras_image_classifier.log").read_bytes().decode("utf-8")
+    demo = raw.replace("\r\n", "\n")
+    # As displayed: Keras colours its progress bar, and the README shows the
+    # line a terminal shows, without the colour codes.
+    from epochix.pipeline import _clean_line
+
+    shown = {_clean_line(ln).strip() for ln in demo.split("\n")}
     for line in source.strip().splitlines():
-        assert line in demo, f"not a line of the bundled demo: {line!r}"
+        assert line.strip() in shown, f"not a line of the bundled demo: {line!r}"
 
     frames = _frames(tmp_path, demo)
     last, before = frames[-1], frames[-2]

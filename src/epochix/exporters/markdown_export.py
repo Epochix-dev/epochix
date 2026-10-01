@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING
 from epochix import cross_validation
 from epochix.i18n import t
 from epochix.story_engine.messages import phase_name
+from epochix.story_engine.warnings import standing_warnings
 
 if TYPE_CHECKING:
     from epochix.store.sqlite_store import RunStore
@@ -187,16 +188,14 @@ def build_markdown(run_id: str, store: RunStore) -> str:
         lines.append("")
 
     # ── Warnings ─────────────────────────────────────────────────────────
-    warning_frames = [f for f in frames if f.warnings]
-    if warning_frames:
+    # Only the warnings that still stand: the report listed a withdrawn overfit
+    # warning, and then its withdrawal, both under a warning sign.
+    standing = standing_warnings(w for f in frames for w in f.warnings)
+    if standing:
         lines.append(f"## {t('md.warnings', locale)}")
         lines.append("")
-        seen: set[str] = set()
-        for frame in warning_frames:
-            for w in frame.warnings:
-                if w.message not in seen:
-                    seen.add(w.message)
-                    lines.append(f"> ⚠️ {w.message}")
+        for w in standing:
+            lines.append(f"> ⚠️ {w.message}")
         lines.append("")
 
     # ── Footer ────────────────────────────────────────────────────────────

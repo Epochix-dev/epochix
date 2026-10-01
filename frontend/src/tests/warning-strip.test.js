@@ -125,3 +125,25 @@ describe('warnings travel on the frame, not only on the live message', () => {
     expect(store.get().warnings).toEqual(before);
   });
 });
+
+describe('the strip follows the frame being viewed', () => {
+  it('does not head an early epoch with a warning from later in the run', async () => {
+    const { store, pushFrame, scrubTo } = await import('../store.js');
+    document.body.innerHTML = '<div id="warning-strip" hidden></div>';
+    const el = document.getElementById('warning-strip');
+    store.set({ frames: [], warnings: [], warningKinds: new Map(), warningLog: [], scrubEpoch: -1 });
+    pushFrame({ seq: 7001, epoch: 1 });
+    pushFrame({ seq: 7002, epoch: 2, warnings: [{ kind: 'plateau', epoch: 2, message: 'slowed at two' }] });
+    const strip = new WarningStrip(el);
+    strip.mount(store);
+    expect(el.hidden).toBe(false);
+    expect(el.textContent).toContain('slowed at two');
+    scrubTo(0);
+    expect(el.hidden).toBe(true);
+    expect(el.textContent).toBe('');
+    scrubTo(-1);
+    expect(el.textContent).toContain('slowed at two');
+    strip.destroy();
+    store.set({ frames: [], warnings: [], warningKinds: new Map(), warningLog: [], currentFrame: null });
+  });
+});

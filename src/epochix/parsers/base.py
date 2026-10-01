@@ -18,6 +18,18 @@ class ParserContext:
     extra: dict[str, object] = field(default_factory=dict)
 
 
+# Set in ``ctx.extra`` by a parser that recognises a line as its own and reads
+# no result from it; the pipeline then does not offer the line to the fallback
+# parsers. Cleared after every line.
+LINE_CLAIMED = "line_claimed"
+
+
+def claim(ctx: ParserContext) -> list[RawMetric]:
+    """Mark the current line as recognised-but-empty; returns no metrics."""
+    ctx.extra[LINE_CLAIMED] = True
+    return []
+
+
 @runtime_checkable
 class BaseParser(Protocol):
     """Protocol every parser must satisfy."""

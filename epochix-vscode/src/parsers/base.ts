@@ -42,6 +42,22 @@ export interface ParserContext {
   plValues: string | null;
   /** Ultralytics: the post-training validation of best.pt has begun. */
   yoloFinalValidation: boolean;
+  /** Boosting: the next round row reprints the best iteration. */
+  boostingReprintNext: boolean;
+  /** Keras: values already told for the current epoch (the finished bar is
+   *  printed twice when there is validation data). */
+  kerasTold: Map<string, string>;
+  kerasToldEpoch: number | null;
+  /** Set by a parser that recognises a line as its own and reads no result
+   *  from it; the engine then does not offer the line to the fallback
+   *  parsers. Cleared after every line. Python's LINE_CLAIMED. */
+  lineClaimed: boolean;
+}
+
+/** Mark the current line as recognised-but-empty; returns no metrics. */
+export function claim(ctx: ParserContext): RawMetric[] {
+  ctx.lineClaimed = true;
+  return [];
 }
 
 export function makeContext(): ParserContext {
@@ -59,6 +75,10 @@ export function makeContext(): ParserContext {
     plPrinted: null,
     plValues: null,
     yoloFinalValidation: false,
+    boostingReprintNext: false,
+    kerasTold: new Map(),
+    kerasToldEpoch: null,
+    lineClaimed: false,
   };
 }
 

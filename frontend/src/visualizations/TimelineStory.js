@@ -16,6 +16,7 @@ const MILESTONE_EMOJIS = {
   overfit_warning:   '⚠️',
   overfit_cleared:   '✅',
   plateau:           '😴',
+  plateau_cleared:   '✅',
   lr_drop:           '📉',
   divergence:        '💥',
   training_complete: '🎓',

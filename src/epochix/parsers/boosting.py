@@ -26,7 +26,7 @@ import re
 
 from epochix.models import RawMetric
 from epochix.parsers._never_metrics import NEVER_METRICS
-from epochix.parsers.base import ParserContext
+from epochix.parsers.base import ParserContext, claim
 from epochix.parsers.registry import register_parser
 
 # "[12]" or CatBoost's bare "12:" at the start of the line.
@@ -44,6 +44,15 @@ _PAIR = re.compile(rf"([A-Za-z][\w'\-]{{0,48}}(?:\s[A-Za-z][\w'\-]{{0,24}})?)\s*
 # measurement of this round, and charting it draws a staircase that never
 # worsens next to the real curve.
 _DERIVED = frozenset({"best", "bestiteration", "best_iteration", "remaining", "total", "elapsed"})
+
+# When training stops, the libraries print the best round once more:
+#   Early stopping, best iteration is:                 (LightGBM)
+#   Did not meet early stopping. Best iteration is:    (LightGBM)
+#   Stopping. Best iteration:                          (XGBoost)
+#   [19]	train's l2: 1923.19	valid's l2: 3270.66
+# That row is a round already told, not a new measurement. Read as one, a real
+# LightGBM run ended its story on a reprint of round 19 after round 29.
+_BEST_ITERATION = re.compile(r"best iteration(?: is)?:\s*$", re.IGNORECASE)
 
 # How each library names the split. Order matters: "validation" must be tested
 # before "valid", and "training" before "train".
@@ -158,7 +167,11 @@ class BoostingParser:
     def parse_line(self, line: str, ctx: ParserContext) -> list[RawMetric]:
         m = _ROUND.match(line)
         if m is None:
+            if _BEST_ITERATION.search(line):
+                ctx.extra["boosting_reprint_next"] = True
             return []
+        if ctx.extra.pop("boosting_reprint_next", False):
+            return claim(ctx)
         rnd = float(m.group(1) if m.group(1) is not None else m.group(2))
         ctx.current_epoch = rnd
         ctx.current_step = int(rnd)

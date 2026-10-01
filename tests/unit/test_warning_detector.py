@@ -210,3 +210,128 @@ class TestOverfitWithdrawn:
 
         for locale, table in MESSAGES.items():
             assert table.get("warn_overfit_cleared"), locale
+
+
+class TestPlateauWithdrawn:
+    """The plateau warning describes the last five readings, so it stands only
+    while it is true of them.
+
+    A real Keras run (demo/keras_image_classifier.log) moved less than 1% over
+    epochs 10-14, then climbed again. The banner kept saying the model "has
+    stopped finding new patterns" beside a grade card reading "still improving
+    at the last reading".
+    """
+
+    FLAT = [0.700, 0.701, 0.702, 0.703, 0.704]
+    FLAT_AGAIN = [0.751, 0.752, 0.753, 0.754]
+
+    def _replay(self, values: list[float]) -> list[tuple[int, str]]:
+        det = WarningDetector()
+        fired: list[tuple[int, str]] = []
+        for epoch, value in enumerate(values, start=1):
+            fired += [(epoch, k) for k in _kinds(det.update(epoch, primary_value=value))]
+        return fired
+
+    def test_a_metric_that_moves_again_withdraws_the_warning(self) -> None:
+        assert self._replay([*self.FLAT, 0.75]) == [(5, "plateau"), (6, "plateau_cleared")]
+
+    def test_it_fires_again_if_the_run_flattens_later(self) -> None:
+        assert self._replay([*self.FLAT, 0.75, *self.FLAT_AGAIN]) == [
+            (5, "plateau"),
+            (6, "plateau_cleared"),
+            (10, "plateau"),
+        ]
+
+    def test_a_run_that_stays_flat_keeps_its_one_warning(self) -> None:
+        assert self._replay([0.700 + 0.0001 * e for e in range(1, 13)]) == [(5, "plateau")]
+
+    def test_nothing_is_withdrawn_that_never_fired(self) -> None:
+        assert self._replay([0.4 + 0.05 * e for e in range(1, 9)]) == []
+
+    def test_the_withdrawal_is_in_every_language(self) -> None:
+        from epochix.story_engine.messages import MESSAGES
+
+        for locale, table in MESSAGES.items():
+            assert table.get("warn_plateau_cleared"), locale
+
+
+class TestTheWarningsStateWhatWasMeasured:
+    """The sentences quote the detector's own numbers, so they cannot drift.
+
+    "The model has stopped finding new patterns" was a conclusion; "moved less
+    than 1% over the last 5 readings" is the measurement that fired it.
+    """
+
+    PERSIAN_DIGITS = str.maketrans("0123456789", "۰۱۲۳۴۵۶۷۸۹")
+
+    def _numbers(self, locale: str) -> tuple[str, str]:
+        from epochix.story_engine import warnings as w
+
+        percent = f"{w._PLATEAU_DELTA * 100:g}"
+        window = str(w._PLATEAU_WINDOW)
+        if locale == "fa":
+            return (
+                percent.translate(self.PERSIAN_DIGITS) + "٪",
+                window.translate(self.PERSIAN_DIGITS),
+            )
+        return (percent + (" %" if locale == "fr" else "%"), window)
+
+    def test_the_plateau_sentences_quote_the_window_and_the_threshold(self) -> None:
+        from epochix.story_engine.messages import MESSAGES
+
+        assert set(MESSAGES) == {"en", "fr", "fa"}, "a new locale needs its numbers checked"
+        for locale, table in MESSAGES.items():
+            percent, window = self._numbers(locale)
+            for key in ("warn_plateau", "warn_plateau_cleared"):
+                assert percent in table[key], (locale, key, percent)
+                assert window in table[key], (locale, key, window)
+
+    def test_the_overfit_sentence_counts_the_rises_the_detector_requires(self) -> None:
+        from epochix.story_engine import warnings as w
+        from epochix.story_engine.messages import MESSAGES
+
+        # Three readings each above the last are two rises in a row.
+        assert w._OVERFIT_WINDOW - 1 == 2
+        two = {"en": "two readings in a row", "fr": "deux mesures de suite", "fa": "دو اندازه"}
+        for locale, phrase in two.items():
+            assert phrase in MESSAGES[locale]["warn_overfit"], locale
+
+    def test_neither_warning_claims_more_than_it_measured(self) -> None:
+        from epochix.story_engine.messages import MESSAGES
+
+        english = MESSAGES["en"]
+        assert "stopped finding" not in english["warn_plateau"]
+        assert "unlikely to help" not in english["warn_plateau"]
+        assert "may be memorising" in english["warn_overfit"]
+
+
+class TestStandingWarnings:
+    """What a report shows: the warnings no later reading withdrew."""
+
+    def _warning(self, kind: str, message: str) -> object:
+        from epochix.models import Warning
+
+        return Warning(kind=kind, message=message)  # type: ignore[arg-type]
+
+    def _standing(self, *pairs: tuple[str, str]) -> list[str]:
+        from epochix.story_engine.warnings import standing_warnings
+
+        return [w.kind for w in standing_warnings(self._warning(k, m) for k, m in pairs)]  # type: ignore[misc]
+
+    def test_a_withdrawn_warning_and_its_withdrawal_are_both_gone(self) -> None:
+        assert self._standing(("overfit", "a"), ("lr_drop", "b"), ("overfit_cleared", "c")) == [
+            "lr_drop"
+        ]
+
+    def test_each_withdrawal_takes_only_its_own_kind(self) -> None:
+        assert self._standing(("plateau", "a"), ("overfit", "b"), ("plateau_cleared", "c")) == [
+            "overfit"
+        ]
+
+    def test_a_warning_that_fires_again_stands(self) -> None:
+        assert self._standing(("plateau", "a"), ("plateau_cleared", "c"), ("plateau", "a")) == [
+            "plateau"
+        ]
+
+    def test_the_same_message_is_listed_once(self) -> None:
+        assert self._standing(("divergence", "a"), ("divergence", "a")) == ["divergence"]

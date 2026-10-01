@@ -22,21 +22,21 @@
 </p>
 
 No code changes — it reads your training output as-is. This is the bundled
-Keras-style demo (`epochix demo keras`) — a real CNN trained on scikit-learn's
+Keras demo (`epochix demo keras`) — a CNN trained with Keras on scikit-learn's
 handwritten digits by
 [`demo/keras_image_classifier_source.py`](https://github.com/Epochix-dev/epochix/blob/main/demo/keras_image_classifier_source.py)
-— its last epoch and what Epochix says about it:
+— its last epoch, as Keras printed it, and what Epochix says about it:
 
 <!-- readme-example:keras -->
 ```
 Epoch 20/20
-43/43 [==============================] - 0s 5ms/step - loss: 0.1959 - accuracy: 0.9480 - val_loss: 0.2098 - val_accuracy: 0.9511
+43/43 ━━━━━━━━━━━━━━━━━━━━ 0s 5ms/step - accuracy: 0.9666 - loss: 0.1600 - val_accuracy: 0.9578 - val_loss: 0.1658
 ```
 ↓
 ```
 ⚡ Mastering phase — Grade A+
 
-Mastering: accuracy 95.1% at epoch 20 — three quarters of the way to a perfect score, or more.
+Mastering: accuracy 95.8% at epoch 20 — three quarters of the way to a perfect score, or more.
 Still improving at the last reading — the grade shows where the run got to, not where it was heading.
 ```
 <!-- /readme-example:keras -->
