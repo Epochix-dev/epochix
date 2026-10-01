@@ -80,6 +80,9 @@ console output, read it. XGBoost read correctly. The others did not.
   being viewed.
 - **The Markdown report listed a withdrawn warning, and then its withdrawal**,
   both under a warning sign. It lists the warnings that stand at the end.
+- **The sentence under the grade said every grade came from fixed
+  thresholds.** A metric with no fixed scale — any loss, an AUC — is graded on
+  how far it improved since its first reading, and the sentence now says so.
 
 ### Changed — the bundled demos are recorded runs
 

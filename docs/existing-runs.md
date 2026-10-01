@@ -105,8 +105,9 @@ or coordinate a team. Those are what a tracker is for, and W&B, MLflow and
 Neptune do them well.
 
 It also refuses to state things it cannot support. A grade is compared against
-absolute per-task thresholds, so it cannot know that 85% on your dataset is
-excellent where 85% on MNIST is poor — and the dashboard says so on the card
-rather than leaving you to assume otherwise. Metric values that are impossible
+absolute per-task thresholds — or, for a metric with no fixed scale such as a
+loss, measured by how far it improved — so it cannot know that 85% on your
+dataset is excellent where 85% on MNIST is poor, and the dashboard says so on
+the card rather than leaving you to assume otherwise. Metric values that are impossible
 for the quantity in question are reported as impossible instead of narrated as
 fact.

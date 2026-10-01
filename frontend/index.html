@@ -117,12 +117,17 @@
           <!-- Why this letter deserves less weight than it looks, when the log
                says so: few readings, or a metric still setting new bests. -->
           <p class="grade-note" id="grade-note" hidden></p>
-          <!-- The grade is an absolute threshold per task type. It knows the
+          <!-- The grade is an absolute threshold per task type, or — for a
+               metric with no fixed scale — how far it improved. It knows the
                metric but not the dataset, so 85% on MNIST and 85% on ImageNet
-               grade alike. Say so rather than let the letter imply otherwise. -->
-          <p class="grade-caveat" data-i18n="ui.gradeCaveat">Graded against fixed
-            thresholds for this task type — it does not know how hard your dataset
-            is. The trend and the best-epoch call are the reliable parts.</p>
+               grade alike. Say so rather than let the letter imply otherwise.
+               The sentence once named only the thresholds, which was false for
+               every run graded on improvement (any loss-only log). -->
+          <p class="grade-caveat" data-i18n="ui.gradeCaveat">The grade comes from
+            fixed thresholds for this task type or, for a metric with no fixed
+            scale such as a loss, from how far it has improved since its first
+            reading. Either way it does not know how hard your dataset is. The
+            trend and the best-epoch call are the reliable parts.</p>
         </div>
       </section>
 
