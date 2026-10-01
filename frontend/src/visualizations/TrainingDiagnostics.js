@@ -1,4 +1,5 @@
 import { escapeHtml as _esc } from '../escape.js';
+import { readGap } from '../generalisation.js';
 /**
  * TrainingDiagnostics.js — interpreted training-health dashboard.
  *
@@ -88,7 +89,7 @@ function _diagnose(s) {
     return null;
   }
 
-  const overfit        = _diagnoseOverfit(trainLoss, valLoss, acc, valAcc);
+  const overfit        = _diagnoseOverfit(metrics);
   const convergence    = _diagnoseConvergence(valLoss.length >= 2 ? valLoss : trainLoss,
                                               valLoss.length >= 2 ? 'val loss' : 'train loss',
                                               trainLoss);
@@ -101,46 +102,54 @@ function _diagnose(s) {
   return { overfit, convergence, best, stability, generalisation, health };
 }
 
-function _diagnoseOverfit(trainLoss, valLoss, acc, valAcc) {
-  // Prefer loss gap; fall back to accuracy gap.
-  if (trainLoss.length >= 1 && valLoss.length >= 1) {
-    const tl = _last(trainLoss), vl = _last(valLoss);
-    const gap = vl - tl;
-    // Dividing by the training loss alone explodes as the model fits: a run at
-    // train 0.01 / val 0.02 is excellent, yet scores 100% and reads
-    // "memorises". Normalise by the LEVEL of the two losses instead, so the
-    // ratio stays meaningful as both approach zero.
-    const level = Math.max((Math.abs(tl) + Math.abs(vl)) / 2, 1e-6);
-    const rel = gap / level;
-    let status = 'good', verdict = 'Generalises well — barely any train/val gap.';
-    if (rel > 0.45)      { status = 'bad';  verdict = 'Overfitting — it memorises training data more than it learns.'; }
-    else if (rel > 0.18) { status = 'warn'; verdict = 'Mild overfitting starting to show.'; }
+/**
+ * The train/validation gap. It was "Overfitting — it memorises training data
+ * more than it learns", red, for any loss gap over 45% of the loss level —
+ * which a model at 99% training accuracy reaches while validation is still
+ * improving, as a real ResNet-18 run did. Overfitting is validation getting
+ * worse while training improves; the card says that only when it is so
+ * (generalisation.js), and is read the same way as the plain-English panel.
+ */
+function _diagnoseOverfit(metrics) {
+  const g = readGap(metrics);
+  if (!g) {
     return {
-      label: 'Overfitting',
-      status,
-      big: (gap >= 0 ? '+' : '') + gap.toFixed(3),
-      plain: verdict,
-      tech: `val−train loss = ${gap.toFixed(3)} (${(rel * 100).toFixed(0)}% of the loss level)`,
+      label: 'Overfitting', status: 'neutral', big: 'n/a',
+      plain: 'Add a validation metric to detect overfitting.',
+      tech: 'No paired train/val series found.',
     };
   }
-  if (acc.length >= 1 && valAcc.length >= 1) {
-    const a = _last(acc), v = _last(valAcc);
-    const gap = a - v;
-    let status = 'good', verdict = 'Validation tracks training closely.';
-    if (gap > 0.12)      { status = 'bad';  verdict = 'Overfitting — much better on training than validation.'; }
-    else if (gap > 0.05) { status = 'warn'; verdict = 'Small generalisation gap appearing.'; }
+  const since = g.bestEpoch == null ? '' : ` since epoch ${fmtEpoch(g.bestEpoch)}`;
+  let plain;
+  if (g.size === 'small') {
+    plain = 'Does about as well on new data as on its training data.';
+  } else if (g.validation === 'at_best') {
+    plain = g.size === 'wide'
+      ? 'Much better on training data than on new data. Validation is still improving, so the gap is not costing it yet.'
+      : 'Better on training data than on new data. Validation is still improving, so the gap is not costing it yet.';
+  } else if (g.validation === 'past_best') {
+    plain = `Overfitting — validation has got worse${since} while training kept improving.`;
+  } else {
+    plain = g.size === 'wide'
+      ? 'Much better on training data than on new data — likely overfitting.'
+      : 'A gap between training and validation is appearing.';
+  }
+  const heading = { at_best: 'validation at its best', past_best: `validation past its best${since}`,
+                    unknown: 'too few readings for a trend' }[g.validation];
+  if (g.kind === 'accuracy') {
+    const pts = (g.gap * 100).toFixed(1);
     return {
-      label: 'Overfitting',
-      status,
-      big: (gap * 100).toFixed(1) + 'pp',
-      plain: verdict,
-      tech: `train−val acc = ${(gap * 100).toFixed(1)} percentage points`,
+      label: 'Overfitting', status: g.status,
+      big: `${g.gap >= 0 ? '+' : ''}${pts} pts`,
+      plain,
+      tech: `train−val accuracy = ${pts} points · ${heading}`,
     };
   }
   return {
-    label: 'Overfitting', status: 'neutral', big: 'n/a',
-    plain: 'Add a validation metric to detect overfitting.',
-    tech: 'No paired train/val series found.',
+    label: 'Overfitting', status: g.status,
+    big: (g.gap >= 0 ? '+' : '') + g.gap.toFixed(3),
+    plain,
+    tech: `val−train loss = ${g.gap.toFixed(3)} (${(g.rel * 100).toFixed(0)}% of the loss level) · ${heading}`,
   };
 }
 
