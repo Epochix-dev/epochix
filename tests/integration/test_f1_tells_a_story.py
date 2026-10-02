@@ -23,7 +23,7 @@ from epochix import parse
 from epochix.cli import app
 from epochix.enums import TaskType
 from epochix.store.sqlite_store import RunStore
-from epochix.story_engine.grade import grade_by_trajectory, has_absolute_scale
+from epochix.story_engine.grade import compute_grade, has_absolute_scale
 from epochix.story_engine.task_classifier import classify_task
 
 if TYPE_CHECKING:
@@ -98,12 +98,16 @@ class TestTheStory:
         _, frames = _told(tmp_path, lines)
         assert {f.primary_metric for f in frames} == {"val_accuracy"}
 
-    def test_it_is_graded_on_improvement_not_on_accuracy_s_bands(self, tmp_path: Path) -> None:
-        """F1 has no bands of its own (see grade._METRIC_THRESHOLDS): the
-        letter is how far it moved, and the card says a grade may be that."""
-        assert not has_absolute_scale("val_f1")
+    def test_it_is_graded_where_it_stands(self, tmp_path: Path) -> None:
+        """F1 shares accuracy's bands (see test_f1_grade_scale.py): every frame
+        is graded on its value, the first included."""
+        assert has_absolute_scale("val_f1")
         _, frames = _told(tmp_path, _f1_only())
-        assert frames[-1].grade is grade_by_trajectory(F1[0], F1[-1], False)
+        for frame in frames:
+            assert frame.grade is compute_grade(
+                TaskType.CLASSIFICATION, frame.primary_metric_value
+            ), frame.epoch
+            assert frame.grade_basis == "thresholds"
 
 
 class TestCheck:

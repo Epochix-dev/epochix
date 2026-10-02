@@ -367,9 +367,8 @@ file is in use and whether it applies to that log, and
 [`.epochix.example.yaml`](https://github.com/epochix-dev/epochix/blob/main/.epochix.example.yaml)
 lists every entry with the built-in values.
 
-The file is read by the command line, the server and the Python SDK. The
-VS Code extension's panel does not read it: it grades with the built-in
-thresholds.
+The file is read by the command line, the server, the Python SDK and the
+VS Code extension, which looks for it from the workspace's first folder.
 
 ---
 

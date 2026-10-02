@@ -13,6 +13,7 @@
  */
 import * as fs from "fs";
 import { taskHint } from "../config";
+import { workspaceGradeConfig } from "../gradeConfigFile";
 import { StandaloneEngine } from "../webview/StandaloneEngine";
 import type { ServerManager } from "./ServerManager";
 
@@ -26,7 +27,7 @@ export async function persistLogFile(
   locale?: string,
 ): Promise<string> {
   const hint = taskHint();
-  const engine = new StandaloneEngine(hint, locale);
+  const engine = new StandaloneEngine(hint, locale, workspaceGradeConfig());
 
   await new Promise<void>((resolve, reject) => {
     // Raw chunks, not readline: readline ends a line at a lone \r too, so every

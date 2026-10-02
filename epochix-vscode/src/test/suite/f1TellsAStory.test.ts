@@ -8,7 +8,7 @@
  */
 import * as assert from "assert";
 
-import { gradeByTrajectory } from "../../story/grader";
+import { computeGrade } from "../../story/grader";
 import { StandaloneEngine } from "../../webview/StandaloneEngine";
 
 const F1 = [0.4, 0.55, 0.7, 0.8, 0.84];
@@ -27,8 +27,11 @@ suite("A run that reports F1 has a story", () => {
     assert.deepStrictEqual(frames.map((f) => f.primaryMetric), Array(5).fill("val_f1"));
     assert.deepStrictEqual(frames.map((f) => f.primaryMetricValue), F1);
     assert.strictEqual(frames[4].taskType, "classification");
-    // No bands of its own: the letter is how far it moved.
-    assert.strictEqual(frames[4].grade, gradeByTrajectory(F1[0], F1[4], false));
+    // Graded where it stands, on accuracy's bands, every frame.
+    for (const frame of frames) {
+      assert.strictEqual(frame.grade, computeGrade("classification", frame.primaryMetricValue));
+      assert.strictEqual(frame.gradeBasis, "thresholds");
+    }
   });
 
   test("F1 beside a loss is the story, not the loss", () => {

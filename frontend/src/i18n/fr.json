@@ -75,6 +75,10 @@
       "engineer": "Panneau ingénieur"
     },
     "gradeCaveat": "La note vient de seuils fixes pour ce type de tâche ou, pour une métrique sans échelle fixe comme une perte, de sa progression depuis sa première mesure. Dans les deux cas, elle ne connaît pas la difficulté de vos données. La tendance et le meilleur epoch sont les parties fiables.",
+    "gradeCaveats": {
+      "thresholds": "Noté selon des seuils fixes pour cette métrique — sans connaître la difficulté de vos données. La tendance et le meilleur epoch sont les parties fiables.",
+      "improvement": "Noté selon la progression de cette métrique depuis sa première mesure, car elle n'a pas d'échelle fixe. Cela mesure le changement, pas la qualité du modèle. La tendance et le meilleur epoch sont les parties fiables."
+    },
     "gradeNotes": {
       "few_readings": "Provisoire : cette note repose sur moins de cinq mesures de la métrique.",
       "still_improving": "Encore en progrès à la dernière mesure — la note montre où l'exécution est arrivée, pas où elle allait."

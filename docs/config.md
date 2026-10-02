@@ -94,8 +94,9 @@ grade_thresholds:
 **Where it is looked for.** The folder epochix is run from, then each parent
 folder, then `~/.epochix/.epochix.yaml`. `EPOCHIX_GRADE_CONFIG` names a file
 directly, or switches the lookup off with `off`. The command line, the server
-and the Python SDK read it; the VS Code extension's panel grades with the
-built-in thresholds.
+and the Python SDK read it. So does the VS Code extension, which has no folder
+it is "run from": it looks from the workspace's first folder upwards, then in
+`~/.epochix`.
 
 **What an entry is.** For each grade, the lowest value that still earns it —
 or the highest, for a metric where lower is better. The order of the numbers

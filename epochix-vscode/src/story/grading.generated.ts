@@ -6,6 +6,7 @@ export type TaskType = "classification" | "detection" | "segmentation" | "regres
 export type Grade = "A+" | "A" | "A-" | "B+" | "B" | "B-" | "C+" | "C" | "C-" | "D" | "F" | "I";
 export type Phase = "awakening" | "learning" | "understanding" | "mastering" | "polishing";
 export type Threshold = [Grade, number];
+export const TASK_TYPES: readonly TaskType[] = ["classification", "detection", "segmentation", "regression", "biometric", "gaze", "nlp", "generative", "custom"];
 
 /** Letter grades best first, without I (incomplete). */
 export const GRADE_ORDER: readonly Grade[] = ["A+", "A", "A-", "B+", "B", "B-", "C+", "C", "C-", "D", "F"];
@@ -29,8 +30,10 @@ export const LOWER_BETTER_TASKS: ReadonlySet<TaskType> = new Set(["biometric", "
 export const METRIC_THRESHOLDS: Readonly<Record<string, readonly Threshold[]>> = {
   "AUC": [["A+", 0.97], ["A", 0.93], ["A-", 0.9], ["B+", 0.87], ["B", 0.83], ["B-", 0.8], ["C+", 0.77], ["C", 0.73], ["C-", 0.7], ["D", 0.5000000000000001], ["F", -Infinity]],
   "R2": [["A+", 0.95], ["A", 0.9], ["A-", 0.85], ["B+", 0.8], ["B", 0.7], ["B-", 0.6], ["C+", 0.5], ["C", 0.4], ["C-", 0.3], ["D", 0.1], ["F", -Infinity]],
+  "f1": [["A+", 0.95], ["A", 0.9], ["A-", 0.87], ["B+", 0.82], ["B", 0.75], ["B-", 0.7], ["C+", 0.65], ["C", 0.6], ["C-", 0.55], ["D", 0.5], ["F", 0.0]],
   "val_AUC": [["A+", 0.97], ["A", 0.93], ["A-", 0.9], ["B+", 0.87], ["B", 0.83], ["B-", 0.8], ["C+", 0.77], ["C", 0.73], ["C-", 0.7], ["D", 0.5000000000000001], ["F", -Infinity]],
   "val_R2": [["A+", 0.95], ["A", 0.9], ["A-", 0.85], ["B+", 0.8], ["B", 0.7], ["B-", 0.6], ["C+", 0.5], ["C", 0.4], ["C-", 0.3], ["D", 0.1], ["F", -Infinity]],
+  "val_f1": [["A+", 0.95], ["A", 0.9], ["A-", 0.87], ["B+", 0.82], ["B", 0.75], ["B-", 0.7], ["C+", 0.65], ["C", 0.6], ["C-", 0.55], ["D", 0.5], ["F", 0.0]],
 };
 
 export const DIRECTION_BY_KEY: Readonly<Record<string, boolean>> = {"balanced_accuracy": false, "bpc": true, "brier": true, "cer": true, "error_rate": true, "explained_variance": false, "far": true, "fid": true, "huber": true, "inception_score": false, "is_score": false, "kappa": false, "kid": true, "l1": true, "l2": true, "log_loss": true, "lpips": true, "mape": true, "mcc": false, "medae": true, "meteor": false, "mrr": false, "ndcg": false, "nll": true, "pearson": false, "pixel_accuracy": false, "quantile_loss": true, "rmsle": true, "rouge": false, "rouge1": false, "rouge2": false, "rougel": false, "sensitivity": false, "silhouette": false, "smape": true, "spearman": false, "specificity": false, "tar": false, "tar_at_far_0_001": false, "top5_accuracy": false, "train_l1": true, "train_l2": true, "val_accuracy": false, "val_auc": false, "val_error_rate": true, "val_f1": false, "val_far": true, "val_fid": true, "val_kid": true, "val_l1": true, "val_l2": true, "val_log_loss": true, "val_mae": true, "val_mape": true, "val_medae": true, "val_meteor": false, "val_mse": true, "val_r2": false, "val_rmse": true, "val_rmsle": true, "val_rouge": false, "val_tar": false, "val_tar_at_far_0_001": false, "wer": true};
@@ -53,3 +56,11 @@ export const OVERFIT_WINDOW = 3;
 export const PLATEAU_WINDOW = 5;
 export const PLATEAU_DELTA = 0.01;
 export const DIVERGE_GROWTH = 10.0;
+
+/** How a letter was reached (models.GradeBasis). */
+export type GradeBasis = "thresholds" | "improvement";
+
+/** .epochix.yaml: other spellings of a grade label (config_loader.py). */
+export const LABEL_ALIASES: Readonly<Record<string, string>> = {"AMINUS": "A-", "APLUS": "A+", "A_MINUS": "A-", "A_PLUS": "A+", "BMINUS": "B-", "BPLUS": "B+", "B_MINUS": "B-", "B_PLUS": "B+", "CMINUS": "C-", "CPLUS": "C+", "C_MINUS": "C-", "C_PLUS": "C+"};
+/** .epochix.yaml: the metric a task's entry is written for. */
+export const GOVERNED_METRICS: Readonly<Record<string, readonly string[]>> = {"classification": ["accuracy", "val_accuracy"], "detection": ["mAP50"], "segmentation": ["mIoU"], "nlp": ["perplexity"], "biometric": ["EER"], "gaze": ["MAE", "val_MAE"], "regression": ["MAE", "val_MAE"], "generative": ["fid"]};

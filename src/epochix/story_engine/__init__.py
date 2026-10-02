@@ -5,7 +5,14 @@ from collections.abc import Sequence, Set
 from dataclasses import dataclass, field
 
 from epochix.enums import Grade, Phase, TaskType
-from epochix.models import MetaphorCard, MetricEvent, Milestone, StoryFrame, Warning
+from epochix.models import (
+    GradeBasis,
+    MetaphorCard,
+    MetricEvent,
+    Milestone,
+    StoryFrame,
+    Warning,
+)
 from epochix.normalizer.canonical_keys import canonicalize_key, is_recognised
 from epochix.story_engine.config_loader import GradeConfig, bands_lower_better
 from epochix.story_engine.grade import (
@@ -699,6 +706,7 @@ class StoryEngine:
         # own order says whether lower is better, so they cannot be applied
         # upside down.
         own_bands = self.grade_config.bands_for(task, primary_key) if self.grade_config else None
+        grade_basis: GradeBasis | None = None
         if own_bands:
             stated = bands_lower_better(own_bands)
             grade = compute_grade(
@@ -707,14 +715,17 @@ class StoryEngine:
                 custom_thresholds=own_bands,
                 direction=lower_better if stated is None else stated,
             )
+            grade_basis = "thresholds"
         elif not needs_trajectory or has_absolute_scale(primary_key):
             grade = compute_grade(
                 task=task,
                 primary_value=primary_value,
                 metric=primary_key,
             )
+            grade_basis = "thresholds"
         elif self._baseline is not None and len(self._metric_history.get(primary_key, ())) >= 2:
             grade = grade_by_trajectory(self._baseline, primary_value, lower_better)
+            grade_basis = "improvement"
         else:
             # No scale to measure against and no movement to measure: one
             # reading of a metric whose units we do not know. Anything else
@@ -868,6 +879,7 @@ class StoryEngine:
                 has_epoch=event.epoch is not None,
                 new_best=new_best,
             ),
+            grade_basis=grade_basis,
             narrative=narrative,
             metaphor_cards=self._build_metaphor_cards(phase, grade),
             skill_dimensions=skill_dims,

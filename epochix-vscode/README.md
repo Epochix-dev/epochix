@@ -94,6 +94,10 @@ data only exists in sidecar mode.
 | `epochix.theme` | `auto` | Dashboard theme — `auto` follows VS Code's colour theme |
 | `epochix.locale` | `en` | UI language — `en` / `fa` (RTL) / `fr` |
 
+**Your own grade thresholds.** Put a `.epochix.yaml` in the workspace folder
+(or in `~/.epochix/`) and the panel grades with it, as the `epochix` command
+line does. See [Grade thresholds](https://epochix.dev/config/#grade-thresholds).
+
 ---
 
 ## Supported log formats

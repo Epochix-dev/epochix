@@ -14,6 +14,7 @@
   "grade_note": "few_readings",
   "cross_validation": null,
   "final_grade": "B+",
+  "final_grade_basis": "thresholds",
   "final_phase": "awakening"
  },
  "ansi_colors.log": {
@@ -30,6 +31,7 @@
   "grade_note": "few_readings",
   "cross_validation": null,
   "final_grade": "C",
+  "final_grade_basis": "thresholds",
   "final_phase": "learning"
  },
  "detection_coco.log": {
@@ -51,6 +53,7 @@
   "grade_note": "still_improving",
   "cross_validation": null,
   "final_grade": "A",
+  "final_grade_basis": "thresholds",
   "final_phase": "understanding"
  },
  "diverging_loss.log": {
@@ -69,6 +72,7 @@
   "grade_note": null,
   "cross_validation": null,
   "final_grade": "C-",
+  "final_grade_basis": "thresholds",
   "final_phase": "learning"
  },
  "empty.log": {
@@ -82,6 +86,7 @@
   "grade_note": null,
   "cross_validation": null,
   "final_grade": null,
+  "final_grade_basis": null,
   "final_phase": null
  },
  "fastai_real.log": {
@@ -99,6 +104,7 @@
   "grade_note": "few_readings",
   "cross_validation": null,
   "final_grade": "B+",
+  "final_grade_basis": "thresholds",
   "final_phase": "understanding"
  },
  "fingerprint_matching.log": {
@@ -117,6 +123,7 @@
   "grade_note": null,
   "cross_validation": null,
   "final_grade": "A",
+  "final_grade_basis": "thresholds",
   "final_phase": "mastering"
  },
  "garbage.log": {
@@ -130,6 +137,7 @@
   "grade_note": null,
   "cross_validation": null,
   "final_grade": null,
+  "final_grade_basis": null,
   "final_phase": null
  },
  "gaze_estimation.log": {
@@ -147,6 +155,7 @@
   "grade_note": null,
   "cross_validation": null,
   "final_grade": "A+",
+  "final_grade_basis": "improvement",
   "final_phase": "mastering"
  },
  "gridsearch_cv.log": {
@@ -209,6 +218,7 @@
    }
   },
   "final_grade": "I",
+  "final_grade_basis": null,
   "final_phase": "polishing"
  },
  "hf_classification.log": {
@@ -227,6 +237,7 @@
   "grade_note": "still_improving",
   "cross_validation": null,
   "final_grade": "A-",
+  "final_grade_basis": "thresholds",
   "final_phase": "mastering"
  },
  "huggingface_5ep.log": {
@@ -245,6 +256,7 @@
   "grade_note": "still_improving",
   "cross_validation": null,
   "final_grade": "A-",
+  "final_grade_basis": "thresholds",
   "final_phase": "mastering"
  },
  "huggingface_bert.log": {
@@ -264,6 +276,7 @@
   "grade_note": "still_improving",
   "cross_validation": null,
   "final_grade": "B+",
+  "final_grade_basis": "thresholds",
   "final_phase": "mastering"
  },
  "huggingface_nlp_10ep.log": {
@@ -282,6 +295,7 @@
   "grade_note": null,
   "cross_validation": null,
   "final_grade": "A+",
+  "final_grade_basis": "thresholds",
   "final_phase": "polishing"
  },
  "huggingface_real_trainer.log": {
@@ -301,6 +315,7 @@
   "grade_note": null,
   "cross_validation": null,
   "final_grade": "A",
+  "final_grade_basis": "thresholds",
   "final_phase": "understanding"
  },
  "interrupted.log": {
@@ -317,6 +332,7 @@
   "grade_note": "few_readings",
   "cross_validation": null,
   "final_grade": "D",
+  "final_grade_basis": "thresholds",
   "final_phase": "awakening"
  },
  "keras_100ep.log": {
@@ -335,6 +351,7 @@
   "grade_note": null,
   "cross_validation": null,
   "final_grade": "B+",
+  "final_grade_basis": "thresholds",
   "final_phase": "mastering"
  },
  "keras_50ep.log": {
@@ -353,6 +370,7 @@
   "grade_note": null,
   "cross_validation": null,
   "final_grade": "B+",
+  "final_grade_basis": "thresholds",
   "final_phase": "mastering"
  },
  "keras_image_classifier.log": {
@@ -371,6 +389,7 @@
   "grade_note": "still_improving",
   "cross_validation": null,
   "final_grade": "A+",
+  "final_grade_basis": "thresholds",
   "final_phase": "mastering"
  },
  "keras_real_verbose2.log": {
@@ -389,6 +408,7 @@
   "grade_note": "still_improving",
   "cross_validation": null,
   "final_grade": "A+",
+  "final_grade_basis": "thresholds",
   "final_phase": "mastering"
  },
  "keras_short.log": {
@@ -407,6 +427,7 @@
   "grade_note": "still_improving",
   "cross_validation": null,
   "final_grade": "B+",
+  "final_grade_basis": "thresholds",
   "final_phase": "mastering"
  },
  "lightgbm_real_classifier.log": {
@@ -425,6 +446,7 @@
   "grade_note": null,
   "cross_validation": null,
   "final_grade": "A+",
+  "final_grade_basis": "thresholds",
   "final_phase": "understanding"
  },
  "lightgbm_real_early_stopping.log": {
@@ -443,6 +465,7 @@
   "grade_note": null,
   "cross_validation": null,
   "final_grade": "B-",
+  "final_grade_basis": "improvement",
   "final_phase": "learning"
  },
  "mixed_frameworks.log": {
@@ -462,6 +485,7 @@
   "grade_note": "few_readings",
   "cross_validation": null,
   "final_grade": "B",
+  "final_grade_basis": "thresholds",
   "final_phase": "learning"
  },
  "multiline_json.log": {
@@ -481,6 +505,7 @@
   "grade_note": "few_readings",
   "cross_validation": null,
   "final_grade": "C+",
+  "final_grade_basis": "thresholds",
   "final_phase": "understanding"
  },
  "no_val_metrics.log": {
@@ -497,6 +522,7 @@
   "grade_note": "still_improving",
   "cross_validation": null,
   "final_grade": "C+",
+  "final_grade_basis": "thresholds",
   "final_phase": "learning"
  },
  "pl_high_accuracy.log": {
@@ -515,6 +541,7 @@
   "grade_note": "still_improving",
   "cross_validation": null,
   "final_grade": "A-",
+  "final_grade_basis": "thresholds",
   "final_phase": "mastering"
  },
  "plateau.log": {
@@ -531,6 +558,7 @@
   "grade_note": null,
   "cross_validation": null,
   "final_grade": "B+",
+  "final_grade_basis": "thresholds",
   "final_phase": "learning"
  },
  "pytorch_lightning.log": {
@@ -549,6 +577,7 @@
   "grade_note": "still_improving",
   "cross_validation": null,
   "final_grade": "A-",
+  "final_grade_basis": "thresholds",
   "final_phase": "understanding"
  },
  "pytorch_lightning_30ep.log": {
@@ -567,6 +596,7 @@
   "grade_note": "still_improving",
   "cross_validation": null,
   "final_grade": "A-",
+  "final_grade_basis": "thresholds",
   "final_phase": "mastering"
  },
  "pytorch_lightning_long.log": {
@@ -585,6 +615,7 @@
   "grade_note": "still_improving",
   "cross_validation": null,
   "final_grade": "A-",
+  "final_grade_basis": "thresholds",
   "final_phase": "mastering"
  },
  "pytorch_lightning_short.log": {
@@ -603,6 +634,7 @@
   "grade_note": "still_improving",
   "cross_validation": null,
   "final_grade": "A-",
+  "final_grade_basis": "thresholds",
   "final_phase": "mastering"
  },
  "resnet18_cifar10.log": {
@@ -623,6 +655,7 @@
   "grade_note": "still_improving",
   "cross_validation": null,
   "final_grade": "A",
+  "final_grade_basis": "thresholds",
   "final_phase": "mastering"
  },
  "scientific_notation.log": {
@@ -640,6 +673,7 @@
   "grade_note": "still_improving",
   "cross_validation": null,
   "final_grade": "A+",
+  "final_grade_basis": "improvement",
   "final_phase": "understanding"
  },
  "seq2seq_attention.log": {
@@ -658,6 +692,7 @@
   "grade_note": null,
   "cross_validation": null,
   "final_grade": "B+",
+  "final_grade_basis": "thresholds",
   "final_phase": "understanding"
  },
  "single_epoch.log": {
@@ -676,6 +711,7 @@
   "grade_note": "few_readings",
   "cross_validation": null,
   "final_grade": "A-",
+  "final_grade_basis": "thresholds",
   "final_phase": "mastering"
  },
  "universal_20ep.log": {
@@ -695,6 +731,7 @@
   "grade_note": "still_improving",
   "cross_validation": null,
   "final_grade": "A-",
+  "final_grade_basis": "thresholds",
   "final_phase": "mastering"
  },
  "universal_kv_colon.log": {
@@ -714,6 +751,7 @@
   "grade_note": "still_improving",
   "cross_validation": null,
   "final_grade": "B+",
+  "final_grade_basis": "thresholds",
   "final_phase": "mastering"
  },
  "vscode-demo.log": {
@@ -733,6 +771,7 @@
   "grade_note": null,
   "cross_validation": null,
   "final_grade": "A+",
+  "final_grade_basis": "thresholds",
   "final_phase": "mastering"
  },
  "xgboost_real_classifier.log": {
@@ -751,6 +790,7 @@
   "grade_note": null,
   "cross_validation": null,
   "final_grade": "A+",
+  "final_grade_basis": "improvement",
   "final_phase": "understanding"
  },
  "yolo_100ep.log": {
@@ -772,6 +812,7 @@
   "grade_note": "still_improving",
   "cross_validation": null,
   "final_grade": "A+",
+  "final_grade_basis": "thresholds",
   "final_phase": "mastering"
  },
  "yolo_50ep.log": {
@@ -793,6 +834,7 @@
   "grade_note": "still_improving",
   "cross_validation": null,
   "final_grade": "A+",
+  "final_grade_basis": "thresholds",
   "final_phase": "mastering"
  },
  "yolo_real_ultralytics.log": {
@@ -814,6 +856,7 @@
   "grade_note": "few_readings",
   "cross_validation": null,
   "final_grade": "A-",
+  "final_grade_basis": "thresholds",
   "final_phase": "learning"
  },
  "yolo_short.log": {
@@ -835,6 +878,7 @@
   "grade_note": "few_readings",
   "cross_validation": null,
   "final_grade": "A+",
+  "final_grade_basis": "thresholds",
   "final_phase": "understanding"
  },
  "yolov8_detection.log": {
@@ -856,6 +900,7 @@
   "grade_note": "still_improving",
   "cross_validation": null,
   "final_grade": "A+",
+  "final_grade_basis": "thresholds",
   "final_phase": "understanding"
  }
 }

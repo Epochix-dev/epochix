@@ -428,11 +428,9 @@ _METRIC_THRESHOLDS["val_R2"] = _METRIC_THRESHOLDS["R2"]
 # A D starts strictly above 0.5: a model that predicts one constant scores
 # exactly 0.5, and that is the coin toss, not a pass.
 #
-# Not given bands here: PR AUC and F1. Their chance level is not a constant —
-# it follows the positive class's share of the data, which no log states — so
-# they stay graded on improvement. (Whether F1 should share accuracy's bands,
-# which have the same blind spot and say so on the card, is an open decision;
-# see ROADMAP.md.)
+# Not given bands here: PR AUC. Its chance level is not a constant — it is the
+# positive class's share of the data, which no log states — so it stays graded
+# on improvement.
 _ABOVE_CHANCE_AUC = math.nextafter(0.5, 1.0)
 _METRIC_THRESHOLDS["AUC"] = [
     (Grade.A_PLUS, 0.97),
@@ -448,6 +446,18 @@ _METRIC_THRESHOLDS["AUC"] = [
     (Grade.F, float("-inf")),
 ]
 _METRIC_THRESHOLDS["val_AUC"] = _METRIC_THRESHOLDS["AUC"]
+
+# F1 shares accuracy's bands. This one is a decision, not a derivation, and is
+# written down as one (2026-10-02). F1's floor follows the class balance, so
+# no scale for it is exact — but accuracy's does too (a 95% majority class
+# makes 95% accuracy worthless) and accuracy has always been graded on these
+# bands, with the card saying the grade does not know the dataset. Graded on
+# improvement instead, an F1 run going 0.90 to 0.91 was a C-: the letter
+# described how little it moved, beside a number that reads as strong. Treating
+# the two alike is the smaller inconsistency. A project that knows its class
+# balance can set its own with a `val_f1` entry in .epochix.yaml.
+_METRIC_THRESHOLDS["f1"] = _DEFAULT_THRESHOLDS[TaskType.CLASSIFICATION]
+_METRIC_THRESHOLDS["val_f1"] = _METRIC_THRESHOLDS["f1"]
 
 
 def has_absolute_scale(metric: str | None) -> bool:

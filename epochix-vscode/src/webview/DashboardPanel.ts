@@ -19,6 +19,7 @@ import { persistLogFile } from "../sidecar/persistLog";
 import { StatusBar } from "../statusBar";
 import { StandaloneEngine } from "./StandaloneEngine";
 import { resolvedTheme, taskHint } from "../config";
+import { workspaceGradeConfig } from "../gradeConfigFile";
 import { buildUrl, openExternalUrl } from "../util/uri";
 
 
@@ -61,7 +62,9 @@ export class DashboardPanel {
     this._theme = theme;
 
     // Standalone engine is used when no sidecar is available
-    this._engine = sidecar ? null : new StandaloneEngine(taskHint(), locale);
+    this._engine = sidecar
+      ? null
+      : new StandaloneEngine(taskHint(), locale, workspaceGradeConfig());
 
     this._panel.webview.html = buildWebviewHtml({
       extensionUri,
@@ -324,7 +327,7 @@ export class DashboardPanel {
    */
   private _degradeToStandalone(extensionUri: vscode.Uri, locale: string): void {
     this._sidecar = null;
-    this._engine = new StandaloneEngine(taskHint(), locale);
+    this._engine = new StandaloneEngine(taskHint(), locale, workspaceGradeConfig());
     this._panel.webview.html = buildWebviewHtml({
       extensionUri,
       webview: this._panel.webview,

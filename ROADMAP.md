@@ -24,31 +24,16 @@ taught live in [AGENTS.md](AGENTS.md).
 
 ## Open
 
-- **F1 is graded on improvement; decide whether it should share accuracy's
-  bands.** ROC AUC got bands of its own in 0.7.27 because its chance level is
-  0.5 in every dataset. F1's is not a constant — it follows the positive
-  class's share — so it was left on the improvement rule: a run going 0.40 →
-  0.84 grades A+, one going 0.90 → 0.91 grades C−. Accuracy has the same
-  blind spot (a 95% majority class makes 95% accuracy worthless) and is graded
-  on fixed bands with a caveat on the card. Either treat F1 like accuracy
-  (add `val_f1`/`f1` to `_ON_SCALE_KEYS[CLASSIFICATION]`) or keep it as it is;
-  it is a judgement, and should be written down as one. Since 0.7.28 a project
-  can set F1 bands for itself with a `val_f1` entry in `.epochix.yaml`; this
-  item is about the default.
-- **The VS Code panel does not read `.epochix.yaml`.** The command line, the
-  server and the SDK grade with a project's thresholds; the extension's own
-  engine (TypeScript) uses the built-in ones, and its Python server is started
-  from a temporary folder, so it would not find a workspace file either. A
-  workspace with custom thresholds therefore shows one grade in the panel and
-  another from `epochix run`. The README and `docs/config.md` say so. Closing
-  it means reading the workspace's file in the extension (a YAML reader in the
-  bundle) and replaying the Python loader's answers, like the other tables.
-- **Say which way this run was graded.** The sentence under the grade names
-  both ways a grade is reached (fixed thresholds, or improvement since the
-  first reading) because a frame does not record which applied. Carry it on
-  the frame — a `grade_basis` beside `grade_note`: model, store column and
-  migration, the TypeScript engine and its goldens, the exports — and show
-  only the sentence that is true of the run.
+- **The PDF and comparison reports do not say how the grade was reached.**
+  The dashboard card and the Markdown report do, from `StoryFrame.grade_basis`
+  (0.7.29). The PDF cover and the comparison table carry the grade note but
+  not the basis; a run graded on improvement reads there as if it were graded
+  on a scale.
+- **The extension notices a new `.epochix.yaml` only for the next run.** The
+  thresholds file is read when a panel's engine is created, and the Python
+  server is told its path when it starts. A file added or edited afterwards
+  applies from the next run in that window (and, for stored runs, after the
+  window is reloaded). Watching the file would close it.
 
 ---
 

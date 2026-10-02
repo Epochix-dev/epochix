@@ -84,6 +84,8 @@ story_frames_table = Table(
     # Why the frame's letter deserves less weight (few readings, still
     # improving) — or NULL. See story_engine.grade.grade_note.
     Column("grade_note", String),
+    # How the letter was reached: "thresholds", "improvement", or NULL.
+    Column("grade_basis", String),
     Column("narrative", Text),
     Column("metaphor_json", Text),
     Column("skill_json", Text),
@@ -169,6 +171,7 @@ class RunStore:
                 ("story_frames", "primary_key", "TEXT"),
                 ("story_frames", "task_type", "TEXT"),
                 ("story_frames", "grade_note", "TEXT"),
+                ("story_frames", "grade_basis", "TEXT"),
             ):
                 info = cur.execute(f"PRAGMA table_info({table})").fetchall()
                 if not info:
@@ -419,6 +422,7 @@ class RunStore:
                     "task_type": frame.task_type.value,
                     "confidence": frame.confidence,
                     "grade_note": frame.grade_note,
+                    "grade_basis": frame.grade_basis,
                     "narrative": frame.narrative,
                     "metaphor_json": json.dumps([m.model_dump() for m in frame.metaphor_cards]),
                     "skill_json": json.dumps(frame.skill_dimensions),
@@ -468,6 +472,7 @@ class RunStore:
                     primary_metric=r.primary_key,
                     confidence=r.confidence or 0.0,
                     grade_note=r.grade_note,
+                    grade_basis=r.grade_basis,
                     narrative=r.narrative or "",
                     metaphor_cards=[MetaphorCard(**m) for m in json.loads(r.metaphor_json or "[]")],
                     skill_dimensions=json.loads(r.skill_json or "{}"),

@@ -121,6 +121,11 @@ def build_markdown(run_id: str, store: RunStore) -> str:
     if frames and frames[-1].grade_note is not None:
         note = t(f"grade_note.{frames[-1].grade_note}", locale)
         lines.append(f"| **{t('md.grade_note', locale)}** | {note} |")
+    # How the letter was reached: fixed thresholds, or improvement. A run
+    # stored before this was recorded says nothing rather than guess.
+    if frames and frames[-1].grade_basis is not None:
+        basis = t(f"grade_basis.{frames[-1].grade_basis}", locale)
+        lines.append(f"| **{t('md.grade_basis', locale)}** | {basis} |")
     lines.append(f"| **{t('md.task', locale)}** | {task_str} |")
     lines.append(f"| **{t('md.final_phase', locale)}** | {phase_str or '—'} |")
     lines.append(

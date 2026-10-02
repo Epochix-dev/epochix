@@ -19,6 +19,13 @@ import {
   relativeImprovement,
 } from "../story/phases";
 import type { Grade, TaskType } from "../story/grader";
+import type { GradeBasis } from "../story/grading.generated";
+import {
+  bandsFor,
+  bandsLowerBetter,
+  gradeWithBands,
+  type GradeConfig,
+} from "../story/gradeConfig";
 import {
   computeGrade,
   gradeByTrajectory,
@@ -221,8 +228,12 @@ export class StandaloneEngine {
   // have English templates only, whatever the setting said.
   private readonly _locale: Locale;
 
-  constructor(taskHint?: TaskType, locale?: string) {
+  // The project's .epochix.yaml, or null for the built-in thresholds.
+  private readonly _gradeConfig: GradeConfig | null;
+
+  constructor(taskHint?: TaskType, locale?: string, gradeConfig?: GradeConfig | null) {
     this._locale = resolveLocale(locale);
+    this._gradeConfig = gradeConfig ?? null;
     this._parsers = makeParsers();
 
     // A task the user pinned (`epochix.taskHint`) is locked in, so detection
@@ -621,7 +632,11 @@ export class StandaloneEngine {
 
     // Direction from the metric's own name first: the task default is right
     // for the task's headline metric and silently inverts every other one.
-    const lowerBetter = metricLowerBetter(key) ?? taskLowerBetter(this._task);
+    // Where the name says nothing, the project's thresholds file may.
+    const lowerBetter =
+      metricLowerBetter(key) ??
+      this._gradeConfig?.lowerBetter[this._task] ??
+      taskLowerBetter(this._task);
 
     // Best so far, updated BEFORE the past-peak check, as in the Python engine.
     const newBest =
@@ -651,7 +666,7 @@ export class StandaloneEngine {
     let progress = clock !== null ? clock : rel !== null ? rel : 0.0;
     if (!Number.isFinite(progress)) progress = 0.0;
     progress = Math.max(0.0, Math.min(1.0, progress));
-    const grade = this._grade(value, lowerBetter);
+    const [grade, gradeBasis] = this._grade(value, lowerBetter);
 
     let pastPeak = false;
     if (Math.abs(this._best) > 1e-9) {
@@ -711,6 +726,7 @@ export class StandaloneEngine {
       gradeNote: gradeNote(grade, this._primaryReadings, {
         hasEpoch: epoch !== null, newBest,
       }),
+      gradeBasis,
       narrative,
       taskType: this._task,
     };
@@ -721,18 +737,24 @@ export class StandaloneEngine {
    * apply only to its on-scale metric; anything else is graded on how far it
    * improved, and with a single reading there is nothing to measure against.
    */
-  private _grade(value: number, lowerBetter: boolean): Grade {
+  private _grade(value: number, lowerBetter: boolean): [Grade, GradeBasis | null] {
     const key = this._primaryMetric;
+    // A project's own thresholds come first, and only for the metric they
+    // were written for. The bands' own order says whether lower is better.
+    const own = this._gradeConfig ? bandsFor(this._gradeConfig, this._task, key) : null;
+    if (own !== null) {
+      return [gradeWithBands(own, value, bandsLowerBetter(own) ?? lowerBetter), "thresholds"];
+    }
     const onScale = [...ON_SCALE[this._task]].some((k) => k.toLowerCase() === key.toLowerCase());
     if (onScale || hasAbsoluteScale(key)) {
-      return computeGrade(this._task, value, key);
+      return [computeGrade(this._task, value, key), "thresholds"];
     }
     if (this._baseline !== null && this._primaryReadings >= 2) {
-      return gradeByTrajectory(this._baseline, value, lowerBetter);
+      return [gradeByTrajectory(this._baseline, value, lowerBetter), "improvement"];
     }
     // One reading of a metric with no known scale: anything else is a guess
     // dressed as a verdict.
-    return "I";
+    return ["I", null];
   }
 
   /**
@@ -757,6 +779,7 @@ export class StandaloneEngine {
       grade: "F",
       // A divergence is certain, not provisional — as in the Python engine.
       gradeNote: null,
+      gradeBasis: null,
       narrative: narrateDiverged({
         epoch, metric, lastValue: prev.primaryMetricValue,
         lastEpoch: prev.epoch, runId: this._runId, locale: this._locale,

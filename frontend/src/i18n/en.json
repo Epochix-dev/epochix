@@ -75,6 +75,10 @@
       "engineer": "Engineer Panel"
     },
     "gradeCaveat": "The grade comes from fixed thresholds for this task type or, for a metric with no fixed scale such as a loss, from how far it has improved since its first reading. Either way it does not know how hard your dataset is. The trend and the best-epoch call are the reliable parts.",
+    "gradeCaveats": {
+      "thresholds": "Graded against fixed thresholds for this metric — it does not know how hard your dataset is. The trend and the best-epoch call are the reliable parts.",
+      "improvement": "Graded on how far this metric has improved since its first reading, because it has no fixed scale. That measures the change, not how good the model is. The trend and the best-epoch call are the reliable parts."
+    },
     "gradeNotes": {
       "few_readings": "Provisional: this grade rests on fewer than five readings of the metric.",
       "still_improving": "Still improving at the last reading — the grade shows where the run got to, not where it was heading."

@@ -1,0 +1,4270 @@
+{
+ "alias_labels": {
+  "config": {
+   "grade_thresholds": {
+    "classification": {
+     "APLUS": 0.96,
+     "A_plus": 0.95,
+     "F": 0.0,
+     "b_minus": 0.7
+    }
+   },
+   "lower_better": {},
+   "metric_thresholds": {},
+   "problems": []
+  },
+  "error": null,
+  "queries": [
+   {
+    "bands": {
+     "APLUS": 0.96,
+     "A_plus": 0.95,
+     "F": 0.0,
+     "b_minus": 0.7
+    },
+    "grades": [
+     [
+      -1.0,
+      true,
+      "F"
+     ],
+     [
+      -1.0,
+      false,
+      "F"
+     ],
+     [
+      0.0,
+      true,
+      "F"
+     ],
+     [
+      0.0,
+      false,
+      "F"
+     ],
+     [
+      0.3,
+      true,
+      "B-"
+     ],
+     [
+      0.3,
+      false,
+      "F"
+     ],
+     [
+      0.6,
+      true,
+      "B-"
+     ],
+     [
+      0.6,
+      false,
+      "F"
+     ],
+     [
+      0.75,
+      true,
+      "A+"
+     ],
+     [
+      0.75,
+      false,
+      "B-"
+     ],
+     [
+      0.9,
+      true,
+      "A+"
+     ],
+     [
+      0.9,
+      false,
+      "B-"
+     ],
+     [
+      0.95,
+      true,
+      "A+"
+     ],
+     [
+      0.95,
+      false,
+      "A+"
+     ],
+     [
+      0.9961,
+      true,
+      "F"
+     ],
+     [
+      0.9961,
+      false,
+      "A+"
+     ],
+     [
+      1.0,
+      true,
+      "F"
+     ],
+     [
+      1.0,
+      false,
+      "A+"
+     ],
+     [
+      2.0,
+      true,
+      "F"
+     ],
+     [
+      2.0,
+      false,
+      "A+"
+     ],
+     [
+      7.0,
+      true,
+      "F"
+     ],
+     [
+      7.0,
+      false,
+      "A+"
+     ],
+     [
+      30.0,
+      true,
+      "F"
+     ],
+     [
+      30.0,
+      false,
+      "A+"
+     ]
+    ],
+    "lower_better": false,
+    "metric": "val_accuracy",
+    "task": "classification"
+   },
+   {
+    "bands": {
+     "APLUS": 0.96,
+     "A_plus": 0.95,
+     "F": 0.0,
+     "b_minus": 0.7
+    },
+    "grades": [
+     [
+      -1.0,
+      true,
+      "F"
+     ],
+     [
+      -1.0,
+      false,
+      "F"
+     ],
+     [
+      0.0,
+      true,
+      "F"
+     ],
+     [
+      0.0,
+      false,
+      "F"
+     ],
+     [
+      0.3,
+      true,
+      "B-"
+     ],
+     [
+      0.3,
+      false,
+      "F"
+     ],
+     [
+      0.6,
+      true,
+      "B-"
+     ],
+     [
+      0.6,
+      false,
+      "F"
+     ],
+     [
+      0.75,
+      true,
+      "A+"
+     ],
+     [
+      0.75,
+      false,
+      "B-"
+     ],
+     [
+      0.9,
+      true,
+      "A+"
+     ],
+     [
+      0.9,
+      false,
+      "B-"
+     ],
+     [
+      0.95,
+      true,
+      "A+"
+     ],
+     [
+      0.95,
+      false,
+      "A+"
+     ],
+     [
+      0.9961,
+      true,
+      "F"
+     ],
+     [
+      0.9961,
+      false,
+      "A+"
+     ],
+     [
+      1.0,
+      true,
+      "F"
+     ],
+     [
+      1.0,
+      false,
+      "A+"
+     ],
+     [
+      2.0,
+      true,
+      "F"
+     ],
+     [
+      2.0,
+      false,
+      "A+"
+     ],
+     [
+      7.0,
+      true,
+      "F"
+     ],
+     [
+      7.0,
+      false,
+      "A+"
+     ],
+     [
+      30.0,
+      true,
+      "F"
+     ],
+     [
+      30.0,
+      false,
+      "A+"
+     ]
+    ],
+    "lower_better": false,
+    "metric": "accuracy",
+    "task": "classification"
+   },
+   {
+    "bands": null,
+    "grades": [],
+    "lower_better": null,
+    "metric": "val_AUC",
+    "task": "classification"
+   },
+   {
+    "bands": null,
+    "grades": [],
+    "lower_better": null,
+    "metric": "val_f1",
+    "task": "classification"
+   },
+   {
+    "bands": null,
+    "grades": [],
+    "lower_better": null,
+    "metric": "val_MAE",
+    "task": "regression"
+   },
+   {
+    "bands": null,
+    "grades": [],
+    "lower_better": null,
+    "metric": "val_R2",
+    "task": "regression"
+   },
+   {
+    "bands": null,
+    "grades": [],
+    "lower_better": null,
+    "metric": "mAP50",
+    "task": "detection"
+   },
+   {
+    "bands": null,
+    "grades": [],
+    "lower_better": null,
+    "metric": "mAP",
+    "task": "detection"
+   },
+   {
+    "bands": null,
+    "grades": [],
+    "lower_better": null,
+    "metric": "my_metric",
+    "task": "custom"
+   },
+   {
+    "bands": null,
+    "grades": [],
+    "lower_better": null,
+    "metric": "val_loss",
+    "task": "custom"
+   },
+   {
+    "bands": null,
+    "grades": [],
+    "lower_better": null,
+    "metric": "perplexity",
+    "task": "nlp"
+   }
+  ],
+  "yaml": "grade_thresholds:\n  classification:\n    A_plus: 0.95\n    APLUS: 0.96\n    b_minus: 0.70\n    F: 0.0\n"
+ },
+ "comments_only": {
+  "config": null,
+  "error": null,
+  "yaml": "# nothing here\n# grade_thresholds:\n#   classification:\n"
+ },
+ "custom_lower_better": {
+  "config": {
+   "grade_thresholds": {
+    "custom": {
+     "A": 10.0,
+     "B": 20.0,
+     "C": 40.0,
+     "F": "inf"
+    }
+   },
+   "lower_better": {
+    "custom": true,
+    "nlp": false
+   },
+   "metric_thresholds": {},
+   "problems": []
+  },
+  "error": null,
+  "queries": [
+   {
+    "bands": null,
+    "grades": [],
+    "lower_better": null,
+    "metric": "val_accuracy",
+    "task": "classification"
+   },
+   {
+    "bands": null,
+    "grades": [],
+    "lower_better": null,
+    "metric": "accuracy",
+    "task": "classification"
+   },
+   {
+    "bands": null,
+    "grades": [],
+    "lower_better": null,
+    "metric": "val_AUC",
+    "task": "classification"
+   },
+   {
+    "bands": null,
+    "grades": [],
+    "lower_better": null,
+    "metric": "val_f1",
+    "task": "classification"
+   },
+   {
+    "bands": null,
+    "grades": [],
+    "lower_better": null,
+    "metric": "val_MAE",
+    "task": "regression"
+   },
+   {
+    "bands": null,
+    "grades": [],
+    "lower_better": null,
+    "metric": "val_R2",
+    "task": "regression"
+   },
+   {
+    "bands": null,
+    "grades": [],
+    "lower_better": null,
+    "metric": "mAP50",
+    "task": "detection"
+   },
+   {
+    "bands": null,
+    "grades": [],
+    "lower_better": null,
+    "metric": "mAP",
+    "task": "detection"
+   },
+   {
+    "bands": {
+     "A": 10.0,
+     "B": 20.0,
+     "C": 40.0,
+     "F": "inf"
+    },
+    "grades": [
+     [
+      -1.0,
+      true,
+      "A"
+     ],
+     [
+      -1.0,
+      false,
+      "F"
+     ],
+     [
+      0.0,
+      true,
+      "A"
+     ],
+     [
+      0.0,
+      false,
+      "F"
+     ],
+     [
+      0.3,
+      true,
+      "A"
+     ],
+     [
+      0.3,
+      false,
+      "F"
+     ],
+     [
+      0.6,
+      true,
+      "A"
+     ],
+     [
+      0.6,
+      false,
+      "F"
+     ],
+     [
+      0.75,
+      true,
+      "A"
+     ],
+     [
+      0.75,
+      false,
+      "F"
+     ],
+     [
+      0.9,
+      true,
+      "A"
+     ],
+     [
+      0.9,
+      false,
+      "F"
+     ],
+     [
+      0.95,
+      true,
+      "A"
+     ],
+     [
+      0.95,
+      false,
+      "F"
+     ],
+     [
+      0.9961,
+      true,
+      "A"
+     ],
+     [
+      0.9961,
+      false,
+      "F"
+     ],
+     [
+      1.0,
+      true,
+      "A"
+     ],
+     [
+      1.0,
+      false,
+      "F"
+     ],
+     [
+      2.0,
+      true,
+      "A"
+     ],
+     [
+      2.0,
+      false,
+      "F"
+     ],
+     [
+      7.0,
+      true,
+      "A"
+     ],
+     [
+      7.0,
+      false,
+      "F"
+     ],
+     [
+      30.0,
+      true,
+      "C"
+     ],
+     [
+      30.0,
+      false,
+      "B"
+     ]
+    ],
+    "lower_better": true,
+    "metric": "my_metric",
+    "task": "custom"
+   },
+   {
+    "bands": {
+     "A": 10.0,
+     "B": 20.0,
+     "C": 40.0,
+     "F": "inf"
+    },
+    "grades": [
+     [
+      -1.0,
+      true,
+      "A"
+     ],
+     [
+      -1.0,
+      false,
+      "F"
+     ],
+     [
+      0.0,
+      true,
+      "A"
+     ],
+     [
+      0.0,
+      false,
+      "F"
+     ],
+     [
+      0.3,
+      true,
+      "A"
+     ],
+     [
+      0.3,
+      false,
+      "F"
+     ],
+     [
+      0.6,
+      true,
+      "A"
+     ],
+     [
+      0.6,
+      false,
+      "F"
+     ],
+     [
+      0.75,
+      true,
+      "A"
+     ],
+     [
+      0.75,
+      false,
+      "F"
+     ],
+     [
+      0.9,
+      true,
+      "A"
+     ],
+     [
+      0.9,
+      false,
+      "F"
+     ],
+     [
+      0.95,
+      true,
+      "A"
+     ],
+     [
+      0.95,
+      false,
+      "F"
+     ],
+     [
+      0.9961,
+      true,
+      "A"
+     ],
+     [
+      0.9961,
+      false,
+      "F"
+     ],
+     [
+      1.0,
+      true,
+      "A"
+     ],
+     [
+      1.0,
+      false,
+      "F"
+     ],
+     [
+      2.0,
+      true,
+      "A"
+     ],
+     [
+      2.0,
+      false,
+      "F"
+     ],
+     [
+      7.0,
+      true,
+      "A"
+     ],
+     [
+      7.0,
+      false,
+      "F"
+     ],
+     [
+      30.0,
+      true,
+      "C"
+     ],
+     [
+      30.0,
+      false,
+      "B"
+     ]
+    ],
+    "lower_better": true,
+    "metric": "val_loss",
+    "task": "custom"
+   },
+   {
+    "bands": null,
+    "grades": [],
+    "lower_better": null,
+    "metric": "perplexity",
+    "task": "nlp"
+   }
+  ],
+  "yaml": "grade_thresholds:\n  custom:\n    A: 10.0\n    B: 20.0\n    C: 40.0\n    F: .inf\nlower_better:\n  custom: true\n  nlp: false\n"
+ },
+ "empty": {
+  "config": null,
+  "error": null,
+  "yaml": ""
+ },
+ "entry_not_a_mapping": {
+  "config": {
+   "grade_thresholds": {
+    "detection": {
+     "A": 0.5
+    }
+   },
+   "lower_better": {},
+   "metric_thresholds": {},
+   "problems": []
+  },
+  "error": null,
+  "queries": [
+   {
+    "bands": null,
+    "grades": [],
+    "lower_better": null,
+    "metric": "val_accuracy",
+    "task": "classification"
+   },
+   {
+    "bands": null,
+    "grades": [],
+    "lower_better": null,
+    "metric": "accuracy",
+    "task": "classification"
+   },
+   {
+    "bands": null,
+    "grades": [],
+    "lower_better": null,
+    "metric": "val_AUC",
+    "task": "classification"
+   },
+   {
+    "bands": null,
+    "grades": [],
+    "lower_better": null,
+    "metric": "val_f1",
+    "task": "classification"
+   },
+   {
+    "bands": null,
+    "grades": [],
+    "lower_better": null,
+    "metric": "val_MAE",
+    "task": "regression"
+   },
+   {
+    "bands": null,
+    "grades": [],
+    "lower_better": null,
+    "metric": "val_R2",
+    "task": "regression"
+   },
+   {
+    "bands": {
+     "A": 0.5
+    },
+    "grades": [
+     [
+      -1.0,
+      true,
+      "A"
+     ],
+     [
+      -1.0,
+      false,
+      "F"
+     ],
+     [
+      0.0,
+      true,
+      "A"
+     ],
+     [
+      0.0,
+      false,
+      "F"
+     ],
+     [
+      0.3,
+      true,
+      "A"
+     ],
+     [
+      0.3,
+      false,
+      "F"
+     ],
+     [
+      0.6,
+      true,
+      "F"
+     ],
+     [
+      0.6,
+      false,
+      "A"
+     ],
+     [
+      0.75,
+      true,
+      "F"
+     ],
+     [
+      0.75,
+      false,
+      "A"
+     ],
+     [
+      0.9,
+      true,
+      "F"
+     ],
+     [
+      0.9,
+      false,
+      "A"
+     ],
+     [
+      0.95,
+      true,
+      "F"
+     ],
+     [
+      0.95,
+      false,
+      "A"
+     ],
+     [
+      0.9961,
+      true,
+      "F"
+     ],
+     [
+      0.9961,
+      false,
+      "A"
+     ],
+     [
+      1.0,
+      true,
+      "F"
+     ],
+     [
+      1.0,
+      false,
+      "A"
+     ],
+     [
+      2.0,
+      true,
+      "F"
+     ],
+     [
+      2.0,
+      false,
+      "A"
+     ],
+     [
+      7.0,
+      true,
+      "F"
+     ],
+     [
+      7.0,
+      false,
+      "A"
+     ],
+     [
+      30.0,
+      true,
+      "F"
+     ],
+     [
+      30.0,
+      false,
+      "A"
+     ]
+    ],
+    "lower_better": null,
+    "metric": "mAP50",
+    "task": "detection"
+   },
+   {
+    "bands": null,
+    "grades": [],
+    "lower_better": null,
+    "metric": "mAP",
+    "task": "detection"
+   },
+   {
+    "bands": null,
+    "grades": [],
+    "lower_better": null,
+    "metric": "my_metric",
+    "task": "custom"
+   },
+   {
+    "bands": null,
+    "grades": [],
+    "lower_better": null,
+    "metric": "val_loss",
+    "task": "custom"
+   },
+   {
+    "bands": null,
+    "grades": [],
+    "lower_better": null,
+    "metric": "perplexity",
+    "task": "nlp"
+   }
+  ],
+  "yaml": "grade_thresholds:\n  classification: 0.9\n  detection:\n    A: 0.5\n"
+ },
+ "example_file_as_shipped": {
+  "config": {
+   "grade_thresholds": {},
+   "lower_better": {},
+   "metric_thresholds": {},
+   "problems": []
+  },
+  "error": null,
+  "queries": [
+   {
+    "bands": null,
+    "grades": [],
+    "lower_better": null,
+    "metric": "val_accuracy",
+    "task": "classification"
+   },
+   {
+    "bands": null,
+    "grades": [],
+    "lower_better": null,
+    "metric": "accuracy",
+    "task": "classification"
+   },
+   {
+    "bands": null,
+    "grades": [],
+    "lower_better": null,
+    "metric": "val_AUC",
+    "task": "classification"
+   },
+   {
+    "bands": null,
+    "grades": [],
+    "lower_better": null,
+    "metric": "val_f1",
+    "task": "classification"
+   },
+   {
+    "bands": null,
+    "grades": [],
+    "lower_better": null,
+    "metric": "val_MAE",
+    "task": "regression"
+   },
+   {
+    "bands": null,
+    "grades": [],
+    "lower_better": null,
+    "metric": "val_R2",
+    "task": "regression"
+   },
+   {
+    "bands": null,
+    "grades": [],
+    "lower_better": null,
+    "metric": "mAP50",
+    "task": "detection"
+   },
+   {
+    "bands": null,
+    "grades": [],
+    "lower_better": null,
+    "metric": "mAP",
+    "task": "detection"
+   },
+   {
+    "bands": null,
+    "grades": [],
+    "lower_better": null,
+    "metric": "my_metric",
+    "task": "custom"
+   },
+   {
+    "bands": null,
+    "grades": [],
+    "lower_better": null,
+    "metric": "val_loss",
+    "task": "custom"
+   },
+   {
+    "bands": null,
+    "grades": [],
+    "lower_better": null,
+    "metric": "perplexity",
+    "task": "nlp"
+   }
+  ],
+  "yaml": "# Custom grade thresholds for epochix.\n#\n# Copy this file to the folder you run epochix from, name it `.epochix.yaml`,\n# and uncomment the entries you want to change. As it stands it changes\n# nothing: every entry is commented out.\n#\n# Where it is looked for: the current folder, then each parent, then\n# ~/.epochix/.epochix.yaml. EPOCHIX_GRADE_CONFIG names a file directly, or\n# turns the lookup off with `off`. `epochix check <log>` says which file is in\n# use and whether it applies to that log.\n#\n# Reference: https://epochix.dev/config/\n\nversion: 1\n\n# ── Grade thresholds ─────────────────────────────────────────────────────────\n#\n# An entry lists, for each grade, the lowest value that still earns it — or the\n# highest, for a metric where lower is better. The order of the numbers says\n# which: write them from A+ down to F and epochix reads the direction from\n# them. You do not have to list every grade.\n#\n# A TASK entry applies to one metric of that task, named beside it below. A\n# run told by another metric is not touched by it.\n#\n# A METRIC entry (the name of a metric instead of a task) applies to that\n# metric in any run. Use it for a metric that has no entry of its own.\n#\n# The values below are the built-in ones, so uncommenting an entry without\n# editing it changes nothing.\n\ngrade_thresholds:\n\n  # classification:         # applies to: val_accuracy, accuracy\n  #   \"A+\": 0.95\n  #   A:    0.90\n  #   \"A-\": 0.87\n  #   \"B+\": 0.82\n  #   B:    0.75\n  #   \"B-\": 0.70\n  #   \"C+\": 0.65\n  #   C:    0.60\n  #   \"C-\": 0.55\n  #   D:    0.50\n  #   F:    0.0\n\n  # detection:              # applies to: mAP50\n  #   \"A+\": 0.75\n  #   A:    0.65\n  #   \"A-\": 0.58\n  #   \"B+\": 0.50\n  #   B:    0.42\n  #   \"B-\": 0.35\n  #   \"C+\": 0.28\n  #   C:    0.20\n  #   \"C-\": 0.15\n  #   D:    0.08\n  #   F:    0.0\n\n  # segmentation:           # applies to: mIoU\n  #   \"A+\": 0.85\n  #   A:    0.78\n  #   \"A-\": 0.72\n  #   \"B+\": 0.66\n  #   B:    0.60\n  #   \"B-\": 0.54\n  #   \"C+\": 0.47\n  #   C:    0.40\n  #   \"C-\": 0.32\n  #   D:    0.20\n  #   F:    0.0\n\n  # nlp:                    # applies to: perplexity (lower is better)\n  #   \"A+\": 10.0\n  #   A:    20.0\n  #   \"A-\": 30.0\n  #   \"B+\": 50.0\n  #   B:    80.0\n  #   \"B-\": 120.0\n  #   \"C+\": 180.0\n  #   C:    250.0\n  #   \"C-\": 350.0\n  #   D:    500.0\n  #   F:    .inf\n\n  # biometric:              # applies to: EER (lower is better)\n  #   \"A+\": 0.01\n  #   A:    0.03\n  #   \"A-\": 0.05\n  #   \"B+\": 0.08\n  #   B:    0.10\n  #   \"B-\": 0.15\n  #   \"C+\": 0.20\n  #   C:    0.25\n  #   \"C-\": 0.30\n  #   D:    0.40\n  #   F:    .inf\n\n  # gaze:                   # applies to: val_MAE, MAE in degrees (lower is better)\n  #   \"A+\": 0.5\n  #   A:    1.0\n  #   \"A-\": 1.5\n  #   \"B+\": 2.5\n  #   B:    4.0\n  #   \"B-\": 6.0\n  #   \"C+\": 9.0\n  #   C:    12.0\n  #   \"C-\": 16.0\n  #   D:    22.0\n  #   F:    .inf\n\n  # ── No built-in thresholds: these change how the run is graded ────────────\n  #\n  # By default an MAE, an FID and a metric epochix does not recognise are\n  # graded on how far they improved, because a log cannot say what a good\n  # value is. Writing thresholds here supplies that, in your own units. The\n  # numbers below are placeholders — replace them with yours.\n\n  # regression:             # applies to: val_MAE, MAE (not R2, which has its own)\n  #   A: 1.0\n  #   B: 2.5\n  #   C: 5.0\n  #   D: 10.0\n  #   F: .inf\n\n  # generative:             # applies to: fid\n  #   A: 10.0\n  #   B: 40.0\n  #   C: 130.0\n  #   D: 300.0\n  #   F: .inf\n\n  # custom:                 # applies to whatever a run with no known task is told by\n  #   A: 0.90\n  #   B: 0.75\n  #   C: 0.60\n  #   D: 0.50\n  #   F: 0.0\n\n  # ── A metric entry ────────────────────────────────────────────────────────\n  #\n  # F1 is graded on accuracy's bands by default. This gives it bands of its\n  # own — lower ones, say, where the positive class is rare.\n\n  # val_f1:\n  #   A: 0.90\n  #   B: 0.75\n  #   C: 0.60\n  #   D: 0.50\n  #   F: 0.0\n\n# ── Direction ────────────────────────────────────────────────────────────────\n#\n# Only for a metric whose name does not say which way is better. epochix knows\n# that a loss or an error falls and an accuracy rises; for a name it does not\n# recognise in a run with no known task, it assumes higher is better unless\n# told otherwise here.\n\n# lower_better:\n#   custom: true\n"
+ },
+ "metric_entry_canonicalised": {
+  "config": {
+   "grade_thresholds": {},
+   "lower_better": {},
+   "metric_thresholds": {
+    "val_f1": {
+     "A": 0.9,
+     "B": 0.75,
+     "C": 0.6,
+     "F": 0.0
+    }
+   },
+   "problems": []
+  },
+  "error": null,
+  "queries": [
+   {
+    "bands": null,
+    "grades": [],
+    "lower_better": null,
+    "metric": "val_accuracy",
+    "task": "classification"
+   },
+   {
+    "bands": null,
+    "grades": [],
+    "lower_better": null,
+    "metric": "accuracy",
+    "task": "classification"
+   },
+   {
+    "bands": null,
+    "grades": [],
+    "lower_better": null,
+    "metric": "val_AUC",
+    "task": "classification"
+   },
+   {
+    "bands": {
+     "A": 0.9,
+     "B": 0.75,
+     "C": 0.6,
+     "F": 0.0
+    },
+    "grades": [
+     [
+      -1.0,
+      true,
+      "F"
+     ],
+     [
+      -1.0,
+      false,
+      "F"
+     ],
+     [
+      0.0,
+      true,
+      "F"
+     ],
+     [
+      0.0,
+      false,
+      "F"
+     ],
+     [
+      0.3,
+      true,
+      "C"
+     ],
+     [
+      0.3,
+      false,
+      "F"
+     ],
+     [
+      0.6,
+      true,
+      "C"
+     ],
+     [
+      0.6,
+      false,
+      "C"
+     ],
+     [
+      0.75,
+      true,
+      "B"
+     ],
+     [
+      0.75,
+      false,
+      "B"
+     ],
+     [
+      0.9,
+      true,
+      "A"
+     ],
+     [
+      0.9,
+      false,
+      "A"
+     ],
+     [
+      0.95,
+      true,
+      "F"
+     ],
+     [
+      0.95,
+      false,
+      "A"
+     ],
+     [
+      0.9961,
+      true,
+      "F"
+     ],
+     [
+      0.9961,
+      false,
+      "A"
+     ],
+     [
+      1.0,
+      true,
+      "F"
+     ],
+     [
+      1.0,
+      false,
+      "A"
+     ],
+     [
+      2.0,
+      true,
+      "F"
+     ],
+     [
+      2.0,
+      false,
+      "A"
+     ],
+     [
+      7.0,
+      true,
+      "F"
+     ],
+     [
+      7.0,
+      false,
+      "A"
+     ],
+     [
+      30.0,
+      true,
+      "F"
+     ],
+     [
+      30.0,
+      false,
+      "A"
+     ]
+    ],
+    "lower_better": false,
+    "metric": "val_f1",
+    "task": "classification"
+   },
+   {
+    "bands": null,
+    "grades": [],
+    "lower_better": null,
+    "metric": "val_MAE",
+    "task": "regression"
+   },
+   {
+    "bands": null,
+    "grades": [],
+    "lower_better": null,
+    "metric": "val_R2",
+    "task": "regression"
+   },
+   {
+    "bands": null,
+    "grades": [],
+    "lower_better": null,
+    "metric": "mAP50",
+    "task": "detection"
+   },
+   {
+    "bands": null,
+    "grades": [],
+    "lower_better": null,
+    "metric": "mAP",
+    "task": "detection"
+   },
+   {
+    "bands": null,
+    "grades": [],
+    "lower_better": null,
+    "metric": "my_metric",
+    "task": "custom"
+   },
+   {
+    "bands": null,
+    "grades": [],
+    "lower_better": null,
+    "metric": "val_loss",
+    "task": "custom"
+   },
+   {
+    "bands": null,
+    "grades": [],
+    "lower_better": null,
+    "metric": "perplexity",
+    "task": "nlp"
+   }
+  ],
+  "yaml": "grade_thresholds:\n  eval_f1:\n    A: 0.90\n    B: 0.75\n    C: 0.60\n    F: 0.0\n"
+ },
+ "mixed_case_task": {
+  "config": {
+   "grade_thresholds": {
+    "classification": {
+     "A": 0.9,
+     "F": 0.0
+    }
+   },
+   "lower_better": {},
+   "metric_thresholds": {},
+   "problems": []
+  },
+  "error": null,
+  "queries": [
+   {
+    "bands": {
+     "A": 0.9,
+     "F": 0.0
+    },
+    "grades": [
+     [
+      -1.0,
+      true,
+      "F"
+     ],
+     [
+      -1.0,
+      false,
+      "F"
+     ],
+     [
+      0.0,
+      true,
+      "F"
+     ],
+     [
+      0.0,
+      false,
+      "F"
+     ],
+     [
+      0.3,
+      true,
+      "A"
+     ],
+     [
+      0.3,
+      false,
+      "F"
+     ],
+     [
+      0.6,
+      true,
+      "A"
+     ],
+     [
+      0.6,
+      false,
+      "F"
+     ],
+     [
+      0.75,
+      true,
+      "A"
+     ],
+     [
+      0.75,
+      false,
+      "F"
+     ],
+     [
+      0.9,
+      true,
+      "A"
+     ],
+     [
+      0.9,
+      false,
+      "A"
+     ],
+     [
+      0.95,
+      true,
+      "F"
+     ],
+     [
+      0.95,
+      false,
+      "A"
+     ],
+     [
+      0.9961,
+      true,
+      "F"
+     ],
+     [
+      0.9961,
+      false,
+      "A"
+     ],
+     [
+      1.0,
+      true,
+      "F"
+     ],
+     [
+      1.0,
+      false,
+      "A"
+     ],
+     [
+      2.0,
+      true,
+      "F"
+     ],
+     [
+      2.0,
+      false,
+      "A"
+     ],
+     [
+      7.0,
+      true,
+      "F"
+     ],
+     [
+      7.0,
+      false,
+      "A"
+     ],
+     [
+      30.0,
+      true,
+      "F"
+     ],
+     [
+      30.0,
+      false,
+      "A"
+     ]
+    ],
+    "lower_better": false,
+    "metric": "val_accuracy",
+    "task": "classification"
+   },
+   {
+    "bands": {
+     "A": 0.9,
+     "F": 0.0
+    },
+    "grades": [
+     [
+      -1.0,
+      true,
+      "F"
+     ],
+     [
+      -1.0,
+      false,
+      "F"
+     ],
+     [
+      0.0,
+      true,
+      "F"
+     ],
+     [
+      0.0,
+      false,
+      "F"
+     ],
+     [
+      0.3,
+      true,
+      "A"
+     ],
+     [
+      0.3,
+      false,
+      "F"
+     ],
+     [
+      0.6,
+      true,
+      "A"
+     ],
+     [
+      0.6,
+      false,
+      "F"
+     ],
+     [
+      0.75,
+      true,
+      "A"
+     ],
+     [
+      0.75,
+      false,
+      "F"
+     ],
+     [
+      0.9,
+      true,
+      "A"
+     ],
+     [
+      0.9,
+      false,
+      "A"
+     ],
+     [
+      0.95,
+      true,
+      "F"
+     ],
+     [
+      0.95,
+      false,
+      "A"
+     ],
+     [
+      0.9961,
+      true,
+      "F"
+     ],
+     [
+      0.9961,
+      false,
+      "A"
+     ],
+     [
+      1.0,
+      true,
+      "F"
+     ],
+     [
+      1.0,
+      false,
+      "A"
+     ],
+     [
+      2.0,
+      true,
+      "F"
+     ],
+     [
+      2.0,
+      false,
+      "A"
+     ],
+     [
+      7.0,
+      true,
+      "F"
+     ],
+     [
+      7.0,
+      false,
+      "A"
+     ],
+     [
+      30.0,
+      true,
+      "F"
+     ],
+     [
+      30.0,
+      false,
+      "A"
+     ]
+    ],
+    "lower_better": false,
+    "metric": "accuracy",
+    "task": "classification"
+   },
+   {
+    "bands": null,
+    "grades": [],
+    "lower_better": null,
+    "metric": "val_AUC",
+    "task": "classification"
+   },
+   {
+    "bands": null,
+    "grades": [],
+    "lower_better": null,
+    "metric": "val_f1",
+    "task": "classification"
+   },
+   {
+    "bands": null,
+    "grades": [],
+    "lower_better": null,
+    "metric": "val_MAE",
+    "task": "regression"
+   },
+   {
+    "bands": null,
+    "grades": [],
+    "lower_better": null,
+    "metric": "val_R2",
+    "task": "regression"
+   },
+   {
+    "bands": null,
+    "grades": [],
+    "lower_better": null,
+    "metric": "mAP50",
+    "task": "detection"
+   },
+   {
+    "bands": null,
+    "grades": [],
+    "lower_better": null,
+    "metric": "mAP",
+    "task": "detection"
+   },
+   {
+    "bands": null,
+    "grades": [],
+    "lower_better": null,
+    "metric": "my_metric",
+    "task": "custom"
+   },
+   {
+    "bands": null,
+    "grades": [],
+    "lower_better": null,
+    "metric": "val_loss",
+    "task": "custom"
+   },
+   {
+    "bands": null,
+    "grades": [],
+    "lower_better": null,
+    "metric": "perplexity",
+    "task": "nlp"
+   }
+  ],
+  "yaml": "grade_thresholds:\n  Classification:\n    A: 0.9\n    F: 0.0\n"
+ },
+ "not_a_number": {
+  "config": {
+   "grade_thresholds": {
+    "classification": {
+     "B": 0.8,
+     "F": 0.0
+    }
+   },
+   "lower_better": {},
+   "metric_thresholds": {},
+   "problems": [
+    "classification: the threshold for A is not a number",
+    "classification: the threshold for C is not a number"
+   ]
+  },
+  "error": null,
+  "queries": [
+   {
+    "bands": {
+     "B": 0.8,
+     "F": 0.0
+    },
+    "grades": [
+     [
+      -1.0,
+      true,
+      "F"
+     ],
+     [
+      -1.0,
+      false,
+      "F"
+     ],
+     [
+      0.0,
+      true,
+      "F"
+     ],
+     [
+      0.0,
+      false,
+      "F"
+     ],
+     [
+      0.3,
+      true,
+      "B"
+     ],
+     [
+      0.3,
+      false,
+      "F"
+     ],
+     [
+      0.6,
+      true,
+      "B"
+     ],
+     [
+      0.6,
+      false,
+      "F"
+     ],
+     [
+      0.75,
+      true,
+      "B"
+     ],
+     [
+      0.75,
+      false,
+      "F"
+     ],
+     [
+      0.9,
+      true,
+      "F"
+     ],
+     [
+      0.9,
+      false,
+      "B"
+     ],
+     [
+      0.95,
+      true,
+      "F"
+     ],
+     [
+      0.95,
+      false,
+      "B"
+     ],
+     [
+      0.9961,
+      true,
+      "F"
+     ],
+     [
+      0.9961,
+      false,
+      "B"
+     ],
+     [
+      1.0,
+      true,
+      "F"
+     ],
+     [
+      1.0,
+      false,
+      "B"
+     ],
+     [
+      2.0,
+      true,
+      "F"
+     ],
+     [
+      2.0,
+      false,
+      "B"
+     ],
+     [
+      7.0,
+      true,
+      "F"
+     ],
+     [
+      7.0,
+      false,
+      "B"
+     ],
+     [
+      30.0,
+      true,
+      "F"
+     ],
+     [
+      30.0,
+      false,
+      "B"
+     ]
+    ],
+    "lower_better": false,
+    "metric": "val_accuracy",
+    "task": "classification"
+   },
+   {
+    "bands": {
+     "B": 0.8,
+     "F": 0.0
+    },
+    "grades": [
+     [
+      -1.0,
+      true,
+      "F"
+     ],
+     [
+      -1.0,
+      false,
+      "F"
+     ],
+     [
+      0.0,
+      true,
+      "F"
+     ],
+     [
+      0.0,
+      false,
+      "F"
+     ],
+     [
+      0.3,
+      true,
+      "B"
+     ],
+     [
+      0.3,
+      false,
+      "F"
+     ],
+     [
+      0.6,
+      true,
+      "B"
+     ],
+     [
+      0.6,
+      false,
+      "F"
+     ],
+     [
+      0.75,
+      true,
+      "B"
+     ],
+     [
+      0.75,
+      false,
+      "F"
+     ],
+     [
+      0.9,
+      true,
+      "F"
+     ],
+     [
+      0.9,
+      false,
+      "B"
+     ],
+     [
+      0.95,
+      true,
+      "F"
+     ],
+     [
+      0.95,
+      false,
+      "B"
+     ],
+     [
+      0.9961,
+      true,
+      "F"
+     ],
+     [
+      0.9961,
+      false,
+      "B"
+     ],
+     [
+      1.0,
+      true,
+      "F"
+     ],
+     [
+      1.0,
+      false,
+      "B"
+     ],
+     [
+      2.0,
+      true,
+      "F"
+     ],
+     [
+      2.0,
+      false,
+      "B"
+     ],
+     [
+      7.0,
+      true,
+      "F"
+     ],
+     [
+      7.0,
+      false,
+      "B"
+     ],
+     [
+      30.0,
+      true,
+      "F"
+     ],
+     [
+      30.0,
+      false,
+      "B"
+     ]
+    ],
+    "lower_better": false,
+    "metric": "accuracy",
+    "task": "classification"
+   },
+   {
+    "bands": null,
+    "grades": [],
+    "lower_better": null,
+    "metric": "val_AUC",
+    "task": "classification"
+   },
+   {
+    "bands": null,
+    "grades": [],
+    "lower_better": null,
+    "metric": "val_f1",
+    "task": "classification"
+   },
+   {
+    "bands": null,
+    "grades": [],
+    "lower_better": null,
+    "metric": "val_MAE",
+    "task": "regression"
+   },
+   {
+    "bands": null,
+    "grades": [],
+    "lower_better": null,
+    "metric": "val_R2",
+    "task": "regression"
+   },
+   {
+    "bands": null,
+    "grades": [],
+    "lower_better": null,
+    "metric": "mAP50",
+    "task": "detection"
+   },
+   {
+    "bands": null,
+    "grades": [],
+    "lower_better": null,
+    "metric": "mAP",
+    "task": "detection"
+   },
+   {
+    "bands": null,
+    "grades": [],
+    "lower_better": null,
+    "metric": "my_metric",
+    "task": "custom"
+   },
+   {
+    "bands": null,
+    "grades": [],
+    "lower_better": null,
+    "metric": "val_loss",
+    "task": "custom"
+   },
+   {
+    "bands": null,
+    "grades": [],
+    "lower_better": null,
+    "metric": "perplexity",
+    "task": "nlp"
+   }
+  ],
+  "yaml": "grade_thresholds:\n  classification:\n    A: high\n    B: 0.8\n    C:\n    F: 0.0\n"
+ },
+ "not_yaml": {
+  "config": null,
+  "error": "it is not valid YAML",
+  "yaml": "grade_thresholds: [unclosed\n"
+ },
+ "out_of_order": {
+  "config": {
+   "grade_thresholds": {},
+   "lower_better": {},
+   "metric_thresholds": {},
+   "problems": [
+    "classification: the thresholds are not in order from A+ to F, so the entry is not used"
+   ]
+  },
+  "error": null,
+  "queries": [
+   {
+    "bands": null,
+    "grades": [],
+    "lower_better": null,
+    "metric": "val_accuracy",
+    "task": "classification"
+   },
+   {
+    "bands": null,
+    "grades": [],
+    "lower_better": null,
+    "metric": "accuracy",
+    "task": "classification"
+   },
+   {
+    "bands": null,
+    "grades": [],
+    "lower_better": null,
+    "metric": "val_AUC",
+    "task": "classification"
+   },
+   {
+    "bands": null,
+    "grades": [],
+    "lower_better": null,
+    "metric": "val_f1",
+    "task": "classification"
+   },
+   {
+    "bands": null,
+    "grades": [],
+    "lower_better": null,
+    "metric": "val_MAE",
+    "task": "regression"
+   },
+   {
+    "bands": null,
+    "grades": [],
+    "lower_better": null,
+    "metric": "val_R2",
+    "task": "regression"
+   },
+   {
+    "bands": null,
+    "grades": [],
+    "lower_better": null,
+    "metric": "mAP50",
+    "task": "detection"
+   },
+   {
+    "bands": null,
+    "grades": [],
+    "lower_better": null,
+    "metric": "mAP",
+    "task": "detection"
+   },
+   {
+    "bands": null,
+    "grades": [],
+    "lower_better": null,
+    "metric": "my_metric",
+    "task": "custom"
+   },
+   {
+    "bands": null,
+    "grades": [],
+    "lower_better": null,
+    "metric": "val_loss",
+    "task": "custom"
+   },
+   {
+    "bands": null,
+    "grades": [],
+    "lower_better": null,
+    "metric": "perplexity",
+    "task": "nlp"
+   }
+  ],
+  "yaml": "grade_thresholds:\n  classification:\n    A: 0.9\n    B: 0.95\n    C: 0.6\n"
+ },
+ "quoted_number": {
+  "config": {
+   "grade_thresholds": {
+    "detection": {
+     "A": 0.6,
+     "F": 0.0
+    }
+   },
+   "lower_better": {},
+   "metric_thresholds": {},
+   "problems": []
+  },
+  "error": null,
+  "queries": [
+   {
+    "bands": null,
+    "grades": [],
+    "lower_better": null,
+    "metric": "val_accuracy",
+    "task": "classification"
+   },
+   {
+    "bands": null,
+    "grades": [],
+    "lower_better": null,
+    "metric": "accuracy",
+    "task": "classification"
+   },
+   {
+    "bands": null,
+    "grades": [],
+    "lower_better": null,
+    "metric": "val_AUC",
+    "task": "classification"
+   },
+   {
+    "bands": null,
+    "grades": [],
+    "lower_better": null,
+    "metric": "val_f1",
+    "task": "classification"
+   },
+   {
+    "bands": null,
+    "grades": [],
+    "lower_better": null,
+    "metric": "val_MAE",
+    "task": "regression"
+   },
+   {
+    "bands": null,
+    "grades": [],
+    "lower_better": null,
+    "metric": "val_R2",
+    "task": "regression"
+   },
+   {
+    "bands": {
+     "A": 0.6,
+     "F": 0.0
+    },
+    "grades": [
+     [
+      -1.0,
+      true,
+      "F"
+     ],
+     [
+      -1.0,
+      false,
+      "F"
+     ],
+     [
+      0.0,
+      true,
+      "F"
+     ],
+     [
+      0.0,
+      false,
+      "F"
+     ],
+     [
+      0.3,
+      true,
+      "A"
+     ],
+     [
+      0.3,
+      false,
+      "F"
+     ],
+     [
+      0.6,
+      true,
+      "A"
+     ],
+     [
+      0.6,
+      false,
+      "A"
+     ],
+     [
+      0.75,
+      true,
+      "F"
+     ],
+     [
+      0.75,
+      false,
+      "A"
+     ],
+     [
+      0.9,
+      true,
+      "F"
+     ],
+     [
+      0.9,
+      false,
+      "A"
+     ],
+     [
+      0.95,
+      true,
+      "F"
+     ],
+     [
+      0.95,
+      false,
+      "A"
+     ],
+     [
+      0.9961,
+      true,
+      "F"
+     ],
+     [
+      0.9961,
+      false,
+      "A"
+     ],
+     [
+      1.0,
+      true,
+      "F"
+     ],
+     [
+      1.0,
+      false,
+      "A"
+     ],
+     [
+      2.0,
+      true,
+      "F"
+     ],
+     [
+      2.0,
+      false,
+      "A"
+     ],
+     [
+      7.0,
+      true,
+      "F"
+     ],
+     [
+      7.0,
+      false,
+      "A"
+     ],
+     [
+      30.0,
+      true,
+      "F"
+     ],
+     [
+      30.0,
+      false,
+      "A"
+     ]
+    ],
+    "lower_better": false,
+    "metric": "mAP50",
+    "task": "detection"
+   },
+   {
+    "bands": null,
+    "grades": [],
+    "lower_better": null,
+    "metric": "mAP",
+    "task": "detection"
+   },
+   {
+    "bands": null,
+    "grades": [],
+    "lower_better": null,
+    "metric": "my_metric",
+    "task": "custom"
+   },
+   {
+    "bands": null,
+    "grades": [],
+    "lower_better": null,
+    "metric": "val_loss",
+    "task": "custom"
+   },
+   {
+    "bands": null,
+    "grades": [],
+    "lower_better": null,
+    "metric": "perplexity",
+    "task": "nlp"
+   }
+  ],
+  "yaml": "grade_thresholds:\n  detection:\n    A: \"0.6\"\n    F: 0.0\n"
+ },
+ "readme_example": {
+  "config": {
+   "grade_thresholds": {
+    "classification": {
+     "A": 0.93,
+     "A+": 0.97,
+     "B": 0.85,
+     "C": 0.75,
+     "D": 0.6,
+     "F": 0.0
+    }
+   },
+   "lower_better": {},
+   "metric_thresholds": {
+    "val_f1": {
+     "A": 0.9,
+     "B": 0.75,
+     "C": 0.6,
+     "F": 0.0
+    }
+   },
+   "problems": []
+  },
+  "error": null,
+  "queries": [
+   {
+    "bands": {
+     "A": 0.93,
+     "A+": 0.97,
+     "B": 0.85,
+     "C": 0.75,
+     "D": 0.6,
+     "F": 0.0
+    },
+    "grades": [
+     [
+      -1.0,
+      true,
+      "F"
+     ],
+     [
+      -1.0,
+      false,
+      "F"
+     ],
+     [
+      0.0,
+      true,
+      "F"
+     ],
+     [
+      0.0,
+      false,
+      "F"
+     ],
+     [
+      0.3,
+      true,
+      "D"
+     ],
+     [
+      0.3,
+      false,
+      "F"
+     ],
+     [
+      0.6,
+      true,
+      "D"
+     ],
+     [
+      0.6,
+      false,
+      "D"
+     ],
+     [
+      0.75,
+      true,
+      "C"
+     ],
+     [
+      0.75,
+      false,
+      "C"
+     ],
+     [
+      0.9,
+      true,
+      "A"
+     ],
+     [
+      0.9,
+      false,
+      "B"
+     ],
+     [
+      0.95,
+      true,
+      "A+"
+     ],
+     [
+      0.95,
+      false,
+      "A"
+     ],
+     [
+      0.9961,
+      true,
+      "F"
+     ],
+     [
+      0.9961,
+      false,
+      "A+"
+     ],
+     [
+      1.0,
+      true,
+      "F"
+     ],
+     [
+      1.0,
+      false,
+      "A+"
+     ],
+     [
+      2.0,
+      true,
+      "F"
+     ],
+     [
+      2.0,
+      false,
+      "A+"
+     ],
+     [
+      7.0,
+      true,
+      "F"
+     ],
+     [
+      7.0,
+      false,
+      "A+"
+     ],
+     [
+      30.0,
+      true,
+      "F"
+     ],
+     [
+      30.0,
+      false,
+      "A+"
+     ]
+    ],
+    "lower_better": false,
+    "metric": "val_accuracy",
+    "task": "classification"
+   },
+   {
+    "bands": {
+     "A": 0.93,
+     "A+": 0.97,
+     "B": 0.85,
+     "C": 0.75,
+     "D": 0.6,
+     "F": 0.0
+    },
+    "grades": [
+     [
+      -1.0,
+      true,
+      "F"
+     ],
+     [
+      -1.0,
+      false,
+      "F"
+     ],
+     [
+      0.0,
+      true,
+      "F"
+     ],
+     [
+      0.0,
+      false,
+      "F"
+     ],
+     [
+      0.3,
+      true,
+      "D"
+     ],
+     [
+      0.3,
+      false,
+      "F"
+     ],
+     [
+      0.6,
+      true,
+      "D"
+     ],
+     [
+      0.6,
+      false,
+      "D"
+     ],
+     [
+      0.75,
+      true,
+      "C"
+     ],
+     [
+      0.75,
+      false,
+      "C"
+     ],
+     [
+      0.9,
+      true,
+      "A"
+     ],
+     [
+      0.9,
+      false,
+      "B"
+     ],
+     [
+      0.95,
+      true,
+      "A+"
+     ],
+     [
+      0.95,
+      false,
+      "A"
+     ],
+     [
+      0.9961,
+      true,
+      "F"
+     ],
+     [
+      0.9961,
+      false,
+      "A+"
+     ],
+     [
+      1.0,
+      true,
+      "F"
+     ],
+     [
+      1.0,
+      false,
+      "A+"
+     ],
+     [
+      2.0,
+      true,
+      "F"
+     ],
+     [
+      2.0,
+      false,
+      "A+"
+     ],
+     [
+      7.0,
+      true,
+      "F"
+     ],
+     [
+      7.0,
+      false,
+      "A+"
+     ],
+     [
+      30.0,
+      true,
+      "F"
+     ],
+     [
+      30.0,
+      false,
+      "A+"
+     ]
+    ],
+    "lower_better": false,
+    "metric": "accuracy",
+    "task": "classification"
+   },
+   {
+    "bands": null,
+    "grades": [],
+    "lower_better": null,
+    "metric": "val_AUC",
+    "task": "classification"
+   },
+   {
+    "bands": {
+     "A": 0.9,
+     "B": 0.75,
+     "C": 0.6,
+     "F": 0.0
+    },
+    "grades": [
+     [
+      -1.0,
+      true,
+      "F"
+     ],
+     [
+      -1.0,
+      false,
+      "F"
+     ],
+     [
+      0.0,
+      true,
+      "F"
+     ],
+     [
+      0.0,
+      false,
+      "F"
+     ],
+     [
+      0.3,
+      true,
+      "C"
+     ],
+     [
+      0.3,
+      false,
+      "F"
+     ],
+     [
+      0.6,
+      true,
+      "C"
+     ],
+     [
+      0.6,
+      false,
+      "C"
+     ],
+     [
+      0.75,
+      true,
+      "B"
+     ],
+     [
+      0.75,
+      false,
+      "B"
+     ],
+     [
+      0.9,
+      true,
+      "A"
+     ],
+     [
+      0.9,
+      false,
+      "A"
+     ],
+     [
+      0.95,
+      true,
+      "F"
+     ],
+     [
+      0.95,
+      false,
+      "A"
+     ],
+     [
+      0.9961,
+      true,
+      "F"
+     ],
+     [
+      0.9961,
+      false,
+      "A"
+     ],
+     [
+      1.0,
+      true,
+      "F"
+     ],
+     [
+      1.0,
+      false,
+      "A"
+     ],
+     [
+      2.0,
+      true,
+      "F"
+     ],
+     [
+      2.0,
+      false,
+      "A"
+     ],
+     [
+      7.0,
+      true,
+      "F"
+     ],
+     [
+      7.0,
+      false,
+      "A"
+     ],
+     [
+      30.0,
+      true,
+      "F"
+     ],
+     [
+      30.0,
+      false,
+      "A"
+     ]
+    ],
+    "lower_better": false,
+    "metric": "val_f1",
+    "task": "classification"
+   },
+   {
+    "bands": null,
+    "grades": [],
+    "lower_better": null,
+    "metric": "val_MAE",
+    "task": "regression"
+   },
+   {
+    "bands": null,
+    "grades": [],
+    "lower_better": null,
+    "metric": "val_R2",
+    "task": "regression"
+   },
+   {
+    "bands": null,
+    "grades": [],
+    "lower_better": null,
+    "metric": "mAP50",
+    "task": "detection"
+   },
+   {
+    "bands": null,
+    "grades": [],
+    "lower_better": null,
+    "metric": "mAP",
+    "task": "detection"
+   },
+   {
+    "bands": null,
+    "grades": [],
+    "lower_better": null,
+    "metric": "my_metric",
+    "task": "custom"
+   },
+   {
+    "bands": null,
+    "grades": [],
+    "lower_better": null,
+    "metric": "val_loss",
+    "task": "custom"
+   },
+   {
+    "bands": null,
+    "grades": [],
+    "lower_better": null,
+    "metric": "perplexity",
+    "task": "nlp"
+   }
+  ],
+  "yaml": "version: 1\n\ngrade_thresholds:\n  classification:    # a task: applies to its accuracy\n    \"A+\": 0.97       # a tighter standard for your domain\n    A:    0.93\n    B:    0.85\n    C:    0.75\n    D:    0.60\n    F:    0.0\n  val_f1:            # a metric: applies to it in any run\n    A: 0.90\n    B: 0.75\n    C: 0.60\n    F: 0.0\n"
+ },
+ "regression_error_bands": {
+  "config": {
+   "grade_thresholds": {
+    "regression": {
+     "A": 1.0,
+     "B": 2.5,
+     "C": 5.0,
+     "D": 10.0,
+     "F": "inf"
+    }
+   },
+   "lower_better": {},
+   "metric_thresholds": {},
+   "problems": []
+  },
+  "error": null,
+  "queries": [
+   {
+    "bands": null,
+    "grades": [],
+    "lower_better": null,
+    "metric": "val_accuracy",
+    "task": "classification"
+   },
+   {
+    "bands": null,
+    "grades": [],
+    "lower_better": null,
+    "metric": "accuracy",
+    "task": "classification"
+   },
+   {
+    "bands": null,
+    "grades": [],
+    "lower_better": null,
+    "metric": "val_AUC",
+    "task": "classification"
+   },
+   {
+    "bands": null,
+    "grades": [],
+    "lower_better": null,
+    "metric": "val_f1",
+    "task": "classification"
+   },
+   {
+    "bands": {
+     "A": 1.0,
+     "B": 2.5,
+     "C": 5.0,
+     "D": 10.0,
+     "F": "inf"
+    },
+    "grades": [
+     [
+      -1.0,
+      true,
+      "A"
+     ],
+     [
+      -1.0,
+      false,
+      "F"
+     ],
+     [
+      0.0,
+      true,
+      "A"
+     ],
+     [
+      0.0,
+      false,
+      "F"
+     ],
+     [
+      0.3,
+      true,
+      "A"
+     ],
+     [
+      0.3,
+      false,
+      "F"
+     ],
+     [
+      0.6,
+      true,
+      "A"
+     ],
+     [
+      0.6,
+      false,
+      "F"
+     ],
+     [
+      0.75,
+      true,
+      "A"
+     ],
+     [
+      0.75,
+      false,
+      "F"
+     ],
+     [
+      0.9,
+      true,
+      "A"
+     ],
+     [
+      0.9,
+      false,
+      "F"
+     ],
+     [
+      0.95,
+      true,
+      "A"
+     ],
+     [
+      0.95,
+      false,
+      "F"
+     ],
+     [
+      0.9961,
+      true,
+      "A"
+     ],
+     [
+      0.9961,
+      false,
+      "F"
+     ],
+     [
+      1.0,
+      true,
+      "A"
+     ],
+     [
+      1.0,
+      false,
+      "A"
+     ],
+     [
+      2.0,
+      true,
+      "B"
+     ],
+     [
+      2.0,
+      false,
+      "A"
+     ],
+     [
+      7.0,
+      true,
+      "D"
+     ],
+     [
+      7.0,
+      false,
+      "C"
+     ],
+     [
+      30.0,
+      true,
+      "F"
+     ],
+     [
+      30.0,
+      false,
+      "D"
+     ]
+    ],
+    "lower_better": true,
+    "metric": "val_MAE",
+    "task": "regression"
+   },
+   {
+    "bands": null,
+    "grades": [],
+    "lower_better": null,
+    "metric": "val_R2",
+    "task": "regression"
+   },
+   {
+    "bands": null,
+    "grades": [],
+    "lower_better": null,
+    "metric": "mAP50",
+    "task": "detection"
+   },
+   {
+    "bands": null,
+    "grades": [],
+    "lower_better": null,
+    "metric": "mAP",
+    "task": "detection"
+   },
+   {
+    "bands": null,
+    "grades": [],
+    "lower_better": null,
+    "metric": "my_metric",
+    "task": "custom"
+   },
+   {
+    "bands": null,
+    "grades": [],
+    "lower_better": null,
+    "metric": "val_loss",
+    "task": "custom"
+   },
+   {
+    "bands": null,
+    "grades": [],
+    "lower_better": null,
+    "metric": "perplexity",
+    "task": "nlp"
+   }
+  ],
+  "yaml": "grade_thresholds:\n  regression:\n    A: 1.0\n    B: 2.5\n    C: 5.0\n    D: 10.0\n    F: .inf\n"
+ },
+ "sections_missing": {
+  "config": {
+   "grade_thresholds": {},
+   "lower_better": {},
+   "metric_thresholds": {},
+   "problems": []
+  },
+  "error": null,
+  "queries": [
+   {
+    "bands": null,
+    "grades": [],
+    "lower_better": null,
+    "metric": "val_accuracy",
+    "task": "classification"
+   },
+   {
+    "bands": null,
+    "grades": [],
+    "lower_better": null,
+    "metric": "accuracy",
+    "task": "classification"
+   },
+   {
+    "bands": null,
+    "grades": [],
+    "lower_better": null,
+    "metric": "val_AUC",
+    "task": "classification"
+   },
+   {
+    "bands": null,
+    "grades": [],
+    "lower_better": null,
+    "metric": "val_f1",
+    "task": "classification"
+   },
+   {
+    "bands": null,
+    "grades": [],
+    "lower_better": null,
+    "metric": "val_MAE",
+    "task": "regression"
+   },
+   {
+    "bands": null,
+    "grades": [],
+    "lower_better": null,
+    "metric": "val_R2",
+    "task": "regression"
+   },
+   {
+    "bands": null,
+    "grades": [],
+    "lower_better": null,
+    "metric": "mAP50",
+    "task": "detection"
+   },
+   {
+    "bands": null,
+    "grades": [],
+    "lower_better": null,
+    "metric": "mAP",
+    "task": "detection"
+   },
+   {
+    "bands": null,
+    "grades": [],
+    "lower_better": null,
+    "metric": "my_metric",
+    "task": "custom"
+   },
+   {
+    "bands": null,
+    "grades": [],
+    "lower_better": null,
+    "metric": "val_loss",
+    "task": "custom"
+   },
+   {
+    "bands": null,
+    "grades": [],
+    "lower_better": null,
+    "metric": "perplexity",
+    "task": "nlp"
+   }
+  ],
+  "yaml": "version: 1\n"
+ },
+ "single_band": {
+  "config": {
+   "grade_thresholds": {},
+   "lower_better": {},
+   "metric_thresholds": {
+    "val_AUC": {
+     "A": 0.99
+    }
+   },
+   "problems": []
+  },
+  "error": null,
+  "queries": [
+   {
+    "bands": null,
+    "grades": [],
+    "lower_better": null,
+    "metric": "val_accuracy",
+    "task": "classification"
+   },
+   {
+    "bands": null,
+    "grades": [],
+    "lower_better": null,
+    "metric": "accuracy",
+    "task": "classification"
+   },
+   {
+    "bands": {
+     "A": 0.99
+    },
+    "grades": [
+     [
+      -1.0,
+      true,
+      "A"
+     ],
+     [
+      -1.0,
+      false,
+      "F"
+     ],
+     [
+      0.0,
+      true,
+      "A"
+     ],
+     [
+      0.0,
+      false,
+      "F"
+     ],
+     [
+      0.3,
+      true,
+      "A"
+     ],
+     [
+      0.3,
+      false,
+      "F"
+     ],
+     [
+      0.6,
+      true,
+      "A"
+     ],
+     [
+      0.6,
+      false,
+      "F"
+     ],
+     [
+      0.75,
+      true,
+      "A"
+     ],
+     [
+      0.75,
+      false,
+      "F"
+     ],
+     [
+      0.9,
+      true,
+      "A"
+     ],
+     [
+      0.9,
+      false,
+      "F"
+     ],
+     [
+      0.95,
+      true,
+      "A"
+     ],
+     [
+      0.95,
+      false,
+      "F"
+     ],
+     [
+      0.9961,
+      true,
+      "F"
+     ],
+     [
+      0.9961,
+      false,
+      "A"
+     ],
+     [
+      1.0,
+      true,
+      "F"
+     ],
+     [
+      1.0,
+      false,
+      "A"
+     ],
+     [
+      2.0,
+      true,
+      "F"
+     ],
+     [
+      2.0,
+      false,
+      "A"
+     ],
+     [
+      7.0,
+      true,
+      "F"
+     ],
+     [
+      7.0,
+      false,
+      "A"
+     ],
+     [
+      30.0,
+      true,
+      "F"
+     ],
+     [
+      30.0,
+      false,
+      "A"
+     ]
+    ],
+    "lower_better": null,
+    "metric": "val_AUC",
+    "task": "classification"
+   },
+   {
+    "bands": null,
+    "grades": [],
+    "lower_better": null,
+    "metric": "val_f1",
+    "task": "classification"
+   },
+   {
+    "bands": null,
+    "grades": [],
+    "lower_better": null,
+    "metric": "val_MAE",
+    "task": "regression"
+   },
+   {
+    "bands": null,
+    "grades": [],
+    "lower_better": null,
+    "metric": "val_R2",
+    "task": "regression"
+   },
+   {
+    "bands": null,
+    "grades": [],
+    "lower_better": null,
+    "metric": "mAP50",
+    "task": "detection"
+   },
+   {
+    "bands": null,
+    "grades": [],
+    "lower_better": null,
+    "metric": "mAP",
+    "task": "detection"
+   },
+   {
+    "bands": null,
+    "grades": [],
+    "lower_better": null,
+    "metric": "my_metric",
+    "task": "custom"
+   },
+   {
+    "bands": null,
+    "grades": [],
+    "lower_better": null,
+    "metric": "val_loss",
+    "task": "custom"
+   },
+   {
+    "bands": null,
+    "grades": [],
+    "lower_better": null,
+    "metric": "perplexity",
+    "task": "nlp"
+   }
+  ],
+  "yaml": "grade_thresholds:\n  val_AUC:\n    A: 0.99\n"
+ },
+ "strict_classification": {
+  "config": {
+   "grade_thresholds": {
+    "classification": {
+     "A": 0.998,
+     "A+": 0.999,
+     "B": 0.997,
+     "C": 0.996,
+     "D": 0.995,
+     "F": 0.0
+    }
+   },
+   "lower_better": {},
+   "metric_thresholds": {},
+   "problems": []
+  },
+  "error": null,
+  "queries": [
+   {
+    "bands": {
+     "A": 0.998,
+     "A+": 0.999,
+     "B": 0.997,
+     "C": 0.996,
+     "D": 0.995,
+     "F": 0.0
+    },
+    "grades": [
+     [
+      -1.0,
+      true,
+      "F"
+     ],
+     [
+      -1.0,
+      false,
+      "F"
+     ],
+     [
+      0.0,
+      true,
+      "F"
+     ],
+     [
+      0.0,
+      false,
+      "F"
+     ],
+     [
+      0.3,
+      true,
+      "D"
+     ],
+     [
+      0.3,
+      false,
+      "F"
+     ],
+     [
+      0.6,
+      true,
+      "D"
+     ],
+     [
+      0.6,
+      false,
+      "F"
+     ],
+     [
+      0.75,
+      true,
+      "D"
+     ],
+     [
+      0.75,
+      false,
+      "F"
+     ],
+     [
+      0.9,
+      true,
+      "D"
+     ],
+     [
+      0.9,
+      false,
+      "F"
+     ],
+     [
+      0.95,
+      true,
+      "D"
+     ],
+     [
+      0.95,
+      false,
+      "F"
+     ],
+     [
+      0.9961,
+      true,
+      "B"
+     ],
+     [
+      0.9961,
+      false,
+      "C"
+     ],
+     [
+      1.0,
+      true,
+      "F"
+     ],
+     [
+      1.0,
+      false,
+      "A+"
+     ],
+     [
+      2.0,
+      true,
+      "F"
+     ],
+     [
+      2.0,
+      false,
+      "A+"
+     ],
+     [
+      7.0,
+      true,
+      "F"
+     ],
+     [
+      7.0,
+      false,
+      "A+"
+     ],
+     [
+      30.0,
+      true,
+      "F"
+     ],
+     [
+      30.0,
+      false,
+      "A+"
+     ]
+    ],
+    "lower_better": false,
+    "metric": "val_accuracy",
+    "task": "classification"
+   },
+   {
+    "bands": {
+     "A": 0.998,
+     "A+": 0.999,
+     "B": 0.997,
+     "C": 0.996,
+     "D": 0.995,
+     "F": 0.0
+    },
+    "grades": [
+     [
+      -1.0,
+      true,
+      "F"
+     ],
+     [
+      -1.0,
+      false,
+      "F"
+     ],
+     [
+      0.0,
+      true,
+      "F"
+     ],
+     [
+      0.0,
+      false,
+      "F"
+     ],
+     [
+      0.3,
+      true,
+      "D"
+     ],
+     [
+      0.3,
+      false,
+      "F"
+     ],
+     [
+      0.6,
+      true,
+      "D"
+     ],
+     [
+      0.6,
+      false,
+      "F"
+     ],
+     [
+      0.75,
+      true,
+      "D"
+     ],
+     [
+      0.75,
+      false,
+      "F"
+     ],
+     [
+      0.9,
+      true,
+      "D"
+     ],
+     [
+      0.9,
+      false,
+      "F"
+     ],
+     [
+      0.95,
+      true,
+      "D"
+     ],
+     [
+      0.95,
+      false,
+      "F"
+     ],
+     [
+      0.9961,
+      true,
+      "B"
+     ],
+     [
+      0.9961,
+      false,
+      "C"
+     ],
+     [
+      1.0,
+      true,
+      "F"
+     ],
+     [
+      1.0,
+      false,
+      "A+"
+     ],
+     [
+      2.0,
+      true,
+      "F"
+     ],
+     [
+      2.0,
+      false,
+      "A+"
+     ],
+     [
+      7.0,
+      true,
+      "F"
+     ],
+     [
+      7.0,
+      false,
+      "A+"
+     ],
+     [
+      30.0,
+      true,
+      "F"
+     ],
+     [
+      30.0,
+      false,
+      "A+"
+     ]
+    ],
+    "lower_better": false,
+    "metric": "accuracy",
+    "task": "classification"
+   },
+   {
+    "bands": null,
+    "grades": [],
+    "lower_better": null,
+    "metric": "val_AUC",
+    "task": "classification"
+   },
+   {
+    "bands": null,
+    "grades": [],
+    "lower_better": null,
+    "metric": "val_f1",
+    "task": "classification"
+   },
+   {
+    "bands": null,
+    "grades": [],
+    "lower_better": null,
+    "metric": "val_MAE",
+    "task": "regression"
+   },
+   {
+    "bands": null,
+    "grades": [],
+    "lower_better": null,
+    "metric": "val_R2",
+    "task": "regression"
+   },
+   {
+    "bands": null,
+    "grades": [],
+    "lower_better": null,
+    "metric": "mAP50",
+    "task": "detection"
+   },
+   {
+    "bands": null,
+    "grades": [],
+    "lower_better": null,
+    "metric": "mAP",
+    "task": "detection"
+   },
+   {
+    "bands": null,
+    "grades": [],
+    "lower_better": null,
+    "metric": "my_metric",
+    "task": "custom"
+   },
+   {
+    "bands": null,
+    "grades": [],
+    "lower_better": null,
+    "metric": "val_loss",
+    "task": "custom"
+   },
+   {
+    "bands": null,
+    "grades": [],
+    "lower_better": null,
+    "metric": "perplexity",
+    "task": "nlp"
+   }
+  ],
+  "yaml": "version: 1\ngrade_thresholds:\n  classification:\n    \"A+\": 0.999\n    A: 0.998\n    B: 0.997\n    C: 0.996\n    D: 0.995\n    F: 0.0\n"
+ },
+ "top_level_list": {
+  "config": null,
+  "error": "its top level is not a mapping",
+  "yaml": "- a\n- b\n"
+ },
+ "unknown_label": {
+  "config": {
+   "grade_thresholds": {
+    "classification": {
+     "A": 0.9,
+     "F": 0.0
+    }
+   },
+   "lower_better": {},
+   "metric_thresholds": {},
+   "problems": [
+    "classification: 'A++' is not a grade (use A+ … D, F)"
+   ]
+  },
+  "error": null,
+  "queries": [
+   {
+    "bands": {
+     "A": 0.9,
+     "F": 0.0
+    },
+    "grades": [
+     [
+      -1.0,
+      true,
+      "F"
+     ],
+     [
+      -1.0,
+      false,
+      "F"
+     ],
+     [
+      0.0,
+      true,
+      "F"
+     ],
+     [
+      0.0,
+      false,
+      "F"
+     ],
+     [
+      0.3,
+      true,
+      "A"
+     ],
+     [
+      0.3,
+      false,
+      "F"
+     ],
+     [
+      0.6,
+      true,
+      "A"
+     ],
+     [
+      0.6,
+      false,
+      "F"
+     ],
+     [
+      0.75,
+      true,
+      "A"
+     ],
+     [
+      0.75,
+      false,
+      "F"
+     ],
+     [
+      0.9,
+      true,
+      "A"
+     ],
+     [
+      0.9,
+      false,
+      "A"
+     ],
+     [
+      0.95,
+      true,
+      "F"
+     ],
+     [
+      0.95,
+      false,
+      "A"
+     ],
+     [
+      0.9961,
+      true,
+      "F"
+     ],
+     [
+      0.9961,
+      false,
+      "A"
+     ],
+     [
+      1.0,
+      true,
+      "F"
+     ],
+     [
+      1.0,
+      false,
+      "A"
+     ],
+     [
+      2.0,
+      true,
+      "F"
+     ],
+     [
+      2.0,
+      false,
+      "A"
+     ],
+     [
+      7.0,
+      true,
+      "F"
+     ],
+     [
+      7.0,
+      false,
+      "A"
+     ],
+     [
+      30.0,
+      true,
+      "F"
+     ],
+     [
+      30.0,
+      false,
+      "A"
+     ]
+    ],
+    "lower_better": false,
+    "metric": "val_accuracy",
+    "task": "classification"
+   },
+   {
+    "bands": {
+     "A": 0.9,
+     "F": 0.0
+    },
+    "grades": [
+     [
+      -1.0,
+      true,
+      "F"
+     ],
+     [
+      -1.0,
+      false,
+      "F"
+     ],
+     [
+      0.0,
+      true,
+      "F"
+     ],
+     [
+      0.0,
+      false,
+      "F"
+     ],
+     [
+      0.3,
+      true,
+      "A"
+     ],
+     [
+      0.3,
+      false,
+      "F"
+     ],
+     [
+      0.6,
+      true,
+      "A"
+     ],
+     [
+      0.6,
+      false,
+      "F"
+     ],
+     [
+      0.75,
+      true,
+      "A"
+     ],
+     [
+      0.75,
+      false,
+      "F"
+     ],
+     [
+      0.9,
+      true,
+      "A"
+     ],
+     [
+      0.9,
+      false,
+      "A"
+     ],
+     [
+      0.95,
+      true,
+      "F"
+     ],
+     [
+      0.95,
+      false,
+      "A"
+     ],
+     [
+      0.9961,
+      true,
+      "F"
+     ],
+     [
+      0.9961,
+      false,
+      "A"
+     ],
+     [
+      1.0,
+      true,
+      "F"
+     ],
+     [
+      1.0,
+      false,
+      "A"
+     ],
+     [
+      2.0,
+      true,
+      "F"
+     ],
+     [
+      2.0,
+      false,
+      "A"
+     ],
+     [
+      7.0,
+      true,
+      "F"
+     ],
+     [
+      7.0,
+      false,
+      "A"
+     ],
+     [
+      30.0,
+      true,
+      "F"
+     ],
+     [
+      30.0,
+      false,
+      "A"
+     ]
+    ],
+    "lower_better": false,
+    "metric": "accuracy",
+    "task": "classification"
+   },
+   {
+    "bands": null,
+    "grades": [],
+    "lower_better": null,
+    "metric": "val_AUC",
+    "task": "classification"
+   },
+   {
+    "bands": null,
+    "grades": [],
+    "lower_better": null,
+    "metric": "val_f1",
+    "task": "classification"
+   },
+   {
+    "bands": null,
+    "grades": [],
+    "lower_better": null,
+    "metric": "val_MAE",
+    "task": "regression"
+   },
+   {
+    "bands": null,
+    "grades": [],
+    "lower_better": null,
+    "metric": "val_R2",
+    "task": "regression"
+   },
+   {
+    "bands": null,
+    "grades": [],
+    "lower_better": null,
+    "metric": "mAP50",
+    "task": "detection"
+   },
+   {
+    "bands": null,
+    "grades": [],
+    "lower_better": null,
+    "metric": "mAP",
+    "task": "detection"
+   },
+   {
+    "bands": null,
+    "grades": [],
+    "lower_better": null,
+    "metric": "my_metric",
+    "task": "custom"
+   },
+   {
+    "bands": null,
+    "grades": [],
+    "lower_better": null,
+    "metric": "val_loss",
+    "task": "custom"
+   },
+   {
+    "bands": null,
+    "grades": [],
+    "lower_better": null,
+    "metric": "perplexity",
+    "task": "nlp"
+   }
+  ],
+  "yaml": "grade_thresholds:\n  classification:\n    \"A++\": 0.99\n    A: 0.9\n    F: 0.0\n"
+ },
+ "unrecognised_metric_entry": {
+  "config": {
+   "grade_thresholds": {},
+   "lower_better": {},
+   "metric_thresholds": {
+    "my_metric": {
+     "A": 0.9,
+     "F": 0.0
+    }
+   },
+   "problems": []
+  },
+  "error": null,
+  "queries": [
+   {
+    "bands": null,
+    "grades": [],
+    "lower_better": null,
+    "metric": "val_accuracy",
+    "task": "classification"
+   },
+   {
+    "bands": null,
+    "grades": [],
+    "lower_better": null,
+    "metric": "accuracy",
+    "task": "classification"
+   },
+   {
+    "bands": null,
+    "grades": [],
+    "lower_better": null,
+    "metric": "val_AUC",
+    "task": "classification"
+   },
+   {
+    "bands": null,
+    "grades": [],
+    "lower_better": null,
+    "metric": "val_f1",
+    "task": "classification"
+   },
+   {
+    "bands": null,
+    "grades": [],
+    "lower_better": null,
+    "metric": "val_MAE",
+    "task": "regression"
+   },
+   {
+    "bands": null,
+    "grades": [],
+    "lower_better": null,
+    "metric": "val_R2",
+    "task": "regression"
+   },
+   {
+    "bands": null,
+    "grades": [],
+    "lower_better": null,
+    "metric": "mAP50",
+    "task": "detection"
+   },
+   {
+    "bands": null,
+    "grades": [],
+    "lower_better": null,
+    "metric": "mAP",
+    "task": "detection"
+   },
+   {
+    "bands": {
+     "A": 0.9,
+     "F": 0.0
+    },
+    "grades": [
+     [
+      -1.0,
+      true,
+      "F"
+     ],
+     [
+      -1.0,
+      false,
+      "F"
+     ],
+     [
+      0.0,
+      true,
+      "F"
+     ],
+     [
+      0.0,
+      false,
+      "F"
+     ],
+     [
+      0.3,
+      true,
+      "A"
+     ],
+     [
+      0.3,
+      false,
+      "F"
+     ],
+     [
+      0.6,
+      true,
+      "A"
+     ],
+     [
+      0.6,
+      false,
+      "F"
+     ],
+     [
+      0.75,
+      true,
+      "A"
+     ],
+     [
+      0.75,
+      false,
+      "F"
+     ],
+     [
+      0.9,
+      true,
+      "A"
+     ],
+     [
+      0.9,
+      false,
+      "A"
+     ],
+     [
+      0.95,
+      true,
+      "F"
+     ],
+     [
+      0.95,
+      false,
+      "A"
+     ],
+     [
+      0.9961,
+      true,
+      "F"
+     ],
+     [
+      0.9961,
+      false,
+      "A"
+     ],
+     [
+      1.0,
+      true,
+      "F"
+     ],
+     [
+      1.0,
+      false,
+      "A"
+     ],
+     [
+      2.0,
+      true,
+      "F"
+     ],
+     [
+      2.0,
+      false,
+      "A"
+     ],
+     [
+      7.0,
+      true,
+      "F"
+     ],
+     [
+      7.0,
+      false,
+      "A"
+     ],
+     [
+      30.0,
+      true,
+      "F"
+     ],
+     [
+      30.0,
+      false,
+      "A"
+     ]
+    ],
+    "lower_better": false,
+    "metric": "my_metric",
+    "task": "custom"
+   },
+   {
+    "bands": null,
+    "grades": [],
+    "lower_better": null,
+    "metric": "val_loss",
+    "task": "custom"
+   },
+   {
+    "bands": null,
+    "grades": [],
+    "lower_better": null,
+    "metric": "perplexity",
+    "task": "nlp"
+   }
+  ],
+  "yaml": "grade_thresholds:\n  my_metric:\n    A: 0.9\n    F: 0.0\n"
+ },
+ "yaml_1_1_booleans": {
+  "config": {
+   "grade_thresholds": {},
+   "lower_better": {
+    "biometric": false,
+    "custom": true,
+    "gaze": true,
+    "nlp": false
+   },
+   "metric_thresholds": {},
+   "problems": []
+  },
+  "error": null,
+  "queries": [
+   {
+    "bands": null,
+    "grades": [],
+    "lower_better": null,
+    "metric": "val_accuracy",
+    "task": "classification"
+   },
+   {
+    "bands": null,
+    "grades": [],
+    "lower_better": null,
+    "metric": "accuracy",
+    "task": "classification"
+   },
+   {
+    "bands": null,
+    "grades": [],
+    "lower_better": null,
+    "metric": "val_AUC",
+    "task": "classification"
+   },
+   {
+    "bands": null,
+    "grades": [],
+    "lower_better": null,
+    "metric": "val_f1",
+    "task": "classification"
+   },
+   {
+    "bands": null,
+    "grades": [],
+    "lower_better": null,
+    "metric": "val_MAE",
+    "task": "regression"
+   },
+   {
+    "bands": null,
+    "grades": [],
+    "lower_better": null,
+    "metric": "val_R2",
+    "task": "regression"
+   },
+   {
+    "bands": null,
+    "grades": [],
+    "lower_better": null,
+    "metric": "mAP50",
+    "task": "detection"
+   },
+   {
+    "bands": null,
+    "grades": [],
+    "lower_better": null,
+    "metric": "mAP",
+    "task": "detection"
+   },
+   {
+    "bands": null,
+    "grades": [],
+    "lower_better": null,
+    "metric": "my_metric",
+    "task": "custom"
+   },
+   {
+    "bands": null,
+    "grades": [],
+    "lower_better": null,
+    "metric": "val_loss",
+    "task": "custom"
+   },
+   {
+    "bands": null,
+    "grades": [],
+    "lower_better": null,
+    "metric": "perplexity",
+    "task": "nlp"
+   }
+  ],
+  "yaml": "lower_better:\n  custom: yes\n  nlp: no\n  gaze: On\n  biometric: off\n"
+ }
+}

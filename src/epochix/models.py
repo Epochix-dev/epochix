@@ -83,6 +83,13 @@ class Warning(BaseModel):
 # the reader's language; see story_engine.grade.grade_note.
 GradeNote = Literal["few_readings", "still_improving"]
 
+# How a frame's letter was reached: against fixed thresholds (built in, or a
+# project's own), or by how far the metric improved since its first reading.
+# None when there is no letter to explain — an "I", or the F given to a run
+# that diverged. The card said "graded against fixed thresholds" of every run,
+# which was false of each one graded on improvement.
+GradeBasis = Literal["thresholds", "improvement"]
+
 
 class StoryFrame(BaseModel):
     run_id: str
@@ -99,6 +106,7 @@ class StoryFrame(BaseModel):
     primary_metric: str | None = None
     confidence: float = Field(ge=0.0, le=1.0)
     grade_note: GradeNote | None = None
+    grade_basis: GradeBasis | None = None
     narrative: str
     metaphor_cards: list[MetaphorCard] = Field(default_factory=list)
     skill_dimensions: dict[str, float] = Field(default_factory=dict)
