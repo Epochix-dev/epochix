@@ -7,6 +7,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.7.27] — 2026-10-02
+
+### Changed — a ROC AUC is graded on its own scale
+
+- **An AUC was graded on how far it had moved, and AUC starts high and moves
+  little.** A real LightGBM classifier ending at 0.984 validation AUC was
+  graded **C−** for a 2.1% gain from its first reading. ROC AUC has a scale of
+  its own — 0.5 is a coin toss whatever the class balance — so `AUC` and
+  `val_AUC` now have bands, as R² does. That run grades A+.
+- **The bands.** The letters sit on the rule of thumb in Hosmer and Lemeshow's
+  *Applied Logistic Regression*: 0.7 acceptable (C−), 0.8 excellent (B−), 0.9
+  outstanding (A−). The steps inside a letter are each range cut into thirds
+  (C 0.73, C+ 0.77, B 0.83, B+ 0.87, A 0.93, A+ 0.97) — that part is this
+  project's judgement. Above 0.5 and below 0.7 is a D; 0.5 itself, which is
+  what a constant prediction scores, and anything under it is an F.
+- A single AUC reading is now graded; it used to be "I", having nothing to
+  measure improvement against.
+- PR AUC and F1 are unchanged: their chance level follows the positive class's
+  share of the data, so they stay graded on improvement. Whether F1 should
+  share accuracy's bands is open in `ROADMAP.md`.
+- A `.epochix.yaml` `classification` entry still takes precedence over these
+  bands, as it does over every built-in one.
+
+### Fixed — a run that reports F1 has a task, and a story
+
+- **A log reporting only F1 produced no story at all**, and one with F1 and a
+  loss was told on the loss. The docs list `f1` as a classification metric,
+  but the task classifier did not treat it as a signal, so such a run fell to
+  the `custom` task, whose story is told on a loss. F1 is now a classification
+  signal — the weakest one, so mAP, IoU or perplexity beside it still decide.
+- **`epochix check` told a log containing `val_f1` that it had "No
+  task-defining metric (accuracy / mAP / F1 / …)".** It no longer does.
+
+---
+
 ## [0.7.26] — 2026-10-01
 
 ### Fixed — real PyTorch Lightning and Ultralytics output was misread
