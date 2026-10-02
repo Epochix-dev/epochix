@@ -424,7 +424,7 @@
   "metric_from_epoch": 1.0,
   "grade_note": null,
   "cross_validation": null,
-  "final_grade": "C-",
+  "final_grade": "A+",
   "final_phase": "understanding"
  },
  "lightgbm_real_early_stopping.log": {

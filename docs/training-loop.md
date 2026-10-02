@@ -62,6 +62,18 @@ which is graded on its improvement trajectory rather than an absolute scale.
 A run that logs only a loss curve is fine — it is graded on how much the loss
 improved from its own starting point, not against an accuracy scale.
 
+Which metrics get a grade from fixed bands, and which from improvement:
+
+- **Fixed bands** — the number means the same thing in every run: accuracy,
+  ROC AUC (0.5 is a coin toss, and the letters follow the usual rule of thumb:
+  0.7 acceptable, 0.8 excellent, 0.9 outstanding), R², and each other task's
+  main metric (mAP50, mIoU, perplexity, EER).
+- **Improvement since the first reading** — the number has no scale of its
+  own: a loss, an error in the target's units (MAE, RMSE), F1, PR AUC, and any
+  name epochix does not recognise.
+
+Either way the grade does not know how hard your dataset is.
+
 ## What not to print
 
 Some things look like metrics and are not, so epochix deliberately ignores

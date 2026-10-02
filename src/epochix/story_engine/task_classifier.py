@@ -58,6 +58,14 @@ _TASK_SIGNALS: list[tuple[frozenset[str], TaskType]] = [
                 "val_error_rate",
                 "log_loss",
                 "val_log_loss",
+                # Last, so mAP, IoU or perplexity beside it still decide: F1
+                # is printed by detectors and taggers too. On its own it was
+                # no signal at all — a log reporting only F1 fell to CUSTOM,
+                # whose story is told on a loss, and so had no story; and
+                # `epochix check` told a log containing val_f1 that it had
+                # "no task-defining metric (accuracy / mAP / F1 ...)".
+                "f1",
+                "val_f1",
             }
         ),
         TaskType.CLASSIFICATION,

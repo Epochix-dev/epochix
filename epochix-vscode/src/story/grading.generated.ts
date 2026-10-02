@@ -25,9 +25,11 @@ export const DEFAULT_THRESHOLDS: Readonly<Record<TaskType, readonly Threshold[]>
 
 export const LOWER_BETTER_TASKS: ReadonlySet<TaskType> = new Set(["biometric", "gaze", "nlp", "regression"]);
 
-/** Bands that belong to a metric rather than a task (R2 carries its own scale). */
+/** Bands that belong to a metric, not a task: R2 and ROC AUC carry their own scale. */
 export const METRIC_THRESHOLDS: Readonly<Record<string, readonly Threshold[]>> = {
+  "AUC": [["A+", 0.97], ["A", 0.93], ["A-", 0.9], ["B+", 0.87], ["B", 0.83], ["B-", 0.8], ["C+", 0.77], ["C", 0.73], ["C-", 0.7], ["D", 0.5000000000000001], ["F", -Infinity]],
   "R2": [["A+", 0.95], ["A", 0.9], ["A-", 0.85], ["B+", 0.8], ["B", 0.7], ["B-", 0.6], ["C+", 0.5], ["C", 0.4], ["C-", 0.3], ["D", 0.1], ["F", -Infinity]],
+  "val_AUC": [["A+", 0.97], ["A", 0.93], ["A-", 0.9], ["B+", 0.87], ["B", 0.83], ["B-", 0.8], ["C+", 0.77], ["C", 0.73], ["C-", 0.7], ["D", 0.5000000000000001], ["F", -Infinity]],
   "val_R2": [["A+", 0.95], ["A", 0.9], ["A-", 0.85], ["B+", 0.8], ["B", 0.7], ["B-", 0.6], ["C+", 0.5], ["C", 0.4], ["C-", 0.3], ["D", 0.1], ["F", -Infinity]],
 };
 

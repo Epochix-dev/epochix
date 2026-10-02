@@ -24,17 +24,30 @@ taught live in [AGENTS.md](AGENTS.md).
 
 ## Open
 
-- **A bounded metric with no bands of its own is graded on improvement, and
-  that can read as harsh.** A real LightGBM classifier
-  (`tests/fixtures/logs/lightgbm_real_classifier.log`) ends at a validation
-  AUC of 0.9836 and is graded **C−**: only accuracy has classification bands,
-  so AUC is scored by how far it moved from its first reading (0.9631, a 2.1%
-  gain). The letter is the improvement rule working as written, and the card
-  now says a grade may come from improvement — but a reader sees 98.4% beside
-  a C−. AUC, F1 and mAP outside their own task are the same. This needs a
-  decision, not a patch: give AUC (0.5 is chance, 1.0 perfect) and F1 bands of
-  their own in `grade._METRIC_THRESHOLDS`, as R² has, or keep grading them on
-  improvement. Bands are a judgement and must be written down as one.
+- **F1 is graded on improvement; decide whether it should share accuracy's
+  bands.** ROC AUC got bands of its own in 0.7.27 because its chance level is
+  0.5 in every dataset. F1's is not a constant — it follows the positive
+  class's share — so it was left on the improvement rule: a run going 0.40 →
+  0.84 grades A+, one going 0.90 → 0.91 grades C−. Accuracy has the same
+  blind spot (a 95% majority class makes 95% accuracy worthless) and is graded
+  on fixed bands with a caveat on the card. Either treat F1 like accuracy
+  (add `val_f1`/`f1` to `_ON_SCALE_KEYS[CLASSIFICATION]`) or keep it as it is;
+  it is a judgement, and should be written down as one.
+- **A task's custom thresholds are applied to a metric that has bands of its
+  own.** `compute_grade` puts a `.epochix.yaml` task entry above
+  `_METRIC_THRESHOLDS`. With regression thresholds written for MAE
+  (`A+: 0.01 … D: 2.5`), an R² of 0.99 grades **B** instead of A+: the MAE
+  numbers are read as R² floors. A classification entry written for accuracy
+  is likewise applied to an AUC. Needs per-metric keys in the config, or the
+  rule that a task entry applies only to the task's own main metric.
+- **`precision` and `recall` printed by a training loop tell no story.**
+  `docs/training-loop.md` lists them as detection metrics. In a `key=value`
+  line `precision` is dropped as a numeric-precision setting (Lightning prints
+  `precision=16`), and `recall` is read but is neither a task signal nor a
+  story metric: five epochs of `precision=… recall=…` give task `custom` and
+  no frame, and `epochix check` says the run "is graded on how much its loss
+  improved" when it has no loss. More generally, a recognised metric that no
+  task lists as a story metric cannot carry a run by itself.
 - **Say which way this run was graded.** The sentence under the grade names
   both ways a grade is reached (fixed thresholds, or improvement since the
   first reading) because a frame does not record which applied. Carry it on

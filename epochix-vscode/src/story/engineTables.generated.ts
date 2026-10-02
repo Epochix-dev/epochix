@@ -207,7 +207,7 @@ export const TASK_SIGNALS: ReadonlyArray<readonly [TaskType, ReadonlySet<string>
   ["generative", new Set(["LPIPS", "PSNR", "SSIM"])],
   ["generative", new Set(["fid", "is_score"])],
   ["regression", new Set(["MAE", "MAPE", "MSE", "MedAE", "R2", "RMSE", "RMSLE", "explained_variance", "val_MAE", "val_MAPE", "val_MSE", "val_R2", "val_RMSE"])],
-  ["classification", new Set(["AUC", "MCC", "PR_AUC", "accuracy", "balanced_accuracy", "error_rate", "kappa", "log_loss", "top5_accuracy", "val_AUC", "val_accuracy", "val_error_rate", "val_log_loss"])],
+  ["classification", new Set(["AUC", "MCC", "PR_AUC", "accuracy", "balanced_accuracy", "error_rate", "f1", "kappa", "log_loss", "top5_accuracy", "val_AUC", "val_accuracy", "val_error_rate", "val_f1", "val_log_loss"])],
 ];
 
 /** Primary-metric preference per task, best first. */

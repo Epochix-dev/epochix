@@ -427,6 +427,44 @@ _METRIC_THRESHOLDS: dict[str, list[tuple[Grade, float]]] = {
 }
 _METRIC_THRESHOLDS["val_R2"] = _METRIC_THRESHOLDS["R2"]
 
+# ROC AUC carries its own scale too: 0.5 is a coin toss whatever the class
+# balance, and 1.0 is a perfect ranking. Without bands it was graded on how far
+# it had moved, and AUC starts high and moves little: a real LightGBM
+# classifier ending at 0.984 on validation was graded C- for a 2.1% gain from
+# its first reading.
+#
+# The four anchors are the rule of thumb in Hosmer and Lemeshow, "Applied
+# Logistic Regression": 0.5 is no discrimination, 0.7 acceptable, 0.8
+# excellent, 0.9 outstanding. They map to the letters — below acceptable is a
+# D, acceptable a C, excellent a B, outstanding an A. The plus and minus steps
+# inside a letter are this project's own: each range cut into thirds, to two
+# decimal places. That part is a judgement, not a measurement, and like every
+# band here it knows the metric and not the dataset.
+#
+# A D starts strictly above 0.5: a model that predicts one constant scores
+# exactly 0.5, and that is the coin toss, not a pass.
+#
+# Not given bands here: PR AUC and F1. Their chance level is not a constant —
+# it follows the positive class's share of the data, which no log states — so
+# they stay graded on improvement. (Whether F1 should share accuracy's bands,
+# which have the same blind spot and say so on the card, is an open decision;
+# see ROADMAP.md.)
+_ABOVE_CHANCE_AUC = math.nextafter(0.5, 1.0)
+_METRIC_THRESHOLDS["AUC"] = [
+    (Grade.A_PLUS, 0.97),
+    (Grade.A, 0.93),
+    (Grade.A_MINUS, 0.90),
+    (Grade.B_PLUS, 0.87),
+    (Grade.B, 0.83),
+    (Grade.B_MINUS, 0.80),
+    (Grade.C_PLUS, 0.77),
+    (Grade.C, 0.73),
+    (Grade.C_MINUS, 0.70),
+    (Grade.D, _ABOVE_CHANCE_AUC),
+    (Grade.F, float("-inf")),
+]
+_METRIC_THRESHOLDS["val_AUC"] = _METRIC_THRESHOLDS["AUC"]
+
 
 def has_absolute_scale(metric: str | None) -> bool:
     """Whether *metric* can be graded without knowing the dataset's units."""
