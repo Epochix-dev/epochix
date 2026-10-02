@@ -14,6 +14,27 @@ which covers the extension too; entries here resume with 0.7.16.
 
 ---
 
+## [0.7.29] — 2026-10-02
+
+### Added
+
+- **Your own grade thresholds.** A `.epochix.yaml` in the workspace folder (or
+  in `~/.epochix/`) now changes the grades in the panel, as it does for the
+  `epochix` command line. The panel used the built-in thresholds whatever the
+  file said. A file added while a panel is open applies from the next run.
+
+### Changed
+
+- **F1 is graded on accuracy's bands** instead of on how far it moved: a run
+  going 0.90 → 0.91 was a C−.
+- **The grade card says how this run was graded** — against fixed thresholds,
+  or by improvement since the first reading — instead of naming both.
+
+### Fixed
+
+- This changelog is now included in the package, so the Changelog tab is no
+  longer empty; a lint configuration file that was shipped by mistake is not.
+
 ## [0.7.28] — 2026-10-02
 
 ### Fixed
