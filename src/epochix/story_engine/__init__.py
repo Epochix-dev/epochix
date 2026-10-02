@@ -1,12 +1,13 @@
 from __future__ import annotations
 
 import math
+from collections.abc import Sequence, Set
 from dataclasses import dataclass, field
 
 from epochix.enums import Grade, Phase, TaskType
 from epochix.models import MetaphorCard, MetricEvent, Milestone, StoryFrame, Warning
 from epochix.normalizer.canonical_keys import canonicalize_key, is_recognised
-from epochix.story_engine.config_loader import GradeConfig
+from epochix.story_engine.config_loader import GradeConfig, bands_lower_better
 from epochix.story_engine.grade import (
     compute_grade,
     grade_by_trajectory,
@@ -245,6 +246,38 @@ _PRIMARY_KEY_FOR_TASK: dict[TaskType, str] = {
 }
 
 
+def story_metric(
+    task: TaskType, logged: Sequence[str], announced: Set[str] = frozenset()
+) -> str | None:
+    """The metric a run of *task* is told by, or None when nothing logged can.
+
+    *logged* is the canonical keys in the order they first appeared;
+    *announced* the keys named on the line being read (see
+    ``StoryEngine.announce``).
+    """
+    # Prefer the highest-priority candidate that has actually been logged, so
+    # an alternative-but-valid metric (RMSE vs MAE, mAP vs mAP50) drives the
+    # story instead of matching nothing.
+    for key in _PREFERRED_KEYS_FOR_TASK.get(task, ()):
+        if key in logged or key in announced:
+            return key
+    if task is TaskType.CUSTOM:
+        # A run whose metrics we do not recognise is told by the first of
+        # them, under its own name. They used to be merged into one "custom"
+        # series, which put unrelated numbers on one curve.
+        for key in logged:
+            if not is_recognised(key):
+                return key
+        # A score we do recognise but no task lists — recall, specificity,
+        # NDCG — is a story too: a loop printing only precision and recall had
+        # none. A name whose direction is unknown (a learning rate, a gradient
+        # norm) is not a score and cannot be told as one.
+        for key in logged:
+            if metric_lower_better(key) is not None:
+                return key
+    return None
+
+
 @dataclass
 class StoryEngine:
     run_id: str
@@ -301,21 +334,10 @@ class StoryEngine:
         if self.primary_metric:
             return canonicalize_key(self.primary_metric)
         task = self._effective_task()
-        # Prefer the highest-priority candidate that has actually been logged,
-        # so an alternative-but-valid metric (RMSE vs MAE, mAP vs mAP50) drives
-        # the story instead of matching nothing. Fall back to the default when
-        # none has appeared yet.
-        for key in _PREFERRED_KEYS_FOR_TASK.get(task, ()):
-            if key in self._metric_history or key in self._announced_keys:
-                return key
-        if task is TaskType.CUSTOM:
-            # A run whose metrics we do not recognise is told by the first of
-            # them, under its own name. They used to be merged into one
-            # "custom" series, which put unrelated numbers on one curve.
-            for key in self._metric_history:
-                if not is_recognised(key):
-                    return key
-        return _PRIMARY_KEY_FOR_TASK.get(task, "val_loss")
+        # Fall back to the task's default when nothing that can tell the story
+        # has appeared yet.
+        chosen = story_metric(task, list(self._metric_history), self._announced_keys)
+        return chosen or _PRIMARY_KEY_FOR_TASK.get(task, "val_loss")
 
     def process(self, event: MetricEvent) -> StoryFrame | None:
         """Process one MetricEvent, returning the latest StoryFrame (or None).
@@ -603,7 +625,10 @@ class StoryEngine:
         if name_dir is not None:
             lower_better = name_dir
         elif task is TaskType.CUSTOM:
-            lower_better = False
+            # Nothing says which way an unrecognised name runs — unless the
+            # project's own thresholds file does.
+            override = self.grade_config.get_lower_better(task) if self.grade_config else None
+            lower_better = bool(override)
         else:
             lower_better = is_lower_better(task, self.grade_config)
 
@@ -668,11 +693,24 @@ class StoryEngine:
         off_scale = bool(preferred) and primary_key not in on_scale
         needs_trajectory = task is TaskType.CUSTOM or off_scale
 
-        if not needs_trajectory or has_absolute_scale(primary_key):
+        # A project's own thresholds come first, and only for the metric they
+        # were written for (GradeConfig.bands_for): a `regression` entry holds
+        # error bands, and read as R² floors it graded 0.99 a B. The bands'
+        # own order says whether lower is better, so they cannot be applied
+        # upside down.
+        own_bands = self.grade_config.bands_for(task, primary_key) if self.grade_config else None
+        if own_bands:
+            stated = bands_lower_better(own_bands)
             grade = compute_grade(
                 task=task,
                 primary_value=primary_value,
-                config=self.grade_config,
+                custom_thresholds=own_bands,
+                direction=lower_better if stated is None else stated,
+            )
+        elif not needs_trajectory or has_absolute_scale(primary_key):
+            grade = compute_grade(
+                task=task,
+                primary_value=primary_value,
                 metric=primary_key,
             )
         elif self._baseline is not None and len(self._metric_history.get(primary_key, ())) >= 2:

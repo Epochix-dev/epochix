@@ -114,6 +114,18 @@ npm --prefix epochix-vscode test    # launches a real VS Code host
   `<kind>_cleared` withdraws a `<kind>` everywhere warnings are shown — the
   store, the report (`standing_warnings`) — and a scrubbed view shows what
   stood at that frame (`warningsInView`), not the run's final warnings.
+- **A name can be a setting in one log and a metric in another.** `precision`
+  is `16` in a Lightning log and `0.87` in a training loop; listed as
+  configuration, the metric was dropped everywhere. A name like that goes in
+  `VALUE_DECIDES` (`parsers/_never_metrics.py`), not in the skip list.
+- **Grading reads the project's `.epochix.yaml`.** The loader was unit-tested
+  and called by nothing for the life of the feature. `active_grade_config()`
+  is what the pipeline and the server call; `tests/conftest.py` turns the
+  lookup off (`EPOCHIX_GRADE_CONFIG=off`) so a developer's own file cannot
+  change a test, and a test of the feature turns it back on. The repository
+  root must not hold a live `.epochix.yaml` — the template is
+  `.epochix.example.yaml`, inert as shipped. A task's entry applies only to
+  the metric in `GOVERNED_METRICS`.
 - **Test what the release builds.** 0.7.5–0.7.10 shipped a blank VS Code panel
   because the extension tests ran against `frontend/dist` (the server build)
   while the release packages `build:webview` output. When a release step

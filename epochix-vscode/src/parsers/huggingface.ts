@@ -9,7 +9,7 @@
  * produced no metric, no frame and no story.
  */
 import { claim, type Parser, type ParserContext, type RawMetric } from "./base";
-import { NEVER_METRICS } from "./neverMetrics";
+import { NEVER_METRICS, isSetting } from "./neverMetrics";
 
 const HF_DICT_LINE = /^\s*\{['"]loss['"].*\}/;
 const NUMBER = /^[-+]?(?:\d+\.?\d*|\.\d+)(?:[eE][-+]?\d{1,4})?$/;
@@ -69,7 +69,7 @@ export class HuggingFaceParser implements Parser {
     for (const [key, val] of Object.entries(data)) {
       if (NEVER_METRICS.has(key.toLowerCase())) continue;
       const value = numberOf(val);
-      if (value === null) continue;
+      if (value === null || isSetting(key.toLowerCase(), value)) continue;
       metrics.push({
         seq: ctx.seq,
         epoch: ctx.currentEpoch,

@@ -867,6 +867,12 @@ def cmd_check(
     from epochix.parsers.base import ParserContext
     from epochix.parsers.registry import SNIFF_SAMPLE_LINES, detect_parser
     from epochix.pipeline import _clean_line
+    from epochix.story_engine import story_metric
+    from epochix.story_engine.config_loader import (
+        config_error,
+        configured_path,
+        load_grade_config,
+    )
     from epochix.story_engine.task_classifier import classify_task
 
     raw_lines = log_file.read_text(encoding="utf-8", errors="replace").splitlines()
@@ -940,6 +946,36 @@ def cmd_check(
         typer.echo("  metrics found   (none)")
     typer.echo("")
 
+    # Which thresholds a run of this log would be graded with. A project's
+    # .epochix.yaml was documented and read by nothing for a long time; now
+    # that it is read, saying so here is how a person finds out it applied.
+    told_by = story_metric(task, list(found))
+    thresholds_file = configured_path()
+    if thresholds_file is None:
+        typer.echo("  thresholds    built-in")
+    else:
+        typer.echo(f"  thresholds    {thresholds_file}")
+        indent = " " * 16
+        unusable = config_error(thresholds_file)
+        grade_config = load_grade_config(thresholds_file)
+        if unusable is not None:
+            typer.echo(f"{indent}not used: {unusable}")
+        elif grade_config is None:
+            typer.echo(f"{indent}sets nothing, so the built-in thresholds apply")
+        else:
+            for problem in grade_config.problems:
+                typer.echo(f"{indent}! {problem}")
+            if told_by is not None and grade_config.bands_for(task, told_by):
+                typer.echo(f"{indent}{told_by} is graded on its thresholds")
+            else:
+                entries = sorted([*grade_config.grade_thresholds, *grade_config.metric_thresholds])
+                typer.echo(
+                    f"{indent}no entry applies to this run"
+                    + (f", which is told by {told_by}" if told_by else "")
+                    + f" (the file sets: {', '.join(entries) or 'nothing'})"
+                )
+    typer.echo("")
+
     if cv_folds and cv_candidates:
         # A parameter search. Its candidates are separate populations, so one
         # mean across all of them answers nothing — the search exists to pick
@@ -985,13 +1021,26 @@ def cmd_check(
             'val_accuracy={acc:.4f}")'
         )
     elif task is TaskType.CUSTOM:
-        problems.append(
-            "No task-defining metric (accuracy / mAP / F1 / MAE / perplexity ...),\n"
-            "      so the run is graded on how much its loss improved rather than on\n"
-            "      task quality. Log one to get a real grade, e.g.\n"
-            '        print(f"Epoch {epoch}/{total} train_loss={loss:.4f} '
-            'val_accuracy={acc:.4f}")'
+        # Name what the run is actually told by. This said "graded on how much
+        # its loss improved" to a log with no loss in it, and listed F1 and
+        # MAE as the way to "a real grade" — both are graded on improvement.
+        example = (
+            '        print(f"Epoch {epoch}/{total} train_loss={loss:.4f} val_accuracy={acc:.4f}")'
         )
+        if told_by is None:
+            problems.append(
+                "Nothing in this log can carry a story: "
+                f"{', '.join(sorted(found))} "
+                f"{'is' if len(found) == 1 else 'are'} not a score.\n"
+                "      Log a loss or a metric once per epoch, e.g.\n" + example
+            )
+        else:
+            problems.append(
+                "No task-defining metric (accuracy / AUC / mAP50 / R2 / perplexity ...),\n"
+                f"      so the run is told by {told_by} and graded on how much it improved\n"
+                "      rather than on a fixed scale. Log one for a grade that says how\n"
+                "      good the model is, e.g.\n" + example
+            )
     elif task is TaskType.REGRESSION and not (seen_keys & {"R2", "val_R2"}):
         problems.append(
             "No R2, so the grade reflects how much the error IMPROVED, not how\n"

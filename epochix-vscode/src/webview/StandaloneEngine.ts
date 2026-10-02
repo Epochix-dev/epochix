@@ -98,8 +98,8 @@ const NON_FINITE_ASSIGNMENT =
 /**
  * The key this run is narrated by — Python's _effective_primary_key: the
  * task's first preferred key that has been logged; for a CUSTOM run with none
- * of them, the first metric we do not recognise, under its own name; else the
- * task's default. `seen` is in the order keys were first logged.
+ * of them, the first metric we do not recognise, under its own name, then the
+ * first recognised score no task lists; else the task's default. `seen` is in the order keys were first logged.
  */
 function primaryMetricFrom(task: TaskType, seen: ReadonlyArray<string>): string {
   const logged = new Set(seen);
@@ -107,6 +107,10 @@ function primaryMetricFrom(task: TaskType, seen: ReadonlyArray<string>): string 
   if (task === "custom") {
     const unknown = seen.find((k) => !isRecognised(k));
     if (unknown !== undefined) return unknown;
+    // A score we recognise but no task lists (recall, specificity, NDCG) is a
+    // story too; a name whose direction is unknown (a learning rate) is not.
+    const score = seen.find((k) => metricLowerBetter(k) !== undefined);
+    if (score !== undefined) return score;
   }
   return PREFERRED_KEYS[task][0] ?? "val_loss";
 }

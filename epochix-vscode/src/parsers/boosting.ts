@@ -19,7 +19,7 @@
  * but structurally the same — one more unit of fitting.
  */
 import { claim, type Parser, type ParserContext, type RawMetric } from "./base";
-import { NEVER_METRICS } from "./neverMetrics";
+import { NEVER_METRICS, isSetting } from "./neverMetrics";
 
 // Bounded quantifiers throughout: an unbounded run before a delimiter is
 // O(n^2) on a long line.
@@ -142,6 +142,7 @@ export class BoostingParser implements Parser {
       if (Number.isNaN(value)) continue;
       const flat = rawName.replace(/[\s'-]/g, "").toLowerCase();
       if (DERIVED.has(flat) || NEVER_METRICS.has(rawName.toLowerCase())) continue;
+      if (isSetting(rawName.toLowerCase(), value)) continue;
       const [split, index, metric] = dissect(rawName);
       found.push([split, index, metric, value]);
     }

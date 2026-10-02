@@ -32,22 +32,17 @@ taught live in [AGENTS.md](AGENTS.md).
   blind spot (a 95% majority class makes 95% accuracy worthless) and is graded
   on fixed bands with a caveat on the card. Either treat F1 like accuracy
   (add `val_f1`/`f1` to `_ON_SCALE_KEYS[CLASSIFICATION]`) or keep it as it is;
-  it is a judgement, and should be written down as one.
-- **A task's custom thresholds are applied to a metric that has bands of its
-  own.** `compute_grade` puts a `.epochix.yaml` task entry above
-  `_METRIC_THRESHOLDS`. With regression thresholds written for MAE
-  (`A+: 0.01 … D: 2.5`), an R² of 0.99 grades **B** instead of A+: the MAE
-  numbers are read as R² floors. A classification entry written for accuracy
-  is likewise applied to an AUC. Needs per-metric keys in the config, or the
-  rule that a task entry applies only to the task's own main metric.
-- **`precision` and `recall` printed by a training loop tell no story.**
-  `docs/training-loop.md` lists them as detection metrics. In a `key=value`
-  line `precision` is dropped as a numeric-precision setting (Lightning prints
-  `precision=16`), and `recall` is read but is neither a task signal nor a
-  story metric: five epochs of `precision=… recall=…` give task `custom` and
-  no frame, and `epochix check` says the run "is graded on how much its loss
-  improved" when it has no loss. More generally, a recognised metric that no
-  task lists as a story metric cannot carry a run by itself.
+  it is a judgement, and should be written down as one. Since 0.7.28 a project
+  can set F1 bands for itself with a `val_f1` entry in `.epochix.yaml`; this
+  item is about the default.
+- **The VS Code panel does not read `.epochix.yaml`.** The command line, the
+  server and the SDK grade with a project's thresholds; the extension's own
+  engine (TypeScript) uses the built-in ones, and its Python server is started
+  from a temporary folder, so it would not find a workspace file either. A
+  workspace with custom thresholds therefore shows one grade in the panel and
+  another from `epochix run`. The README and `docs/config.md` say so. Closing
+  it means reading the workspace's file in the extension (a YAML reader in the
+  bundle) and replaying the Python loader's answers, like the other tables.
 - **Say which way this run was graded.** The sentence under the grade names
   both ways a grade is reached (fixed thresholds, or improvement since the
   first reading) because a frame does not record which applied. Carry it on

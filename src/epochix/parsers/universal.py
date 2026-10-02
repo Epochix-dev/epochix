@@ -7,7 +7,7 @@ from typing import cast
 
 from epochix.models import RawMetric
 from epochix.normalizer.canonical_keys import canonicalize_key, is_recognised
-from epochix.parsers._never_metrics import NEVER_METRICS
+from epochix.parsers._never_metrics import NEVER_METRICS, VALUE_DECIDES
 from epochix.parsers.base import ParserContext
 from epochix.parsers.registry import register_parser
 
@@ -402,6 +402,8 @@ class UniversalParser:
                 or key_lo in _SKIP_KEYS
                 or key_lo in _EPOCH_KEYS
                 or key_lo in _STEP_KEYS
+                # `precision=16` is a setting, `precision=0.87` a metric.
+                or (key_lo in VALUE_DECIDES and not 0.0 <= val <= 1.0)
             ):
                 continue
             seen_keys.add(key_lo)
@@ -490,11 +492,13 @@ class UniversalParser:
                 key_lo = match.group(1).lower()
                 if key_lo in _SKIP_KEYS or key_lo in _EPOCH_KEYS or key_lo in _STEP_KEYS:
                     continue
-                try:  # noqa: SIM105 - not contextlib.suppress: it costs more per call than
-                    # the rest of the statement, and this runs several times per line
-                    hits.append((match.group(1), float(match.group(2))))
+                try:
+                    value = float(match.group(2))
                 except ValueError:
-                    pass
+                    continue
+                if key_lo in VALUE_DECIDES and not 0.0 <= value <= 1.0:
+                    continue
+                hits.append((match.group(1), value))
             if hits:
                 return hits
         return []

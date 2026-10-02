@@ -239,7 +239,10 @@ export const ON_SCALE: Readonly<Record<TaskType, ReadonlySet<string>>> = {
 
 /** Names that are never a metric: run config, model-summary totals, units
  *  (parsers/_never_metrics.py). */
-export const NEVER_METRICS: ReadonlySet<string> = new Set(["accumulate_grad_batches", "batch_size", "batchsize", "bs", "devices", "epochs", "eval_runtime", "eval_samples_per_second", "eval_steps_per_second", "flops", "gpus", "img_size", "imgsz", "log_every_n_steps", "macs", "max_epochs", "ms", "node", "non_trainable_params", "ns", "num_epochs", "num_workers", "params", "patience", "pid", "port", "precision", "rank", "runtime", "s", "samples_per_second", "save_top_k", "seed", "steps_per_second", "test_runtime", "test_samples_per_second", "test_steps_per_second", "total_epochs", "total_flos", "total_params", "train_runtime", "train_samples_per_second", "train_steps_per_second", "trainable_params", "us", "verbose", "workers", "world_size"]);
+export const NEVER_METRICS: ReadonlySet<string> = new Set(["accumulate_grad_batches", "batch_size", "batchsize", "bs", "devices", "epochs", "eval_runtime", "eval_samples_per_second", "eval_steps_per_second", "flops", "gpus", "img_size", "imgsz", "log_every_n_steps", "macs", "max_epochs", "ms", "node", "non_trainable_params", "ns", "num_epochs", "num_workers", "params", "patience", "pid", "port", "rank", "runtime", "s", "samples_per_second", "save_top_k", "seed", "steps_per_second", "test_runtime", "test_samples_per_second", "test_steps_per_second", "total_epochs", "total_flos", "total_params", "train_runtime", "train_samples_per_second", "train_steps_per_second", "trainable_params", "us", "verbose", "workers", "world_size"]);
+
+/** Names that are a setting or a metric depending on the value (is_setting). */
+export const VALUE_DECIDES: ReadonlySet<string> = new Set(["precision"]);
 
 /** Keyword arguments of a torch `print(model)` dump (parsers/universal.py). */
 export const NN_REPR_KWARGS: ReadonlySet<string> = new Set(["affine", "batch_first", "bias", "ceil_mode", "count_include_pad", "dilation", "dropout", "embedding_dim", "eps", "groups", "hidden_size", "in_channels", "in_features", "inplace", "kernel_size", "momentum", "nhead", "num_embeddings", "num_features", "num_layers", "out_channels", "out_features", "output_padding", "padding", "padding_mode", "return_indices", "stride", "track_running_stats"]);

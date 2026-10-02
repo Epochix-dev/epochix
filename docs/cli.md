@@ -71,7 +71,10 @@ epochix check train.log
 ```
 
 Reach for this first when a run produced no story, an unexpected grade, or an
-empty architecture panel.
+empty architecture panel. It names the metric the run is told by, and which
+grade thresholds apply — the built-in ones, or your
+[`.epochix.yaml`](config.md#grade-thresholds) and whether any entry in it
+applies to this log.
 
 ## `epochix serve`
 

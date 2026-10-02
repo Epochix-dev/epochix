@@ -4,7 +4,7 @@ import contextlib
 import re
 
 from epochix.models import RawMetric
-from epochix.parsers._never_metrics import NEVER_METRICS
+from epochix.parsers._never_metrics import NEVER_METRICS, is_setting
 from epochix.parsers.base import ParserContext, claim
 from epochix.parsers.registry import register_parser
 
@@ -76,13 +76,16 @@ class KerasParser:
                 continue
             told[key] = val
             with contextlib.suppress(ValueError):
+                value = float(val)
+                if is_setting(key.lower(), value):
+                    continue
                 metrics.append(
                     RawMetric(
                         seq=ctx.seq,
                         epoch=ctx.current_epoch,
                         step=ctx.current_step,
                         key=key,
-                        value=float(val),
+                        value=value,
                         parser_name=self.name,
                         confidence=0.88,
                     )

@@ -7,4 +7,17 @@
  * another: the bundled demo's `Total params: 53,002` was charted as a flat
  * series worth 53.
  */
-export { NEVER_METRICS } from "../story/engineTables.generated";
+import { VALUE_DECIDES } from "../story/engineTables.generated";
+
+export { NEVER_METRICS, VALUE_DECIDES } from "../story/engineTables.generated";
+
+/**
+ * Whether `key` (lower-cased) holding `value` is a setting, not a metric —
+ * Python's `is_setting`. `precision` is the numeric precision in a Lightning
+ * or AMP log (`precision=16`) and a classification metric in a training loop
+ * (`precision=0.87`): a numeric precision is 16 or more, the metric cannot
+ * exceed 1.
+ */
+export function isSetting(key: string, value: number): boolean {
+  return VALUE_DECIDES.has(key) && !(value >= 0 && value <= 1);
+}
