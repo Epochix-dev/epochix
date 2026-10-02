@@ -7,6 +7,64 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.7.28] — 2026-10-02
+
+### Fixed — custom grade thresholds were documented and read by nothing
+
+- **A `.epochix.yaml` had no effect.** The README told people to put one in
+  their project to set their own grade cut-offs. A loader existed, with unit
+  tests, and so did grading code that accepted its result — and nothing
+  connected them: no run ever read the file. A file making everything under
+  99.5% accuracy an F still graded 90% an A. The command line, the server and
+  the Python SDK read it now. (The VS Code extension's panel still grades with
+  the built-in thresholds; see `ROADMAP.md`.)
+- **A task's entry applies to that task's main metric only** — a
+  `classification` entry to accuracy, `detection` to mAP50, and so on
+  (`docs/config.md` has the table). Before, the grading code would have
+  applied a `regression` entry, which holds error bands, to an R²: 0.99 graded
+  B. An entry named after a metric (`val_f1`, `R2`) sets bands for that metric
+  in any run.
+- **The order of the numbers says whether lower is better**, so an entry
+  cannot be applied upside down, whatever the metric is called.
+- **A `regression`, `generative` or `custom` entry grades the run on your
+  bands.** Those are graded on improvement by default, because a log cannot
+  say what a good MAE is; the entry supplies it.
+- **Mistakes in the file are reported, not guessed at.** An unknown grade
+  label would have raised an error in the middle of a run. It, a threshold
+  that is not a number, and thresholds that are not in order are skipped and
+  listed by `epochix check`, which also prints the file in use and whether any
+  entry applies to the log.
+- `EPOCHIX_GRADE_CONFIG` names a thresholds file directly, or switches the
+  lookup off with `off`.
+- **The template is `.epochix.example.yaml`, and copying it changes nothing.**
+  The old one sat at the repository root under the live name, with a
+  `regression` entry that would have graded every MAE on bands written for
+  normalised targets. Every entry is commented out now; the values it calls
+  built-in are tested against the built-in ones.
+- PyYAML is a declared dependency. It was already installed with every
+  epochix, through `uvicorn[standard]`.
+
+### Fixed — `precision` and `recall` printed by a training loop
+
+- **`precision` was dropped by every parser.** It was listed as run
+  configuration, because Lightning and AMP print the numeric precision under
+  that name (`precision=16`). A loop printing `precision=0.55 recall=0.45`
+  charted its recall alone, and a Keras bar's `precision: 0.87` vanished. The
+  value decides now: a numeric precision is 16 or more, the metric cannot
+  exceed 1.
+- **A log with only precision and recall had no story.** Neither is a task
+  signal or on any task's list of story metrics. A run with no recognised task
+  can now be told by a score epochix recognises but no task lists — recall,
+  specificity, NDCG — graded on improvement. A learning rate or a gradient
+  norm is still not a score.
+- **`epochix check` named the wrong thing.** It said a run "is graded on how
+  much its loss improved" of a log with no loss, and listed F1 and MAE as the
+  way to "a real grade" although both are graded on improvement. It names the
+  metric the run is told by, lists metrics that are graded on a fixed scale,
+  and says so plainly when nothing in the log can carry a story.
+
+---
+
 ## [0.7.27] — 2026-10-02
 
 ### Changed — a ROC AUC is graded on its own scale

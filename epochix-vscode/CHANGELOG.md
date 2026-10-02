@@ -14,6 +14,21 @@ which covers the extension too; entries here resume with 0.7.16.
 
 ---
 
+## [0.7.28] — 2026-10-02
+
+### Fixed
+
+- **`precision` printed by a training loop is read.** It was dropped as run
+  configuration (Lightning prints `precision=16`); a fraction is now read as
+  the metric it is.
+- **A log with only precision and recall is told**, on the first of them,
+  instead of producing no story.
+
+### Known limitation
+
+- The panel grades with the built-in thresholds. A project's `.epochix.yaml`,
+  which the command line now reads, is not read here.
+
 ## [0.7.27] — 2026-10-02
 
 ### Changed
