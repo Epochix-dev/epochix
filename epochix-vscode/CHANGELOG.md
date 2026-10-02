@@ -14,6 +14,21 @@ which covers the extension too; entries here resume with 0.7.16.
 
 ---
 
+## [0.7.27] — 2026-10-02
+
+### Changed
+
+- **A ROC AUC is graded on its own scale** instead of on how far it moved: a
+  LightGBM classifier at 0.984 validation AUC was graded C−, and now grades
+  A+. The letters follow the usual rule of thumb (0.7 acceptable, 0.8
+  excellent, 0.9 outstanding); 0.5, a coin toss, is an F.
+
+### Fixed
+
+- **A run that reports only F1 is told.** F1 was not recognised as a
+  classification metric, so such a log produced no story, and one with F1 and
+  a loss was told on the loss.
+
 ## [0.7.26] — 2026-10-01
 
 ### Fixed
