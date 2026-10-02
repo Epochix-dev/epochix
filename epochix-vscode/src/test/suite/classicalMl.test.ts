@@ -108,7 +108,7 @@ suite("Regression grading does not depend on the target's units", () => {
     assert.strictEqual(computeGrade("regression", -3.0, "R2"), "F");
   });
 
-  test("only R2 claims an absolute scale", () => {
+  test("among regression metrics, only R2 claims an absolute scale", () => {
     assert.ok(hasAbsoluteScale("R2"));
     assert.ok(hasAbsoluteScale("val_R2"));
     assert.ok(!hasAbsoluteScale("MAE"));

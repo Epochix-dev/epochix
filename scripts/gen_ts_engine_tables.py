@@ -435,7 +435,7 @@ def render_grading() -> str:
         + _js(sorted(t.value for t in grade._LOWER_BETTER))
         + ");",
         "",
-        "/** Bands that belong to a metric rather than a task (R2 carries its own scale). */",
+        "/** Bands that belong to a metric, not a task: R2 and ROC AUC carry their own scale. */",
         "export const METRIC_THRESHOLDS: Readonly<Record<string, readonly Threshold[]>> = {",
     ]
     for metric, rows in sorted(grade._METRIC_THRESHOLDS.items()):
