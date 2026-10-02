@@ -33,12 +33,28 @@ suite("An AUC is graded on its own scale", () => {
     assert.strictEqual(computeGrade("classification", 0.31, "val_AUC"), "F");
   });
 
-  test("ROC AUC has a scale; F1 and PR AUC do not", () => {
+  test("ROC AUC has a scale; PR AUC, precision and recall do not", () => {
     assert.ok(hasAbsoluteScale("AUC"));
     assert.ok(hasAbsoluteScale("val_AUC"));
-    for (const metric of ["f1", "val_f1", "PR_AUC", "precision", "recall"]) {
+    for (const metric of ["PR_AUC", "precision", "recall"]) {
       assert.ok(!hasAbsoluteScale(metric), metric);
     }
+  });
+
+  test("F1 shares accuracy's bands", () => {
+    // A decision, written down in grade.py: mirrors test_f1_grade_scale.py.
+    assert.ok(hasAbsoluteScale("f1"));
+    assert.ok(hasAbsoluteScale("val_f1"));
+    for (const value of [0.99, 0.91, 0.84, 0.72, 0.61, 0.52, 0.31]) {
+      assert.strictEqual(
+        computeGrade("classification", value, "val_f1"),
+        computeGrade("classification", value),
+        String(value),
+      );
+    }
+    // The fault itself: 0.90 -> 0.91 was a C- on improvement.
+    assert.strictEqual(gradeByTrajectory(0.9, 0.91, false), "C-");
+    assert.strictEqual(computeGrade("classification", 0.91, "val_f1"), "A");
   });
 
   test("the real LightGBM run is graded where its AUC stands", () => {

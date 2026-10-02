@@ -65,15 +65,17 @@ improved from its own starting point, not against an accuracy scale.
 
 Which metrics get a grade from fixed bands, and which from improvement:
 
-- **Fixed bands** — the number means the same thing in every run: accuracy,
-  ROC AUC (0.5 is a coin toss, and the letters follow the usual rule of thumb:
-  0.7 acceptable, 0.8 excellent, 0.9 outstanding), R², and each other task's
-  main metric (mAP50, mIoU, perplexity, EER).
+- **Fixed bands** — accuracy; F1, on accuracy's bands; ROC AUC (0.5 is a coin
+  toss, and the letters follow the usual rule of thumb: 0.7 acceptable, 0.8
+  excellent, 0.9 outstanding); R²; and each other task's main metric (mAP50,
+  mIoU, perplexity, EER).
 - **Improvement since the first reading** — the number has no scale of its
-  own: a loss, an error in the target's units (MAE, RMSE), F1, PR AUC, and any
+  own: a loss, an error in the target's units (MAE, RMSE), PR AUC, and any
   name epochix does not recognise.
 
-Either way the grade does not know how hard your dataset is.
+Either way the grade does not know how hard your dataset is, and the card
+under the grade says which of the two applied. To grade a metric on bands of
+your own, see [Grade thresholds](config.md#grade-thresholds).
 
 ## What not to print
 

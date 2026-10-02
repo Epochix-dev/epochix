@@ -10,6 +10,7 @@ tsconfig.json
 tsconfig.test.json
 .eslintrc*
 .eslintignore
+eslint.config.mjs
 
 # Node tooling / metadata
 node_modules/**
@@ -31,6 +32,5 @@ Thumbs.db
 **/*.map
 *.vsix
 
-# CI / docs
+# CI
 .github/**
-CHANGELOG.md

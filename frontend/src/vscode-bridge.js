@@ -28,6 +28,8 @@ export function mapFrame(f) {
     confidence: f.confidence,
     // Why the letter deserves less weight (few readings, still improving).
     grade_note: f.gradeNote ?? null,
+    // How the letter was reached: fixed thresholds, or improvement.
+    grade_basis: f.gradeBasis ?? null,
     narrative: f.narrative,
     task_type: f.taskType,
   };

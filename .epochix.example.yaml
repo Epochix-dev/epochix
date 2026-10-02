@@ -139,7 +139,8 @@ grade_thresholds:
 
   # ── A metric entry ────────────────────────────────────────────────────────
   #
-  # F1 is graded on improvement by default. This grades it on fixed bands.
+  # F1 is graded on accuracy's bands by default. This gives it bands of its
+  # own — lower ones, say, where the positive class is rare.
 
   # val_f1:
   #   A: 0.90

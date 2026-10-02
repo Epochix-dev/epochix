@@ -125,7 +125,15 @@ npm --prefix epochix-vscode test    # launches a real VS Code host
   change a test, and a test of the feature turns it back on. The repository
   root must not hold a live `.epochix.yaml` — the template is
   `.epochix.example.yaml`, inert as shipped. A task's entry applies only to
-  the metric in `GOVERNED_METRICS`.
+  the metric in `GOVERNED_METRICS`. The extension reads the file too
+  (`story/gradeConfig.ts`, a port of `config_loader.py`): change the loader
+  and `gradeConfig.golden.json` — Python's reading of a set of sample files —
+  is regenerated and replayed, so add a sample for a new rule.
+- **A frame says how its letter was reached.** `StoryFrame.grade_basis` is
+  "thresholds", "improvement" or None, set where the grade is computed, in
+  both engines, and pinned per log in `corpus_truth.json`. The card under the
+  grade reads it. A new way of grading needs a new value and a sentence for it
+  in all three languages — not a sentence that is true of most runs.
 - **Test what the release builds.** 0.7.5–0.7.10 shipped a blank VS Code panel
   because the extension tests ran against `frontend/dist` (the server build)
   while the release packages `build:webview` output. When a release step

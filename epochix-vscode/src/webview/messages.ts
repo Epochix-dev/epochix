@@ -7,6 +7,7 @@
 
 import type { Phase } from "../story/phases";
 import type { Grade, TaskType } from "../story/grader";
+import type { GradeBasis } from "../story/grading.generated";
 
 // ── Shared data shapes ────────────────────────────────────────────────────────
 
@@ -26,11 +27,16 @@ export interface StoryFrameMsg {
   /** Why the letter deserves less weight than it looks — mirrors
    *  story_engine.grade.grade_note. Null when there is nothing to qualify. */
   gradeNote: GradeNote | null;
+  /** How the letter was reached — fixed thresholds, or improvement since the
+   *  first reading. Null where there is no letter to explain (an "I", or the
+   *  F of a diverged run). Mirrors StoryFrame.grade_basis. */
+  gradeBasis: GradeBasis | null;
   narrative: string;
   taskType: TaskType;
 }
 
 export type GradeNote = "few_readings" | "still_improving";
+export type { GradeBasis };
 
 export interface MilestoneMsg {
   kind: string;

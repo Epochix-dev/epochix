@@ -78,6 +78,9 @@ _EN: dict[str, str] = {
     "cv.note": "Folds are reported here rather than charted: their order carries no meaning, "
     "so they have no trend.",
     "md.grade_note": "About the grade",
+    "md.grade_basis": "How it was graded",
+    "grade_basis.thresholds": "Against fixed thresholds for this metric.",
+    "grade_basis.improvement": "On how far this metric improved since its first reading.",
     "grade_note.few_readings": "Provisional: this grade rests on fewer than five "
     "readings of the metric.",
     "grade_note.still_improving": "Still improving at the last reading — the grade "
@@ -148,6 +151,9 @@ _FA: dict[str, str] = {
     "امتیازدهنده‌های scikit-learn هرچه بیشتر بهتر هستند. ترتیب بخش‌ها معنایی ندارد.",
     "cv.note": "بخش‌ها این‌جا گزارش می‌شوند، نه در نمودار: ترتیبشان معنایی ندارد، پس روندی هم ندارند.",
     "md.grade_note": "دربارهٔ نمره",
+    "md.grade_basis": "نحوهٔ نمره‌دهی",
+    "grade_basis.thresholds": "در برابر آستانه‌های ثابت برای این سنجه.",
+    "grade_basis.improvement": "بر پایهٔ میزان بهبود این سنجه از نخستین اندازه‌گیری.",
     "grade_note.few_readings": "موقت: این نمره بر کمتر از پنج خوانش از سنجه تکیه دارد.",
     "grade_note.still_improving": "در آخرین خوانش هنوز در حال بهبود بود — نمره نشان "
     "می‌دهد اجرا به کجا رسید، نه به کجا می‌رفت.",
@@ -219,6 +225,9 @@ _FR: dict[str, str] = {
     "cv.note": "Les plis sont rapportés ici plutôt que tracés : leur ordre n'a pas de sens, "
     "ils n'ont donc pas de tendance.",
     "md.grade_note": "À propos de la note",
+    "md.grade_basis": "Mode de notation",
+    "grade_basis.thresholds": "Selon des seuils fixes pour cette métrique.",
+    "grade_basis.improvement": "Selon la progression de cette métrique depuis sa première mesure.",
     "grade_note.few_readings": "Provisoire : cette note repose sur moins de cinq "
     "mesures de la métrique.",
     "grade_note.still_improving": "Encore en progrès à la dernière mesure — la note "

@@ -119,6 +119,7 @@ def test_the_final_letter_and_phase(name: str) -> None:
     last = frames[-1] if frames else None
     want = TRUTH[name]
     assert (last.grade.value if last else None) == want["final_grade"]
+    assert (last.grade_basis if last else None) == want["final_grade_basis"]
     assert (last.phase.value if last else None) == want["final_phase"]
 
 

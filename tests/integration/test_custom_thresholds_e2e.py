@@ -189,10 +189,12 @@ class TestATaskEntryAppliesToItsOwnMetric:
         assert frames[-1].grade is Grade.A_PLUS
 
     def test_a_classification_entry_does_not_touch_an_f1(self, project: Path) -> None:
+        """An F1 keeps its built-in bands: 0.84 is a B+, not the F the entry
+        gives anything under 99.5%."""
         values = [0.40, 0.55, 0.70, 0.80, 0.84]
         lines = [f"Epoch {e}/5 val_f1={v}" for e, v in enumerate(values, 1)]
         frames = _told(project, lines, config=STRICT)
-        assert frames[-1].grade is grade_by_trajectory(values[0], values[-1], False)
+        assert frames[-1].grade is Grade.B_PLUS
 
     def test_a_regression_entry_grades_the_error_not_r2(self, project: Path) -> None:
         """The fault this rule exists for: error bands read as R² floors
@@ -252,8 +254,26 @@ class TestAMetricEntry:
     def test_it_grades_that_metric_on_fixed_bands(self, project: Path) -> None:
         lines = [f"Epoch {e}/5 val_f1={v}" for e, v in enumerate([0.40, 0.55, 0.70, 0.80, 0.84], 1)]
         frames = _told(project, lines, config=self.CONFIG)
-        # 0.84 is over B's 0.75 and short of A's 0.90. On improvement it was an A+.
+        # 0.84 is over B's 0.75 and short of A's 0.90; the built-in bands say B+.
         assert [f.grade for f in frames] == [Grade.F, Grade.F, Grade.C, Grade.B, Grade.B]
+        assert {f.grade_basis for f in frames} == {"thresholds"}
+
+    def test_a_name_epochix_does_not_recognise_keeps_its_own(self, project: Path) -> None:
+        """Stored under the name the run reports it as — not merged into "custom"."""
+        config = """\
+            version: 1
+            grade_thresholds:
+              my_score:
+                A: 0.90
+                B: 0.75
+                F: 0.0
+            """
+        lines = [f"Epoch {e}/5 my_score={v}" for e, v in enumerate([0.5, 0.6, 0.7, 0.8, 0.85], 1)]
+        frames = _told(project, lines, config=config)
+        assert {f.primary_metric for f in frames} == {"my_score"}
+        assert frames[-1].grade is Grade.B
+        loaded = active_grade_config()
+        assert loaded is not None and list(loaded.metric_thresholds) == ["my_score"]
 
     def test_its_name_is_read_like_a_metric_in_a_log(self, project: Path) -> None:
         (project / ".epochix.yaml").write_text(textwrap.dedent(self.CONFIG), encoding="utf-8")

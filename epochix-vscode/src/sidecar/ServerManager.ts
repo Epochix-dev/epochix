@@ -12,6 +12,7 @@ import { candidateInterpreters } from "./interpreters";
 import { findFreePort } from "./PortAllocator";
 import { waitReady } from "./HealthCheck";
 import { openExternalUrl } from "../util/uri";
+import { workspaceGradeConfigFile } from "../gradeConfigFile";
 import * as http from "http";
 import * as os from "os";
 
@@ -84,6 +85,7 @@ export class ServerManager implements vscode.Disposable {
 
     try {
       const port = await findFreePort(7860);
+      const gradeConfigFile = workspaceGradeConfigFile();
 
       // Only flags `epochix serve` actually accepts: --port / --host /
       // --log-level. (It never opens a browser, and the webview sets its own
@@ -103,6 +105,12 @@ export class ServerManager implements vscode.Disposable {
           // is being used by another process". An editor extension must not be
           // able to block the editor's own update.
           cwd: os.tmpdir(),
+          // Started from a temporary folder, the server would not find the
+          // workspace's .epochix.yaml by looking upwards; name it instead, so
+          // a run stored through it is graded as the command line grades it.
+          env: gradeConfigFile
+            ? { ...process.env, EPOCHIX_GRADE_CONFIG: gradeConfigFile }
+            : process.env,
         },
       );
 

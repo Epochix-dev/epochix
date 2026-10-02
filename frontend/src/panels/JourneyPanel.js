@@ -160,6 +160,10 @@ export class JourneyPanel {
       noteEl.hidden = !text;
     }
 
+    // ── How this letter was reached ─────────────────────────────────────────
+    const caveatEl = document.getElementById('grade-caveat');
+    if (caveatEl) caveatEl.textContent = gradeCaveatText(frame?.grade_basis);
+
     // ── Metaphor cards  ─────────────────────────────────────────────────────
     // Model uses { title, body, icon } — render all three.
     const mc = document.getElementById('metaphor-cards');
@@ -362,6 +366,30 @@ function _renderEmpty(el, s) {
   } else {
     el.innerHTML = `<p class="narrative-placeholder">${_esc(t('labels.waiting', 'Waiting for training data…'))}</p>`;
   }
+}
+
+/**
+ * The sentence under the grade: how this frame's letter was reached.
+ *
+ * It said "graded against fixed thresholds" of every run, which was false of
+ * each one graded on improvement — any loss-only log. Then it named both ways,
+ * because a frame did not say which applied. A frame now carries
+ * `grade_basis`, so the card says the one that is true; a frame without it (a
+ * run stored by an older version, an "I", a diverged run) keeps the sentence
+ * that names both.
+ * @param {string|null|undefined} basis
+ */
+export function gradeCaveatText(basis) {
+  if (basis === 'thresholds') {
+    return t('ui.gradeCaveats.thresholds',
+      'Graded against fixed thresholds for this metric — it does not know how hard your dataset is. The trend and the best-epoch call are the reliable parts.');
+  }
+  if (basis === 'improvement') {
+    return t('ui.gradeCaveats.improvement',
+      'Graded on how far this metric has improved since its first reading, because it has no fixed scale. That measures the change, not how good the model is. The trend and the best-epoch call are the reliable parts.');
+  }
+  return t('ui.gradeCaveat',
+    'The grade comes from fixed thresholds for this task type or, for a metric with no fixed scale such as a loss, from how far it has improved since its first reading. Either way it does not know how hard your dataset is. The trend and the best-epoch call are the reliable parts.');
 }
 
 /**

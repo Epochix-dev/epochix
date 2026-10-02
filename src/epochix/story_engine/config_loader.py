@@ -190,21 +190,36 @@ def find_config_file(start: Path | None = None) -> Path | None:
 def _read(path: Path) -> tuple[GradeConfig | None, str | None]:
     """The config in *path*, or why there is none."""
     try:
+        text = path.read_text(encoding="utf-8")
+    except (OSError, UnicodeDecodeError):
+        return None, "it could not be read"
+    return parse_grade_config(text, source=path)
+
+
+def parse_grade_config(
+    text: str, source: Path | None = None
+) -> tuple[GradeConfig | None, str | None]:
+    """The config written in *text*, or why there is none.
+
+    The extension's loader (story/gradeConfig.ts) is a port of this function
+    and replays its answers from gradeConfig.golden.json.
+    """
+    try:
         import yaml  # type: ignore[import-untyped]
     except ImportError:
         return None, "PyYAML is not installed (pip install pyyaml)"
 
     try:
-        raw: Any = yaml.safe_load(path.read_text(encoding="utf-8"))
-    except Exception as exc:  # noqa: BLE001 - a bad file must not stop a run
-        return None, f"it is not valid YAML ({type(exc).__name__})"
+        raw: Any = yaml.safe_load(text)
+    except Exception:  # noqa: BLE001 - a bad file must not stop a run
+        return None, "it is not valid YAML"
 
     if raw is None:
         return None, None  # empty, or every line a comment: nothing is set
     if not isinstance(raw, dict):
         return None, "its top level is not a mapping"
 
-    config = GradeConfig(source=path)
+    config = GradeConfig(source=source)
 
     thresholds_raw = raw.get("grade_thresholds", {})
     if isinstance(thresholds_raw, dict):
@@ -218,7 +233,7 @@ def _read(path: Path) -> tuple[GradeConfig | None, str | None]:
             if key.lower() in _TASK_NAMES:
                 config.grade_thresholds[key.lower()] = bands
             else:
-                config.metric_thresholds[canonicalize_key(key)] = bands
+                config.metric_thresholds[_metric_name(key)] = bands
 
     lower_better_raw = raw.get("lower_better", {})
     if isinstance(lower_better_raw, dict):
@@ -226,6 +241,16 @@ def _read(path: Path) -> tuple[GradeConfig | None, str | None]:
             config.lower_better_override[str(task_key)] = bool(flag)
 
     return config, None
+
+
+def _metric_name(key: str) -> str:
+    """The name a metric written as *key* is stored under in a run.
+
+    As the normaliser does it: a name epochix knows becomes its canonical
+    form (``eval_f1`` is ``val_f1``); one it does not know keeps its own.
+    """
+    canonical = canonicalize_key(key)
+    return key.strip() if canonical == "custom" and key.strip() else canonical
 
 
 def _bands(key: str, grade_map: dict[Any, Any], problems: list[str]) -> dict[str, float]:

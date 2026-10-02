@@ -8,8 +8,9 @@ ended at 0.984 on validation and was graded **C-** for a 2.1% gain from 0.963.
 ROC AUC brings its own scale: 0.5 is a coin toss whatever the class balance,
 1.0 a perfect ranking. The letters sit on the rule of thumb in Hosmer and
 Lemeshow's "Applied Logistic Regression" — 0.7 acceptable, 0.8 excellent, 0.9
-outstanding. F1 and PR AUC do not get bands: their chance level is the positive
-class's share of the data, which no log states.
+outstanding. PR AUC does not get bands: its chance level is the positive
+class's share of the data, which no log states. (F1 shares accuracy's bands;
+see test_f1_grade_scale.py.)
 """
 
 from __future__ import annotations
@@ -129,7 +130,7 @@ class TestWhichMetricsHaveAScale:
         assert has_absolute_scale("AUC")
         assert has_absolute_scale("val_AUC")
 
-    @pytest.mark.parametrize("metric", ["f1", "val_f1", "PR_AUC", "precision", "recall", "MCC"])
+    @pytest.mark.parametrize("metric", ["PR_AUC", "precision", "recall", "MCC"])
     def test_a_metric_whose_chance_level_depends_on_class_balance_does_not(
         self, metric: str
     ) -> None:

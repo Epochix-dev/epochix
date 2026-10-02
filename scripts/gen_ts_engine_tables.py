@@ -41,6 +41,7 @@ from epochix.story_engine import (  # noqa: E402  # noqa: E402  # noqa: E402
     narrator,
     phases,
 )
+from epochix.story_engine import config_loader  # noqa: E402
 from epochix.story_engine import warnings as warnings_mod  # noqa: E402
 from epochix.story_engine.task_classifier import _TASK_SIGNALS  # noqa: E402
 
@@ -59,6 +60,9 @@ GOLDEN = REPO / "epochix-vscode" / "src" / "test" / "fixtures" / "canonical.gold
 # generated, and GRADING_GOLDEN pins what the Python functions answer.
 GRADING = REPO / "epochix-vscode" / "src" / "story" / "grading.generated.ts"
 GRADING_GOLDEN = REPO / "epochix-vscode" / "src" / "test" / "fixtures" / "grading.golden.json"
+# What the Python loader makes of a set of .epochix.yaml files, and which bands
+# it then applies to which metric. The extension's loader replays it.
+CONFIG_GOLDEN = REPO / "epochix-vscode" / "src" / "test" / "fixtures" / "gradeConfig.golden.json"
 
 _BASES = (
     "mae", "rmse", "mse", "r2", "mape", "l1", "l2", "loss", "accuracy", "acc", "iou", "miou",
@@ -419,6 +423,7 @@ def render_grading() -> str:
         "export type Grade = " + " | ".join(_js(g.value) for g in Grade) + ";",
         "export type Phase = " + " | ".join(_js(p.value) for p in Phase) + ";",
         "export type Threshold = [Grade, number];",
+        "export const TASK_TYPES: readonly TaskType[] = " + _js([t.value for t in tasks]) + ";",
         "",
         "/** Letter grades best first, without I (incomplete). */",
         "export const GRADE_ORDER: readonly Grade[] = "
@@ -476,6 +481,18 @@ def render_grading() -> str:
         f"export const PLATEAU_WINDOW = {warnings_mod._PLATEAU_WINDOW};",
         f"export const PLATEAU_DELTA = {_num(warnings_mod._PLATEAU_DELTA)};",
         f"export const DIVERGE_GROWTH = {_num(warnings_mod._DIVERGE_GROWTH)};",
+        "",
+        "/** How a letter was reached (models.GradeBasis). */",
+        'export type GradeBasis = "thresholds" | "improvement";',
+        "",
+        "/** .epochix.yaml: other spellings of a grade label (config_loader.py). */",
+        "export const LABEL_ALIASES: Readonly<Record<string, string>> = "
+        + _js(dict(sorted(config_loader.LABEL_ALIASES.items())))
+        + ";",
+        "/** .epochix.yaml: the metric a task's entry is written for. */",
+        "export const GOVERNED_METRICS: Readonly<Record<string, readonly string[]>> = "
+        + _js({t.value: sorted(m) for t, m in config_loader.GOVERNED_METRICS.items()})
+        + ";",
         "",
     ]
     return "\n".join(lines)
@@ -553,6 +570,132 @@ def render_grading_golden() -> str:
     return json.dumps(golden, indent=0, ensure_ascii=False, sort_keys=True) + "\n"
 
 
+# Thresholds files the two loaders must read alike: what works, what is
+# wrong in a way the file's author can fix, and what cannot be read at all.
+_CONFIG_SAMPLES: dict[str, str] = {
+    "strict_classification": (
+        "version: 1\ngrade_thresholds:\n  classification:\n"
+        '    "A+": 0.999\n    A: 0.998\n    B: 0.997\n    C: 0.996\n    D: 0.995\n    F: 0.0\n'
+    ),
+    "regression_error_bands": (
+        "grade_thresholds:\n  regression:\n"
+        "    A: 1.0\n    B: 2.5\n    C: 5.0\n    D: 10.0\n    F: .inf\n"
+    ),
+    "metric_entry_canonicalised": (
+        "grade_thresholds:\n  eval_f1:\n    A: 0.90\n    B: 0.75\n    C: 0.60\n    F: 0.0\n"
+    ),
+    "custom_lower_better": (
+        "grade_thresholds:\n  custom:\n    A: 10.0\n    B: 20.0\n    C: 40.0\n    F: .inf\n"
+        "lower_better:\n  custom: true\n  nlp: false\n"
+    ),
+    "alias_labels": (
+        "grade_thresholds:\n  classification:\n    A_plus: 0.95\n    APLUS: 0.96\n"
+        "    b_minus: 0.70\n    F: 0.0\n"
+    ),
+    "unknown_label": (
+        'grade_thresholds:\n  classification:\n    "A++": 0.99\n    A: 0.9\n    F: 0.0\n'
+    ),
+    "not_a_number": (
+        "grade_thresholds:\n  classification:\n    A: high\n    B: 0.8\n    C:\n    F: 0.0\n"
+    ),
+    "quoted_number": 'grade_thresholds:\n  detection:\n    A: "0.6"\n    F: 0.0\n',
+    "out_of_order": "grade_thresholds:\n  classification:\n    A: 0.9\n    B: 0.95\n    C: 0.6\n",
+    "single_band": "grade_thresholds:\n  val_AUC:\n    A: 0.99\n",
+    "entry_not_a_mapping": "grade_thresholds:\n  classification: 0.9\n  detection:\n    A: 0.5\n",
+    "sections_missing": "version: 1\n",
+    "comments_only": "# nothing here\n# grade_thresholds:\n#   classification:\n",
+    "empty": "",
+    "top_level_list": "- a\n- b\n",
+    "not_yaml": "grade_thresholds: [unclosed\n",
+    "mixed_case_task": "grade_thresholds:\n  Classification:\n    A: 0.9\n    F: 0.0\n",
+    "unrecognised_metric_entry": "grade_thresholds:\n  my_metric:\n    A: 0.9\n    F: 0.0\n",
+    "yaml_1_1_booleans": "lower_better:\n  custom: yes\n  nlp: no\n  gaze: On\n  biometric: off\n",
+}
+
+_CONFIG_QUERIES: tuple[tuple[str, str], ...] = (
+    ("classification", "val_accuracy"),
+    ("classification", "accuracy"),
+    ("classification", "val_AUC"),
+    ("classification", "val_f1"),
+    ("regression", "val_MAE"),
+    ("regression", "val_R2"),
+    ("detection", "mAP50"),
+    ("detection", "mAP"),
+    ("custom", "my_metric"),
+    ("custom", "val_loss"),
+    ("nlp", "perplexity"),
+)
+
+_CONFIG_GRADES: tuple[float, ...] = (-1.0, 0.0, 0.3, 0.6, 0.75, 0.9, 0.95, 0.9961, 1.0, 2.0, 7.0, 30.0)
+
+
+def _json_number(value: float) -> float | str:
+    """JSON has no infinity; the test decodes these."""
+    if value == float("inf"):
+        return "inf"
+    if value == float("-inf"):
+        return "-inf"
+    return value
+
+
+def _json_bands(bands: dict[str, float] | None) -> dict[str, float | str] | None:
+    return None if bands is None else {k: _json_number(v) for k, v in bands.items()}
+
+
+def render_config_golden() -> str:
+    """What config_loader makes of each sample, for the extension to replay."""
+    samples = dict(_CONFIG_SAMPLES)
+    example = (REPO / ".epochix.example.yaml").read_text(encoding="utf-8")
+    samples["example_file_as_shipped"] = example
+    readme = (REPO / "README.md").read_text(encoding="utf-8")
+    marker = "<!-- readme-example:thresholds -->"
+    block = readme.split(marker, 1)[1].split("```yaml\n", 1)[1].split("```", 1)[0]
+    samples["readme_example"] = block
+
+    cases = {}
+    for name, text in sorted(samples.items()):
+        config, error = config_loader.parse_grade_config(text)
+        entry: dict[str, object] = {"yaml": text, "error": error, "config": None}
+        if config is not None:
+            queries = []
+            for task_name, metric in _CONFIG_QUERIES:
+                bands = config.bands_for(TaskType(task_name), metric)
+                direction = config_loader.bands_lower_better(bands) if bands else None
+                grades = []
+                if bands:
+                    for value in _CONFIG_GRADES:
+                        for lower in (True, False):
+                            got = grade.compute_grade(
+                                TaskType(task_name),
+                                value,
+                                custom_thresholds=bands,
+                                direction=lower,
+                            )
+                            grades.append([value, lower, got.value])
+                queries.append(
+                    {
+                        "task": task_name,
+                        "metric": metric,
+                        "bands": _json_bands(bands),
+                        "lower_better": direction,
+                        "grades": grades,
+                    }
+                )
+            entry["config"] = {
+                "grade_thresholds": {
+                    k: _json_bands(v) for k, v in sorted(config.grade_thresholds.items())
+                },
+                "metric_thresholds": {
+                    k: _json_bands(v) for k, v in sorted(config.metric_thresholds.items())
+                },
+                "lower_better": dict(sorted(config.lower_better_override.items())),
+                "problems": config.problems,
+            }
+            entry["queries"] = queries
+        cases[name] = entry
+    return json.dumps(cases, indent=1, ensure_ascii=False, sort_keys=True) + "\n"
+
+
 def main() -> int:
     outputs = {
         TARGET: render(),
@@ -560,6 +703,7 @@ def main() -> int:
         GOLDEN: render_golden(),
         GRADING: render_grading(),
         GRADING_GOLDEN: render_grading_golden(),
+        CONFIG_GOLDEN: render_config_golden(),
         ARCH_GOLDEN: render_arch_golden(),
     }
     if "--check" in sys.argv:
