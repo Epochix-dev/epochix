@@ -336,20 +336,40 @@ epochix config show
 
 ## Custom grade thresholds
 
-Place a `.epochix.yaml` in your project root:
+Put a `.epochix.yaml` in the folder you run epochix from to replace the
+built-in cut-offs:
 
+<!-- readme-example:thresholds -->
 ```yaml
 version: 1
 
 grade_thresholds:
-  classification:
-    "A+": 0.97   # tighter standard for your domain
+  classification:    # a task: applies to its accuracy
+    "A+": 0.97       # a tighter standard for your domain
     A:    0.93
-    # ... (see .epochix.yaml template for all grades)
-
-lower_better:
-  nlp: true      # perplexity
+    B:    0.85
+    C:    0.75
+    D:    0.60
+    F:    0.0
+  val_f1:            # a metric: applies to it in any run
+    A: 0.90
+    B: 0.75
+    C: 0.60
+    F: 0.0
 ```
+<!-- /readme-example:thresholds -->
+
+Each entry lists the lowest value that still earns a grade — or the highest,
+for a metric where lower is better; the order of the numbers says which. A
+task's entry applies to that task's main metric only, so thresholds written
+for accuracy are never applied to an AUC. `epochix check <log>` shows which
+file is in use and whether it applies to that log, and
+[`.epochix.example.yaml`](https://github.com/epochix-dev/epochix/blob/main/.epochix.example.yaml)
+lists every entry with the built-in values.
+
+The file is read by the command line, the server and the Python SDK. The
+VS Code extension's panel does not read it: it grades with the built-in
+thresholds.
 
 ---
 

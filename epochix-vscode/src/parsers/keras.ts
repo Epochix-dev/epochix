@@ -2,7 +2,7 @@
  * TypeScript port of src/epochix/parsers/keras_tensorflow.py
  */
 import { claim, type Parser, type ParserContext, type RawMetric } from "./base";
-import { NEVER_METRICS } from "./neverMetrics";
+import { NEVER_METRICS, isSetting } from "./neverMetrics";
 
 const EPOCH_LINE = /^Epoch\s+(\d+)\/(\d+)\s*$/;
 // A progress line, in each layout Keras has printed:
@@ -66,7 +66,7 @@ export class KerasParser implements Parser {
       if (ctx.kerasTold.get(key) === kv[2]) continue;
       ctx.kerasTold.set(key, kv[2]);
       const value = parseFloat(kv[2]);
-      if (!isNaN(value)) {
+      if (!isNaN(value) && !isSetting(key.toLowerCase(), value)) {
         metrics.push({
           seq: ctx.seq,
           epoch: ctx.currentEpoch,

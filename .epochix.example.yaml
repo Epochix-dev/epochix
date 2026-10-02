@@ -1,0 +1,159 @@
+# Custom grade thresholds for epochix.
+#
+# Copy this file to the folder you run epochix from, name it `.epochix.yaml`,
+# and uncomment the entries you want to change. As it stands it changes
+# nothing: every entry is commented out.
+#
+# Where it is looked for: the current folder, then each parent, then
+# ~/.epochix/.epochix.yaml. EPOCHIX_GRADE_CONFIG names a file directly, or
+# turns the lookup off with `off`. `epochix check <log>` says which file is in
+# use and whether it applies to that log.
+#
+# Reference: https://epochix.dev/config/
+
+version: 1
+
+# ── Grade thresholds ─────────────────────────────────────────────────────────
+#
+# An entry lists, for each grade, the lowest value that still earns it — or the
+# highest, for a metric where lower is better. The order of the numbers says
+# which: write them from A+ down to F and epochix reads the direction from
+# them. You do not have to list every grade.
+#
+# A TASK entry applies to one metric of that task, named beside it below. A
+# run told by another metric is not touched by it.
+#
+# A METRIC entry (the name of a metric instead of a task) applies to that
+# metric in any run. Use it for a metric that has no entry of its own.
+#
+# The values below are the built-in ones, so uncommenting an entry without
+# editing it changes nothing.
+
+grade_thresholds:
+
+  # classification:         # applies to: val_accuracy, accuracy
+  #   "A+": 0.95
+  #   A:    0.90
+  #   "A-": 0.87
+  #   "B+": 0.82
+  #   B:    0.75
+  #   "B-": 0.70
+  #   "C+": 0.65
+  #   C:    0.60
+  #   "C-": 0.55
+  #   D:    0.50
+  #   F:    0.0
+
+  # detection:              # applies to: mAP50
+  #   "A+": 0.75
+  #   A:    0.65
+  #   "A-": 0.58
+  #   "B+": 0.50
+  #   B:    0.42
+  #   "B-": 0.35
+  #   "C+": 0.28
+  #   C:    0.20
+  #   "C-": 0.15
+  #   D:    0.08
+  #   F:    0.0
+
+  # segmentation:           # applies to: mIoU
+  #   "A+": 0.85
+  #   A:    0.78
+  #   "A-": 0.72
+  #   "B+": 0.66
+  #   B:    0.60
+  #   "B-": 0.54
+  #   "C+": 0.47
+  #   C:    0.40
+  #   "C-": 0.32
+  #   D:    0.20
+  #   F:    0.0
+
+  # nlp:                    # applies to: perplexity (lower is better)
+  #   "A+": 10.0
+  #   A:    20.0
+  #   "A-": 30.0
+  #   "B+": 50.0
+  #   B:    80.0
+  #   "B-": 120.0
+  #   "C+": 180.0
+  #   C:    250.0
+  #   "C-": 350.0
+  #   D:    500.0
+  #   F:    .inf
+
+  # biometric:              # applies to: EER (lower is better)
+  #   "A+": 0.01
+  #   A:    0.03
+  #   "A-": 0.05
+  #   "B+": 0.08
+  #   B:    0.10
+  #   "B-": 0.15
+  #   "C+": 0.20
+  #   C:    0.25
+  #   "C-": 0.30
+  #   D:    0.40
+  #   F:    .inf
+
+  # gaze:                   # applies to: val_MAE, MAE in degrees (lower is better)
+  #   "A+": 0.5
+  #   A:    1.0
+  #   "A-": 1.5
+  #   "B+": 2.5
+  #   B:    4.0
+  #   "B-": 6.0
+  #   "C+": 9.0
+  #   C:    12.0
+  #   "C-": 16.0
+  #   D:    22.0
+  #   F:    .inf
+
+  # ── No built-in thresholds: these change how the run is graded ────────────
+  #
+  # By default an MAE, an FID and a metric epochix does not recognise are
+  # graded on how far they improved, because a log cannot say what a good
+  # value is. Writing thresholds here supplies that, in your own units. The
+  # numbers below are placeholders — replace them with yours.
+
+  # regression:             # applies to: val_MAE, MAE (not R2, which has its own)
+  #   A: 1.0
+  #   B: 2.5
+  #   C: 5.0
+  #   D: 10.0
+  #   F: .inf
+
+  # generative:             # applies to: fid
+  #   A: 10.0
+  #   B: 40.0
+  #   C: 130.0
+  #   D: 300.0
+  #   F: .inf
+
+  # custom:                 # applies to whatever a run with no known task is told by
+  #   A: 0.90
+  #   B: 0.75
+  #   C: 0.60
+  #   D: 0.50
+  #   F: 0.0
+
+  # ── A metric entry ────────────────────────────────────────────────────────
+  #
+  # F1 is graded on improvement by default. This grades it on fixed bands.
+
+  # val_f1:
+  #   A: 0.90
+  #   B: 0.75
+  #   C: 0.60
+  #   D: 0.50
+  #   F: 0.0
+
+# ── Direction ────────────────────────────────────────────────────────────────
+#
+# Only for a metric whose name does not say which way is better. epochix knows
+# that a loss or an error falls and an accuracy rises; for a name it does not
+# recognise in a run with no known task, it assumes higher is better unless
+# told otherwise here.
+
+# lower_better:
+#   custom: true

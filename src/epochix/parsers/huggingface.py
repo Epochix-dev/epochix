@@ -4,7 +4,7 @@ import json
 import re
 
 from epochix.models import RawMetric
-from epochix.parsers._never_metrics import NEVER_METRICS
+from epochix.parsers._never_metrics import NEVER_METRICS, is_setting
 from epochix.parsers.base import ParserContext, claim
 from epochix.parsers.registry import register_parser
 
@@ -80,7 +80,7 @@ class HFParser:
             if key.lower() in NEVER_METRICS:
                 continue
             number = _number(val)
-            if number is None:
+            if number is None or is_setting(key.lower(), number):
                 continue
             metrics.append(
                 RawMetric(

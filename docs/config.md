@@ -20,6 +20,7 @@ epochix config show         # the values currently in effect
 | `EPOCHIX_KEEP_RAW_LINES` | `false` | Keep the raw log lines alongside parsed metrics. |
 | `EPOCHIX_SCRUB_SECRETS` | `true` | Redact secret-looking strings (API keys, tokens, passwords, credentials in URLs) from the raw lines that are stored, and from lines sent to an LLM provider. Metrics are always read from the line as printed. |
 | `EPOCHIX_TELEMETRY` | `false` | Has no effect: epochix has no telemetry and sends nothing anywhere. Accepted so existing configs keep loading. |
+| `EPOCHIX_GRADE_CONFIG` | empty | A path to a grade thresholds file, or `off` to use the built-in thresholds. Empty looks for the nearest `.epochix.yaml` — see [Grade thresholds](#grade-thresholds). |
 
 ### Serving beyond localhost
 
@@ -66,6 +67,71 @@ model is unreachable, the run still completes.
     configured endpoint. With the default `ollama` provider that endpoint is on
     your own machine. Point it at a hosted provider and those lines leave your
     machine — check that against whatever your logs contain.
+
+## Grade thresholds
+
+The letter grades come from built-in cut-offs. A project can replace them with
+a `.epochix.yaml`:
+
+```yaml
+version: 1
+
+grade_thresholds:
+  classification:    # a task: applies to its accuracy
+    "A+": 0.97
+    A:    0.93
+    B:    0.85
+    C:    0.75
+    D:    0.60
+    F:    0.0
+  val_f1:            # a metric: applies to it in any run
+    A: 0.90
+    B: 0.75
+    C: 0.60
+    F: 0.0
+```
+
+**Where it is looked for.** The folder epochix is run from, then each parent
+folder, then `~/.epochix/.epochix.yaml`. `EPOCHIX_GRADE_CONFIG` names a file
+directly, or switches the lookup off with `off`. The command line, the server
+and the Python SDK read it; the VS Code extension's panel grades with the
+built-in thresholds.
+
+**What an entry is.** For each grade, the lowest value that still earns it —
+or the highest, for a metric where lower is better. The order of the numbers
+says which, so write them from A+ down to F. You do not have to list every
+grade.
+
+**What an entry applies to.**
+
+| Entry | Applies to |
+|---|---|
+| `classification` | `val_accuracy`, `accuracy` |
+| `detection` | `mAP50` |
+| `segmentation` | `mIoU` |
+| `nlp` | `perplexity` |
+| `biometric` | `EER` |
+| `gaze` | `val_MAE`, `MAE` (degrees) |
+| `regression` | `val_MAE`, `MAE` |
+| `generative` | `fid` |
+| `custom` | whatever a run with no recognised task is told by |
+| a metric's name, such as `val_f1` or `R2` | that metric, in any run |
+
+A task's entry is not applied to the task's other metrics: thresholds written
+for accuracy mean nothing for an AUC. Name the metric to set bands for it.
+
+A `regression`, `generative` or `custom` entry does more than move cut-offs.
+Those runs are graded on how far the metric improved, because a log cannot say
+what a good MAE is; your entry supplies that, and the run is graded on it
+instead.
+
+**Checking it.** `epochix check train.log` prints the file in use and whether
+an entry applies to that log, and reports anything in the file it could not
+use — an unknown grade, a threshold that is not a number, or thresholds that
+are not in order.
+
+[`.epochix.example.yaml`](https://github.com/epochix-dev/epochix/blob/main/.epochix.example.yaml)
+lists every entry with the built-in values, commented out.
 
 ## Writing to `.env`
 

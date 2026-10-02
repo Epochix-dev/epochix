@@ -723,7 +723,9 @@ def phase(progress: float, primary: float, baseline: float) -> Phase:
 
 ### 10.4 Grader
 
-Task-specific thresholds, configurable via `.epochix.yaml`:
+Task-specific thresholds, configurable via `.epochix.yaml` (read by the
+pipeline and the server through `config_loader.active_grade_config`; a task's
+entry applies to that task's main metric only — see `docs/config.md`):
 
 ```yaml
 grade_thresholds:

@@ -12,6 +12,7 @@
  */
 import type { Parser, ParserContext, RawMetric } from "./base";
 import { isRecognised } from "../story/canonical";
+import { isSetting } from "./neverMetrics";
 import {
   CONFIG_DUMP_MIN_PAIRS,
   CONFIG_DUMP_NON_NUMERIC_SHARE,
@@ -208,6 +209,8 @@ export class UniversalParser implements Parser {
     for (const [key, val, conf] of candidates) {
       const lo = key.toLowerCase();
       if (seen.has(lo) || SKIP_KEYS.has(lo) || EPOCH_KEYS.has(lo) || STEP_KEYS.has(lo)) continue;
+      // `precision=16` is a setting, `precision=0.87` a metric.
+      if (isSetting(lo, val)) continue;
       seen.add(lo);
       const metric: RawMetric = {
         seq: ctx.seq,
@@ -301,7 +304,7 @@ export class UniversalParser implements Parser {
         const lo = m[1].toLowerCase();
         if (SKIP_KEYS.has(lo) || EPOCH_KEYS.has(lo) || STEP_KEYS.has(lo)) continue;
         const v = parseFloat(m[2]);
-        if (!Number.isNaN(v)) hits.push([m[1], v]);
+        if (!Number.isNaN(v) && !isSetting(lo, v)) hits.push([m[1], v]);
       }
       if (hits.length > 0) return hits;
     }

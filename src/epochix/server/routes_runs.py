@@ -121,6 +121,7 @@ async def create_run(
     from epochix.enums import TaskType
     from epochix.models import Run
     from epochix.story_engine import StoryEngine
+    from epochix.story_engine.config_loader import active_grade_config
 
     try:
         from ulid import ULID
@@ -168,6 +169,7 @@ async def create_run(
         primary_metric=body.primary_metric,
         total_epochs=body.total_epochs,
         locale=body.locale,
+        grade_config=active_grade_config(),
     )
     request.app.state.engine_map[run_id] = engine
 

@@ -154,10 +154,13 @@ task it inferred, and — the useful part — exactly what's missing:
     train_loss          5 values   0.4 -> 0.28
     val_loss            5 values   0.207 -> 0.187
 
+  thresholds    built-in
+
   to improve this run
-    ! No task-defining metric (accuracy / mAP / F1 / MAE / perplexity ...),
-      so the run is graded on how much its loss improved rather than on
-      task quality. Log one to get a real grade, e.g.
+    ! No task-defining metric (accuracy / AUC / mAP50 / R2 / perplexity ...),
+      so the run is told by val_loss and graded on how much it improved
+      rather than on a fixed scale. Log one for a grade that says how
+      good the model is, e.g.
         print(f"Epoch {epoch}/{total} train_loss={loss:.4f} val_accuracy={acc:.4f}")
     ! No model architecture - the Network panel will stay empty.
       Either print the model summary once at the start ...

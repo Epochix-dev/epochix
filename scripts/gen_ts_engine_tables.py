@@ -29,7 +29,7 @@ import epochix.story_engine as engine  # noqa: E402
 from epochix.enums import Grade, Phase, TaskType  # noqa: E402
 from epochix.normalizer import canonical_keys as ck  # noqa: E402
 from epochix.parsers import architecture_parser as arch  # noqa: E402
-from epochix.parsers._never_metrics import NEVER_METRICS  # noqa: E402
+from epochix.parsers._never_metrics import NEVER_METRICS, VALUE_DECIDES  # noqa: E402
 from epochix.parsers.registry import SNIFF_SAMPLE_LINES, SNIFF_THRESHOLD  # noqa: E402
 from epochix.parsers import universal as universal_parser  # noqa: E402
 from epochix.parsers.universal import _NN_REPR_KWARGS  # noqa: E402
@@ -141,6 +141,9 @@ def render() -> str:
         "/** Names that are never a metric: run config, model-summary totals, units",
         " *  (parsers/_never_metrics.py). */",
         f"export const NEVER_METRICS: ReadonlySet<string> = new Set({_js(sorted(NEVER_METRICS))});",
+        "",
+        "/** Names that are a setting or a metric depending on the value (is_setting). */",
+        f"export const VALUE_DECIDES: ReadonlySet<string> = new Set({_js(sorted(VALUE_DECIDES))});",
         "",
         "/** Keyword arguments of a torch `print(model)` dump (parsers/universal.py). */",
         f"export const NN_REPR_KWARGS: ReadonlySet<string> = new Set({_js(sorted(_NN_REPR_KWARGS))});",

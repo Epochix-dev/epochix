@@ -41,7 +41,6 @@ CONFIG_KEYS = frozenset(
         "total_epochs",
         "gpus",
         "devices",
-        "precision",
         "accumulate_grad_batches",
         "log_every_n_steps",
         "save_top_k",
@@ -81,3 +80,17 @@ TIMING_KEYS = frozenset(
 )
 
 NEVER_METRICS = MODEL_SUMMARY_KEYS | CONFIG_KEYS | UNIT_KEYS | TIMING_KEYS
+
+# A name that is a setting or a measurement, and only its value says which.
+# `precision` is the numeric precision in a Lightning or AMP log
+# (`precision=16`, `precision: 32`) and a classification metric in a training
+# loop or a Keras progress bar (`precision: 0.8700`). It was listed as run
+# configuration, so the metric was dropped by every parser — a loop printing
+# `precision=… recall=…` charted its recall alone. A numeric precision is 16 or
+# more; the metric cannot exceed 1.
+VALUE_DECIDES = frozenset({"precision"})
+
+
+def is_setting(key: str, value: float) -> bool:
+    """Whether *key* (lower-cased) holding *value* is a setting, not a metric."""
+    return key in VALUE_DECIDES and not 0.0 <= value <= 1.0

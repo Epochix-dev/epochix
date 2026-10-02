@@ -4,6 +4,7 @@ import math
 from typing import Literal
 
 from epochix.enums import Grade, TaskType
+from epochix.story_engine.config_loader import LABEL_ALIASES as _LABEL_ALIASES
 from epochix.story_engine.config_loader import GradeConfig
 
 # Default thresholds per task type.
@@ -118,23 +119,6 @@ _LOWER_BETTER: frozenset[TaskType] = frozenset(
         TaskType.REGRESSION,
     }
 )
-
-# Map of normalised string variants → canonical Grade label for YAML keys.
-# Allows both "A+" (direct) and "A_PLUS" / "APLUS" (code-friendly) forms.
-_LABEL_ALIASES: dict[str, str] = {
-    "A_PLUS": "A+",
-    "APLUS": "A+",
-    "A_MINUS": "A-",
-    "AMINUS": "A-",
-    "B_PLUS": "B+",
-    "BPLUS": "B+",
-    "B_MINUS": "B-",
-    "BMINUS": "B-",
-    "C_PLUS": "C+",
-    "CPLUS": "C+",
-    "C_MINUS": "C-",
-    "CMINUS": "C-",
-}
 
 
 def is_lower_better(task: TaskType, config: GradeConfig | None = None) -> bool:
@@ -477,6 +461,8 @@ def compute_grade(
     custom_thresholds: dict[str, float] | None = None,
     config: GradeConfig | None = None,
     metric: str | None = None,
+    *,
+    direction: bool | None = None,
 ) -> Grade:
     """Return the letter grade for the current primary metric value.
 
@@ -492,6 +478,10 @@ def compute_grade(
     set — except where the metric brings its own bands, which carry their own
     direction. Regression is a lower-is-better task, so grading R² by the task
     direction scores a perfect fit as F.
+
+    *direction*, when given, is the last word on it: True if lower is better.
+    The engine passes it with *custom_thresholds* taken from a project's
+    ``.epochix.yaml``, whose bands say which way they run.
     """
     thresholds = _DEFAULT_THRESHOLDS.get(task, _DEFAULT_THRESHOLDS[TaskType.CLASSIFICATION])
 
@@ -508,6 +498,9 @@ def compute_grade(
         name_dir = metric_lower_better(metric)
         if name_dir is not None:
             lower_better = name_dir
+
+    if direction is not None:
+        lower_better = direction
 
     if custom_thresholds:
         thresholds = _dict_to_thresholds(custom_thresholds, lower_better=lower_better)

@@ -52,7 +52,8 @@ it, so the names matter more than the format.
 | `train_loss`, `val_loss`, `loss` | any run |
 | `val_accuracy` / `val_acc`, `f1`, `auc` | classification |
 | `mae`, `rmse`, `mse`, `r2` | regression |
-| `map50`, `map`, `precision`, `recall` | detection |
+| `map50`, `map` | detection |
+| `precision`, `recall` | any run — they chart, and tell the story when nothing above is logged |
 | `perplexity` | language modelling |
 | `lr` | learning-rate schedule |
 

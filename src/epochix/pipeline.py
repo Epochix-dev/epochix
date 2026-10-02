@@ -32,6 +32,7 @@ from epochix.parsers.base import LINE_CLAIMED, ParserContext
 from epochix.parsers.registry import SNIFF_SAMPLE_LINES, detect_parser, get_registry
 from epochix.scrub import scrub_secrets
 from epochix.story_engine import StoryEngine
+from epochix.story_engine.config_loader import active_grade_config
 
 # ANSI escape sequences (color codes + "erase line" \x1b[K, used by every
 # modern "rich" CLI: ultralytics, lightning, tqdm). They land in the log
@@ -405,6 +406,9 @@ async def run_pipeline(
         primary_metric=primary_metric,
         total_epochs=total_epochs,
         locale=locale,
+        # The project's .epochix.yaml, if there is one. Documented for a long
+        # time and passed by nothing: every run used the built-in thresholds.
+        grade_config=active_grade_config(),
     )
 
     effective_keep = keep_raw_lines or settings.keep_raw_lines

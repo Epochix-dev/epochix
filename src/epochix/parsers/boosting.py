@@ -25,7 +25,7 @@ from __future__ import annotations
 import re
 
 from epochix.models import RawMetric
-from epochix.parsers._never_metrics import NEVER_METRICS
+from epochix.parsers._never_metrics import NEVER_METRICS, is_setting
 from epochix.parsers.base import ParserContext, claim
 from epochix.parsers.registry import register_parser
 
@@ -188,6 +188,8 @@ class BoostingParser:
 
             flat = raw_name.replace(" ", "").replace("'", "").replace("-", "").lower()
             if flat in _DERIVED or raw_name.lower() in NEVER_METRICS:
+                continue
+            if is_setting(raw_name.lower(), value):
                 continue
 
             split, index, metric = _dissect(raw_name)
