@@ -7,6 +7,54 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.7.29] — 2026-10-02
+
+### Changed — F1 is graded on accuracy's bands
+
+- **An F1 was graded on how far it had moved**, so a run going 0.90 → 0.91 was
+  a C−: the letter described how little the metric changed, beside a number
+  that reads as strong. F1 (`f1`, `val_f1`) now shares accuracy's bands. This
+  is a decision, not a derivation, and is recorded as one in `grade.py`: F1's
+  floor follows the class balance — but so does accuracy's, and accuracy has
+  always been graded on fixed bands, with the card saying the grade does not
+  know the dataset. A project that knows its class balance can set its own
+  bands with a `val_f1` entry in `.epochix.yaml`. PR AUC is unchanged.
+
+### Fixed — the grade card says how this run was graded
+
+- **Every reading records how its letter was reached** — against fixed
+  thresholds, or by improvement since the first reading (`grade_basis`, in
+  both engines, stored with the run, in the JSON export). The card under the
+  grade showed one sentence naming both ways; it now shows the one that
+  applies, and follows the reading in view when a run's story metric changes
+  part-way. The Markdown report has the same line. A run stored by an older
+  version keeps the sentence that names both.
+
+### Fixed — the VS Code extension reads `.epochix.yaml`
+
+- **The panel graded with the built-in thresholds** whatever the workspace's
+  `.epochix.yaml` said, so the same log could get one grade in the panel and
+  another from `epochix run`. The extension reads the file now — from the
+  workspace's first folder upwards, then `~/.epochix` — with the same rules as
+  the command line: a task's entry applies to that task's main metric, a
+  metric's entry to that metric, and the order of the numbers says whether
+  lower is better. Its loader is a port of the Python one and replays the
+  Python loader's reading of a set of sample files.
+- **The Python server it starts is told the workspace's file**, so a run
+  stored through it is graded the same way. It was started from a temporary
+  folder and would not have found it.
+- A metric entry for a name epochix does not recognise (`my_score:`) was
+  stored under `custom` and never applied. It keeps its own name.
+
+### Fixed — the extension package
+
+- **The package left out its changelog and shipped its lint configuration.**
+  `CHANGELOG.md` was in `.vscodeignore`, so the Marketplace and Open VSX had
+  nothing for the extension's Changelog tab; `eslint.config.mjs` was not, so
+  every user downloaded it.
+
+---
+
 ## [0.7.28] — 2026-10-02
 
 ### Fixed — custom grade thresholds were documented and read by nothing
