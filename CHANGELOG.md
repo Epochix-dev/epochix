@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [Unreleased]
+## [0.7.30] — 2026-10-06
 
 ### Fixed
 
@@ -18,6 +18,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   document where 4 did not: the panel would have called an empty file "not
   valid YAML". Found by Dependabot's js-yaml 5 pull request failing the
   loader's golden test; three more such files are now in the golden.
+
+### Dependencies
+
+- The extension reads `.epochix.yaml` with js-yaml 5 (from 4), and its
+  development tooling is updated (typescript-eslint and two more). The
+  dashboard builds with vite 8.3.2 and is tested with the current vitest.
+  None of these changes what a run is told or graded; the extension's
+  thresholds-file golden test passes unchanged on js-yaml 5.
 
 ---
 
