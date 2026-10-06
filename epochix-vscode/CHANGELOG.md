@@ -14,6 +14,19 @@ which covers the extension too; entries here resume with 0.7.16.
 
 ---
 
+## [0.7.30] — 2026-10-06
+
+### Fixed
+
+- **An empty `.epochix.yaml` sets nothing.** A blank file, or one whose every
+  line is a comment, now leaves the built-in thresholds in place, as the
+  `epochix` command line does. With the newer YAML reader this release ships,
+  the panel would otherwise have called such a file "not valid YAML".
+
+### Changed
+
+- The YAML reader is js-yaml 5; development tooling is updated.
+
 ## [0.7.29] — 2026-10-02
 
 ### Added
