@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [Unreleased]
+
+### Fixed
+
+- **The VS Code extension decides for itself when a `.epochix.yaml` sets
+  nothing.** A blank file, one whose every line is a comment, or one holding
+  only a document marker sets nothing, as the command line reads it. The
+  extension left that to its YAML library, and js-yaml 5 throws on an empty
+  document where 4 did not: the panel would have called an empty file "not
+  valid YAML". Found by Dependabot's js-yaml 5 pull request failing the
+  loader's golden test; three more such files are now in the golden.
+
+---
+
 ## [0.7.29] — 2026-10-02
 
 ### Changed — F1 is graded on accuracy's bands

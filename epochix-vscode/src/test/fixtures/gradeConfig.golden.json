@@ -703,6 +703,11 @@
   ],
   "yaml": "grade_thresholds:\n  custom:\n    A: 10.0\n    B: 20.0\n    C: 40.0\n    F: .inf\nlower_better:\n  custom: true\n  nlp: false\n"
  },
+ "document_marker_only": {
+  "config": null,
+  "error": null,
+  "yaml": "---\n# nothing set\n...\n"
+ },
  "empty": {
   "config": null,
   "error": null,
@@ -1012,6 +1017,11 @@
    }
   ],
   "yaml": "# Custom grade thresholds for epochix.\n#\n# Copy this file to the folder you run epochix from, name it `.epochix.yaml`,\n# and uncomment the entries you want to change. As it stands it changes\n# nothing: every entry is commented out.\n#\n# Where it is looked for: the current folder, then each parent, then\n# ~/.epochix/.epochix.yaml. EPOCHIX_GRADE_CONFIG names a file directly, or\n# turns the lookup off with `off`. `epochix check <log>` says which file is in\n# use and whether it applies to that log.\n#\n# Reference: https://epochix.dev/config/\n\nversion: 1\n\n# ── Grade thresholds ─────────────────────────────────────────────────────────\n#\n# An entry lists, for each grade, the lowest value that still earns it — or the\n# highest, for a metric where lower is better. The order of the numbers says\n# which: write them from A+ down to F and epochix reads the direction from\n# them. You do not have to list every grade.\n#\n# A TASK entry applies to one metric of that task, named beside it below. A\n# run told by another metric is not touched by it.\n#\n# A METRIC entry (the name of a metric instead of a task) applies to that\n# metric in any run. Use it for a metric that has no entry of its own.\n#\n# The values below are the built-in ones, so uncommenting an entry without\n# editing it changes nothing.\n\ngrade_thresholds:\n\n  # classification:         # applies to: val_accuracy, accuracy\n  #   \"A+\": 0.95\n  #   A:    0.90\n  #   \"A-\": 0.87\n  #   \"B+\": 0.82\n  #   B:    0.75\n  #   \"B-\": 0.70\n  #   \"C+\": 0.65\n  #   C:    0.60\n  #   \"C-\": 0.55\n  #   D:    0.50\n  #   F:    0.0\n\n  # detection:              # applies to: mAP50\n  #   \"A+\": 0.75\n  #   A:    0.65\n  #   \"A-\": 0.58\n  #   \"B+\": 0.50\n  #   B:    0.42\n  #   \"B-\": 0.35\n  #   \"C+\": 0.28\n  #   C:    0.20\n  #   \"C-\": 0.15\n  #   D:    0.08\n  #   F:    0.0\n\n  # segmentation:           # applies to: mIoU\n  #   \"A+\": 0.85\n  #   A:    0.78\n  #   \"A-\": 0.72\n  #   \"B+\": 0.66\n  #   B:    0.60\n  #   \"B-\": 0.54\n  #   \"C+\": 0.47\n  #   C:    0.40\n  #   \"C-\": 0.32\n  #   D:    0.20\n  #   F:    0.0\n\n  # nlp:                    # applies to: perplexity (lower is better)\n  #   \"A+\": 10.0\n  #   A:    20.0\n  #   \"A-\": 30.0\n  #   \"B+\": 50.0\n  #   B:    80.0\n  #   \"B-\": 120.0\n  #   \"C+\": 180.0\n  #   C:    250.0\n  #   \"C-\": 350.0\n  #   D:    500.0\n  #   F:    .inf\n\n  # biometric:              # applies to: EER (lower is better)\n  #   \"A+\": 0.01\n  #   A:    0.03\n  #   \"A-\": 0.05\n  #   \"B+\": 0.08\n  #   B:    0.10\n  #   \"B-\": 0.15\n  #   \"C+\": 0.20\n  #   C:    0.25\n  #   \"C-\": 0.30\n  #   D:    0.40\n  #   F:    .inf\n\n  # gaze:                   # applies to: val_MAE, MAE in degrees (lower is better)\n  #   \"A+\": 0.5\n  #   A:    1.0\n  #   \"A-\": 1.5\n  #   \"B+\": 2.5\n  #   B:    4.0\n  #   \"B-\": 6.0\n  #   \"C+\": 9.0\n  #   C:    12.0\n  #   \"C-\": 16.0\n  #   D:    22.0\n  #   F:    .inf\n\n  # ── No built-in thresholds: these change how the run is graded ────────────\n  #\n  # By default an MAE, an FID and a metric epochix does not recognise are\n  # graded on how far they improved, because a log cannot say what a good\n  # value is. Writing thresholds here supplies that, in your own units. The\n  # numbers below are placeholders — replace them with yours.\n\n  # regression:             # applies to: val_MAE, MAE (not R2, which has its own)\n  #   A: 1.0\n  #   B: 2.5\n  #   C: 5.0\n  #   D: 10.0\n  #   F: .inf\n\n  # generative:             # applies to: fid\n  #   A: 10.0\n  #   B: 40.0\n  #   C: 130.0\n  #   D: 300.0\n  #   F: .inf\n\n  # custom:                 # applies to whatever a run with no known task is told by\n  #   A: 0.90\n  #   B: 0.75\n  #   C: 0.60\n  #   D: 0.50\n  #   F: 0.0\n\n  # ── A metric entry ────────────────────────────────────────────────────────\n  #\n  # F1 is graded on accuracy's bands by default. This gives it bands of its\n  # own — lower ones, say, where the positive class is rare.\n\n  # val_f1:\n  #   A: 0.90\n  #   B: 0.75\n  #   C: 0.60\n  #   D: 0.50\n  #   F: 0.0\n\n# ── Direction ────────────────────────────────────────────────────────────────\n#\n# Only for a metric whose name does not say which way is better. epochix knows\n# that a loss or an error falls and an accuracy rises; for a name it does not\n# recognise in a run with no known task, it assumes higher is better unless\n# told otherwise here.\n\n# lower_better:\n#   custom: true\n"
+ },
+ "explicit_null": {
+  "config": null,
+  "error": null,
+  "yaml": "~\n"
  },
  "metric_entry_canonicalised": {
   "config": {
@@ -4172,6 +4182,11 @@
    }
   ],
   "yaml": "grade_thresholds:\n  my_metric:\n    A: 0.9\n    F: 0.0\n"
+ },
+ "whitespace_only": {
+  "config": null,
+  "error": null,
+  "yaml": "   \n\n  \n"
  },
  "yaml_1_1_booleans": {
   "config": {

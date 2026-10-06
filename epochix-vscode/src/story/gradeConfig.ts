@@ -136,11 +136,25 @@ function toBool(flag: unknown): boolean {
   return Boolean(flag);
 }
 
+/** Whether `text` holds anything but blank lines, comments and document markers. */
+function hasContent(text: string): boolean {
+  return text.split("\n").some((line) => {
+    const trimmed = line.trim();
+    return trimmed !== "" && !trimmed.startsWith("#") && trimmed !== "---" && trimmed !== "...";
+  });
+}
+
 /** The config written in `text`, or why there is none — parse_grade_config. */
 export function parseGradeConfig(
   text: string,
   source?: string,
 ): { config: GradeConfig | null; error: string | null } {
+  // A file with nothing in it — blank, every line a comment, or only a
+  // document marker — sets nothing, as PyYAML reads it. That is decided here
+  // rather than left to the YAML library: js-yaml 5 throws on an empty
+  // document where 4 returned undefined, and the panel then called an empty
+  // file "not valid YAML".
+  if (!hasContent(text)) return { config: null, error: null };
   let raw: unknown;
   try {
     raw = loadYaml(text);
