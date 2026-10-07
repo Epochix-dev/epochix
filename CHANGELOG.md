@@ -7,6 +7,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.7.31] — 2026-10-07
+
+### Fixed — every report says how its grade was reached
+
+- **The PDF report and the run comparison did not say it.** 0.7.29 recorded,
+  for every reading, whether its letter came from fixed thresholds or from how
+  far the metric improved, and the dashboard and the Markdown report said
+  which. The PDF cover and the comparison table (Markdown and PDF) did not: a
+  run graded on how far its loss fell read there as if it had been graded on
+  a scale, and two runs graded the two different ways sat side by side with
+  letters that do not compare. Both now carry the sentence, in the reader's
+  language, before the grade note.
+
+### Fixed — a changed thresholds file applies to the open run
+
+- **The VS Code panel read `.epochix.yaml` once**, when its run started, so a
+  file added or edited while a run was on screen applied from the next run
+  only. The panel now watches every folder the file is read from and, when it
+  appears, changes or goes away, reads the open run again from its start with
+  the new thresholds. (A run too long to keep in memory — over 32 MB of
+  output — says the change applies from the next run instead.)
+- **`EPOCHIX_GRADE_CONFIG` can name a folder** to look for the file from, as
+  well as the file itself or `off`. The extension starts its Python server in
+  a temporary folder and used to pass the path of the workspace's file — only
+  if there was one at start-up, so a file created later was never found. It
+  passes the workspace folder now, and each new run reads the file as it is.
+
+---
+
 ## [0.7.30] — 2026-10-06
 
 ### Fixed

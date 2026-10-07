@@ -14,6 +14,17 @@ which covers the extension too; entries here resume with 0.7.16.
 
 ---
 
+## [0.7.31] — 2026-10-07
+
+### Fixed
+
+- **Editing `.epochix.yaml` re-grades the open run.** The panel read the file
+  once, when the run started; a file added or changed while the run was on
+  screen applied from the next run only. It now watches the file and reads
+  the run again with the new thresholds.
+- **A thresholds file created after the extension started is found** by its
+  Python server too, for the runs it stores.
+
 ## [0.7.30] — 2026-10-06
 
 ### Fixed
