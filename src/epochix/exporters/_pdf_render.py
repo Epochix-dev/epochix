@@ -450,9 +450,12 @@ def _cover_facts(
     if run.parser_used:
         rows.append((t("cover.read_by", locale), run.parser_used))
 
-    # Why the letter above deserves less weight than it looks, if it does.
+    # How the letter above was reached, and why it deserves less weight than
+    # it looks, if it does. The dashboard and the Markdown report said the
+    # first; the PDF a reader is handed did not.
+    last_basis = frames[-1].grade_basis if frames else None
     last_note = frames[-1].grade_note if frames else None
-    if not rows and last_note is None:
+    if not rows and last_note is None and last_basis is None:
         return
 
     doc.ln(4)
@@ -464,11 +467,16 @@ def _cover_facts(
         doc.cell(38, 6, _s(doc, label))
         _text(doc, 10, _INK, "B")
         doc.cell(54, 6, _s(doc, value), new_x="LMARGIN", new_y="NEXT")
+    sentences = []
+    if last_basis is not None:
+        sentences.append(t(f"grade_basis.{last_basis}", locale))
     if last_note is not None:
+        sentences.append(t(f"grade_note.{last_note}", locale))
+    if sentences:
         doc.ln(2)
         doc.set_x(left)
         _text(doc, 10, _MUTED)
-        doc.multi_cell(width, 5, _s(doc, t(f"grade_note.{last_note}", locale)), align="C")
+        doc.multi_cell(width, 5, _s(doc, " ".join(sentences)), align="C")
 
 
 def _epoch_table(

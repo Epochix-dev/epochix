@@ -128,7 +128,10 @@ npm --prefix epochix-vscode test    # launches a real VS Code host
   the metric in `GOVERNED_METRICS`. The extension reads the file too
   (`story/gradeConfig.ts`, a port of `config_loader.py`): change the loader
   and `gradeConfig.golden.json` — Python's reading of a set of sample files —
-  is regenerated and replayed, so add a sample for a new rule.
+  is regenerated and replayed, so add a sample for a new rule. The panel
+  re-reads an open run when the file changes (`webview/replay.ts`), and
+  the server it starts is given the workspace folder, not the file, in
+  `EPOCHIX_GRADE_CONFIG`, so a file created later is still found.
 - **A frame says how its letter was reached.** `StoryFrame.grade_basis` is
   "thresholds", "improvement" or None, set where the grade is computed, in
   both engines, and pinned per log in `corpus_truth.json`. The card under the

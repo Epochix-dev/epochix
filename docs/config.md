@@ -20,7 +20,7 @@ epochix config show         # the values currently in effect
 | `EPOCHIX_KEEP_RAW_LINES` | `false` | Keep the raw log lines alongside parsed metrics. |
 | `EPOCHIX_SCRUB_SECRETS` | `true` | Redact secret-looking strings (API keys, tokens, passwords, credentials in URLs) from the raw lines that are stored, and from lines sent to an LLM provider. Metrics are always read from the line as printed. |
 | `EPOCHIX_TELEMETRY` | `false` | Has no effect: epochix has no telemetry and sends nothing anywhere. Accepted so existing configs keep loading. |
-| `EPOCHIX_GRADE_CONFIG` | empty | A path to a grade thresholds file, or `off` to use the built-in thresholds. Empty looks for the nearest `.epochix.yaml` — see [Grade thresholds](#grade-thresholds). |
+| `EPOCHIX_GRADE_CONFIG` | empty | A grade thresholds file, a folder to look for one from (and up), or `off` for the built-in thresholds. Empty looks for the nearest `.epochix.yaml` from the current folder — see [Grade thresholds](#grade-thresholds). |
 
 ### Serving beyond localhost
 
@@ -96,7 +96,9 @@ folder, then `~/.epochix/.epochix.yaml`. `EPOCHIX_GRADE_CONFIG` names a file
 directly, or switches the lookup off with `off`. The command line, the server
 and the Python SDK read it. So does the VS Code extension, which has no folder
 it is "run from": it looks from the workspace's first folder upwards, then in
-`~/.epochix`.
+`~/.epochix`. When the file is added, edited or removed, the extension reads
+the open run again with the new thresholds; a run stored through its Python
+server keeps the grades it was stored with, and the next run uses the file.
 
 **What an entry is.** For each grade, the lowest value that still earns it —
 or the highest, for a metric where lower is better. The order of the numbers

@@ -24,16 +24,7 @@ taught live in [AGENTS.md](AGENTS.md).
 
 ## Open
 
-- **The PDF and comparison reports do not say how the grade was reached.**
-  The dashboard card and the Markdown report do, from `StoryFrame.grade_basis`
-  (0.7.29). The PDF cover and the comparison table carry the grade note but
-  not the basis; a run graded on improvement reads there as if it were graded
-  on a scale.
-- **The extension notices a new `.epochix.yaml` only for the next run.** The
-  thresholds file is read when a panel's engine is created, and the Python
-  server is told its path when it starts. A file added or edited afterwards
-  applies from the next run in that window (and, for stored runs, after the
-  window is reloaded). Watching the file would close it.
+Nothing at the moment.
 
 ---
 

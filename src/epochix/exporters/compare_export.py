@@ -37,7 +37,10 @@ class ComparisonRow:
     final: str
     best: str
     epochs: str
-    # The grade note's sentence in the comparison's language, or "".
+    # How the letter was reached, then the grade note, as sentences in the
+    # comparison's language; "" when there is neither. Two runs graded the two
+    # different ways have letters that do not compare, and the table said
+    # nothing about it.
     note: str
 
 
@@ -109,8 +112,13 @@ def build_comparison(run_ids: list[str], store: RunStore, locale: str | None = N
             best, epochs = "—", str(len(run_frames))
         else:
             metric, final, best, epochs = run.primary_metric, "—", "—", "0"
-        note_key = run_frames[-1].grade_note if run_frames else None
-        note = t(f"grade_note.{note_key}", locale) if note_key else ""
+        last = run_frames[-1] if run_frames else None
+        sentences = []
+        if last is not None and last.grade_basis is not None:
+            sentences.append(t(f"grade_basis.{last.grade_basis}", locale))
+        if last is not None and last.grade_note is not None:
+            sentences.append(t(f"grade_note.{last.grade_note}", locale))
+        note = " ".join(sentences)
         rows.append(ComparisonRow(label, grade, metric, final, best, epochs, note))
 
     return Comparison(
