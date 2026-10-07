@@ -313,8 +313,14 @@ def config_error(path: Path) -> str | None:
 def configured_path() -> Path | None:
     """The thresholds file in effect for this process, or None.
 
-    ``EPOCHIX_GRADE_CONFIG`` names one, or turns the lookup off; left unset,
-    the nearest ``.epochix.yaml`` is used.
+    ``EPOCHIX_GRADE_CONFIG`` names a file, names a folder to look from instead
+    of the working directory, or turns the lookup off; left unset, the nearest
+    ``.epochix.yaml`` is used.
+
+    The folder form is for a process started away from the project — the VS
+    Code extension starts its server in a temporary folder so as not to lock
+    the workspace, and passes the workspace this way. Naming the file itself
+    would miss one created after the server started.
     """
     from epochix.config import get_settings
 
@@ -322,7 +328,8 @@ def configured_path() -> Path | None:
     if setting.lower() in _DISABLED:
         return None
     if setting:
-        return Path(setting).expanduser()
+        named = Path(setting).expanduser()
+        return find_config_file(named) if named.is_dir() else named
     return find_config_file()
 
 

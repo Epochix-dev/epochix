@@ -60,9 +60,9 @@ class Settings(BaseSettings):
     # Behaviour
     open_browser: bool = True
     keep_raw_lines: bool = False
-    # Custom grade thresholds: a path to a .epochix.yaml, or "off" for the
-    # built-in ones. Empty looks for the nearest .epochix.yaml (see
-    # story_engine/config_loader.py).
+    # Custom grade thresholds: a path to a .epochix.yaml, a folder to look for
+    # one from, or "off" for the built-in ones. Empty looks for the nearest
+    # .epochix.yaml (see story_engine/config_loader.py).
     grade_config: str = ""
 
     @model_validator(mode="after")

@@ -19,7 +19,8 @@ import { persistLogFile } from "../sidecar/persistLog";
 import { StatusBar } from "../statusBar";
 import { StandaloneEngine } from "./StandaloneEngine";
 import { resolvedTheme, taskHint } from "../config";
-import { workspaceGradeConfig } from "../gradeConfigFile";
+import { watchGradeConfig, workspaceGradeConfig } from "../gradeConfigFile";
+import { ReplayBuffer, regrade } from "./replay";
 import { buildUrl, openExternalUrl } from "../util/uri";
 
 
@@ -46,6 +47,9 @@ export class DashboardPanel {
 
   private _disposables: vscode.Disposable[] = [];
   private _sidecar: ServerManager | null;
+  // What this panel's run was read from, so it can be read again when the
+  // thresholds file changes.
+  private _replay = new ReplayBuffer();
   private readonly _locale: string;
   private readonly _theme: "light" | "dark";
 
@@ -81,6 +85,9 @@ export class DashboardPanel {
     );
 
     this._panel.onDidDispose(() => this.dispose(), null, this._disposables);
+
+    // A .epochix.yaml added or edited while a run is open re-grades it.
+    this._disposables.push(watchGradeConfig(() => this._regrade()));
 
     // `epochix.theme` pins light or dark; only "auto" follows VS Code. The
     // panel used to ignore the setting entirely and always follow VS Code.
@@ -182,6 +189,7 @@ export class DashboardPanel {
   feedLines(buffer: string): void {
     this._attached = true;
     if (!this._engine) return;
+    this._replay.add(buffer);
     this._postFrames(this._engine.feed(buffer));
     // The engine samples up to 200 lines before choosing a parser, as the
     // Python pipeline does, so a short live run would draw nothing until it
@@ -210,6 +218,7 @@ export class DashboardPanel {
    */
   endOfStream(): void {
     if (!this._engine) return;
+    this._replay.end();
     for (const frame of this._engine.flush()) {
       this._post({ type: "frame", frame });
       StatusBar.update(frame);
@@ -364,6 +373,7 @@ export class DashboardPanel {
     const stream = fs.createReadStream(filePath, { encoding: "utf-8" });
 
     stream.on("data", (chunk) => {
+      this._replay.add(String(chunk));
       const frames = this._engine!.feed(String(chunk));
       for (const frame of frames) {
         this._post({ type: "frame", frame });
@@ -372,6 +382,7 @@ export class DashboardPanel {
     });
 
     stream.on("end", () => {
+      this._replay.end();
       // Commit anything still held back by the format sniff — a short log can
       // end before the engine ever became confident, and those lines would
       // otherwise never be drawn.
@@ -384,6 +395,32 @@ export class DashboardPanel {
         this._post({ type: "complete", run: summary });
       }
     });
+  }
+
+  /**
+   * Read the open run again with the thresholds file as it is now, and send
+   * the panel the result as a fresh start. With the Python server attached
+   * the run on screen is a stored one and keeps its grades; the server reads
+   * the file again for the next run.
+   */
+  private _regrade(): void {
+    if (!this._engine || this._replay.empty) return;
+    const again = regrade(this._replay, workspaceGradeConfig(), taskHint(), this._locale);
+    if (again === null) {
+      void vscode.window.setStatusBarMessage(
+        "Epochix: grade thresholds changed — they apply from the next run (this one is too long to re-read).",
+        6000,
+      );
+      return;
+    }
+    this._engine = again.engine;
+    this._metricsSent = 0;
+    this._architectureSent = false;
+    this._sendInit();
+    const frames = again.engine.snapshot();
+    if (frames.length) StatusBar.update(frames[frames.length - 1]);
+    if (again.summary) this._post({ type: "complete", run: again.summary });
+    void vscode.window.setStatusBarMessage("Epochix: grade thresholds changed — run re-graded.", 4000);
   }
 
   dispose(): void {

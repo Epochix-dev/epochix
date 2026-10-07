@@ -368,7 +368,8 @@ file is in use and whether it applies to that log, and
 lists every entry with the built-in values.
 
 The file is read by the command line, the server, the Python SDK and the
-VS Code extension, which looks for it from the workspace's first folder.
+VS Code extension, which looks for it from the workspace's first folder and
+re-grades the open run when the file changes.
 
 ---
 

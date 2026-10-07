@@ -72,3 +72,60 @@ export function workspaceGradeConfig(): GradeConfig | null {
   const file = workspaceGradeConfigFile();
   return file === null ? null : readGradeConfigFile(file);
 }
+
+/** The folders a thresholds file is looked for in: `start` and each parent, then ~/.epochix. */
+export function gradeConfigFolders(start: string | undefined, home: string | undefined): string[] {
+  const folders: string[] = [];
+  if (start) {
+    let dir = path.resolve(start);
+    for (;;) {
+      folders.push(dir);
+      const parent = path.dirname(dir);
+      if (parent === dir) break;
+      dir = parent;
+    }
+  }
+  if (home) folders.push(path.join(home, ".epochix"));
+  return folders;
+}
+
+/**
+ * Call `onChange` when a thresholds file appears, changes or goes away in any
+ * folder this window would read one from. Changes arriving together (an
+ * editor's save writes more than once) are reported once.
+ */
+export function watchGradeConfig(
+  onChange: () => void,
+  folders: readonly string[] = gradeConfigFolders(
+    vscode.workspace.workspaceFolders?.[0]?.uri.fsPath,
+    homeDir(),
+  ),
+  quietMs = 300,
+): vscode.Disposable {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const fire = (): void => {
+    if (timer !== undefined) clearTimeout(timer);
+    timer = setTimeout(() => {
+      timer = undefined;
+      onChange();
+    }, quietMs);
+  };
+  const watchers = folders.map((folder) => {
+    const watcher = vscode.workspace.createFileSystemWatcher(
+      new vscode.RelativePattern(vscode.Uri.file(folder), FILENAME),
+    );
+    watcher.onDidCreate(fire);
+    watcher.onDidChange(fire);
+    watcher.onDidDelete(fire);
+    return watcher;
+  });
+  return new vscode.Disposable(() => {
+    if (timer !== undefined) clearTimeout(timer);
+    for (const watcher of watchers) watcher.dispose();
+  });
+}
+
+/** The folder the extension's Python server should look for a thresholds file from. */
+export function workspaceRoot(): string | null {
+  return vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ?? null;
+}
