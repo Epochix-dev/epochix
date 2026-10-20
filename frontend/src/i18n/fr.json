@@ -32,6 +32,7 @@
     "reconnecting": "Reconnexion…",
     "frame": "Trame",
     "empty_title": "Rien n'est encore chargé.",
+    "empty_what": "Epochix lit ce qu'affiche un entraînement — la perte et la précision à chaque époque — et non votre code source.",
     "empty_hint": "Ouvrez un journal d'entraînement, essayez la démo fournie, ou lancez l'entraînement dans un terminal — Epochix le suit au fil de l'eau.",
     "try_demo": "Essayer la démo",
     "open_log": "Ouvrir un fichier journal",
@@ -112,5 +113,11 @@
     "chosen": "choisi",
     "note_search": "Seul le réglage choisi est tracé et noté : la moyenne la plus haute, les scores de scikit-learn étant « plus haut = mieux ». L'ordre des plis n'a pas de sens.",
     "note_cv": "Les plis sont rapportés ici plutôt que tracés : leur ordre n'a pas de sens, ils n'ont donc pas de tendance."
+  },
+  "report": {
+    "nothing_title": "Rien n'est encore chargé",
+    "nothing_body": "Epochix lit ce qu'affiche un entraînement — la perte et la précision à chaque époque — et non votre code source. Donnez-lui d'abord un entraînement, puis signalez ce qu'il lit mal.",
+    "nothing_cli": "Depuis un terminal : epochix demo, ou epochix run train.log",
+    "anyway": "Signaler un problème quand même"
   }
 }

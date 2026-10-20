@@ -253,3 +253,69 @@ def test_an_exported_report_works_offline_with_its_fonts(
             browser.close()  # type: ignore[attr-defined]
     assert not blocked, f"{browser_name}: the offline report reached for the network: {blocked}"
     assert all(faces.values()), f"{browser_name}: report fonts not drawn offline: {faces}"
+
+
+@pytest.fixture(scope="session")
+def empty_dashboard(tmp_path_factory: pytest.TempPathFactory) -> Iterator[str]:
+    """The dashboard served over a database with no run in it."""
+    if not _FRONTEND_INDEX.is_file():
+        msg = "frontend bundle not built — see the `dashboard` fixture"
+        if _REQUIRE_ALL:
+            pytest.fail(msg)
+        pytest.skip(msg)
+    db_path = str(tmp_path_factory.mktemp("browser-empty") / "runs.db")
+    port = _free_port()
+    server = uvicorn.Server(
+        uvicorn.Config(
+            create_app(settings=Settings(db=db_path)),
+            host="127.0.0.1",
+            port=port,
+            log_level="error",
+        )
+    )
+    thread = threading.Thread(target=server.run, daemon=True)
+    thread.start()
+    deadline = time.monotonic() + 30
+    while not server.started:
+        if time.monotonic() > deadline:
+            raise RuntimeError("uvicorn did not start within 30s")
+        time.sleep(0.05)
+    try:
+        yield f"http://127.0.0.1:{port}"
+    finally:
+        server.should_exit = True
+        thread.join(timeout=15)
+
+
+@pytest.mark.parametrize("browser_name", BROWSERS)
+def test_the_report_button_with_nothing_loaded_explains_first(
+    empty_dashboard: str,
+    browser_name: str,
+) -> None:
+    """Both outside reports in the first month were blank forms filed from an
+    empty panel. With nothing loaded, the button says what Epochix reads, and
+    a report is still one click further — asking what the person was doing."""
+    with sync_playwright() as pw:
+        browser = _launch(pw, browser_name)
+        try:
+            page = browser.new_page()  # type: ignore[attr-defined]
+            # Record where a report would go instead of leaving the machine.
+            page.add_init_script(
+                "window.__opened = []; window.open = (url) => { window.__opened.push(url); return null; };"
+            )
+            page.goto(f"{empty_dashboard}/", wait_until="networkidle")
+            page.click("#report-btn")
+            prompt = page.wait_for_selector(".report-prompt", timeout=5000)
+            text = prompt.inner_text()
+            assert "not your source code" in text, text
+            assert "epochix demo" in text, text
+            assert page.evaluate("window.__opened.length") == 0, "a blank form opened first"
+
+            page.click(".report-anyway")
+            page.wait_for_function("window.__opened.length === 1", timeout=5000)
+            url = page.evaluate("window.__opened[0]")
+            assert url.startswith("https://github.com/Epochix-dev/epochix/issues/new"), url
+            assert "What%20were%20you%20trying%20to%20do" in url, url
+            assert page.query_selector(".report-prompt") is None, "the prompt stayed open"
+        finally:
+            browser.close()  # type: ignore[attr-defined]

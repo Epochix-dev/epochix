@@ -272,6 +272,14 @@ _DIRECTION_BY_KEY: dict[str, bool] = {
     "val_l2": True,
     "train_l1": True,
     "train_l2": True,
+    # A score is higher-is-better: scikit-learn's convention (its losses are
+    # negated to fit it), and what the boosting parser calls CatBoost's
+    # unnamed eval metric when its running best follows the maximum. Unpinned,
+    # a CUSTOM run inherited lower-is-better and a CatBoost AUC climbing to
+    # 0.99 was told "past its best".
+    "score": False,
+    "val_score": False,
+    "train_score": False,
 }
 
 

@@ -112,7 +112,9 @@ epochix training.log    # any subcommand can be omitted — it's the default
 ### Classical ML, not just deep learning
 
 XGBoost, LightGBM and CatBoost are read round by round, with the training and
-validation curves kept apart — the gap between them is the overfitting signal:
+validation curves kept apart — the gap between them is the overfitting signal.
+CatBoost prints no metric name, so its eval metric is called a loss or a score
+by which way its own running best moves:
 
 ```bash
 python train_xgb.py 2>&1 | epochix --live

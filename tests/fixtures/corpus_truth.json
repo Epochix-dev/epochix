@@ -34,6 +34,39 @@
   "final_grade_basis": "thresholds",
   "final_phase": "learning"
  },
+ "catboost_real_classifier.log": {
+  "path": "tests/fixtures/logs/catboost_real_classifier.log",
+  "task": "custom",
+  "metric": "val_score",
+  "frames": 60,
+  "last_value": 0.9925,
+  "keys": [
+   "val_score"
+  ],
+  "metric_from_epoch": 0.0,
+  "grade_note": null,
+  "cross_validation": null,
+  "final_grade": "C-",
+  "final_grade_basis": "improvement",
+  "final_phase": "understanding"
+ },
+ "catboost_real_regressor.log": {
+  "path": "tests/fixtures/logs/catboost_real_regressor.log",
+  "task": "custom",
+  "metric": "val_loss",
+  "frames": 57,
+  "last_value": 55.4836,
+  "keys": [
+   "train_loss",
+   "val_loss"
+  ],
+  "metric_from_epoch": 0.0,
+  "grade_note": null,
+  "cross_validation": null,
+  "final_grade": "B-",
+  "final_grade_basis": "improvement",
+  "final_phase": "learning"
+ },
  "detection_coco.log": {
   "path": "tests/fixtures/logs/detection_coco.log",
   "task": "detection",

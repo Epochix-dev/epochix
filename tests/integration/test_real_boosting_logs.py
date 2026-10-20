@@ -11,6 +11,14 @@ XGBoost read correctly. LightGBM did not, in three ways:
 * **The reprint of the best round was read as a new measurement.** After
   "Early stopping, best iteration is:" LightGBM prints that round again; a
   29-round run ended its story on round 19.
+
+CatBoost had never been run at all, and its classifier was told backwards:
+
+* **An AUC was called a loss.** CatBoost prints "test: 0.9790356" with the
+  metric's name nowhere on the line; read as a loss, an AUC climbing from 0.979
+  to 0.992 was narrated "past its best".
+* **Its timing was a metric.** "total: 137ms<TAB>remaining: 8.11s" became a
+  series called "ms<TAB>remaining" on every row.
 """
 
 from __future__ import annotations
@@ -32,6 +40,8 @@ from epochix.story_engine import _PREFERRED_KEYS_FOR_TASK
 LOGS = Path(__file__).resolve().parents[1] / "fixtures" / "logs"
 LGB_CLASSIFIER = LOGS / "lightgbm_real_classifier.log"
 LGB_EARLY_STOP = LOGS / "lightgbm_real_early_stopping.log"
+CB_CLASSIFIER = LOGS / "catboost_real_classifier.log"
+CB_REGRESSOR = LOGS / "catboost_real_regressor.log"
 XGB_CLASSIFIER = LOGS / "xgboost_real_classifier.log"
 
 
@@ -114,3 +124,37 @@ def test_no_task_prefers_a_training_metric_to_its_validation_twin() -> None:
         if not key.startswith("val_") and f"val_{key}" in keys[i:]
     ]
     assert not inverted, inverted
+
+
+def test_a_catboost_auc_is_told_as_a_rising_score() -> None:
+    text = CB_CLASSIFIER.read_text(encoding="utf-8")
+    assert "learn:" not in text, "the fixture should print the eval set alone"
+    run, frames = _told(CB_CLASSIFIER)
+    assert run.parser_used == "boosting"
+    assert run.primary_metric == "val_score"
+    assert [f.epoch for f in frames] == [float(r) for r in range(60)]
+    assert frames[0].primary_metric_value == pytest.approx(0.9790356)
+    assert frames[-1].primary_metric_value == pytest.approx(0.9924528)
+    assert not any("past its best" in (f.narrative or "") for f in frames)
+
+
+@pytest.mark.parametrize("log", [CB_CLASSIFIER, CB_REGRESSOR], ids=lambda p: p.name)
+def test_catboost_s_timing_and_summary_are_not_metrics(log: Path) -> None:
+    text = log.read_text(encoding="utf-8")
+    assert "remaining:" in text and "bestTest =" in text, "the fixture lost its tail"
+    store = RunStore(":memory:")
+    asyncio.run(
+        run_pipeline(ingester=FileBatchIngester("b", str(log)), run_id="b", store=store, hub=Hub())
+    )
+    keys = {e.canonical_key for e in store.get_metric_events("b")}
+    assert keys <= {"train_loss", "val_loss", "val_score"}, keys
+
+
+def test_catboost_s_overfitting_detector_run_ends_where_it_stopped() -> None:
+    text = CB_REGRESSOR.read_text(encoding="utf-8")
+    assert "Stopped by overfitting detector" in text
+    run, frames = _told(CB_REGRESSOR)
+    assert run.primary_metric == "val_loss"
+    # Rounds 0-56: the best was round 41, and the detector waited 15 more.
+    assert [f.epoch for f in frames] == [float(r) for r in range(57)]
+    assert frames[-1].primary_metric_value == pytest.approx(55.4836303)

@@ -1,4 +1,4 @@
-"""Real XGBoost and LightGBM runs on scikit-learn's bundled data, console output kept."""
+"""Real XGBoost, LightGBM and CatBoost runs on scikit-learn's bundled data, console output kept."""
 
 from __future__ import annotations
 
@@ -52,3 +52,34 @@ elif which == "lgb_native":
         valid_names=["train", "valid"],
         callbacks=[lgb.log_evaluation(1), lgb.early_stopping(10)],
     )
+elif which == "cb_clf":
+    from catboost import CatBoostClassifier
+
+    x, y = load_breast_cancer(return_X_y=True)
+    xt, xv, yt, yv = train_test_split(x, y, test_size=0.25, random_state=3)
+    model = CatBoostClassifier(
+        iterations=60,
+        learning_rate=0.1,
+        depth=4,
+        loss_function="Logloss",
+        eval_metric="AUC",
+        random_seed=3,
+        allow_writing_files=False,
+    )
+    model.fit(xt, yt, eval_set=(xv, yv), verbose=1)
+elif which == "cb_reg":
+    from catboost import CatBoostRegressor
+
+    x, y = load_diabetes(return_X_y=True)
+    xt, xv, yt, yv = train_test_split(x, y, test_size=0.25, random_state=3)
+    model = CatBoostRegressor(
+        iterations=300,
+        learning_rate=0.1,
+        depth=4,
+        loss_function="RMSE",
+        random_seed=3,
+        od_type="Iter",
+        od_wait=15,
+        allow_writing_files=False,
+    )
+    model.fit(xt, yt, eval_set=(xv, yv), verbose=1)

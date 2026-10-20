@@ -1137,6 +1137,23 @@ body {
   font-size: 0.74rem;
 }
 
+/* The report button with nothing loaded: what Epochix reads, then the ways
+   to give it a run, then "report anyway". */
+.report-prompt {
+  max-width: 340px;
+}
+
+.report-prompt-text {
+  margin: 0 12px 8px;
+  color: var(--text-primary, #e8ecf8);
+  font-size: 0.86rem;
+  line-height: 1.45;
+}
+
+.report-anyway {
+  color: var(--text-secondary, #94a3b8);
+}
+
 /* Report-a-problem button. Sits beside Export because that is where a person
    already looks when they want to do something *with* what is on screen. */
 .report-btn {

@@ -14,6 +14,27 @@ which covers the extension too; entries here resume with 0.7.16.
 
 ---
 
+## [0.7.32] — 2026-10-20
+
+### Fixed
+
+- **A CatBoost AUC is no longer told as a loss.** CatBoost prints its eval
+  metric without a name; the extension called every such value a loss, so a
+  rising AUC was "past its best". Its direction now comes from CatBoost's own
+  running best: a score when the best follows the maximum, a loss when it
+  follows the minimum. CatBoost's `total: … remaining: …` timing is no longer
+  charted as a metric, and rounds held back while the direction is unknown
+  each get their own frame.
+
+### Changed
+
+- **The empty panel says what Epochix reads**: what a training run prints,
+  not your source code.
+- **The report button with nothing loaded offers the demo and opening a log
+  file first**, and a report filed anyway asks what you were trying to do.
+
+---
+
 ## [0.7.31] — 2026-10-07
 
 ### Fixed

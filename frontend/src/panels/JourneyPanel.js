@@ -351,6 +351,9 @@ function _renderEmpty(el, s) {
     };
     el.innerHTML =
       `<p class="narrative-placeholder">${_esc(t('labels.empty_title', 'Nothing is loaded yet.'))}</p>` +
+      // Said first: a report filed from this panel came from someone who
+      // expected Epochix to read their project's code.
+      `<p class="narrative-hint">${_esc(t('labels.empty_what', 'Epochix reads what a training run prints — the loss and accuracy at each epoch — not your source code.'))}</p>` +
       `<p class="narrative-hint">${_esc(t('labels.empty_hint', ''))}</p>` +
       `<div class="empty-actions">${EMPTY_STATE_COMMANDS.map((c) =>
         `<button type="button" class="empty-action" data-command="${_esc(c)}">${_esc(labels[c])}</button>`).join('')}</div>`;

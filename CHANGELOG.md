@@ -7,6 +7,53 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.7.32] — 2026-10-20
+
+### Fixed — CatBoost, checked on a real run for the first time
+
+CatBoost was listed as supported, but no real CatBoost output had ever been
+read. Two runs are now recorded (`tests/fixtures/logs/boosting_real_source.py`)
+and pinned for both engines; reading them found two faults.
+
+- **An AUC was told as a loss.** CatBoost prints `test: 0.9790356` with the
+  metric's name nowhere on the line, and every such value was called a loss. A
+  classifier whose AUC climbed from 0.979 to 0.992 was told "past its best".
+  The direction comes from CatBoost's own running best, printed on every row:
+  a best that follows the maximum makes the value a **score**, one that
+  follows the minimum a **loss**. Rows are held until a row shows which;
+  a metric that never moves is told as `metric`, claiming neither, and a
+  live run is never held for more than ten rounds.
+- **Its timing was charted as a metric.** `total: 137ms remaining: 8.11s`
+  became a series called "ms remaining" on every row. A metric name can no
+  longer start inside a word or a number.
+- CatBoost's closing `bestTest =` / `bestIteration =` lines are claimed, so no
+  other parser reads them as a new measurement.
+- `score`, `val_score` and `train_score` are pinned higher-is-better
+  (scikit-learn's convention). Unpinned, they took a CUSTOM run's
+  lower-is-better default.
+- **VS Code:** a parser that returns rows it held back together with the
+  current one now gets a frame for each round; the extension had folded them
+  into one reading.
+
+### Changed — a first look with nothing loaded
+
+- **The empty panel says what Epochix reads**: what a training run prints,
+  the loss and accuracy at each epoch, not your source code. Both reports that
+  reached the tracker from outside in the first month were filed from an empty
+  panel, and one expected Epochix to read their code.
+- **The report button with nothing loaded asks first.** It offers the demo and
+  opening a log file (in VS Code) or how to load a run from a terminal, before
+  a report. A report filed anyway asks what you were trying to do and what you
+  expected to see, rather than "what looks wrong" with nothing on screen. In
+  English, French and Persian.
+
+### Dependencies
+
+- Development tooling updates for the frontend and the extension (#106, #107,
+  #108, #111, #112).
+
+---
+
 ## [0.7.31] — 2026-10-07
 
 ### Fixed — every report says how its grade was reached

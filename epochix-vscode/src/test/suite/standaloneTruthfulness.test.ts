@@ -124,6 +124,50 @@ suite("Standalone engine — boosting logs", () => {
     const keys = new Set(r.engine.metrics().map((m) => m.canonical_key));
     assert.deepStrictEqual([...keys].sort(), ["train_loss", "val_loss"]);
   });
+
+  test("a CatBoost metric whose best follows the maximum is a score, not a loss", () => {
+    // Real CatBoost output with eval_metric="AUC": nothing names the metric.
+    // Read as a loss, an AUC climbing to 0.99 was told "past its best".
+    const r = drive([
+      "0:\ttest: 0.9790356\tbest: 0.9790356 (0)\ttotal: 137ms\tremaining: 8.11s",
+      "1:\ttest: 0.9854298\tbest: 0.9854298 (1)\ttotal: 139ms\tremaining: 4.02s",
+      "2:\ttest: 0.9842767\tbest: 0.9854298 (1)\ttotal: 140ms\tremaining: 2.66s",
+      "3:\ttest: 0.9864780\tbest: 0.9864780 (3)\ttotal: 141ms\tremaining: 1.97s",
+    ]);
+    const keys = new Set(r.engine.metrics().map((m) => m.canonical_key));
+    assert.deepStrictEqual([...keys], ["val_score"], "the timing tail or a loss name leaked in");
+    assert.deepStrictEqual(r.engine.metrics().map((m) => m.epoch), [0, 1, 2, 3]);
+    assert.ok(!/past its best/i.test(r.text), r.last.narrative);
+  });
+
+  test("CatBoost rows that never say their direction are told at the end, claiming none", () => {
+    const p = new BoostingParser();
+    const ctx = makeContext();
+    for (let k = 0; k < 3; k++) {
+      assert.deepStrictEqual(p.parseLine(`${k}:\ttest: 1.0000000\tbest: 1.0000000 (0)`, ctx), []);
+      assert.ok(ctx.lineClaimed, "a held row was offered to the fallback parsers");
+      ctx.lineClaimed = false;
+    }
+    assert.deepStrictEqual(p.flush(ctx).map((m) => [m.key, m.epoch]), [
+      ["val_metric", 0], ["val_metric", 1], ["val_metric", 2],
+    ]);
+  });
+
+  test("a live CatBoost run is never held for good", () => {
+    const p = new BoostingParser();
+    const ctx = makeContext();
+    const out = Array.from({ length: 10 }, (_, k) => p.parseLine(`${k}:\ttest: 0.5\tbest: 0.5 (0)`, ctx)).flat();
+    assert.deepStrictEqual(out.map((m) => m.epoch), Array.from({ length: 10 }, (_, k) => k));
+    assert.deepStrictEqual(p.flush(ctx), []);
+  });
+
+  test("CatBoost's closing summary is claimed, not read", () => {
+    for (const line of ["bestTest = 0.9926624738", "bestIteration = 50"]) {
+      const ctx = makeContext();
+      assert.deepStrictEqual(new BoostingParser().parseLine(line, ctx), []);
+      assert.ok(ctx.lineClaimed, line);
+    }
+  });
 });
 
 suite("Standalone engine — metric direction and prose", () => {

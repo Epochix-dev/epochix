@@ -37,7 +37,7 @@ import fa from './i18n/fa.json';
 import fr from './i18n/fr.json';
 import { applyStaticI18n, setActiveI18n, t } from './i18n/apply.js';
 import { escapeHtml as _esc } from './escape.js';
-import { REPORT_LABELS, openIssue } from './report.js';
+import { REPORT_LABELS, dashboardReportBody, nothingLoadedPrompt, openIssue } from './report.js';
 import { WarningStrip } from './visualizations/WarningStrip.js';
 
 const LOCALES = { en, fa, fr };
@@ -309,13 +309,58 @@ async function main() {
   // versions behind it — nothing else. A run name comes from a log file and a
   // path identifies someone's machine; neither is ours to publish, so the
   // report carries the *shape* of the run and not its identity.
-  document.getElementById('report-btn')?.addEventListener('click', async () => {
+  document.getElementById('report-btn')?.addEventListener('click', async (ev) => {
+    const anchor = ev.currentTarget;
     const runId = getRunId();
     const s = store.get();
     const frames = s.frames ?? [];
-    const last = frames[frames.length - 1] ?? {};
     const run = s.run ?? {};
+    const hasRun = Boolean(runId) || frames.length > 0;
 
+    // Nothing loaded: say what Epochix reads and how to give it a run, before
+    // offering an empty form. See nothingLoadedPrompt.
+    if (!hasRun && !document.querySelector('.report-prompt')) {
+      const prompt = nothingLoadedPrompt({ inVsCode: Boolean(window.__EPOCHIX_VSCODE__), t });
+      document.body.appendChild(prompt);
+      const btn = anchor.getBoundingClientRect();
+      prompt.style.top = `${btn.bottom + 8}px`;
+      prompt.style.right = `${Math.max(8, window.innerWidth - btn.right)}px`;
+      prompt.addEventListener('click', async (e) => {
+        const target = e.target?.closest('button');
+        if (!target) return;
+        prompt.remove();
+        if (target.dataset.command) {
+          window.dispatchEvent(new CustomEvent('ms-run-command', { detail: { command: target.dataset.command } }));
+        } else if (target.classList.contains('report-anyway')) {
+          openIssue({
+            title: 'Dashboard: ',
+            labels: REPORT_LABELS,
+            body: dashboardReportBody({ hasRun, diag: await reportVersion(), run, frames }),
+          });
+        }
+      });
+      setTimeout(() => {
+        document.addEventListener('click', function close(e) {
+          if (!prompt.contains(e.target)) {
+            prompt.remove();
+            document.removeEventListener('click', close);
+          }
+        });
+      }, 0);
+      return;
+    }
+
+    // Same dispatch as the per-frame control — a webview discards
+    // window.open silently, so this must not be reimplemented per caller.
+    openIssue({
+      title: 'Dashboard: ',
+      labels: REPORT_LABELS,
+      body: dashboardReportBody({ hasRun, diag: await reportVersion(), run, frames }),
+    });
+  });
+
+  /** Which epochix produced this page, for a report. */
+  async function reportVersion() {
     // Which epochix produced this page. Three surfaces, three sources, and
     // only the first has a server: a VS Code webview and a standalone HTML
     // export both failed the fetch and reported "(unavailable)", so a report
@@ -334,34 +379,8 @@ async function main() {
         diag = `${window.__EPOCHIX_EXT_VERSION__} (vs code extension)`;
       }
     }
-
-    const body = [
-      '### What looks wrong?',
-      '',
-      '',
-      '### What did you expect instead?',
-      '',
-      '',
-      '---',
-      '```',
-      `epochix      ${diag}`,
-      `surface      dashboard`,
-      `metric       ${run.primary_metric ?? '(unknown)'}`,
-      `task         ${run.task_type ?? '(unknown)'}`,
-      `run loaded   ${runId ? 'yes' : 'no'}`,
-      `epochs       ${frames.length}`,
-      `last value   ${last.primary_metric_value ?? '(none)'}`,
-      `grade        ${last.grade ?? '(none)'}`,
-      `browser      ${navigator.userAgent}`,
-      '```',
-      '',
-      '_No run name, file path or log content is included._',
-    ].join('\n');
-
-    // Same dispatch as the per-frame control — a webview discards
-    // window.open silently, so this must not be reimplemented per caller.
-    openIssue({ title: 'Dashboard: ', labels: REPORT_LABELS, body });
-  });
+    return diag;
+  }
 
   const EXPORT_FORMATS = [
     ['html', 'Standalone HTML'],

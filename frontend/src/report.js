@@ -101,3 +101,104 @@ export function frameReportButton(frame) {
     `this looks wrong</button>`
   );
 }
+
+/**
+ * The report button with nothing loaded.
+ *
+ * Both reports that reached the tracker from outside in the project's first
+ * month (#35, #101) were filed from an empty panel, with the form left blank:
+ * the "report a problem" button was the only thing on screen that looked like
+ * help. One was titled "my code project" — its author expected Epochix to read
+ * their code. With no run, the button now says what Epochix reads and how to
+ * give it a run, and still lets a report through.
+ *
+ * @param {{inVsCode: boolean, t: (key: string, fallback: string) => string}} opts
+ * @returns {HTMLElement} the prompt, not yet in the document
+ */
+export function nothingLoadedPrompt({ inVsCode, t }) {
+  const menu = document.createElement('div');
+  menu.className = 'export-menu report-prompt';
+  menu.setAttribute('role', 'dialog');
+  const head = document.createElement('div');
+  head.className = 'export-menu-head';
+  head.textContent = t('report.nothing_title', 'Nothing is loaded yet');
+  const body = document.createElement('p');
+  body.className = 'report-prompt-text';
+  body.textContent = t(
+    'report.nothing_body',
+    'Epochix reads what a training run prints — the loss and accuracy at each epoch — not your source code. Give it a run first, then report anything it gets wrong.',
+  );
+  menu.append(head, body);
+  if (inVsCode) {
+    for (const [command, key, fallback] of [
+      ['epochix.tryDemo', 'labels.try_demo', 'Try the demo'],
+      ['epochix.openLogFile', 'labels.open_log', 'Open a log file'],
+    ]) {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'export-opt';
+      btn.dataset.command = command;
+      btn.textContent = t(key, fallback);
+      menu.append(btn);
+    }
+  } else {
+    const cli = document.createElement('p');
+    cli.className = 'report-prompt-text';
+    cli.textContent = t(
+      'report.nothing_cli',
+      'From a terminal: epochix demo, or epochix run train.log',
+    );
+    menu.append(cli);
+  }
+  const anyway = document.createElement('button');
+  anyway.type = 'button';
+  anyway.className = 'export-opt report-anyway';
+  anyway.textContent = t('report.anyway', 'Report a problem anyway');
+  menu.append(anyway);
+  return menu;
+}
+
+/**
+ * The body of a report filed from the dashboard's report button.
+ *
+ * With a run on screen it asks what looks wrong; with none, what the person
+ * was trying to do — the question an empty-panel report needs answered first.
+ *
+ * @param {{hasRun: boolean, diag: string, run: object, frames: object[]}} opts
+ */
+export function dashboardReportBody({ hasRun, diag, run, frames }) {
+  const last = frames[frames.length - 1] ?? {};
+  const questions = hasRun
+    ? ['### What looks wrong?', '', '', '### What did you expect instead?', '', '']
+    : [
+      '### What were you trying to do?',
+      '',
+      '',
+      '### What did you expect to see?',
+      '',
+      '',
+      '### A few lines of the training output, if you have them',
+      '',
+      '```',
+      '',
+      '```',
+      '',
+    ];
+  return [
+    ...questions,
+    '---',
+    '```',
+    `epochix      ${diag}`,
+    `surface      dashboard`,
+    `metric       ${run.primary_metric ?? '(unknown)'}`,
+    `task         ${run.task_type ?? '(unknown)'}`,
+    `run loaded   ${hasRun ? 'yes' : 'no'}`,
+    `epochs       ${frames.length}`,
+    `last value   ${last.primary_metric_value ?? '(none)'}`,
+    `grade        ${last.grade ?? '(none)'}`,
+    `browser      ${navigator.userAgent}`,
+    '```',
+    '',
+    '_No run name, file path or log content is included._',
+  ].join('\n');
+}
