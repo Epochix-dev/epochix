@@ -310,7 +310,7 @@ export class StandaloneEngine {
     // Metrics that only exist once the stream ends: a cross-validation's mean.
     const parser = this._activeParsers?.[0];
     const tail = parser?.flush ? parser.flush(this._ctx) : [];
-    if (tail.length > 0) newFrames.push(...this._handleMetrics(tail));
+    if (tail.length > 0) newFrames.push(...this._handleRounds(tail));
 
     newFrames.push(...this._drainWarmup(true));
     return newFrames;
@@ -450,7 +450,7 @@ export class StandaloneEngine {
         this._keyCounts.has(assigned[1]))
         ? assigned
         : null;
-    const frames = this._handleMetrics(metrics);
+    const frames = this._handleRounds(metrics);
     if (nonFinite !== null && !this._diverged) {
       if (!this._taskDetected) frames.push(...this._drainWarmup(true));
       const frame = this._divergenceFrame(canonicalise(nonFinite[1]), this._ctx.currentEpoch);
@@ -494,8 +494,25 @@ export class StandaloneEngine {
     return [];
   }
 
-  /** One line's metrics: record them, then warm up or build a frame. */
-  private _handleMetrics(metrics: RawMetric[]): StoryFrameMsg[] {
+  /**
+   * One line's metrics, a frame per round. A parser can return rounds it held
+   * back with the current one (CatBoost's, until its metric's direction
+   * shows); built as one frame, two rounds became one reading. Python's
+   * events each carry their own epoch.
+   */
+  private _handleRounds(metrics: RawMetric[]): StoryFrameMsg[] {
+    const rounds: RawMetric[][] = [];
+    for (const m of metrics) {
+      const last = rounds[rounds.length - 1];
+      if (last !== undefined && last[0].epoch === m.epoch) last.push(m);
+      else rounds.push([m]);
+    }
+    if (rounds.length <= 1) return this._handleMetrics(metrics, this._ctx.currentEpoch);
+    return rounds.flatMap((r) => this._handleMetrics(r, r[0].epoch ?? this._ctx.currentEpoch));
+  }
+
+  /** Metrics of one round: record them, then warm up or build a frame. */
+  private _handleMetrics(metrics: RawMetric[], epoch: number | null): StoryFrameMsg[] {
     this._allMetrics.push(...metrics);
     for (const m of metrics) {
       const key = canonicalise(m.key);
@@ -514,7 +531,7 @@ export class StandaloneEngine {
         // parser context has moved on.
         this._warmup.push({
           metrics,
-          epoch: this._ctx.currentEpoch,
+          epoch,
           totalEpochs: this._ctx.totalEpochs,
         });
       }
@@ -523,7 +540,7 @@ export class StandaloneEngine {
 
     if (metrics.length === 0) return [];
     this._primaryMetric = primaryMetricFrom(this._task, this._seenKeys);
-    const frame = this._buildFrame(metrics, this._ctx.currentEpoch, this._ctx.totalEpochs);
+    const frame = this._buildFrame(metrics, epoch, this._ctx.totalEpochs);
     return frame ? [this._emit(frame)] : [];
   }
 

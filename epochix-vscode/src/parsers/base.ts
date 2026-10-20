@@ -44,6 +44,12 @@ export interface ParserContext {
   yoloFinalValidation: boolean;
   /** Boosting: the next round row reprints the best iteration. */
   boostingReprintNext: boolean;
+  /** CatBoost: what its unnamed metric is called once its direction shows
+   *  ("loss", "score", or "metric" when it never moved); the last eval value
+   *  read; rows held (seq, round, values) until the direction is known. */
+  catboostName: string | null;
+  catboostLast: number | null;
+  catboostHeld: Array<[number, number, Array<["val" | "train" | null, number | null, string, number]>]>;
   /** Keras: values already told for the current epoch (the finished bar is
    *  printed twice when there is validation data). */
   kerasTold: Map<string, string>;
@@ -76,6 +82,9 @@ export function makeContext(): ParserContext {
     plValues: null,
     yoloFinalValidation: false,
     boostingReprintNext: false,
+    catboostName: null,
+    catboostLast: null,
+    catboostHeld: [],
     kerasTold: new Map(),
     kerasToldEpoch: null,
     lineClaimed: false,

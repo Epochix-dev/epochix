@@ -23,6 +23,7 @@ story engine already reasons about progress along that axis.
 from __future__ import annotations
 
 import re
+from typing import cast
 
 from epochix.models import RawMetric
 from epochix.parsers._never_metrics import NEVER_METRICS, is_setting
@@ -37,8 +38,12 @@ _NUM = r"[-+]?\d+(?:\.\d+)?(?:[eE][-+]?\d+)?"
 # One "<name>:<value>" pair where the name may carry the separators these
 # libraries use and the universal pattern rejects: "-", "'", and a single
 # internal space ("valid_0's l2"). Non-greedy so the shortest valid name wins
-# rather than swallowing the previous pair's value.
-_PAIR = re.compile(rf"([A-Za-z][\w'\-]{{0,48}}(?:\s[A-Za-z][\w'\-]{{0,24}})?)\s*:\s*({_NUM})")
+# rather than swallowing the previous pair's value. A name never starts inside
+# a word or a number: CatBoost's timing tail, "total: 137ms<TAB>remaining:
+# 8.11s", was read as a metric called "ms<TAB>remaining" on every row.
+_PAIR = re.compile(
+    rf"(?<![\w.])([A-Za-z][\w'\-]{{0,48}}(?:\s[A-Za-z][\w'\-]{{0,24}})?)\s*:\s*({_NUM})"
+)
 
 # CatBoost repeats the running best on every row. It is a derived value, not a
 # measurement of this round, and charting it draws a staircase that never
@@ -53,6 +58,19 @@ _DERIVED = frozenset({"best", "bestiteration", "best_iteration", "remaining", "t
 # That row is a round already told, not a new measurement. Read as one, a real
 # LightGBM run ended its story on a reprint of round 19 after round 29.
 _BEST_ITERATION = re.compile(r"best iteration(?: is)?:\s*$", re.IGNORECASE)
+
+# CatBoost's closing summary restates the best round: "bestTest = 0.99266",
+# "bestIteration = 50". Both are values already told, not measurements.
+_CATBOOST_SUMMARY = re.compile(r"^\s*best(?:Test|Iteration)\s*=", re.IGNORECASE)
+
+# CatBoost names the split and never the metric: "0: test: 0.9790356" is the
+# eval metric on the eval set, and nothing on the line says which metric or
+# which way it runs. The running best printed beside it does: it follows the
+# maximum of an AUC and the minimum of a loss. Until a row shows which, rows
+# are held. A metric that has not moved in this many rounds is released under
+# a name that claims no direction, so a live run is never held for good.
+_CATBOOST_HOLD_ROUNDS = 10
+_UNNAMED = ""
 
 # How each library names the split. Order matters: "validation" must be tested
 # before "valid", and "training" before "train".
@@ -80,13 +98,13 @@ def _dissect(name: str) -> tuple[str | None, int | None, str]:
 
     if not rest:
         # CatBoost writes the split alone — "learn: 0.679  test: 0.680" — with
-        # the objective's name nowhere on the line. The number is that
-        # objective's value on that split, so it is a loss; naming it after the
-        # split ("learn") would chart it as a metric called learn.
+        # the metric's name nowhere on the line. Naming it after the split
+        # ("learn") would chart a metric called learn; what it is called
+        # depends on which way it runs, which later rows say (_catboost_name).
         if any(head.startswith(t) for t in _VALIDATION_TOKENS):
-            return "val", index, "loss"
+            return "val", index, _UNNAMED
         if any(head.startswith(t) for t in _TRAIN_TOKENS):
-            return "train", index, "loss"
+            return "train", index, _UNNAMED
         return None, None, name
 
     metric = "_".join(rest).lower()
@@ -144,6 +162,26 @@ def _resolve_positions(
     return out
 
 
+def _catboost_name(test: float | None, best: float | None, last: float | None) -> str | None:
+    """What CatBoost's unnamed metric is called, once its direction shows.
+
+    "loss" when its running best follows the minimum, "score" when it follows
+    the maximum, ``None`` while a row cannot tell. A row whose value differs
+    from its best says so directly. A row equal to its best is a new best, so
+    a value that rose to get there is a score and one that fell is a loss.
+    """
+    if test is None or best is None:
+        return None
+    if test != best:
+        return "score" if best > test else "loss"
+    if last is not None and test != last:
+        return "score" if test > last else "loss"
+    return None
+
+
+_Row = list[tuple[str | None, int | None, str, float]]
+
+
 @register_parser
 class BoostingParser:
     """XGBoost / LightGBM / CatBoost round-by-round evaluation rows."""
@@ -169,6 +207,8 @@ class BoostingParser:
         if m is None:
             if _BEST_ITERATION.search(line):
                 ctx.extra["boosting_reprint_next"] = True
+            if _CATBOOST_SUMMARY.match(line):
+                return claim(ctx)
             return []
         if ctx.extra.pop("boosting_reprint_next", False):
             return claim(ctx)
@@ -177,7 +217,8 @@ class BoostingParser:
         ctx.current_step = int(rnd)
 
         body = line[m.end() :]
-        found: list[tuple[str | None, int | None, str, float]] = []
+        found: _Row = []
+        best: float | None = None
 
         for pair in _PAIR.finditer(body):
             raw_name = pair.group(1).strip()
@@ -187,6 +228,11 @@ class BoostingParser:
                 continue
 
             flat = raw_name.replace(" ", "").replace("'", "").replace("-", "").lower()
+            if flat == "best":
+                # Not charted (a staircase that never worsens), but it is
+                # what says which way CatBoost's unnamed metric runs.
+                best = value
+                continue
             if flat in _DERIVED or raw_name.lower() in NEVER_METRICS:
                 continue
             if is_setting(raw_name.lower(), value):
@@ -195,14 +241,50 @@ class BoostingParser:
             split, index, metric = _dissect(raw_name)
             found.append((split, index, metric, value))
 
-        return self._emit(_resolve_positions(found), ctx, rnd)
+        if any(metric == _UNNAMED for _, _, metric, _ in found):
+            return self._catboost(found, best, ctx, rnd)
+        return self._emit(_resolve_positions(found), ctx.seq, rnd)
 
-    def _emit(
-        self,
-        resolved: list[tuple[str, float]],
-        ctx: ParserContext,
-        rnd: float,
+    def _catboost(
+        self, found: _Row, best: float | None, ctx: ParserContext, rnd: float
     ) -> list[RawMetric]:
+        held = cast("list[tuple[int, float, _Row]]", ctx.extra.setdefault("catboost_held", []))
+        name = cast("str | None", ctx.extra.get("catboost_name"))
+        if name is None:
+            if best is None:
+                # No eval set: the only split is learn, and it prints the
+                # objective being minimised.
+                name = "loss"
+            else:
+                test = next((v for s, _, mt, v in found if s == "val" and mt == _UNNAMED), None)
+                last = cast("float | None", ctx.extra.get("catboost_last"))
+                name = _catboost_name(test, best, last)
+                ctx.extra["catboost_last"] = test
+                if name is None and len(held) + 1 < _CATBOOST_HOLD_ROUNDS:
+                    held.append((ctx.seq, rnd, found))
+                    return claim(ctx)
+            ctx.extra["catboost_name"] = name or "metric"
+        rows = [*held, (ctx.seq, rnd, found)]
+        held.clear()
+        told = cast("str", ctx.extra["catboost_name"])
+        return [metric for seq, r, row in rows for metric in self._named(row, told, seq, r)]
+
+    def flush(self, ctx: ParserContext) -> list[RawMetric]:
+        """Release CatBoost rows still held when the log ends.
+
+        Their metric never moved, so nothing said which way it runs; they are
+        told under a name that claims neither.
+        """
+        held = cast("list[tuple[int, float, _Row]]", ctx.extra.get("catboost_held") or [])
+        rows = list(held)
+        held.clear()
+        return [metric for seq, r, row in rows for metric in self._named(row, "metric", seq, r)]
+
+    def _named(self, found: _Row, name: str, seq: int, rnd: float) -> list[RawMetric]:
+        named = [(s, i, name if mt == _UNNAMED else mt, v) for s, i, mt, v in found]
+        return self._emit(_resolve_positions(named), seq, rnd)
+
+    def _emit(self, resolved: list[tuple[str, float]], seq: int, rnd: float) -> list[RawMetric]:
         metrics: list[RawMetric] = []
         seen: set[str] = set()
         for key, value in resolved:
@@ -211,7 +293,7 @@ class BoostingParser:
             seen.add(key)
             metrics.append(
                 RawMetric(
-                    seq=ctx.seq,
+                    seq=seq,
                     epoch=rnd,
                     step=int(rnd),
                     key=key,

@@ -1,0 +1,65 @@
+0:	test: 0.9790356	best: 0.9790356 (0)	total: 137ms	remaining: 8.11s
+1:	test: 0.9854298	best: 0.9854298 (1)	total: 139ms	remaining: 4.02s
+2:	test: 0.9842767	best: 0.9854298 (1)	total: 140ms	remaining: 2.66s
+3:	test: 0.9864780	best: 0.9864780 (3)	total: 141ms	remaining: 1.97s
+4:	test: 0.9856394	best: 0.9864780 (3)	total: 142ms	remaining: 1.56s
+5:	test: 0.9880503	best: 0.9880503 (5)	total: 143ms	remaining: 1.28s
+6:	test: 0.9888889	best: 0.9888889 (6)	total: 143ms	remaining: 1.09s
+7:	test: 0.9890985	best: 0.9890985 (7)	total: 144ms	remaining: 939ms
+8:	test: 0.9872117	best: 0.9890985 (7)	total: 145ms	remaining: 823ms
+9:	test: 0.9886792	best: 0.9890985 (7)	total: 146ms	remaining: 731ms
+10:	test: 0.9899371	best: 0.9899371 (10)	total: 147ms	remaining: 655ms
+11:	test: 0.9909853	best: 0.9909853 (11)	total: 148ms	remaining: 592ms
+12:	test: 0.9914046	best: 0.9914046 (12)	total: 149ms	remaining: 539ms
+13:	test: 0.9911950	best: 0.9914046 (12)	total: 150ms	remaining: 493ms
+14:	test: 0.9914046	best: 0.9914046 (12)	total: 151ms	remaining: 453ms
+15:	test: 0.9914046	best: 0.9914046 (12)	total: 152ms	remaining: 418ms
+16:	test: 0.9914046	best: 0.9914046 (12)	total: 153ms	remaining: 387ms
+17:	test: 0.9911950	best: 0.9914046 (12)	total: 154ms	remaining: 360ms
+18:	test: 0.9907757	best: 0.9914046 (12)	total: 156ms	remaining: 336ms
+19:	test: 0.9903564	best: 0.9914046 (12)	total: 157ms	remaining: 314ms
+20:	test: 0.9911950	best: 0.9914046 (12)	total: 158ms	remaining: 293ms
+21:	test: 0.9911950	best: 0.9914046 (12)	total: 159ms	remaining: 274ms
+22:	test: 0.9914046	best: 0.9914046 (12)	total: 160ms	remaining: 257ms
+23:	test: 0.9911950	best: 0.9914046 (12)	total: 160ms	remaining: 241ms
+24:	test: 0.9916143	best: 0.9916143 (24)	total: 161ms	remaining: 226ms
+25:	test: 0.9918239	best: 0.9918239 (25)	total: 162ms	remaining: 212ms
+26:	test: 0.9914046	best: 0.9918239 (25)	total: 163ms	remaining: 199ms
+27:	test: 0.9914046	best: 0.9918239 (25)	total: 164ms	remaining: 187ms
+28:	test: 0.9916143	best: 0.9918239 (25)	total: 164ms	remaining: 176ms
+29:	test: 0.9914046	best: 0.9918239 (25)	total: 165ms	remaining: 165ms
+30:	test: 0.9916143	best: 0.9918239 (25)	total: 166ms	remaining: 156ms
+31:	test: 0.9918239	best: 0.9918239 (25)	total: 167ms	remaining: 146ms
+32:	test: 0.9918239	best: 0.9918239 (25)	total: 168ms	remaining: 138ms
+33:	test: 0.9918239	best: 0.9918239 (25)	total: 169ms	remaining: 129ms
+34:	test: 0.9918239	best: 0.9918239 (25)	total: 170ms	remaining: 122ms
+35:	test: 0.9916143	best: 0.9918239 (25)	total: 171ms	remaining: 114ms
+36:	test: 0.9918239	best: 0.9918239 (25)	total: 172ms	remaining: 107ms
+37:	test: 0.9918239	best: 0.9918239 (25)	total: 173ms	remaining: 100ms
+38:	test: 0.9918239	best: 0.9918239 (25)	total: 173ms	remaining: 93.4ms
+39:	test: 0.9918239	best: 0.9918239 (25)	total: 174ms	remaining: 87.2ms
+40:	test: 0.9918239	best: 0.9918239 (25)	total: 175ms	remaining: 81.3ms
+41:	test: 0.9918239	best: 0.9918239 (25)	total: 176ms	remaining: 75.5ms
+42:	test: 0.9918239	best: 0.9918239 (25)	total: 177ms	remaining: 69.9ms
+43:	test: 0.9920335	best: 0.9920335 (43)	total: 178ms	remaining: 64.6ms
+44:	test: 0.9924528	best: 0.9924528 (44)	total: 179ms	remaining: 59.5ms
+45:	test: 0.9922432	best: 0.9924528 (44)	total: 179ms	remaining: 54.6ms
+46:	test: 0.9920335	best: 0.9924528 (44)	total: 180ms	remaining: 49.8ms
+47:	test: 0.9924528	best: 0.9924528 (44)	total: 181ms	remaining: 45.2ms
+48:	test: 0.9924528	best: 0.9924528 (44)	total: 182ms	remaining: 40.8ms
+49:	test: 0.9924528	best: 0.9924528 (44)	total: 183ms	remaining: 36.5ms
+50:	test: 0.9926625	best: 0.9926625 (50)	total: 184ms	remaining: 32.4ms
+51:	test: 0.9926625	best: 0.9926625 (50)	total: 184ms	remaining: 28.4ms
+52:	test: 0.9924528	best: 0.9926625 (50)	total: 185ms	remaining: 24.5ms
+53:	test: 0.9916143	best: 0.9926625 (50)	total: 186ms	remaining: 20.7ms
+54:	test: 0.9916143	best: 0.9926625 (50)	total: 187ms	remaining: 17ms
+55:	test: 0.9916143	best: 0.9926625 (50)	total: 188ms	remaining: 13.4ms
+56:	test: 0.9918239	best: 0.9926625 (50)	total: 189ms	remaining: 9.95ms
+57:	test: 0.9926625	best: 0.9926625 (50)	total: 190ms	remaining: 6.54ms
+58:	test: 0.9924528	best: 0.9926625 (50)	total: 191ms	remaining: 3.23ms
+59:	test: 0.9924528	best: 0.9926625 (50)	total: 191ms	remaining: 0us
+
+bestTest = 0.9926624738
+bestIteration = 50
+
+Shrink model to first 51 iterations.

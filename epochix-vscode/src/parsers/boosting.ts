@@ -22,15 +22,28 @@ import { claim, type Parser, type ParserContext, type RawMetric } from "./base";
 import { NEVER_METRICS, isSetting } from "./neverMetrics";
 
 // Bounded quantifiers throughout: an unbounded run before a delimiter is
-// O(n^2) on a long line.
+// O(n^2) on a long line. A name never starts inside a word or a number:
+// CatBoost's timing tail, "total: 137ms<TAB>remaining: 8.11s", was read as a
+// metric called "ms<TAB>remaining" on every row.
 const ROUND = /^\s*(?:\[(\d{1,9})\]|(\d{1,9}):)\s/;
 const PAIR =
-  /([A-Za-z][\w'-]{0,48}(?:\s[A-Za-z][\w'-]{0,24})?)\s*:\s*([-+]?\d+(?:\.\d+)?(?:[eE][-+]?\d+)?)/g;
+  /(?<![\w.])([A-Za-z][\w'-]{0,48}(?:\s[A-Za-z][\w'-]{0,24})?)\s*:\s*([-+]?\d+(?:\.\d+)?(?:[eE][-+]?\d+)?)/g;
 const DERIVED = new Set(["best", "bestiteration", "best_iteration", "remaining", "total", "elapsed"]);
 // When training stops the libraries print the best round once more ("Early
 // stopping, best iteration is:" / "Stopping. Best iteration:"); the row after
 // it is a round already told, not a new measurement.
 const BEST_ITERATION = /best iteration(?: is)?:\s*$/i;
+// CatBoost's closing summary restates the best round: "bestTest = 0.99266",
+// "bestIteration = 50". Values already told, not measurements.
+const CATBOOST_SUMMARY = /^\s*best(?:Test|Iteration)\s*=/i;
+// CatBoost names the split and never the metric: "0: test: 0.9790356" is the
+// eval metric on the eval set, and nothing on the line says which metric or
+// which way it runs. The running best beside it does: it follows the maximum
+// of an AUC and the minimum of a loss. Until a row shows which, rows are held;
+// a metric that has not moved in this many rounds is released under a name
+// that claims no direction, so a live run is never held for good.
+const CATBOOST_HOLD_ROUNDS = 10;
+const UNNAMED = "";
 const VALIDATION_TOKENS = ["validation", "valid", "eval", "test", "holdout", "dev"];
 const TRAIN_TOKENS = ["training", "train", "learn", "fit"];
 
@@ -50,9 +63,10 @@ function dissect(name: string): [Split, number | null, string] {
   const isTrain = TRAIN_TOKENS.some((t) => head.startsWith(t));
 
   if (rest.length === 0) {
-    // CatBoost prints the split alone: "learn: 0.67  test: 0.68".
-    if (isVal) return ["val", index, "loss"];
-    if (isTrain) return ["train", index, "loss"];
+    // CatBoost prints the split alone: "learn: 0.67  test: 0.68". What the
+    // metric is called depends on which way it runs (catboostName).
+    if (isVal) return ["val", index, UNNAMED];
+    if (isTrain) return ["train", index, UNNAMED];
     return [null, null, name];
   }
   const metric = rest.join("_").toLowerCase();
@@ -101,6 +115,21 @@ function resolvePositions(
   return out;
 }
 
+/**
+ * What CatBoost's unnamed metric is called once its direction shows: "loss"
+ * when its running best follows the minimum, "score" when it follows the
+ * maximum, null while a row cannot tell. A row equal to its best is a new
+ * best, so a value that rose to get there is a score.
+ */
+function catboostName(test: number | null, best: number | null, last: number | null): string | null {
+  if (test === null || best === null) return null;
+  if (test !== best) return best > test ? "score" : "loss";
+  if (last !== null && test !== last) return test > last ? "score" : "loss";
+  return null;
+}
+
+type Row = Array<[Split, number | null, string, number]>;
+
 export class BoostingParser implements Parser {
   readonly name = "boosting";
   // Above universal, below the framework parsers — mirrors Python's ordering.
@@ -122,6 +151,7 @@ export class BoostingParser implements Parser {
     const m = ROUND.exec(line);
     if (m === null) {
       if (BEST_ITERATION.test(line)) ctx.boostingReprintNext = true;
+      if (CATBOOST_SUMMARY.test(line)) return claim(ctx);
       return [];
     }
     if (ctx.boostingReprintNext) {
@@ -133,7 +163,8 @@ export class BoostingParser implements Parser {
     ctx.currentStep = Math.round(round);
 
     const body = line.slice(m[0].length);
-    const found: Array<[Split, number | null, string, number]> = [];
+    const found: Row = [];
+    let best: number | null = null;
     PAIR.lastIndex = 0;
     let pair: RegExpExecArray | null;
     while ((pair = PAIR.exec(body)) !== null) {
@@ -141,19 +172,67 @@ export class BoostingParser implements Parser {
       const value = parseFloat(pair[2]);
       if (Number.isNaN(value)) continue;
       const flat = rawName.replace(/[\s'-]/g, "").toLowerCase();
+      if (flat === "best") {
+        // Not charted, but it says which way CatBoost's unnamed metric runs.
+        best = value;
+        continue;
+      }
       if (DERIVED.has(flat) || NEVER_METRICS.has(rawName.toLowerCase())) continue;
       if (isSetting(rawName.toLowerCase(), value)) continue;
       const [split, index, metric] = dissect(rawName);
       found.push([split, index, metric, value]);
     }
 
+    if (found.some(([, , metric]) => metric === UNNAMED)) {
+      return this.catboost(found, best, ctx, round);
+    }
+    return this.emit(resolvePositions(found), ctx.seq, round);
+  }
+
+  private catboost(found: Row, best: number | null, ctx: ParserContext, round: number): RawMetric[] {
+    if (ctx.catboostName === null) {
+      let name: string | null;
+      if (best === null) {
+        // No eval set: the only split is learn, the objective being minimised.
+        name = "loss";
+      } else {
+        const test = found.find(([s, , mt]) => s === "val" && mt === UNNAMED)?.[3] ?? null;
+        name = catboostName(test, best, ctx.catboostLast);
+        ctx.catboostLast = test;
+        if (name === null && ctx.catboostHeld.length + 1 < CATBOOST_HOLD_ROUNDS) {
+          ctx.catboostHeld.push([ctx.seq, round, found]);
+          return claim(ctx);
+        }
+      }
+      ctx.catboostName = name ?? "metric";
+    }
+    const rows: Array<[number, number, Row]> = [...ctx.catboostHeld, [ctx.seq, round, found]];
+    ctx.catboostHeld = [];
+    const told = ctx.catboostName;
+    return rows.flatMap(([seq, r, row]) => this.named(row, told, seq, r));
+  }
+
+  /** Release CatBoost rows still held when the log ends: their metric never
+   *  moved, so they are told under a name that claims no direction. */
+  flush(ctx: ParserContext): RawMetric[] {
+    const rows = ctx.catboostHeld;
+    ctx.catboostHeld = [];
+    return rows.flatMap(([seq, r, row]) => this.named(row, "metric", seq, r));
+  }
+
+  private named(found: Row, name: string, seq: number, round: number): RawMetric[] {
+    const row: Row = found.map(([s, i, mt, v]) => [s, i, mt === UNNAMED ? name : mt, v]);
+    return this.emit(resolvePositions(row), seq, round);
+  }
+
+  private emit(resolved: Array<[string, number]>, seq: number, round: number): RawMetric[] {
     const metrics: RawMetric[] = [];
     const seen = new Set<string>();
-    for (const [key, value] of resolvePositions(found)) {
+    for (const [key, value] of resolved) {
       if (seen.has(key)) continue;
       seen.add(key);
       metrics.push({
-        seq: ctx.seq,
+        seq,
         epoch: round,
         step: Math.round(round),
         key,
@@ -167,4 +246,4 @@ export class BoostingParser implements Parser {
 }
 
 /** Exposed for tests. */
-export const _internals = { dissect, resolvePositions };
+export const _internals = { dissect, resolvePositions, catboostName };

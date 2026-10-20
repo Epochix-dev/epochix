@@ -108,6 +108,11 @@ class TestMetricDirection:
         ("explained_variance", False),
         ("RMSLE", True),
         ("MedAE", True),
+        # scikit-learn's convention, and the boosting parser's name for a
+        # CatBoost eval metric whose best follows the maximum.
+        ("score", False),
+        ("val_score", False),
+        ("train_score", False),
     ]
 
     @pytest.mark.parametrize(("metric", "lower_better"), TRUTH)

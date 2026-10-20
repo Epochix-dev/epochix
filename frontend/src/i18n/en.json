@@ -32,6 +32,7 @@
     "reconnecting": "Reconnecting…",
     "frame": "Frame",
     "empty_title": "Nothing is loaded yet.",
+    "empty_what": "Epochix reads what a training run prints — the loss and accuracy at each epoch — not your source code.",
     "empty_hint": "Open a training log, try the bundled demo, or run training in a terminal — Epochix follows it as it prints.",
     "try_demo": "Try the demo",
     "open_log": "Open a log file",
@@ -112,5 +113,11 @@
     "chosen": "chosen",
     "note_search": "Only the chosen setting is charted and graded: the highest mean, as scikit-learn scorers are higher-is-better. Fold order carries no meaning.",
     "note_cv": "Folds are reported here rather than charted: their order carries no meaning, so they have no trend."
+  },
+  "report": {
+    "nothing_title": "Nothing is loaded yet",
+    "nothing_body": "Epochix reads what a training run prints — the loss and accuracy at each epoch — not your source code. Give it a run first, then report anything it gets wrong.",
+    "nothing_cli": "From a terminal: epochix demo, or epochix run train.log",
+    "anyway": "Report a problem anyway"
   }
 }

@@ -16,8 +16,8 @@ import pytest
 
 from epochix.enums import TaskType
 from epochix.normalizer.canonical_keys import canonicalize_key
-from epochix.parsers.base import ParserContext
-from epochix.parsers.boosting import BoostingParser
+from epochix.parsers.base import LINE_CLAIMED, ParserContext
+from epochix.parsers.boosting import _CATBOOST_HOLD_ROUNDS, BoostingParser
 from epochix.parsers.universal import UniversalParser
 from epochix.story_engine.task_classifier import refine_gaze
 
@@ -184,13 +184,114 @@ class TestBoosting:
     def test_catboost_named_splits_are_taken_at_their_word(self) -> None:
         got = _parse(
             BoostingParser(),
-            ["0:\tlearn: 0.6798710\ttest: 0.6801448\tbest: 0.6801448"],
+            [
+                "0:\tlearn: 0.6798710\ttest: 0.6801448\tbest: 0.6801448 (0)",
+                "1:\tlearn: 0.6512004\ttest: 0.6533120\tbest: 0.6533120 (1)",
+            ],
         )
-        # CatBoost names the split and not the objective, so the number is that
-        # objective's value on that split — a loss. `best` is the running best
-        # restated every row, not a measurement of this round: charting it
-        # draws a staircase that can never worsen.
-        assert [k for k, _, _ in got] == ["train_loss", "val_loss"]
+        # CatBoost names the split and not the metric. A best that follows the
+        # falling value makes it a loss. `best` is the running best restated
+        # every row, not a measurement of this round: charting it draws a
+        # staircase that can never worsen.
+        assert got == [
+            ("train_loss", 0.6798710, 0.0),
+            ("val_loss", 0.6801448, 0.0),
+            ("train_loss", 0.6512004, 1.0),
+            ("val_loss", 0.6533120, 1.0),
+        ]
+
+    def test_a_catboost_metric_whose_best_follows_the_maximum_is_a_score(self) -> None:
+        # Real CatBoost output with eval_metric="AUC": the line names neither
+        # the metric nor its direction. Called a loss, an AUC climbing to 0.99
+        # was told "past its best".
+        rows = [
+            "0:\ttest: 0.9790356\tbest: 0.9790356 (0)\ttotal: 137ms\tremaining: 8.11s",
+            "1:\ttest: 0.9854298\tbest: 0.9854298 (1)\ttotal: 139ms\tremaining: 4.02s",
+            "2:\ttest: 0.9842767\tbest: 0.9854298 (1)\ttotal: 140ms\tremaining: 2.66s",
+        ]
+        got = _parse(BoostingParser(), rows)
+        assert got == [
+            ("val_score", 0.9790356, 0.0),
+            ("val_score", 0.9854298, 1.0),
+            ("val_score", 0.9842767, 2.0),
+        ]
+
+    # CatBoost's row format with chosen values: each case is one way a row can
+    # say its direction.
+    @pytest.mark.parametrize(
+        ("rows", "name"),
+        [
+            # A value below its best: the best is a maximum.
+            (["5:\ttest: 0.80\tbest: 0.90 (2)"], "score"),
+            # A value above its best: the best is a minimum.
+            (["5:\ttest: 0.80\tbest: 0.70 (2)"], "loss"),
+            # Equal to its best, and rose to get there: a new maximum.
+            (["0:\ttest: 0.70\tbest: 0.70 (0)", "1:\ttest: 0.75\tbest: 0.75 (1)"], "score"),
+            (["0:\ttest: 0.70\tbest: 0.70 (0)", "1:\ttest: 0.65\tbest: 0.65 (1)"], "loss"),
+        ],
+    )
+    def test_the_running_best_says_which_way_the_metric_runs(
+        self, rows: list[str], name: str
+    ) -> None:
+        got = _parse(BoostingParser(), rows)
+        assert {k for k, _, _ in got} == {f"val_{name}"}
+        assert len(got) == len(rows), "a held row was lost"
+
+    def test_a_catboost_metric_that_never_moves_claims_no_direction(self) -> None:
+        parser, ctx = BoostingParser(), ParserContext(run_id="t")
+        rows = [f"{r}:\ttest: 1.0000000\tbest: 1.0000000 (0)" for r in range(3)]
+        for row in rows:
+            assert parser.parse_line(row, ctx) == []
+            assert ctx.extra.pop(LINE_CLAIMED, False), "a held row was offered to the fallback"
+        # The log ends: the rows are told, under a name that says neither.
+        assert [(m.key, m.epoch) for m in parser.flush(ctx)] == [
+            ("val_metric", 0.0),
+            ("val_metric", 1.0),
+            ("val_metric", 2.0),
+        ]
+
+    def test_a_live_catboost_run_is_never_held_for_good(self) -> None:
+        # Streaming has no end: a metric that does not move is released after
+        # a bounded number of rounds, not when a flush that never comes.
+        parser, ctx = BoostingParser(), ParserContext(run_id="t")
+        out = [
+            m
+            for r in range(_CATBOOST_HOLD_ROUNDS)
+            for m in parser.parse_line(f"{r}:\ttest: 0.5\tbest: 0.5 (0)", ctx)
+        ]
+        assert [m.epoch for m in out] == [float(r) for r in range(_CATBOOST_HOLD_ROUNDS)]
+        assert {m.key for m in out} == {"val_metric"}
+        assert parser.flush(ctx) == []
+        # It keeps that name: one run, one series.
+        assert [m.key for m in parser.parse_line("99:\ttest: 0.9\tbest: 0.9 (99)", ctx)] == [
+            "val_metric"
+        ]
+
+    def test_catboost_without_an_eval_set_prints_its_objective(self) -> None:
+        # Only `learn`, and no running best: the number is the objective being
+        # minimised, so it is not held.
+        got = _parse(BoostingParser(), ["0:\tlearn: 0.6798710\ttotal: 52ms\tremaining: 5.1s"])
+        assert got == [("train_loss", 0.6798710, 0.0)]
+
+    def test_catboost_s_timing_tail_is_not_a_metric(self) -> None:
+        got = _parse(
+            BoostingParser(),
+            [
+                "0:\tlearn: 75.1450310\ttest: 69.8618753\tbest: 69.8618753 (0)\ttotal: 136ms"
+                "\tremaining: 40.7s"
+            ]
+            + [
+                "1:\tlearn: 72.5961825\ttest: 67.6010507\tbest: 67.6010507 (1)\ttotal: 137ms"
+                "\tremaining: 20.3s"
+            ],
+        )
+        assert {k for k, _, _ in got} == {"train_loss", "val_loss"}
+
+    @pytest.mark.parametrize("line", ["bestTest = 0.9926624738", "bestIteration = 50"])
+    def test_catboost_s_closing_summary_is_claimed(self, line: str) -> None:
+        parser, ctx = BoostingParser(), ParserContext(run_id="t")
+        assert parser.parse_line(line, ctx) == []
+        assert ctx.extra.get(LINE_CLAIMED), "the fallback parsers would read the summary"
 
     def test_the_round_is_the_x_axis(self) -> None:
         got = _parse(
