@@ -7,6 +7,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.7.33] — 2026-10-21
+
+### Fixed — CatBoost with two eval sets
+
+- **A run with two eval sets was told on the wrong curve.** CatBoost prints
+  `test: … test1: … best: …`, and its running best and overfitting detector
+  follow the **last** eval set. Epochix compared the best with the first, so
+  a falling RMSE was called a score, and the run was told on its training
+  loss and graded F, "past its best". Both sets also took one name, so the
+  one CatBoost tracks was dropped. `test1`, `test2` are now numbered eval
+  sets: the last is the validation curve, the earlier ones are kept as
+  `eval0_…`. Two more real CatBoost runs are recorded and pinned — two eval
+  sets, and no eval set at all. (`custom_metric` was checked as well: CatBoost
+  prints nothing extra for it.)
+
+### Internal — the extension's parsers are checked line by line
+
+- The parsers exist twice, in Python and in the extension's TypeScript, and
+  the ports had drifted and brought back fixed bugs before. Every line a
+  Python test feeds a parser — every real log in the repository among them —
+  is now recorded with what the parser returned, and the extension's test
+  suite replays all of it through its own parsers: 3,876 calls, matching
+  today. It caught the CatBoost fix above when only the Python half was in.
+
+---
+
 ## [0.7.32] — 2026-10-20
 
 ### Fixed — CatBoost, checked on a real run for the first time
