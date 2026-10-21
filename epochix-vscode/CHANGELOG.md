@@ -14,6 +14,18 @@ which covers the extension too; entries here resume with 0.7.16.
 
 ---
 
+## [0.7.33] — 2026-10-21
+
+### Fixed
+
+- **A CatBoost run with two eval sets is told on the one CatBoost tracks.**
+  Its running best follows the last eval set; the extension compared it with
+  the first, called a falling RMSE a score, and graded the run F on its
+  training loss. The last set is now the validation curve, and the earlier
+  ones are kept as `eval0_…`.
+
+---
+
 ## [0.7.32] — 2026-10-20
 
 ### Fixed
