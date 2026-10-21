@@ -61,6 +61,12 @@ npm --prefix epochix-vscode test    # launches a real VS Code host
 - **Parsers exist twice.** Python in `src/epochix/parsers/`, TypeScript in
   `epochix-vscode/src/parsers/`. A fix to one must be ported to the other —
   the extension's copies have drifted behind and reintroduced fixed bugs.
+  Every line a Python test feeds a parser directly is recorded with what came
+  back (`scripts/parser_recorder.py`) into `parsers.golden.json`, which the
+  extension replays line by line (`parsersGolden.test.ts`). After changing a
+  parser or its tests run `make gen-ts-tables`; the sync test replays the
+  golden through Python and fails until you do. A context handed to a parser
+  in a test starts empty, or it cannot be recorded.
 - **Unbounded quantifiers are a hang.** Any unanchored regex with `\w+`/`\d+`
   before a delimiter is O(n²) on a long line. Bound them (`\w{1,64}`).
 - **Streaming has no end.** The server ingests live runs through

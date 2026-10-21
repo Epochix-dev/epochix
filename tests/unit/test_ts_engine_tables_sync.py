@@ -83,3 +83,45 @@ def test_golden_covers_the_names_that_drifted() -> None:
     assert golden["eval_loss"] == "val_loss"
     assert golden["val_mae"] == "val_MAE"
     assert golden["mae"] == "MAE"
+
+
+def test_parsers_golden_is_what_the_parsers_answer() -> None:
+    """Every recorded call, fed back to the Python parsers, gives what it gave.
+
+    Recording runs the parser tests (scripts/parser_recorder.py), too slow for
+    here; this replay is what fails when a parser changes and the golden the
+    extension replays was not regenerated.
+    """
+    gen = _generator()
+    golden = json.loads(_committed(gen.PARSERS_GOLDEN))
+    wrong = gen.replay_parsers_golden(golden)
+    assert wrong == [], (
+        f"parsers.golden.json is stale ({len(wrong)} calls differ) — "
+        "run: make gen-ts-tables\n" + "\n".join(wrong[:10])
+    )
+
+
+def test_parsers_golden_reaches_every_port() -> None:
+    golden = json.loads(_committed(_generator().PARSERS_GOLDEN))
+    rows = [row for sequences in golden.values() for s in sequences for row in s.get("events", [])]
+    assert len(rows) > 3000, "the parser golden lost its recordings"
+    ported = {
+        "accelerate",
+        "boosting",
+        "fastai",
+        "huggingface",
+        "keras_tensorflow",
+        "pytorch_lightning",
+        "ultralytics_yolo",
+        "universal",
+    }
+    assert {row[0] for row in rows} == ported
+
+
+def test_every_test_that_feeds_a_parser_is_recorded() -> None:
+    """A new test file that calls a parser directly must be in the golden, or
+    its lines never reach the extension's ports."""
+    gen = _generator()
+    recorded = {node.split("::")[0] for node in json.loads(_committed(gen.PARSERS_GOLDEN))}
+    missing = sorted(set(gen._recorded_test_files()) - recorded)
+    assert missing == [], f"not in parsers.golden.json — run: make gen-ts-tables: {missing}"
