@@ -1,0 +1,44 @@
+0:	learn: 75.1450310	test: 63.0984495	test1: 75.9202908	best: 75.9202908 (0)	total: 130ms	remaining: 5.08s
+1:	learn: 72.5961825	test: 61.0628387	test1: 73.4582320	best: 73.4582320 (1)	total: 131ms	remaining: 2.49s
+2:	learn: 70.2845820	test: 59.9127537	test1: 71.7711451	best: 71.7711451 (2)	total: 131ms	remaining: 1.62s
+3:	learn: 68.1605187	test: 58.7542493	test1: 70.0283659	best: 70.0283659 (3)	total: 132ms	remaining: 1.19s
+4:	learn: 66.4249646	test: 57.7283899	test1: 69.1117220	best: 69.1117220 (4)	total: 132ms	remaining: 925ms
+5:	learn: 64.5356670	test: 56.5741095	test1: 67.1506400	best: 67.1506400 (5)	total: 132ms	remaining: 750ms
+6:	learn: 63.0419398	test: 55.9552018	test1: 65.8077813	best: 65.8077813 (6)	total: 133ms	remaining: 626ms
+7:	learn: 61.7839010	test: 55.6049756	test1: 65.2511839	best: 65.2511839 (7)	total: 133ms	remaining: 532ms
+8:	learn: 60.5983866	test: 55.6282422	test1: 64.3342606	best: 64.3342606 (8)	total: 133ms	remaining: 460ms
+9:	learn: 59.4103538	test: 55.5380844	test1: 63.8332835	best: 63.8332835 (9)	total: 134ms	remaining: 401ms
+10:	learn: 58.3589668	test: 55.1948091	test1: 63.4382060	best: 63.4382060 (10)	total: 134ms	remaining: 353ms
+11:	learn: 57.5595956	test: 54.9150118	test1: 62.7321418	best: 62.7321418 (11)	total: 134ms	remaining: 313ms
+12:	learn: 56.7972182	test: 54.8238950	test1: 61.9138189	best: 61.9138189 (12)	total: 135ms	remaining: 279ms
+13:	learn: 56.1873539	test: 54.7117242	test1: 61.2819200	best: 61.2819200 (13)	total: 135ms	remaining: 251ms
+14:	learn: 55.3916359	test: 54.3263441	test1: 61.0851647	best: 61.0851647 (14)	total: 135ms	remaining: 225ms
+15:	learn: 54.6651221	test: 54.0916817	test1: 60.4621166	best: 60.4621166 (15)	total: 135ms	remaining: 203ms
+16:	learn: 54.1336783	test: 53.8874067	test1: 60.1897988	best: 60.1897988 (16)	total: 136ms	remaining: 184ms
+17:	learn: 53.6566203	test: 53.7197075	test1: 59.7297961	best: 59.7297961 (17)	total: 136ms	remaining: 166ms
+18:	learn: 53.1901705	test: 53.5676186	test1: 59.5227487	best: 59.5227487 (18)	total: 136ms	remaining: 151ms
+19:	learn: 52.7456660	test: 53.5999476	test1: 59.3515117	best: 59.3515117 (19)	total: 137ms	remaining: 137ms
+20:	learn: 52.3289694	test: 53.5601701	test1: 58.8046048	best: 58.8046048 (20)	total: 137ms	remaining: 124ms
+21:	learn: 52.0119775	test: 53.4851643	test1: 58.6379042	best: 58.6379042 (21)	total: 137ms	remaining: 112ms
+22:	learn: 51.6551246	test: 53.4936051	test1: 58.4567583	best: 58.4567583 (22)	total: 138ms	remaining: 102ms
+23:	learn: 51.3755584	test: 53.3689577	test1: 58.2144549	best: 58.2144549 (23)	total: 138ms	remaining: 92ms
+24:	learn: 50.9018753	test: 53.5439532	test1: 57.9238479	best: 57.9238479 (24)	total: 138ms	remaining: 83ms
+25:	learn: 50.5870997	test: 53.5583957	test1: 57.8318467	best: 57.8318467 (25)	total: 139ms	remaining: 74.8ms
+26:	learn: 50.3155068	test: 53.5892566	test1: 57.8728022	best: 57.8318467 (25)	total: 139ms	remaining: 67ms
+27:	learn: 50.0100192	test: 53.4874374	test1: 58.1026475	best: 57.8318467 (25)	total: 139ms	remaining: 59.8ms
+28:	learn: 49.6591742	test: 53.5753752	test1: 57.9251081	best: 57.8318467 (25)	total: 140ms	remaining: 53ms
+29:	learn: 49.4150905	test: 53.6018734	test1: 57.8438410	best: 57.8318467 (25)	total: 140ms	remaining: 46.7ms
+30:	learn: 49.2523336	test: 53.6777296	test1: 57.8427232	best: 57.8318467 (25)	total: 140ms	remaining: 40.8ms
+31:	learn: 48.9809112	test: 53.6565103	test1: 57.7207908	best: 57.7207908 (31)	total: 141ms	remaining: 35.2ms
+32:	learn: 48.6698689	test: 53.6612356	test1: 57.5808941	best: 57.5808941 (32)	total: 141ms	remaining: 30ms
+33:	learn: 48.4879372	test: 53.5620195	test1: 57.5245707	best: 57.5245707 (33)	total: 142ms	remaining: 25ms
+34:	learn: 48.1629500	test: 53.4100152	test1: 57.8123743	best: 57.5245707 (33)	total: 142ms	remaining: 20.3ms
+35:	learn: 48.0280986	test: 53.4046017	test1: 57.7556191	best: 57.5245707 (33)	total: 143ms	remaining: 15.8ms
+36:	learn: 47.8392447	test: 53.4412123	test1: 57.7224606	best: 57.5245707 (33)	total: 143ms	remaining: 11.6ms
+37:	learn: 47.6362137	test: 53.6030393	test1: 57.4328115	best: 57.4328115 (37)	total: 143ms	remaining: 7.54ms
+38:	learn: 47.4075065	test: 53.5361236	test1: 57.2336188	best: 57.2336188 (38)	total: 144ms	remaining: 3.68ms
+39:	learn: 47.1113613	test: 53.5019095	test1: 57.2020078	best: 57.2020078 (39)	total: 144ms	remaining: 0us
+
+bestTest = 57.20200783
+bestIteration = 39
+

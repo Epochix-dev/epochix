@@ -44,6 +44,7 @@ const CATBOOST_SUMMARY = /^\s*best(?:Test|Iteration)\s*=/i;
 // that claims no direction, so a live run is never held for good.
 const CATBOOST_HOLD_ROUNDS = 10;
 const UNNAMED = "";
+const NUMBERED_SPLIT = /^([a-z]{1,16}?)(\d{1,3})$/;
 const VALIDATION_TOKENS = ["validation", "valid", "eval", "test", "holdout", "dev"];
 const TRAIN_TOKENS = ["training", "train", "learn", "fit"];
 
@@ -64,9 +65,12 @@ function dissect(name: string): [Split, number | null, string] {
 
   if (rest.length === 0) {
     // CatBoost prints the split alone: "learn: 0.67  test: 0.68". What the
-    // metric is called depends on which way it runs (catboostName).
-    if (isVal) return ["val", index, UNNAMED];
-    if (isTrain) return ["train", index, UNNAMED];
+    // metric is called depends on which way it runs (catboostName). A second
+    // eval set is "test1", a third "test2": its position after the first.
+    const numbered = NUMBERED_SPLIT.exec(head);
+    const position = numbered !== null ? parseInt(numbered[2], 10) : index;
+    if (isVal) return ["val", position, UNNAMED];
+    if (isTrain) return ["train", position, UNNAMED];
     return [null, null, name];
   }
   const metric = rest.join("_").toLowerCase();
@@ -129,6 +133,18 @@ function catboostName(test: number | null, best: number | null, last: number | n
 }
 
 type Row = Array<[Split, number | null, string, number]>;
+
+/** Position of the last of CatBoost's eval sets on a row ("test" is 0). */
+function lastEvalSet(found: Row): number | null {
+  const positions = found.filter(([s, , mt]) => s === "val" && mt === UNNAMED).map(([, i]) => i ?? 0);
+  return positions.length > 0 ? Math.max(...positions) : null;
+}
+
+/** The value CatBoost's running best follows: its last eval set's. */
+function catboostValidation(found: Row): number | null {
+  const last = lastEvalSet(found);
+  return found.find(([s, i, mt]) => s === "val" && mt === UNNAMED && (i ?? 0) === last)?.[3] ?? null;
+}
 
 export class BoostingParser implements Parser {
   readonly name = "boosting";
@@ -196,7 +212,7 @@ export class BoostingParser implements Parser {
         // No eval set: the only split is learn, the objective being minimised.
         name = "loss";
       } else {
-        const test = found.find(([s, , mt]) => s === "val" && mt === UNNAMED)?.[3] ?? null;
+        const test = catboostValidation(found);
         name = catboostName(test, best, ctx.catboostLast);
         ctx.catboostLast = test;
         if (name === null && ctx.catboostHeld.length + 1 < CATBOOST_HOLD_ROUNDS) {
@@ -221,8 +237,20 @@ export class BoostingParser implements Parser {
   }
 
   private named(found: Row, name: string, seq: number, round: number): RawMetric[] {
-    const row: Row = found.map(([s, i, mt, v]) => [s, i, mt === UNNAMED ? name : mt, v]);
-    return this.emit(resolvePositions(row), seq, round);
+    // CatBoost's eval sets are test, test1, test2...; its running best and
+    // overfitting detector follow the last, so that one is the validation
+    // curve and the others are told by position. Taken as XGBoost's
+    // positional sets, the first would have been called training — and learn
+    // already is.
+    const last = lastEvalSet(found);
+    const resolved: Array<[string, number]> = [];
+    const others: Row = [];
+    for (const [split, index, metric, value] of found) {
+      if (metric !== UNNAMED) others.push([split, index, metric, value]);
+      else if (split === "val" && (index ?? 0) !== last) resolved.push([`eval${index ?? 0}_${name}`, value]);
+      else resolved.push([`${split}_${name}`, value]);
+    }
+    return this.emit([...resolved, ...resolvePositions(others)], seq, round);
   }
 
   private emit(resolved: Array<[string, number]>, seq: number, round: number): RawMetric[] {

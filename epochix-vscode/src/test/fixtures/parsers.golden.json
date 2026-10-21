@@ -99,6 +99,52 @@
 ["boosting","flush",[]]
 ]}
 ],
+"tests/integration/test_parsers_read_their_logs.py::test_the_chosen_parser_reads_the_log_alone[catboost_real_no_eval_set.log]":[
+{"start":[null,null,null],"events":[
+["boosting",1,"0:\tlearn: 0.5397279\ttotal: 140ms\tremaining: 5.45s",[["train_loss",0.5397279,0.0,0,1]],false,[0.0,0,null]],
+["boosting",2,"1:\tlearn: 0.4357019\ttotal: 141ms\tremaining: 2.67s",[["train_loss",0.4357019,1.0,1,2]],false,[1.0,1,null]],
+["boosting",3,"2:\tlearn: 0.3553310\ttotal: 142ms\tremaining: 1.75s",[["train_loss",0.355331,2.0,2,3]],false,[2.0,2,null]],
+["boosting",4,"3:\tlearn: 0.3044152\ttotal: 142ms\tremaining: 1.28s",[["train_loss",0.3044152,3.0,3,4]],false,[3.0,3,null]],
+["boosting",5,"4:\tlearn: 0.2607166\ttotal: 143ms\tremaining: 1s",[["train_loss",0.2607166,4.0,4,5]],false,[4.0,4,null]],
+["boosting",6,"5:\tlearn: 0.2269741\ttotal: 144ms\tremaining: 815ms",[["train_loss",0.2269741,5.0,5,6]],false,[5.0,5,null]],
+["boosting",7,"6:\tlearn: 0.2037787\ttotal: 145ms\tremaining: 683ms",[["train_loss",0.2037787,6.0,6,7]],false,[6.0,6,null]],
+["boosting",8,"7:\tlearn: 0.1769737\ttotal: 146ms\tremaining: 582ms",[["train_loss",0.1769737,7.0,7,8]],false,[7.0,7,null]],
+["boosting",9,"8:\tlearn: 0.1629325\ttotal: 146ms\tremaining: 504ms",[["train_loss",0.1629325,8.0,8,9]],false,[8.0,8,null]],
+["boosting",10,"9:\tlearn: 0.1503663\ttotal: 147ms\tremaining: 441ms",[["train_loss",0.1503663,9.0,9,10]],false,[9.0,9,null]],
+["boosting",11,"10:\tlearn: 0.1331830\ttotal: 148ms\tremaining: 390ms",[["train_loss",0.133183,10.0,10,11]],false,[10.0,10,null]],
+["boosting",12,"11:\tlearn: 0.1267845\ttotal: 149ms\tremaining: 348ms",[["train_loss",0.1267845,11.0,11,12]],false,[11.0,11,null]],
+["boosting",13,"12:\tlearn: 0.1173769\ttotal: 150ms\tremaining: 311ms",[["train_loss",0.1173769,12.0,12,13]],false,[12.0,12,null]],
+["boosting",14,"13:\tlearn: 0.1048455\ttotal: 151ms\tremaining: 280ms",[["train_loss",0.1048455,13.0,13,14]],false,[13.0,13,null]],
+["boosting",15,"14:\tlearn: 0.0978777\ttotal: 151ms\tremaining: 252ms",[["train_loss",0.0978777,14.0,14,15]],false,[14.0,14,null]],
+["boosting",16,"15:\tlearn: 0.0941959\ttotal: 152ms\tremaining: 228ms",[["train_loss",0.0941959,15.0,15,16]],false,[15.0,15,null]],
+["boosting",17,"16:\tlearn: 0.0903199\ttotal: 153ms\tremaining: 207ms",[["train_loss",0.0903199,16.0,16,17]],false,[16.0,16,null]],
+["boosting",18,"17:\tlearn: 0.0882110\ttotal: 154ms\tremaining: 188ms",[["train_loss",0.088211,17.0,17,18]],false,[17.0,17,null]],
+["boosting",19,"18:\tlearn: 0.0857641\ttotal: 155ms\tremaining: 171ms",[["train_loss",0.0857641,18.0,18,19]],false,[18.0,18,null]],
+["boosting",20,"19:\tlearn: 0.0806131\ttotal: 156ms\tremaining: 156ms",[["train_loss",0.0806131,19.0,19,20]],false,[19.0,19,null]],
+["boosting",21,"20:\tlearn: 0.0768152\ttotal: 156ms\tremaining: 142ms",[["train_loss",0.0768152,20.0,20,21]],false,[20.0,20,null]],
+["boosting",22,"21:\tlearn: 0.0753087\ttotal: 157ms\tremaining: 129ms",[["train_loss",0.0753087,21.0,21,22]],false,[21.0,21,null]],
+["boosting",23,"22:\tlearn: 0.0705945\ttotal: 158ms\tremaining: 117ms",[["train_loss",0.0705945,22.0,22,23]],false,[22.0,22,null]],
+["boosting",24,"23:\tlearn: 0.0683824\ttotal: 159ms\tremaining: 106ms",[["train_loss",0.0683824,23.0,23,24]],false,[23.0,23,null]],
+["boosting",25,"24:\tlearn: 0.0655195\ttotal: 159ms\tremaining: 95.6ms",[["train_loss",0.0655195,24.0,24,25]],false,[24.0,24,null]],
+["boosting",26,"25:\tlearn: 0.0636916\ttotal: 160ms\tremaining: 86.2ms",[["train_loss",0.0636916,25.0,25,26]],false,[25.0,25,null]],
+["boosting",27,"26:\tlearn: 0.0609280\ttotal: 161ms\tremaining: 77.4ms",[["train_loss",0.060928,26.0,26,27]],false,[26.0,26,null]],
+["boosting",28,"27:\tlearn: 0.0598108\ttotal: 162ms\tremaining: 69.2ms",[["train_loss",0.0598108,27.0,27,28]],false,[27.0,27,null]],
+["boosting",29,"28:\tlearn: 0.0575786\ttotal: 162ms\tremaining: 61.5ms",[["train_loss",0.0575786,28.0,28,29]],false,[28.0,28,null]],
+["boosting",30,"29:\tlearn: 0.0564499\ttotal: 163ms\tremaining: 54.3ms",[["train_loss",0.0564499,29.0,29,30]],false,[29.0,29,null]],
+["boosting",31,"30:\tlearn: 0.0535001\ttotal: 164ms\tremaining: 47.5ms",[["train_loss",0.0535001,30.0,30,31]],false,[30.0,30,null]],
+["boosting",32,"31:\tlearn: 0.0509179\ttotal: 165ms\tremaining: 41.1ms",[["train_loss",0.0509179,31.0,31,32]],false,[31.0,31,null]],
+["boosting",33,"32:\tlearn: 0.0493245\ttotal: 165ms\tremaining: 35.1ms",[["train_loss",0.0493245,32.0,32,33]],false,[32.0,32,null]],
+["boosting",34,"33:\tlearn: 0.0464942\ttotal: 166ms\tremaining: 29.4ms",[["train_loss",0.0464942,33.0,33,34]],false,[33.0,33,null]],
+["boosting",35,"34:\tlearn: 0.0463770\ttotal: 167ms\tremaining: 23.9ms",[["train_loss",0.046377,34.0,34,35]],false,[34.0,34,null]],
+["boosting",36,"35:\tlearn: 0.0439995\ttotal: 168ms\tremaining: 18.6ms",[["train_loss",0.0439995,35.0,35,36]],false,[35.0,35,null]],
+["boosting",37,"36:\tlearn: 0.0423710\ttotal: 168ms\tremaining: 13.6ms",[["train_loss",0.042371,36.0,36,37]],false,[36.0,36,null]],
+["boosting",38,"37:\tlearn: 0.0411832\ttotal: 169ms\tremaining: 8.91ms",[["train_loss",0.0411832,37.0,37,38]],false,[37.0,37,null]],
+["boosting",39,"38:\tlearn: 0.0398565\ttotal: 170ms\tremaining: 4.36ms",[["train_loss",0.0398565,38.0,38,39]],false,[38.0,38,null]],
+["boosting",40,"39:\tlearn: 0.0383251\ttotal: 171ms\tremaining: 0us",[["train_loss",0.0383251,39.0,39,40]],false,[39.0,39,null]],
+["boosting",41,"",[],false,[39.0,39,null]],
+["boosting","flush",[]]
+]}
+],
 "tests/integration/test_parsers_read_their_logs.py::test_the_chosen_parser_reads_the_log_alone[catboost_real_regressor.log]":[
 {"start":[null,null,null],"events":[
 ["boosting",1,"0:\tlearn: 75.1450310\ttest: 69.8618753\tbest: 69.8618753 (0)\ttotal: 136ms\tremaining: 40.7s",[],true,[0.0,0,null]],
@@ -165,6 +211,56 @@
 ["boosting",62,"",[],false,[56.0,56,null]],
 ["boosting",63,"Shrink model to first 42 iterations.",[],false,[56.0,56,null]],
 ["boosting",64,"",[],false,[56.0,56,null]],
+["boosting","flush",[]]
+]}
+],
+"tests/integration/test_parsers_read_their_logs.py::test_the_chosen_parser_reads_the_log_alone[catboost_real_two_eval_sets.log]":[
+{"start":[null,null,null],"events":[
+["boosting",1,"0:\tlearn: 75.1450310\ttest: 63.0984495\ttest1: 75.9202908\tbest: 75.9202908 (0)\ttotal: 130ms\tremaining: 5.08s",[],true,[0.0,0,null]],
+["boosting",2,"1:\tlearn: 72.5961825\ttest: 61.0628387\ttest1: 73.4582320\tbest: 73.4582320 (1)\ttotal: 131ms\tremaining: 2.49s",[["train_loss",75.145031,0.0,0,1],["eval0_loss",63.0984495,0.0,0,1],["val_loss",75.9202908,0.0,0,1],["train_loss",72.5961825,1.0,1,2],["eval0_loss",61.0628387,1.0,1,2],["val_loss",73.458232,1.0,1,2]],false,[1.0,1,null]],
+["boosting",3,"2:\tlearn: 70.2845820\ttest: 59.9127537\ttest1: 71.7711451\tbest: 71.7711451 (2)\ttotal: 131ms\tremaining: 1.62s",[["train_loss",70.284582,2.0,2,3],["eval0_loss",59.9127537,2.0,2,3],["val_loss",71.7711451,2.0,2,3]],false,[2.0,2,null]],
+["boosting",4,"3:\tlearn: 68.1605187\ttest: 58.7542493\ttest1: 70.0283659\tbest: 70.0283659 (3)\ttotal: 132ms\tremaining: 1.19s",[["train_loss",68.1605187,3.0,3,4],["eval0_loss",58.7542493,3.0,3,4],["val_loss",70.0283659,3.0,3,4]],false,[3.0,3,null]],
+["boosting",5,"4:\tlearn: 66.4249646\ttest: 57.7283899\ttest1: 69.1117220\tbest: 69.1117220 (4)\ttotal: 132ms\tremaining: 925ms",[["train_loss",66.4249646,4.0,4,5],["eval0_loss",57.7283899,4.0,4,5],["val_loss",69.111722,4.0,4,5]],false,[4.0,4,null]],
+["boosting",6,"5:\tlearn: 64.5356670\ttest: 56.5741095\ttest1: 67.1506400\tbest: 67.1506400 (5)\ttotal: 132ms\tremaining: 750ms",[["train_loss",64.535667,5.0,5,6],["eval0_loss",56.5741095,5.0,5,6],["val_loss",67.15064,5.0,5,6]],false,[5.0,5,null]],
+["boosting",7,"6:\tlearn: 63.0419398\ttest: 55.9552018\ttest1: 65.8077813\tbest: 65.8077813 (6)\ttotal: 133ms\tremaining: 626ms",[["train_loss",63.0419398,6.0,6,7],["eval0_loss",55.9552018,6.0,6,7],["val_loss",65.8077813,6.0,6,7]],false,[6.0,6,null]],
+["boosting",8,"7:\tlearn: 61.7839010\ttest: 55.6049756\ttest1: 65.2511839\tbest: 65.2511839 (7)\ttotal: 133ms\tremaining: 532ms",[["train_loss",61.783901,7.0,7,8],["eval0_loss",55.6049756,7.0,7,8],["val_loss",65.2511839,7.0,7,8]],false,[7.0,7,null]],
+["boosting",9,"8:\tlearn: 60.5983866\ttest: 55.6282422\ttest1: 64.3342606\tbest: 64.3342606 (8)\ttotal: 133ms\tremaining: 460ms",[["train_loss",60.5983866,8.0,8,9],["eval0_loss",55.6282422,8.0,8,9],["val_loss",64.3342606,8.0,8,9]],false,[8.0,8,null]],
+["boosting",10,"9:\tlearn: 59.4103538\ttest: 55.5380844\ttest1: 63.8332835\tbest: 63.8332835 (9)\ttotal: 134ms\tremaining: 401ms",[["train_loss",59.4103538,9.0,9,10],["eval0_loss",55.5380844,9.0,9,10],["val_loss",63.8332835,9.0,9,10]],false,[9.0,9,null]],
+["boosting",11,"10:\tlearn: 58.3589668\ttest: 55.1948091\ttest1: 63.4382060\tbest: 63.4382060 (10)\ttotal: 134ms\tremaining: 353ms",[["train_loss",58.3589668,10.0,10,11],["eval0_loss",55.1948091,10.0,10,11],["val_loss",63.438206,10.0,10,11]],false,[10.0,10,null]],
+["boosting",12,"11:\tlearn: 57.5595956\ttest: 54.9150118\ttest1: 62.7321418\tbest: 62.7321418 (11)\ttotal: 134ms\tremaining: 313ms",[["train_loss",57.5595956,11.0,11,12],["eval0_loss",54.9150118,11.0,11,12],["val_loss",62.7321418,11.0,11,12]],false,[11.0,11,null]],
+["boosting",13,"12:\tlearn: 56.7972182\ttest: 54.8238950\ttest1: 61.9138189\tbest: 61.9138189 (12)\ttotal: 135ms\tremaining: 279ms",[["train_loss",56.7972182,12.0,12,13],["eval0_loss",54.823895,12.0,12,13],["val_loss",61.9138189,12.0,12,13]],false,[12.0,12,null]],
+["boosting",14,"13:\tlearn: 56.1873539\ttest: 54.7117242\ttest1: 61.2819200\tbest: 61.2819200 (13)\ttotal: 135ms\tremaining: 251ms",[["train_loss",56.1873539,13.0,13,14],["eval0_loss",54.7117242,13.0,13,14],["val_loss",61.28192,13.0,13,14]],false,[13.0,13,null]],
+["boosting",15,"14:\tlearn: 55.3916359\ttest: 54.3263441\ttest1: 61.0851647\tbest: 61.0851647 (14)\ttotal: 135ms\tremaining: 225ms",[["train_loss",55.3916359,14.0,14,15],["eval0_loss",54.3263441,14.0,14,15],["val_loss",61.0851647,14.0,14,15]],false,[14.0,14,null]],
+["boosting",16,"15:\tlearn: 54.6651221\ttest: 54.0916817\ttest1: 60.4621166\tbest: 60.4621166 (15)\ttotal: 135ms\tremaining: 203ms",[["train_loss",54.6651221,15.0,15,16],["eval0_loss",54.0916817,15.0,15,16],["val_loss",60.4621166,15.0,15,16]],false,[15.0,15,null]],
+["boosting",17,"16:\tlearn: 54.1336783\ttest: 53.8874067\ttest1: 60.1897988\tbest: 60.1897988 (16)\ttotal: 136ms\tremaining: 184ms",[["train_loss",54.1336783,16.0,16,17],["eval0_loss",53.8874067,16.0,16,17],["val_loss",60.1897988,16.0,16,17]],false,[16.0,16,null]],
+["boosting",18,"17:\tlearn: 53.6566203\ttest: 53.7197075\ttest1: 59.7297961\tbest: 59.7297961 (17)\ttotal: 136ms\tremaining: 166ms",[["train_loss",53.6566203,17.0,17,18],["eval0_loss",53.7197075,17.0,17,18],["val_loss",59.7297961,17.0,17,18]],false,[17.0,17,null]],
+["boosting",19,"18:\tlearn: 53.1901705\ttest: 53.5676186\ttest1: 59.5227487\tbest: 59.5227487 (18)\ttotal: 136ms\tremaining: 151ms",[["train_loss",53.1901705,18.0,18,19],["eval0_loss",53.5676186,18.0,18,19],["val_loss",59.5227487,18.0,18,19]],false,[18.0,18,null]],
+["boosting",20,"19:\tlearn: 52.7456660\ttest: 53.5999476\ttest1: 59.3515117\tbest: 59.3515117 (19)\ttotal: 137ms\tremaining: 137ms",[["train_loss",52.745666,19.0,19,20],["eval0_loss",53.5999476,19.0,19,20],["val_loss",59.3515117,19.0,19,20]],false,[19.0,19,null]],
+["boosting",21,"20:\tlearn: 52.3289694\ttest: 53.5601701\ttest1: 58.8046048\tbest: 58.8046048 (20)\ttotal: 137ms\tremaining: 124ms",[["train_loss",52.3289694,20.0,20,21],["eval0_loss",53.5601701,20.0,20,21],["val_loss",58.8046048,20.0,20,21]],false,[20.0,20,null]],
+["boosting",22,"21:\tlearn: 52.0119775\ttest: 53.4851643\ttest1: 58.6379042\tbest: 58.6379042 (21)\ttotal: 137ms\tremaining: 112ms",[["train_loss",52.0119775,21.0,21,22],["eval0_loss",53.4851643,21.0,21,22],["val_loss",58.6379042,21.0,21,22]],false,[21.0,21,null]],
+["boosting",23,"22:\tlearn: 51.6551246\ttest: 53.4936051\ttest1: 58.4567583\tbest: 58.4567583 (22)\ttotal: 138ms\tremaining: 102ms",[["train_loss",51.6551246,22.0,22,23],["eval0_loss",53.4936051,22.0,22,23],["val_loss",58.4567583,22.0,22,23]],false,[22.0,22,null]],
+["boosting",24,"23:\tlearn: 51.3755584\ttest: 53.3689577\ttest1: 58.2144549\tbest: 58.2144549 (23)\ttotal: 138ms\tremaining: 92ms",[["train_loss",51.3755584,23.0,23,24],["eval0_loss",53.3689577,23.0,23,24],["val_loss",58.2144549,23.0,23,24]],false,[23.0,23,null]],
+["boosting",25,"24:\tlearn: 50.9018753\ttest: 53.5439532\ttest1: 57.9238479\tbest: 57.9238479 (24)\ttotal: 138ms\tremaining: 83ms",[["train_loss",50.9018753,24.0,24,25],["eval0_loss",53.5439532,24.0,24,25],["val_loss",57.9238479,24.0,24,25]],false,[24.0,24,null]],
+["boosting",26,"25:\tlearn: 50.5870997\ttest: 53.5583957\ttest1: 57.8318467\tbest: 57.8318467 (25)\ttotal: 139ms\tremaining: 74.8ms",[["train_loss",50.5870997,25.0,25,26],["eval0_loss",53.5583957,25.0,25,26],["val_loss",57.8318467,25.0,25,26]],false,[25.0,25,null]],
+["boosting",27,"26:\tlearn: 50.3155068\ttest: 53.5892566\ttest1: 57.8728022\tbest: 57.8318467 (25)\ttotal: 139ms\tremaining: 67ms",[["train_loss",50.3155068,26.0,26,27],["eval0_loss",53.5892566,26.0,26,27],["val_loss",57.8728022,26.0,26,27]],false,[26.0,26,null]],
+["boosting",28,"27:\tlearn: 50.0100192\ttest: 53.4874374\ttest1: 58.1026475\tbest: 57.8318467 (25)\ttotal: 139ms\tremaining: 59.8ms",[["train_loss",50.0100192,27.0,27,28],["eval0_loss",53.4874374,27.0,27,28],["val_loss",58.1026475,27.0,27,28]],false,[27.0,27,null]],
+["boosting",29,"28:\tlearn: 49.6591742\ttest: 53.5753752\ttest1: 57.9251081\tbest: 57.8318467 (25)\ttotal: 140ms\tremaining: 53ms",[["train_loss",49.6591742,28.0,28,29],["eval0_loss",53.5753752,28.0,28,29],["val_loss",57.9251081,28.0,28,29]],false,[28.0,28,null]],
+["boosting",30,"29:\tlearn: 49.4150905\ttest: 53.6018734\ttest1: 57.8438410\tbest: 57.8318467 (25)\ttotal: 140ms\tremaining: 46.7ms",[["train_loss",49.4150905,29.0,29,30],["eval0_loss",53.6018734,29.0,29,30],["val_loss",57.843841,29.0,29,30]],false,[29.0,29,null]],
+["boosting",31,"30:\tlearn: 49.2523336\ttest: 53.6777296\ttest1: 57.8427232\tbest: 57.8318467 (25)\ttotal: 140ms\tremaining: 40.8ms",[["train_loss",49.2523336,30.0,30,31],["eval0_loss",53.6777296,30.0,30,31],["val_loss",57.8427232,30.0,30,31]],false,[30.0,30,null]],
+["boosting",32,"31:\tlearn: 48.9809112\ttest: 53.6565103\ttest1: 57.7207908\tbest: 57.7207908 (31)\ttotal: 141ms\tremaining: 35.2ms",[["train_loss",48.9809112,31.0,31,32],["eval0_loss",53.6565103,31.0,31,32],["val_loss",57.7207908,31.0,31,32]],false,[31.0,31,null]],
+["boosting",33,"32:\tlearn: 48.6698689\ttest: 53.6612356\ttest1: 57.5808941\tbest: 57.5808941 (32)\ttotal: 141ms\tremaining: 30ms",[["train_loss",48.6698689,32.0,32,33],["eval0_loss",53.6612356,32.0,32,33],["val_loss",57.5808941,32.0,32,33]],false,[32.0,32,null]],
+["boosting",34,"33:\tlearn: 48.4879372\ttest: 53.5620195\ttest1: 57.5245707\tbest: 57.5245707 (33)\ttotal: 142ms\tremaining: 25ms",[["train_loss",48.4879372,33.0,33,34],["eval0_loss",53.5620195,33.0,33,34],["val_loss",57.5245707,33.0,33,34]],false,[33.0,33,null]],
+["boosting",35,"34:\tlearn: 48.1629500\ttest: 53.4100152\ttest1: 57.8123743\tbest: 57.5245707 (33)\ttotal: 142ms\tremaining: 20.3ms",[["train_loss",48.16295,34.0,34,35],["eval0_loss",53.4100152,34.0,34,35],["val_loss",57.8123743,34.0,34,35]],false,[34.0,34,null]],
+["boosting",36,"35:\tlearn: 48.0280986\ttest: 53.4046017\ttest1: 57.7556191\tbest: 57.5245707 (33)\ttotal: 143ms\tremaining: 15.8ms",[["train_loss",48.0280986,35.0,35,36],["eval0_loss",53.4046017,35.0,35,36],["val_loss",57.7556191,35.0,35,36]],false,[35.0,35,null]],
+["boosting",37,"36:\tlearn: 47.8392447\ttest: 53.4412123\ttest1: 57.7224606\tbest: 57.5245707 (33)\ttotal: 143ms\tremaining: 11.6ms",[["train_loss",47.8392447,36.0,36,37],["eval0_loss",53.4412123,36.0,36,37],["val_loss",57.7224606,36.0,36,37]],false,[36.0,36,null]],
+["boosting",38,"37:\tlearn: 47.6362137\ttest: 53.6030393\ttest1: 57.4328115\tbest: 57.4328115 (37)\ttotal: 143ms\tremaining: 7.54ms",[["train_loss",47.6362137,37.0,37,38],["eval0_loss",53.6030393,37.0,37,38],["val_loss",57.4328115,37.0,37,38]],false,[37.0,37,null]],
+["boosting",39,"38:\tlearn: 47.4075065\ttest: 53.5361236\ttest1: 57.2336188\tbest: 57.2336188 (38)\ttotal: 144ms\tremaining: 3.68ms",[["train_loss",47.4075065,38.0,38,39],["eval0_loss",53.5361236,38.0,38,39],["val_loss",57.2336188,38.0,38,39]],false,[38.0,38,null]],
+["boosting",40,"39:\tlearn: 47.1113613\ttest: 53.5019095\ttest1: 57.2020078\tbest: 57.2020078 (39)\ttotal: 144ms\tremaining: 0us",[["train_loss",47.1113613,39.0,39,40],["eval0_loss",53.5019095,39.0,39,40],["val_loss",57.2020078,39.0,39,40]],false,[39.0,39,null]],
+["boosting",41,"",[],false,[39.0,39,null]],
+["boosting",42,"bestTest = 57.20200783",[],true,[39.0,39,null]],
+["boosting",43,"bestIteration = 39",[],true,[39.0,39,null]],
+["boosting",44,"",[],false,[39.0,39,null]],
+["boosting",45,"",[],false,[39.0,39,null]],
 ["boosting","flush",[]]
 ]}
 ],
@@ -3992,6 +4088,12 @@
 "tests/unit/test_classical_ml.py::TestBoosting::test_catboost_s_closing_summary_is_claimed[bestTest = 0.9926624738]":[
 {"start":[null,null,null],"events":[
 ["boosting",0,"bestTest = 0.9926624738",[],true,[null,null,null]]
+]}
+],
+"tests/unit/test_classical_ml.py::TestBoosting::test_catboost_s_last_eval_set_is_the_validation_curve":[
+{"start":[null,null,null],"events":[
+["boosting",0,"0:\tlearn: 75.1450310\ttest: 63.0984495\ttest1: 75.9202908\tbest: 75.9202908 (0)\ttotal: 130ms\tremaining: 5.08s",[],true,[0.0,0,null]],
+["boosting",0,"1:\tlearn: 72.5961825\ttest: 61.0628387\ttest1: 73.4582320\tbest: 73.4582320 (1)\ttotal: 131ms\tremaining: 2.49s",[["train_loss",75.145031,0.0,0,0],["eval0_loss",63.0984495,0.0,0,0],["val_loss",75.9202908,0.0,0,0],["train_loss",72.5961825,1.0,1,0],["eval0_loss",61.0628387,1.0,1,0],["val_loss",73.458232,1.0,1,0]],false,[1.0,1,null]]
 ]}
 ],
 "tests/unit/test_classical_ml.py::TestBoosting::test_catboost_s_timing_tail_is_not_a_metric":[

@@ -50,6 +50,22 @@
   "final_grade_basis": "improvement",
   "final_phase": "understanding"
  },
+ "catboost_real_no_eval_set.log": {
+  "path": "tests/fixtures/logs/catboost_real_no_eval_set.log",
+  "task": "custom",
+  "metric": "train_loss",
+  "frames": 40,
+  "last_value": 0.0383,
+  "keys": [
+   "train_loss"
+  ],
+  "metric_from_epoch": 0.0,
+  "grade_note": "still_improving",
+  "cross_validation": null,
+  "final_grade": "A+",
+  "final_grade_basis": "improvement",
+  "final_phase": "mastering"
+ },
  "catboost_real_regressor.log": {
   "path": "tests/fixtures/logs/catboost_real_regressor.log",
   "task": "custom",
@@ -62,6 +78,24 @@
   ],
   "metric_from_epoch": 0.0,
   "grade_note": null,
+  "cross_validation": null,
+  "final_grade": "B-",
+  "final_grade_basis": "improvement",
+  "final_phase": "learning"
+ },
+ "catboost_real_two_eval_sets.log": {
+  "path": "tests/fixtures/logs/catboost_real_two_eval_sets.log",
+  "task": "custom",
+  "metric": "val_loss",
+  "frames": 40,
+  "last_value": 57.202,
+  "keys": [
+   "eval0_loss",
+   "train_loss",
+   "val_loss"
+  ],
+  "metric_from_epoch": 0.0,
+  "grade_note": "still_improving",
   "cross_validation": null,
   "final_grade": "B-",
   "final_grade_basis": "improvement",

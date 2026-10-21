@@ -71,6 +71,7 @@ _CATBOOST_SUMMARY = re.compile(r"^\s*best(?:Test|Iteration)\s*=", re.IGNORECASE)
 # a name that claims no direction, so a live run is never held for good.
 _CATBOOST_HOLD_ROUNDS = 10
 _UNNAMED = ""
+_NUMBERED_SPLIT = re.compile(r"([a-z]{1,16}?)(\d{1,3})")
 
 # How each library names the split. Order matters: "validation" must be tested
 # before "valid", and "training" before "train".
@@ -101,6 +102,11 @@ def _dissect(name: str) -> tuple[str | None, int | None, str]:
         # the metric's name nowhere on the line. Naming it after the split
         # ("learn") would chart a metric called learn; what it is called
         # depends on which way it runs, which later rows say (_catboost_name).
+        # A second eval set is "test1", a third "test2": the number is its
+        # position after the first.
+        numbered = _NUMBERED_SPLIT.fullmatch(head)
+        if numbered is not None:
+            head, index = numbered.group(1), int(numbered.group(2))
         if any(head.startswith(t) for t in _VALIDATION_TOKENS):
             return "val", index, _UNNAMED
         if any(head.startswith(t) for t in _TRAIN_TOKENS):
@@ -182,6 +188,21 @@ def _catboost_name(test: float | None, best: float | None, last: float | None) -
 _Row = list[tuple[str | None, int | None, str, float]]
 
 
+def _last_eval_set(found: _Row) -> int | None:
+    """Position of the last of CatBoost's eval sets on a row ("test" is 0)."""
+    positions = [i or 0 for s, i, mt, _ in found if s == "val" and mt == _UNNAMED]
+    return max(positions, default=None)
+
+
+def _catboost_validation(found: _Row) -> float | None:
+    """The value CatBoost's running best follows: its last eval set's."""
+    last = _last_eval_set(found)
+    return next(
+        (v for s, i, mt, v in found if s == "val" and mt == _UNNAMED and (i or 0) == last),
+        None,
+    )
+
+
 @register_parser
 class BoostingParser:
     """XGBoost / LightGBM / CatBoost round-by-round evaluation rows."""
@@ -256,7 +277,7 @@ class BoostingParser:
                 # objective being minimised.
                 name = "loss"
             else:
-                test = next((v for s, _, mt, v in found if s == "val" and mt == _UNNAMED), None)
+                test = _catboost_validation(found)
                 last = cast("float | None", ctx.extra.get("catboost_last"))
                 name = _catboost_name(test, best, last)
                 ctx.extra["catboost_last"] = test
@@ -281,8 +302,22 @@ class BoostingParser:
         return [metric for seq, r, row in rows for metric in self._named(row, "metric", seq, r)]
 
     def _named(self, found: _Row, name: str, seq: int, rnd: float) -> list[RawMetric]:
-        named = [(s, i, name if mt == _UNNAMED else mt, v) for s, i, mt, v in found]
-        return self._emit(_resolve_positions(named), seq, rnd)
+        # CatBoost's eval sets are test, test1, test2...; its running best and
+        # overfitting detector follow the last, so that one is the validation
+        # curve and the others are told by position. Taken as XGBoost's
+        # positional sets, the first would have been called training — and
+        # learn already is.
+        last = _last_eval_set(found)
+        resolved: list[tuple[str, float]] = []
+        others: _Row = []
+        for split, index, metric, value in found:
+            if metric != _UNNAMED:
+                others.append((split, index, metric, value))
+            elif split == "val" and (index or 0) != last:
+                resolved.append((f"eval{index or 0}_{name}", value))
+            else:
+                resolved.append((f"{split}_{name}", value))
+        return self._emit(resolved + _resolve_positions(others), seq, rnd)
 
     def _emit(self, resolved: list[tuple[str, float]], seq: int, rnd: float) -> list[RawMetric]:
         metrics: list[RawMetric] = []

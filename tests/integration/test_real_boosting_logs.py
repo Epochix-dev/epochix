@@ -42,6 +42,8 @@ LGB_CLASSIFIER = LOGS / "lightgbm_real_classifier.log"
 LGB_EARLY_STOP = LOGS / "lightgbm_real_early_stopping.log"
 CB_CLASSIFIER = LOGS / "catboost_real_classifier.log"
 CB_REGRESSOR = LOGS / "catboost_real_regressor.log"
+CB_TWO_EVAL_SETS = LOGS / "catboost_real_two_eval_sets.log"
+CB_NO_EVAL_SET = LOGS / "catboost_real_no_eval_set.log"
 XGB_CLASSIFIER = LOGS / "xgboost_real_classifier.log"
 
 
@@ -158,3 +160,23 @@ def test_catboost_s_overfitting_detector_run_ends_where_it_stopped() -> None:
     # Rounds 0-56: the best was round 41, and the detector waited 15 more.
     assert [f.epoch for f in frames] == [float(r) for r in range(57)]
     assert frames[-1].primary_metric_value == pytest.approx(55.4836303)
+
+
+def test_catboost_with_two_eval_sets_is_told_on_the_one_it_tracks() -> None:
+    text = CB_TWO_EVAL_SETS.read_text(encoding="utf-8")
+    assert "test1:" in text and "bestTest = 57.20200783" in text, "the fixture changed"
+    run, frames = _told(CB_TWO_EVAL_SETS)
+    # The second set is the one CatBoost's best (and overfitting detector)
+    # follows; read as a score off the first, this run was graded F.
+    assert run.primary_metric == "val_loss"
+    assert [f.epoch for f in frames] == [float(r) for r in range(40)]
+    assert frames[-1].primary_metric_value == pytest.approx(57.2020078)
+    assert "F" not in {f.grade.value for f in frames}
+
+
+def test_catboost_without_an_eval_set_is_told_on_its_training_loss() -> None:
+    assert "test:" not in CB_NO_EVAL_SET.read_text(encoding="utf-8")
+    run, frames = _told(CB_NO_EVAL_SET)
+    assert run.primary_metric == "train_loss"
+    assert [f.epoch for f in frames] == [float(r) for r in range(40)]
+    assert frames[-1].primary_metric_value == pytest.approx(0.0383251)
