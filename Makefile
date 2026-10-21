@@ -51,7 +51,7 @@ land:
 # changing any of them; tests/unit/test_ts_engine_tables_sync.py fails until
 # the generated files are committed.
 gen-ts-tables:
-	uv run python scripts/gen_ts_engine_tables.py
+	uv run --extra dev python scripts/gen_ts_engine_tables.py
 
 build-frontend:
 	cd frontend && npm ci && npm run build

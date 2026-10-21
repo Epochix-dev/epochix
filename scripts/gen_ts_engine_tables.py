@@ -10,7 +10,9 @@ and grade depending on which engine read it.
 So the tables — and the narrative templates, which were English-only in the
 extension — are no longer ported; they are generated from the Python source,
 and `tests/unit/test_ts_engine_tables_sync.py` fails when a committed file is
-stale.
+stale. The parsers themselves are still ported by hand; what this writes for
+them is a golden of every call the Python tests make to one, recorded by
+running those tests (so it needs the dev extras: `make gen-ts-tables`).
 
     python scripts/gen_ts_engine_tables.py          # rewrite the generated files
     python scripts/gen_ts_engine_tables.py --check  # exit 1 if it is stale
@@ -19,8 +21,14 @@ stale.
 from __future__ import annotations
 
 import json
+import math
+import os
+import re
+import subprocess
 import sys
+import tempfile
 from pathlib import Path
+from typing import Any
 
 REPO = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO / "src"))
@@ -30,7 +38,8 @@ from epochix.enums import Grade, Phase, TaskType  # noqa: E402
 from epochix.normalizer import canonical_keys as ck  # noqa: E402
 from epochix.parsers import architecture_parser as arch  # noqa: E402
 from epochix.parsers._never_metrics import NEVER_METRICS, VALUE_DECIDES  # noqa: E402
-from epochix.parsers.registry import SNIFF_SAMPLE_LINES, SNIFF_THRESHOLD  # noqa: E402
+from epochix.parsers.base import LINE_CLAIMED, ParserContext  # noqa: E402
+from epochix.parsers.registry import SNIFF_SAMPLE_LINES, SNIFF_THRESHOLD, get_registry  # noqa: E402
 from epochix.parsers import universal as universal_parser  # noqa: E402
 from epochix.parsers.universal import _NN_REPR_KWARGS  # noqa: E402
 from epochix.story_engine import (  # noqa: E402  # noqa: E402  # noqa: E402
@@ -63,6 +72,17 @@ GRADING_GOLDEN = REPO / "epochix-vscode" / "src" / "test" / "fixtures" / "gradin
 # What the Python loader makes of a set of .epochix.yaml files, and which bands
 # it then applies to which metric. The extension's loader replays it.
 CONFIG_GOLDEN = REPO / "epochix-vscode" / "src" / "test" / "fixtures" / "gradeConfig.golden.json"
+# Every call a Python test makes to a parser directly, and what it returned
+# (scripts/parser_recorder.py). The parsers are ported, not generated, and the
+# ports drifted; the extension compared only whole logs, through its whole
+# engine, so a line one parser read differently could hide behind another.
+# Its test replays every recorded line through its own parser.
+PARSERS_GOLDEN = REPO / "epochix-vscode" / "src" / "test" / "fixtures" / "parsers.golden.json"
+# Random input and lines megabytes long are not samples worth replaying, and
+# the LLM fallback has no port in the extension.
+_UNRECORDED_TESTS = frozenset(
+    {"test_fuzz_parsers.py", "test_parser_redos.py", "test_llm_fallback.py"}
+)
 
 _BASES = (
     "mae", "rmse", "mse", "r2", "mape", "l1", "l2", "loss", "accuracy", "acc", "iou", "miou",
@@ -699,6 +719,128 @@ def render_config_golden() -> str:
     return json.dumps(cases, indent=1, ensure_ascii=False, sort_keys=True) + "\n"
 
 
+def _recorded_test_files() -> list[str]:
+    """The test files that call a parser themselves."""
+    files = []
+    for folder in ("unit", "integration"):
+        for path in sorted((REPO / "tests" / folder).glob("test_*.py")):
+            if path.name in _UNRECORDED_TESTS:
+                continue
+            if re.search(r"\.(?:parse_line|sniff)\(", path.read_text(encoding="utf-8")):
+                files.append(path.relative_to(REPO).as_posix())
+    return files
+
+
+def render_parsers_golden() -> str:
+    """Run the parser tests with the recorder, and keep what it saw."""
+    with tempfile.TemporaryDirectory() as tmp:
+        recording = Path(tmp) / "recording.json"
+        path = [str(REPO / "scripts"), str(REPO / "src"), os.environ.get("PYTHONPATH", "")]
+        env = {
+            **os.environ,
+            "EPOCHIX_PARSER_RECORDING": str(recording),
+            "PYTHONPATH": os.pathsep.join(p for p in path if p),
+        }
+        plugins = ["-p", "parser_recorder", "-p", "no:cacheprovider"]
+        done = subprocess.run(
+            [sys.executable, "-m", "pytest", *plugins, *_recorded_test_files()],
+            cwd=REPO,
+            env=env,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        if done.returncode != 0 or not recording.exists():
+            raise SystemExit("the parser tests failed; nothing recorded\n" + done.stdout[-4000:])
+        result = json.loads(recording.read_text(encoding="utf-8"))
+    if result["skipped"]:
+        raise SystemExit(
+            f"{result['skipped']} parser context(s) reached a parser already carrying extra "
+            "state, which the extension's context cannot be given: start them empty"
+        )
+    return _dump_parsers_golden(result["tests"])
+
+
+def _compact(value: object) -> str:
+    return json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+
+
+def _event_row(event: dict[str, Any]) -> list[Any]:
+    """A call as a row: [parser, seq, line, out, claimed, [epoch, step,
+    total_epochs] after it], or [parser, "flush", out]."""
+    if event.get("flush"):
+        return [event["parser"], "flush", event["out"]]
+    keys = ("parser", "seq", "line", "out", "claimed", "state")
+    return [event[k] for k in keys]
+
+
+def _dump_parsers_golden(tests: dict[str, list[dict[str, Any]]]) -> str:
+    """One line per parser call, as a row rather than an object: a third of
+    the size, and a changed answer shows in a diff as the one line it is."""
+    nodes = []
+    for node in sorted(tests):
+        sequences = []
+        for sequence in tests[node]:
+            if "sniff" in sequence:
+                sequences.append(_compact(sequence))
+                continue
+            rows = ",\n".join(_compact(_event_row(e)) for e in sequence["events"])
+            sequences.append(f'{{"start":{_compact(sequence["start"])},"events":[\n{rows}\n]}}')
+        nodes.append(f"{_compact(node)}:[\n" + ",\n".join(sequences) + "\n]")
+    return "{\n" + ",\n".join(nodes) + "\n}\n"
+
+
+def _golden_number(v: float | str | None) -> float | str | None:
+    if v is None or isinstance(v, str) or math.isfinite(v):
+        return v
+    return "nan" if math.isnan(v) else ("inf" if v > 0 else "-inf")
+
+
+def replay_parsers_golden(golden: dict[str, list[dict[str, Any]]]) -> list[str]:
+    """Feed the golden back to the Python parsers; every difference, described.
+
+    Re-recording means running the parser tests; this is the quick check that
+    the committed file is still what the parsers answer.
+    """
+    kinds = {p.name: type(p) for p in get_registry()}
+    wrong: list[str] = []
+    for node, sequences in golden.items():
+        for n, sequence in enumerate(sequences):
+            where = f"{node} #{n}"
+            if "sniff" in sequence:
+                got = kinds[sequence["sniff"]]().sniff(sequence["lines"])
+                if got != sequence["score"]:
+                    wrong.append(f"{where}: sniff {got} != {sequence['score']}")
+                continue
+            epoch, step, total = sequence["start"]
+            ctx = ParserContext(
+                run_id="golden", current_epoch=epoch, current_step=step, total_epochs=total
+            )
+            parsers: dict[str, Any] = {}
+            for row in sequence["events"]:
+                parser = parsers.setdefault(row[0], kinds[row[0]]())
+                if row[1] == "flush":
+                    out, want, line = parser.flush(ctx), row[2], "flush"
+                else:
+                    _, ctx.seq, line, want, want_claimed, want_state = row
+                    ctx.extra.pop(LINE_CLAIMED, None)
+                    out = parser.parse_line(line, ctx)
+                    claimed = bool(ctx.extra.get(LINE_CLAIMED))
+                    state = [_golden_number(ctx.current_epoch), ctx.current_step, ctx.total_epochs]
+                    if (claimed, state) != (want_claimed, want_state):
+                        wrong.append(
+                            f"{where} {line!r}: claimed/state "
+                            f"{claimed, state} != {want_claimed, want_state}"
+                        )
+                got = [
+                    [m.key, _golden_number(m.value), _golden_number(m.epoch), m.step, m.seq]
+                    for m in out
+                ]
+                if got != want:
+                    wrong.append(f"{where} {line!r}: {got} != {want}")
+    return wrong
+
+
 def main() -> int:
     outputs = {
         TARGET: render(),
@@ -708,6 +850,7 @@ def main() -> int:
         GRADING_GOLDEN: render_grading_golden(),
         CONFIG_GOLDEN: render_config_golden(),
         ARCH_GOLDEN: render_arch_golden(),
+        PARSERS_GOLDEN: render_parsers_golden(),
     }
     if "--check" in sys.argv:
         stale = [
