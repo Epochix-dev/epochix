@@ -270,7 +270,9 @@
   "tests/fixtures/logs/accelerate_real.log": [],
   "tests/fixtures/logs/ansi_colors.log": [],
   "tests/fixtures/logs/catboost_real_classifier.log": [],
+  "tests/fixtures/logs/catboost_real_no_eval_set.log": [],
   "tests/fixtures/logs/catboost_real_regressor.log": [],
+  "tests/fixtures/logs/catboost_real_two_eval_sets.log": [],
   "tests/fixtures/logs/detection_coco.log": [
    [
     "YOLOv8n",

@@ -67,6 +67,34 @@ elif which == "cb_clf":
         allow_writing_files=False,
     )
     model.fit(xt, yt, eval_set=(xv, yv), verbose=1)
+elif which == "cb_two_eval_sets":
+    from catboost import CatBoostRegressor
+
+    x, y = load_diabetes(return_X_y=True)
+    xt, xv, yt, yv = train_test_split(x, y, test_size=0.25, random_state=3)
+    xv1, xv2, yv1, yv2 = train_test_split(xv, yv, test_size=0.5, random_state=3)
+    model = CatBoostRegressor(
+        iterations=40,
+        learning_rate=0.1,
+        depth=4,
+        loss_function="RMSE",
+        random_seed=3,
+        allow_writing_files=False,
+    )
+    model.fit(xt, yt, eval_set=[(xv1, yv1), (xv2, yv2)], verbose=1)
+elif which == "cb_no_eval_set":
+    from catboost import CatBoostClassifier
+
+    x, y = load_breast_cancer(return_X_y=True)
+    model = CatBoostClassifier(
+        iterations=40,
+        learning_rate=0.1,
+        depth=4,
+        loss_function="Logloss",
+        random_seed=3,
+        allow_writing_files=False,
+    )
+    model.fit(x, y, verbose=1)
 elif which == "cb_reg":
     from catboost import CatBoostRegressor
 

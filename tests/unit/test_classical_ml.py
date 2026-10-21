@@ -273,6 +273,26 @@ class TestBoosting:
         got = _parse(BoostingParser(), ["0:\tlearn: 0.6798710\ttotal: 52ms\tremaining: 5.1s"])
         assert got == [("train_loss", 0.6798710, 0.0)]
 
+    def test_catboost_s_last_eval_set_is_the_validation_curve(self) -> None:
+        # Real CatBoost output with eval_set=[a, b]: the running best follows
+        # the LAST set. Compared with the first, a falling RMSE was called a
+        # score, and both sets took one name, so the tracked one was dropped.
+        rows = [
+            "0:\tlearn: 75.1450310\ttest: 63.0984495\ttest1: 75.9202908"
+            "\tbest: 75.9202908 (0)\ttotal: 130ms\tremaining: 5.08s",
+            "1:\tlearn: 72.5961825\ttest: 61.0628387\ttest1: 73.4582320"
+            "\tbest: 73.4582320 (1)\ttotal: 131ms\tremaining: 2.49s",
+        ]
+        got = _parse(BoostingParser(), rows)
+        assert got == [
+            ("train_loss", 75.1450310, 0.0),
+            ("eval0_loss", 63.0984495, 0.0),
+            ("val_loss", 75.9202908, 0.0),
+            ("train_loss", 72.5961825, 1.0),
+            ("eval0_loss", 61.0628387, 1.0),
+            ("val_loss", 73.4582320, 1.0),
+        ]
+
     def test_catboost_s_timing_tail_is_not_a_metric(self) -> None:
         got = _parse(
             BoostingParser(),
