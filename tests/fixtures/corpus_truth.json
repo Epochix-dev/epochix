@@ -781,6 +781,25 @@
   "final_grade_basis": "thresholds",
   "final_phase": "mastering"
  },
+ "tqdm_loop_real.log": {
+  "path": "tests/fixtures/logs/tqdm_loop_real.log",
+  "task": "classification",
+  "metric": "val_accuracy",
+  "frames": 12,
+  "last_value": 0.9067,
+  "keys": [
+   "accuracy",
+   "train_loss",
+   "val_accuracy",
+   "val_loss"
+  ],
+  "metric_from_epoch": 1.0,
+  "grade_note": null,
+  "cross_validation": null,
+  "final_grade": "A",
+  "final_grade_basis": "thresholds",
+  "final_phase": "mastering"
+ },
  "universal_20ep.log": {
   "path": "tests/fixtures/logs/universal_20ep.log",
   "task": "classification",

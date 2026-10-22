@@ -423,6 +423,7 @@
   ],
   "tests/fixtures/logs/scientific_notation.log": [],
   "tests/fixtures/logs/single_epoch.log": [],
+  "tests/fixtures/logs/tqdm_loop_real.log": [],
   "tests/fixtures/logs/universal_20ep.log": [],
   "tests/fixtures/logs/universal_kv_colon.log": [],
   "tests/fixtures/logs/xgboost_real_classifier.log": [],

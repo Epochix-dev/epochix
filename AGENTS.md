@@ -108,7 +108,12 @@ npm --prefix epochix-vscode test    # launches a real VS Code host
   paths they use, so record from somewhere like `C:\tmp\epochix_demos` or
   `/tmp/epochix_demos`: two fixtures were committed carrying a scratch
   folder's path and a user name. `test_no_machine_paths.py` scans every
-  tracked file. Do not edit a capture afterwards; record it again.
+  tracked file. Do not edit a capture afterwards; record it again. Each log
+  folder's README lists every log as a recording (with its script) or a
+  hand-written format sample (with the layout it imitates, and whether a
+  library really prints it); `test_fixture_provenance.py` fails on a log in
+  neither list. A sample named after a framework is not that framework's
+  output — `pytorch_lightning_30ep.log` is not Lightning's layout.
 - **A parser that recognises a line and reads nothing from it must claim it.**
   Returning `[]` hands the line to the fallback parsers: the Keras parser
   skipped a partial progress bar and the universal parser read it anyway.
