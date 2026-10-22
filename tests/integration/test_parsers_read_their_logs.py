@@ -40,6 +40,16 @@ TOLD = sorted(name for name, t in TRUTH.items() if t["metric"])
 TOLD_BY_THE_FALLBACKS = {"fingerprint_matching.log", "mixed_frameworks.log"}
 
 
+def _lines(path: Path) -> list[str]:
+    """The log's lines as the ingester reads them: split on newlines only.
+
+    read_text() translates a lone carriage return into a line break, so every
+    redraw of a progress bar came out as a line of its own — a feed the
+    pipeline never gives a parser, where _clean_line keeps a line's last draw.
+    """
+    return path.read_bytes().decode("utf-8").split("\n")
+
+
 def _chosen_parser(path: Path) -> str:
     store = RunStore(":memory:")
     run = asyncio.run(
@@ -62,7 +72,7 @@ def test_the_chosen_parser_reads_the_log_alone(name: str) -> None:
 
     ctx = ParserContext(run_id="p")
     read = []
-    for raw in path.read_text(encoding="utf-8").split("\n"):
+    for raw in _lines(path):
         ctx.seq += 1
         read += parser.parse_line(_clean_line(raw), ctx)
         ctx.extra.pop(LINE_CLAIMED, None)
@@ -83,7 +93,7 @@ def test_the_accelerate_parser_reads_its_own_recording() -> None:
     parser is chosen for it — so without this the Accelerate parser would meet
     no real line here, and its port in the extension none in the replay."""
     path = ROOT / TRUTH["accelerate_real.log"]["path"]
-    lines = path.read_text(encoding="utf-8").splitlines()
+    lines = _lines(path)
     parser = next(p for p in get_registry() if p.name == "accelerate")
     assert parser.sniff(lines) > 0
     ctx = ParserContext(run_id="a")

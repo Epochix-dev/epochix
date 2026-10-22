@@ -17,9 +17,10 @@ The VS Code extension's "Try a Demo Run" plays a fourth recording,
 `epochix-vscode/media/demo.log`: the same Keras script's `fast` variant, a
 larger model on a cosine learning-rate schedule.
 
-Real captures of other libraries' output — XGBoost, LightGBM, the Hugging Face
-`Trainer`, Keras with `verbose=2` — are test fixtures in
-`tests/fixtures/logs/` (`*_real_*.log`), with their scripts beside them.
+Real captures of other libraries' output — XGBoost, LightGBM, CatBoost, the
+Hugging Face `Trainer`, Keras with `verbose=2`, a tqdm loop — are test fixtures
+in `tests/fixtures/logs/`. Its README says which logs there are recordings and
+which script produced each, and which are hand-written format samples.
 
 To record one again, put the data the script's docstring names beside it and
 run it from a neutral folder: the libraries print the paths they use, and the
