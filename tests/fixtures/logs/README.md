@@ -12,12 +12,12 @@ paths they use); never edit a capture by hand.
 
 | Log | The run | Script |
 |---|---|---|
-| `accelerate_real.log` | `accelerator.print({...})` from a small Accelerate loop, 4 epochs. | not kept |
+| `accelerate_real.log` | `accelerator.print({...})` of a dict with the global `step`, from a small loop run through Accelerate 1.15, 4 epochs. | `accelerate_real_source.py` |
 | `catboost_real_classifier.log` | CatBoost classifier, `eval_metric="AUC"`, breast cancer data. | `boosting_real_source.py` (`cb_clf`) |
 | `catboost_real_no_eval_set.log` | CatBoost classifier fitted with no eval set. | `boosting_real_source.py` (`cb_no_eval_set`) |
 | `catboost_real_regressor.log` | CatBoost regressor stopped by its overfitting detector. | `boosting_real_source.py` (`cb_reg`) |
 | `catboost_real_two_eval_sets.log` | CatBoost regressor with two eval sets. | `boosting_real_source.py` (`cb_two_eval_sets`) |
-| `fastai_real.log` | fastai's results table, 4 epochs. | not kept |
+| `fastai_real.log` | fastai 2.8's results table from a tabular learner, 4 epochs. | `fastai_real_source.py` |
 | `huggingface_real_trainer.log` | A small MLP trained with `transformers.Trainer` (transformers 5). | `huggingface_real_source.py` |
 | `keras_real_verbose2.log` | The demo CNN with Keras 3, `verbose=2`. | `../../../demo/keras_image_classifier_source.py` (`steady 2`) |
 | `lightgbm_real_classifier.log` | LightGBM classifier, two eval sets. | `boosting_real_source.py` (`lgb_clf`) |
@@ -26,10 +26,6 @@ paths they use); never edit a capture by hand.
 | `tqdm_loop_real.log` | A hand-written PyTorch loop with a tqdm bar over the training and the validation batches, `set_postfix` carrying the numbers. | `tqdm_loop_real_source.py` |
 | `xgboost_real_classifier.log` | XGBoost classifier, two eval sets, two metrics. | `boosting_real_source.py` (`xgb_clf`) |
 | `yolo_real_ultralytics.log` | Ultralytics 8.4 on coco8, 3 epochs on CPU. | `../../../demo/yolov8_detection_source.py` (`3 coco8 320 cpu`) |
-
-The scripts for `accelerate_real.log` and `fastai_real.log` were not kept
-when they were captured (0.5.16); recording them again needs Accelerate and
-fastai installed.
 
 ## Format samples
 

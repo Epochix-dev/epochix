@@ -83,9 +83,10 @@ def test_every_recording_names_a_script_that_exists() -> None:
         path = re.match(r"`([^`]{1,120})`", script)
         assert path, f"{log}: no script named"
         assert (folder / path.group(1)).resolve().is_file(), f"{log}: {path.group(1)} missing"
-    # The two captured before scripts were kept. A new recording ships with
-    # the script that produced it; this list only shrinks.
-    assert sorted(unkept) == ["accelerate_real.log", "fastai_real.log"]
+    # accelerate_real.log and fastai_real.log were the last two, captured in
+    # 0.5.16 without their scripts and recorded again. A recording ships with
+    # the script that produced it.
+    assert unkept == []
 
 
 def test_the_demo_recordings_have_their_scripts() -> None:
