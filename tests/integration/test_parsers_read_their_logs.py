@@ -99,4 +99,4 @@ def test_the_accelerate_parser_reads_its_own_recording() -> None:
     ctx = ParserContext(run_id="a")
     read = [m for line in lines for m in parser.parse_line(_clean_line(line), ctx)]
     accuracy = [(m.epoch, m.step, m.value) for m in read if m.key == "val_accuracy"]
-    assert accuracy == [(0.0, 10, 0.845), (1.0, 20, 0.855), (2.0, 30, 0.855), (3.0, 40, 0.86)]
+    assert accuracy == [(0.0, 10, 0.2044), (1.0, 20, 0.4289), (2.0, 30, 0.5356), (3.0, 40, 0.6378)]

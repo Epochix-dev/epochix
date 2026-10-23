@@ -113,7 +113,7 @@ def test_fastai_table_keeps_the_accuracy_column(tmp_path: Path) -> None:
     assert run.primary_metric == "val_accuracy"
 
     accs = sorted(m.value for m in metrics if m.canonical_key == "val_accuracy")
-    assert accs == pytest.approx([0.671875, 0.789062, 0.828125, 0.859375]), accs
+    assert accs == pytest.approx([0.937063, 0.979021, 0.993007, 0.993007]), accs
 
 
 ACCEL_LOG = Path(__file__).parents[1] / "fixtures" / "logs" / "accelerate_real.log"
@@ -142,4 +142,4 @@ def test_accelerate_dict_step_is_context_not_a_metric(tmp_path: Path) -> None:
     steps = sorted({m.step for m in metrics if m.step is not None})
     assert steps == [10, 20, 30, 40], steps
     accs = sorted(m.value for m in metrics if m.canonical_key == "val_accuracy")
-    assert accs == pytest.approx([0.845, 0.855, 0.855, 0.86]), accs
+    assert accs == pytest.approx([0.2044, 0.4289, 0.5356, 0.6378]), accs

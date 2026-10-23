@@ -1,20 +1,20 @@
 {
 "tests/integration/test_parsers_read_their_logs.py::test_the_accelerate_parser_reads_its_own_recording":[
-{"lines":["{'loss': 0.516, 'val_loss': 0.5113, 'val_accuracy': 0.845, 'step': 10, 'epoch': 0}\r","{'loss': 0.4013, 'val_loss': 0.4183, 'val_accuracy': 0.855, 'step': 20, 'epoch': 1}\r","{'loss': 0.3579, 'val_loss': 0.3835, 'val_accuracy': 0.855, 'step': 30, 'epoch': 2}\r","{'loss': 0.4048, 'val_loss': 0.3652, 'val_accuracy': 0.86, 'step': 40, 'epoch': 3}\r",""],"score":0.88,"sniff":"accelerate"},
+{"lines":["{'loss': 2.2821, 'val_loss': 2.2546, 'val_accuracy': 0.2044, 'step': 10, 'epoch': 0}\r","{'loss': 2.2259, 'val_loss': 2.1957, 'val_accuracy': 0.4289, 'step': 20, 'epoch': 1}\r","{'loss': 2.1586, 'val_loss': 2.121, 'val_accuracy': 0.5356, 'step': 30, 'epoch': 2}\r","{'loss': 2.0769, 'val_loss': 2.0285, 'val_accuracy': 0.6378, 'step': 40, 'epoch': 3}\r",""],"score":0.88,"sniff":"accelerate"},
 {"start":[null,null,null],"events":[
-["accelerate",0,"{'loss': 0.516, 'val_loss': 0.5113, 'val_accuracy': 0.845, 'step': 10, 'epoch': 0}",[["loss",0.516,0.0,10,0],["val_loss",0.5113,0.0,10,0],["val_accuracy",0.845,0.0,10,0]],false,[0.0,10,null]],
-["accelerate",0,"{'loss': 0.4013, 'val_loss': 0.4183, 'val_accuracy': 0.855, 'step': 20, 'epoch': 1}",[["loss",0.4013,1.0,20,0],["val_loss",0.4183,1.0,20,0],["val_accuracy",0.855,1.0,20,0]],false,[1.0,20,null]],
-["accelerate",0,"{'loss': 0.3579, 'val_loss': 0.3835, 'val_accuracy': 0.855, 'step': 30, 'epoch': 2}",[["loss",0.3579,2.0,30,0],["val_loss",0.3835,2.0,30,0],["val_accuracy",0.855,2.0,30,0]],false,[2.0,30,null]],
-["accelerate",0,"{'loss': 0.4048, 'val_loss': 0.3652, 'val_accuracy': 0.86, 'step': 40, 'epoch': 3}",[["loss",0.4048,3.0,40,0],["val_loss",0.3652,3.0,40,0],["val_accuracy",0.86,3.0,40,0]],false,[3.0,40,null]],
+["accelerate",0,"{'loss': 2.2821, 'val_loss': 2.2546, 'val_accuracy': 0.2044, 'step': 10, 'epoch': 0}",[["loss",2.2821,0.0,10,0],["val_loss",2.2546,0.0,10,0],["val_accuracy",0.2044,0.0,10,0]],false,[0.0,10,null]],
+["accelerate",0,"{'loss': 2.2259, 'val_loss': 2.1957, 'val_accuracy': 0.4289, 'step': 20, 'epoch': 1}",[["loss",2.2259,1.0,20,0],["val_loss",2.1957,1.0,20,0],["val_accuracy",0.4289,1.0,20,0]],false,[1.0,20,null]],
+["accelerate",0,"{'loss': 2.1586, 'val_loss': 2.121, 'val_accuracy': 0.5356, 'step': 30, 'epoch': 2}",[["loss",2.1586,2.0,30,0],["val_loss",2.121,2.0,30,0],["val_accuracy",0.5356,2.0,30,0]],false,[2.0,30,null]],
+["accelerate",0,"{'loss': 2.0769, 'val_loss': 2.0285, 'val_accuracy': 0.6378, 'step': 40, 'epoch': 3}",[["loss",2.0769,3.0,40,0],["val_loss",2.0285,3.0,40,0],["val_accuracy",0.6378,3.0,40,0]],false,[3.0,40,null]],
 ["accelerate",0,"",[],false,[3.0,40,null]]
 ]}
 ],
 "tests/integration/test_parsers_read_their_logs.py::test_the_chosen_parser_reads_the_log_alone[accelerate_real.log]":[
 {"start":[null,null,null],"events":[
-["huggingface",1,"{'loss': 0.516, 'val_loss': 0.5113, 'val_accuracy': 0.845, 'step': 10, 'epoch': 0}",[["loss",0.516,0.0,10,1],["val_loss",0.5113,0.0,10,1],["val_accuracy",0.845,0.0,10,1]],false,[0.0,10,null]],
-["huggingface",2,"{'loss': 0.4013, 'val_loss': 0.4183, 'val_accuracy': 0.855, 'step': 20, 'epoch': 1}",[["loss",0.4013,1.0,20,2],["val_loss",0.4183,1.0,20,2],["val_accuracy",0.855,1.0,20,2]],false,[1.0,20,null]],
-["huggingface",3,"{'loss': 0.3579, 'val_loss': 0.3835, 'val_accuracy': 0.855, 'step': 30, 'epoch': 2}",[["loss",0.3579,2.0,30,3],["val_loss",0.3835,2.0,30,3],["val_accuracy",0.855,2.0,30,3]],false,[2.0,30,null]],
-["huggingface",4,"{'loss': 0.4048, 'val_loss': 0.3652, 'val_accuracy': 0.86, 'step': 40, 'epoch': 3}",[["loss",0.4048,3.0,40,4],["val_loss",0.3652,3.0,40,4],["val_accuracy",0.86,3.0,40,4]],false,[3.0,40,null]],
+["huggingface",1,"{'loss': 2.2821, 'val_loss': 2.2546, 'val_accuracy': 0.2044, 'step': 10, 'epoch': 0}",[["loss",2.2821,0.0,10,1],["val_loss",2.2546,0.0,10,1],["val_accuracy",0.2044,0.0,10,1]],false,[0.0,10,null]],
+["huggingface",2,"{'loss': 2.2259, 'val_loss': 2.1957, 'val_accuracy': 0.4289, 'step': 20, 'epoch': 1}",[["loss",2.2259,1.0,20,2],["val_loss",2.1957,1.0,20,2],["val_accuracy",0.4289,1.0,20,2]],false,[1.0,20,null]],
+["huggingface",3,"{'loss': 2.1586, 'val_loss': 2.121, 'val_accuracy': 0.5356, 'step': 30, 'epoch': 2}",[["loss",2.1586,2.0,30,3],["val_loss",2.121,2.0,30,3],["val_accuracy",0.5356,2.0,30,3]],false,[2.0,30,null]],
+["huggingface",4,"{'loss': 2.0769, 'val_loss': 2.0285, 'val_accuracy': 0.6378, 'step': 40, 'epoch': 3}",[["loss",2.0769,3.0,40,4],["val_loss",2.0285,3.0,40,4],["val_accuracy",0.6378,3.0,40,4]],false,[3.0,40,null]],
 ["huggingface",5,"",[],false,[3.0,40,null]]
 ]}
 ],
@@ -304,11 +304,11 @@
 ],
 "tests/integration/test_parsers_read_their_logs.py::test_the_chosen_parser_reads_the_log_alone[fastai_real.log]":[
 {"start":[null,null,null],"events":[
-["fastai",1,"epoch  train_loss  valid_loss  accuracy  time ",[],false,[null,null,null]],
-["fastai",2,"0      0.681724    0.612903    0.671875  00:00",[["train_loss",0.681724,0.0,null,2],["valid_loss",0.612903,0.0,null,2],["valid_accuracy",0.671875,0.0,null,2]],false,[0.0,null,null]],
-["fastai",3,"1      0.564835    0.489217    0.789062  00:00",[["train_loss",0.564835,1.0,null,3],["valid_loss",0.489217,1.0,null,3],["valid_accuracy",0.789062,1.0,null,3]],false,[1.0,null,null]],
-["fastai",4,"2      0.471298    0.402136    0.828125  00:00",[["train_loss",0.471298,2.0,null,4],["valid_loss",0.402136,2.0,null,4],["valid_accuracy",0.828125,2.0,null,4]],false,[2.0,null,null]],
-["fastai",5,"3      0.402789    0.361204    0.859375  00:00",[["train_loss",0.402789,3.0,null,5],["valid_loss",0.361204,3.0,null,5],["valid_accuracy",0.859375,3.0,null,5]],false,[3.0,null,null]],
+["fastai",1,"epoch     train_loss  valid_loss  accuracy  time    ",[],false,[null,null,null]],
+["fastai",2,"0         0.403646    0.226686    0.937063  00:00     ",[["train_loss",0.403646,0.0,null,2],["valid_loss",0.226686,0.0,null,2],["valid_accuracy",0.937063,0.0,null,2]],false,[0.0,null,null]],
+["fastai",3,"1         0.261949    0.111645    0.979021  00:00     ",[["train_loss",0.261949,1.0,null,3],["valid_loss",0.111645,1.0,null,3],["valid_accuracy",0.979021,1.0,null,3]],false,[1.0,null,null]],
+["fastai",4,"2         0.212355    0.070655    0.993007  00:00     ",[["train_loss",0.212355,2.0,null,4],["valid_loss",0.070655,2.0,null,4],["valid_accuracy",0.993007,2.0,null,4]],false,[2.0,null,null]],
+["fastai",5,"3         0.176248    0.062969    0.993007  00:00     ",[["train_loss",0.176248,3.0,null,5],["valid_loss",0.062969,3.0,null,5],["valid_accuracy",0.993007,3.0,null,5]],false,[3.0,null,null]],
 ["fastai",6,"",[],false,[3.0,null,null]]
 ]}
 ],

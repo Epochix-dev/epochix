@@ -4,7 +4,7 @@
   "task": "classification",
   "metric": "val_accuracy",
   "frames": 4,
-  "last_value": 0.86,
+  "last_value": 0.6378,
   "keys": [
    "train_loss",
    "val_accuracy",
@@ -13,9 +13,9 @@
   "metric_from_epoch": 0.0,
   "grade_note": "few_readings",
   "cross_validation": null,
-  "final_grade": "B+",
+  "final_grade": "C",
   "final_grade_basis": "thresholds",
-  "final_phase": "awakening"
+  "final_phase": "understanding"
  },
  "ansi_colors.log": {
   "path": "tests/fixtures/logs/ansi_colors.log",
@@ -161,7 +161,7 @@
   "task": "classification",
   "metric": "val_accuracy",
   "frames": 4,
-  "last_value": 0.8594,
+  "last_value": 0.993,
   "keys": [
    "train_loss",
    "val_accuracy",
@@ -170,9 +170,9 @@
   "metric_from_epoch": 0.0,
   "grade_note": "few_readings",
   "cross_validation": null,
-  "final_grade": "B+",
+  "final_grade": "A+",
   "final_grade_basis": "thresholds",
-  "final_phase": "understanding"
+  "final_phase": "mastering"
  },
  "fingerprint_matching.log": {
   "path": "demo/fingerprint_matching.log",
