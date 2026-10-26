@@ -14,6 +14,22 @@ which covers the extension too; entries here resume with 0.7.16.
 
 ---
 
+## [0.7.35] — 2026-10-26
+
+### Fixed
+
+- **"In plain English" no longer calls any rising number between 0 and 1
+  accuracy.** A CatBoost AUC read "97.9% to 99.2% accuracy… gets more than 9
+  in 10 right on data it hasn't seen"; so did AUC, F1 and mAP50 runs. It now
+  goes by the metric's name, and the "N in 10 right" meter appears only for
+  validation accuracy.
+- **The learning curve names the metric the story is told on**, taken from the
+  frames rather than the run record.
+- **Epochs counted from 0 are counted in full:** sixty CatBoost rounds no
+  longer read "over 59 epochs".
+
+---
+
 ## [0.7.34] — 2026-10-26
 
 ### Changed

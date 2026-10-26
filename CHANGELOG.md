@@ -7,6 +7,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.7.35] — 2026-10-26
+
+### Fixed — a live run says what it is while it runs
+
+Real runs were driven through `epochix --live` with the stream held open: a
+CatBoost classifier, a CatBoost run whose AUC is 1.0 every round, and a Keras
+run. CatBoost read correctly live — every round told as it arrived, and the
+flat run's rows released after ten rounds rather than held for good — but the
+dashboard was wrong in three ways.
+
+- **The learning curve drew a live run under the wrong metric.** A run's record
+  is created before its metric is known, holding `val_loss` and parser
+  `unknown`, and only the end of the stream corrected it — which a live run
+  never reaches. The curve read the record, so a live Keras run's validation
+  accuracy (29% → 96%) was drawn as a falling "val loss" line for as long as
+  it ran, and the run list called it CUSTOM. The record is now written as
+  soon as the task, parser and story metric are known, and the curve takes
+  the metric from the frames.
+- **"In plain English" called any rising number between 0 and 1 accuracy.** A
+  CatBoost AUC climbing from 0.979 to 0.992 read "97.9% to 99.2% accuracy"
+  and "gets more than 9 in 10 right on data it hasn't seen"; so did AUC, F1,
+  mAP50 and R² runs. It now goes by the metric's name: accuracy is told as
+  accuracy, the "N in 10 right" meter appears only for validation accuracy,
+  a loss that fell is "reduced", and any other metric is told by its own name
+  without saying it improved.
+- **The epoch count was one short for logs that count from 0.** Sixty
+  CatBoost rounds read "over 59 epochs"; so did XGBoost and Lightning's
+  `Epoch 0:` logs.
+
+A CatBoost run whose AUC never moves is now a recorded fixture, pinned for both
+engines.
+
+---
+
 ## [0.7.34] — 2026-10-26
 
 ### Changed
