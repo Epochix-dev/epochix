@@ -136,16 +136,10 @@ jobs:
     # macOS row: WebKit on macos-latest is the closest thing to real Safari on
     # a real Mac that CI can provide — it closes the "does the dashboard render
     # on macOS" gap that no machine in this project could reach.
-    #
-    # Linux row pinned to Ubuntu 24.04. The browsers need ~120-140 MB of
-    # system packages on either release; on 24.04 the runner's mirror served
-    # them at 11 MB/s (11 seconds), while the Ubuntu 26 image ubuntu-latest
-    # moved to on 2026-10-19 got them at 25-100 KB/s — 6-minute attempts that
-    # never finished, and every PR blocked behind them.
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-24.04, macos-latest]
+        os: [ubuntu-latest, macos-latest]
     name: browser (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     # Normally 2 minutes. Without a limit a stalled step runs for GitHub's
@@ -171,9 +165,14 @@ jobs:
         run: uv run --extra dev playwright --version
       - name: Install the browsers' system packages
         if: runner.os == 'Linux'
-        # apt takes seconds here on Ubuntu 24.04. Should its mirror crawl as
-        # Ubuntu 26's did (19- and 10-minute installs, cancelled), an attempt
-        # is stopped after 6 minutes and tried again.
+        # The browsers need ~120-140 MB of system packages, which the runner's
+        # own mirror (azure.archive.ubuntu.com) usually serves in 10-60
+        # seconds. Some days it serves them at 25-100 KB/s, on Ubuntu 24.04
+        # and 26 alike: on 2026-10-26 installs ran 19 and 10 minutes before
+        # being cancelled, and three 6-minute attempts in a row never
+        # finished. Retrying that mirror does not help, so a first attempt
+        # still running after 3 minutes is stopped and apt is pointed at
+        # Canonical's archive.ubuntu.com for the next two.
         #
         # Stopping one is not enough: timeout ends uv and Playwright, but the
         # apt-get Playwright starts under sudo runs as root and outlives them,
@@ -183,8 +182,10 @@ jobs:
         timeout-minutes: 20
         env:
           # Seconds allowed for each attempt, in order.
-          APT_ATTEMPT_SECONDS: "360 360 360"
+          APT_ATTEMPT_SECONDS: "180 360 360"
         run: |
+          echo "apt mirror list:"; cat /etc/apt/apt-mirrors.txt || true
+          grep -rhE "^(URIs|deb) " /etc/apt/sources.list /etc/apt/sources.list.d 2>/dev/null || true
           attempt=0
           for limit in $APT_ATTEMPT_SECONDS; do
             attempt=$((attempt + 1))
@@ -198,6 +199,10 @@ jobs:
               sleep 2
             done
             sudo dpkg --configure -a || true
+            if [ "$attempt" = 1 ]; then
+              echo "::notice::system packages: switching apt to archive.ubuntu.com"
+              echo "http://archive.ubuntu.com/ubuntu/" | sudo tee /etc/apt/apt-mirrors.txt
+            fi
           done
           exit 1
       - name: Install the browsers
