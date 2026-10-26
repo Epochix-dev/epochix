@@ -7,7 +7,7 @@
  */
 import { readGap } from '../generalisation.js';
 import { escapeHtml as _esc } from '../escape.js';
-import { LOWER_IS_BETTER, latestPrimaryKey, metricLabel } from '../viz-util.js';
+import { isLowerBetter, latestPrimaryKey, metricLabel } from '../viz-util.js';
 
 const PHASE_EMOJI = {
   awakening: '🌱', learning: '📈', understanding: '💡', mastering: '🎯', polishing: '✨',
@@ -60,8 +60,7 @@ export class Educational {
     const key = latestPrimaryKey(frames);
     const label = metricLabel(key ?? 'metric');
     const isAccuracy = key === 'accuracy' || key === 'val_accuracy';
-    const lowerBetter =
-      key != null && (LOWER_IS_BETTER.has(key) || LOWER_IS_BETTER.has(key.replace(/^val_/, '')));
+    const lowerBetter = isLowerBetter(key);
     const show = (v) => (isAccuracy ? _pct(v) : _num(v));
 
     let lead;
