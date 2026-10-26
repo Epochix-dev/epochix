@@ -14,6 +14,17 @@ which covers the extension too; entries here resume with 0.7.16.
 
 ---
 
+## [0.7.36] — 2026-10-26
+
+### Fixed
+
+- **The Engineer panel's second chart is titled by the story's metric**
+  ("Val score", "Val AUC", "mAP") instead of "Accuracy" for every run, and its
+  best-value star follows that metric's direction. An empty chart no longer
+  shows a legend.
+
+---
+
 ## [0.7.35] — 2026-10-26
 
 ### Fixed

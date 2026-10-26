@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.7.36] — 2026-10-26
+
+### Fixed — the Engineer panel names its chart
+
+- **The Engineer panel titled its second chart "Accuracy" for every run**, with
+  a legend reading "primary metric": a CatBoost AUC was charted as accuracy.
+  The chart is now titled by the metric the story is told on, as its frames
+  name it ("Val score", "Val AUC", "mAP"), and says "Accuracy" only when the
+  story is told on accuracy. Its best-value star follows that metric's
+  direction, from the dashboard's shared lower-is-better list rather than the
+  panel's own shorter copy.
+- A chart with no readings no longer shows a legend: a run without a loss
+  showed "best val ★" on an empty loss chart.
+
+---
+
 ## [0.7.35] — 2026-10-26
 
 ### Fixed — a live run says what it is while it runs
