@@ -1,11 +1,14 @@
 /**
- * TechPanel.js — Engineer panel with Chart.js loss/accuracy charts.
+ * TechPanel.js — Engineer panel with Chart.js loss and story-metric charts.
  *
- * Renders two line charts: one for loss metrics, one for accuracy/primary
- * metrics. Updates incrementally as new metric events arrive. TensorBoard-style
- * controls: EMA smoothing, log-scale loss, and an epoch/step x-axis toggle.
+ * Renders two line charts: one for loss metrics, one for the story's metric,
+ * titled by its name. Updates incrementally as new metric events arrive.
+ * TensorBoard-style controls: EMA smoothing, log-scale loss, and an epoch/step
+ * x-axis toggle.
  */
-import { emaSmooth, metricLabel } from '../viz-util.js';
+import {
+  emaSmooth, isLowerBetter, latestPrimaryKey, metricDisplayLabel, metricLabel,
+} from '../viz-util.js';
 import { escapeHtml as _esc } from '../escape.js';
 
 export class TechPanel {
@@ -248,22 +251,43 @@ export class TechPanel {
       // No separate val loss in detection logs — leave valLoss as null array.
     }
 
-    // Accuracy fallbacks for detection/regression/etc:
-    //  1. explicit accuracy series
-    //  2. mAP50 + mAP50-95 (detection — labelled honestly, not as "val acc")
-    //  3. the frame's primary metric value (universal last-ditch)
-    let accLabels = { train: 'train acc', val: 'val acc' };
+    // The second chart draws the story's metric, titled by its name as the
+    // frames give it (run.primary_metric can still hold its creation-time
+    // placeholder). It read "Accuracy" for every run: a CatBoost AUC was
+    // charted as accuracy. Its curves, in order of preference:
+    //  1. train/val accuracy, when the story is told on accuracy
+    //  2. mAP50 + mAP50-95, when it is told on mAP
+    //  3. the story's own metric, unless it is a loss the chart above draws
+    //  4. failing that, any accuracy or mAP the log reported
+    //  5. the story's own metric
+    const key = latestPrimaryKey(frames);
     const hasAcc = trainAcc.some((v) => v != null) || valAcc.some((v) => v != null);
-    if (!hasAcc) {
-      if (map50.some((v) => v != null)) {
-        valAcc    = map50;
-        trainAcc  = map50_95;
-        accLabels = { train: 'mAP50-95', val: 'mAP50' };
-      } else {
-        valAcc   = frames.map((f) => f.primary_metric_value ?? null);
-        trainAcc = frames.map(() => null);
-        accLabels = { train: 'train acc', val: 'primary metric' };
-      }
+    const hasMap = map50.some((v) => v != null);
+    const storyIsAcc = key === 'accuracy' || key === 'val_accuracy';
+    const storyIsMap = key === 'mAP50' || key === 'mAP';
+    const storyOnLossChart = key === 'train_loss' || key === 'val_loss';
+    let drawn;
+    if (storyIsAcc && hasAcc) drawn = 'accuracy';
+    else if (storyIsMap && hasMap) drawn = 'map';
+    else if (key != null && !storyOnLossChart) drawn = 'story';
+    else if (hasAcc) drawn = 'accuracy';
+    else if (hasMap) drawn = 'map';
+    else drawn = 'story';
+
+    let accLabels = { train: 'train acc', val: 'val acc' };
+    let accTitle = 'Accuracy';
+    let accBest = 'max';
+    if (drawn === 'map') {
+      valAcc    = map50;
+      trainAcc  = map50_95;
+      accLabels = { train: 'mAP50-95', val: 'mAP50' };
+      accTitle  = 'mAP';
+    } else if (drawn === 'story') {
+      valAcc    = frames.map((f) => f.primary_metric_value ?? null);
+      trainAcc  = frames.map(() => null);
+      accLabels = { train: null, val: key != null ? metricLabel(key) : 'story metric' };
+      accTitle  = key != null ? metricDisplayLabel(key) : 'Story metric';
+      accBest   = isLowerBetter(key) ? 'min' : 'max';
     }
 
     // Overfitting gap — fall back to (precision − recall) when train/val loss
@@ -284,7 +308,7 @@ export class TechPanel {
     const smValLoss = sm(valLoss);
     const smValAcc  = sm(valAcc);
     const bestValLossMarker = _bestMarker(smValLoss, 'min');
-    const bestValAccMarker  = _bestMarker(smValAcc,  'max');
+    const bestValAccMarker  = _bestMarker(smValAcc,  accBest);
 
     // Cool family for quality metrics, warm family for losses — matches the
     // dashboard's purple→cyan / pink→orange gradient system. Multi-loss
@@ -295,15 +319,16 @@ export class TechPanel {
       { label: 'box',        data: sm(boxLoss),   color: '#a78bfa', dashed: true },
       { label: 'cls',        data: sm(clsLoss),   color: '#22d3ee', dashed: true },
       { label: 'dfl',        data: sm(dflLoss),   color: '#34d399', dashed: true },
-    ].filter((d) => d.data.some((v) => v != null));
+    ];
     this._setChartData(this._lossChart, labels, lossSeries, [
       { label: 'best val ★', data: bestValLossMarker, color: '#f472b6', marker: true },
     ]);
 
+    if (this._accChart) this._accChart.options.plugins.title.text = accTitle;
     this._setChartData(this._accChart, labels, [
       { label: accLabels.train, data: sm(trainAcc), color: '#7c6dff' },
       { label: accLabels.val,   data: smValAcc,     color: '#22d3ee' },
-    ].filter((d) => d.data.some((v) => v != null)), [
+    ], [
       { label: `best ${accLabels.val} ★`, data: bestValAccMarker, color: '#22d3ee', marker: true },
     ]);
 
@@ -330,7 +355,6 @@ export class TechPanel {
   _renderStats(s) {
     const host = document.getElementById('tech-stats');
     if (!host) return;
-    const lowerBetter = new Set(['train_loss', 'val_loss', 'loss', 'MAE', 'RMSE', 'perplexity']);
     const byKey = new Map();
     for (const m of s.metrics ?? []) {
       if (!Number.isFinite(m.value)) continue;
@@ -342,7 +366,7 @@ export class TechPanel {
 
     const rows = [...byKey.entries()].map(([key, pts]) => {
       const latest = pts[pts.length - 1].value;
-      const lower = lowerBetter.has(key);
+      const lower = isLowerBetter(key);
       const best = pts.reduce((b, p) => (lower ? p.value < b.value : p.value > b.value) ? p : b, pts[0]);
       return `
         <tr>
@@ -363,6 +387,11 @@ export class TechPanel {
   _setChartData(chart, labels, series, markers = []) {
     if (!chart) return;
     chart.data.labels = labels;
+    // A series with no readings gets no legend entry: a run without a loss
+    // showed "best val ★" on an empty loss chart.
+    const hasData = (d) => d.data.some((v) => v != null);
+    series = series.filter(hasData);
+    markers = markers.filter(hasData);
     const lineDatasets = series.map(({ label, data, color, dashed }) => ({
       label,
       data,

@@ -73,6 +73,11 @@ export const LOWER_IS_BETTER = new Set([
   'EER', 'perplexity', 'eta', 'epoch_time', 'fid',
 ]);
 
+/** True when a lower value is better, for a key or its `val_` form (val_MAE). */
+export function isLowerBetter(key) {
+  return key != null && (LOWER_IS_BETTER.has(key) || LOWER_IS_BETTER.has(key.replace(/^val_/, '')));
+}
+
 /**
  * Canonical metrics that are 0–1 fractions and read naturally as a percentage
  * (accuracy family). Everything else — MAE, RMSE, loss, perplexity, cm error,
