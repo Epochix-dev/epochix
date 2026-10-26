@@ -291,6 +291,33 @@ class RunStore:
         with self._engine.begin() as conn:
             conn.execute(runs_table.update().where(runs_table.c.id == run_id).values(**values))
 
+    def update_run_identity(
+        self,
+        run_id: str,
+        *,
+        task_type: TaskType,
+        parser_used: str,
+        primary_metric: str,
+    ) -> None:
+        """Write what the run has turned out to be, while it is still running.
+
+        A run is created before any of these is known, and finish_run wrote
+        them only at end of stream — which a live run never reaches. Until
+        then its record said `val_loss` and parser `unknown`, and the
+        dashboard drew a live run's validation accuracy as an inverted
+        "val loss" curve for its whole life.
+        """
+        with self._engine.begin() as conn:
+            conn.execute(
+                runs_table.update()
+                .where(runs_table.c.id == run_id)
+                .values(
+                    task_type=task_type.value,
+                    parser_used=parser_used,
+                    primary_metric=primary_metric,
+                )
+            )
+
     def update_run_summary(
         self,
         run_id: str,

@@ -100,6 +100,48 @@
 ["boosting","flush",[]]
 ]}
 ],
+"tests/integration/test_parsers_read_their_logs.py::test_the_chosen_parser_reads_the_log_alone[catboost_real_flat_auc.log]":[
+{"start":[null,null,null],"events":[
+["boosting",1,"Learning rate set to 0.108196",[],false,[null,null,null]],
+["boosting",2,"0:\ttest: 1.0000000\tbest: 1.0000000 (0)\ttotal: 133ms\tremaining: 3.85s",[],true,[0.0,0,null]],
+["boosting",3,"1:\ttest: 1.0000000\tbest: 1.0000000 (0)\ttotal: 133ms\tremaining: 1.86s",[],true,[1.0,1,null]],
+["boosting",4,"2:\ttest: 1.0000000\tbest: 1.0000000 (0)\ttotal: 133ms\tremaining: 1.2s",[],true,[2.0,2,null]],
+["boosting",5,"3:\ttest: 1.0000000\tbest: 1.0000000 (0)\ttotal: 134ms\tremaining: 868ms",[],true,[3.0,3,null]],
+["boosting",6,"4:\ttest: 1.0000000\tbest: 1.0000000 (0)\ttotal: 134ms\tremaining: 669ms",[],true,[4.0,4,null]],
+["boosting",7,"5:\ttest: 1.0000000\tbest: 1.0000000 (0)\ttotal: 134ms\tremaining: 536ms",[],true,[5.0,5,null]],
+["boosting",8,"6:\ttest: 1.0000000\tbest: 1.0000000 (0)\ttotal: 134ms\tremaining: 441ms",[],true,[6.0,6,null]],
+["boosting",9,"7:\ttest: 1.0000000\tbest: 1.0000000 (0)\ttotal: 134ms\tremaining: 370ms",[],true,[7.0,7,null]],
+["boosting",10,"8:\ttest: 1.0000000\tbest: 1.0000000 (0)\ttotal: 135ms\tremaining: 314ms",[],true,[8.0,8,null]],
+["boosting",11,"9:\ttest: 1.0000000\tbest: 1.0000000 (0)\ttotal: 135ms\tremaining: 270ms",[["val_metric",1.0,0.0,0,2],["val_metric",1.0,1.0,1,3],["val_metric",1.0,2.0,2,4],["val_metric",1.0,3.0,3,5],["val_metric",1.0,4.0,4,6],["val_metric",1.0,5.0,5,7],["val_metric",1.0,6.0,6,8],["val_metric",1.0,7.0,7,9],["val_metric",1.0,8.0,8,10],["val_metric",1.0,9.0,9,11]],false,[9.0,9,null]],
+["boosting",12,"10:\ttest: 1.0000000\tbest: 1.0000000 (0)\ttotal: 135ms\tremaining: 233ms",[["val_metric",1.0,10.0,10,12]],false,[10.0,10,null]],
+["boosting",13,"11:\ttest: 1.0000000\tbest: 1.0000000 (0)\ttotal: 135ms\tremaining: 203ms",[["val_metric",1.0,11.0,11,13]],false,[11.0,11,null]],
+["boosting",14,"12:\ttest: 1.0000000\tbest: 1.0000000 (0)\ttotal: 136ms\tremaining: 177ms",[["val_metric",1.0,12.0,12,14]],false,[12.0,12,null]],
+["boosting",15,"13:\ttest: 1.0000000\tbest: 1.0000000 (0)\ttotal: 136ms\tremaining: 155ms",[["val_metric",1.0,13.0,13,15]],false,[13.0,13,null]],
+["boosting",16,"14:\ttest: 1.0000000\tbest: 1.0000000 (0)\ttotal: 136ms\tremaining: 136ms",[["val_metric",1.0,14.0,14,16]],false,[14.0,14,null]],
+["boosting",17,"15:\ttest: 1.0000000\tbest: 1.0000000 (0)\ttotal: 136ms\tremaining: 119ms",[["val_metric",1.0,15.0,15,17]],false,[15.0,15,null]],
+["boosting",18,"16:\ttest: 1.0000000\tbest: 1.0000000 (0)\ttotal: 136ms\tremaining: 104ms",[["val_metric",1.0,16.0,16,18]],false,[16.0,16,null]],
+["boosting",19,"17:\ttest: 1.0000000\tbest: 1.0000000 (0)\ttotal: 137ms\tremaining: 91ms",[["val_metric",1.0,17.0,17,19]],false,[17.0,17,null]],
+["boosting",20,"18:\ttest: 1.0000000\tbest: 1.0000000 (0)\ttotal: 137ms\tremaining: 79.2ms",[["val_metric",1.0,18.0,18,20]],false,[18.0,18,null]],
+["boosting",21,"19:\ttest: 1.0000000\tbest: 1.0000000 (0)\ttotal: 137ms\tremaining: 68.5ms",[["val_metric",1.0,19.0,19,21]],false,[19.0,19,null]],
+["boosting",22,"20:\ttest: 1.0000000\tbest: 1.0000000 (0)\ttotal: 137ms\tremaining: 58.8ms",[["val_metric",1.0,20.0,20,22]],false,[20.0,20,null]],
+["boosting",23,"21:\ttest: 1.0000000\tbest: 1.0000000 (0)\ttotal: 137ms\tremaining: 49.9ms",[["val_metric",1.0,21.0,21,23]],false,[21.0,21,null]],
+["boosting",24,"22:\ttest: 1.0000000\tbest: 1.0000000 (0)\ttotal: 138ms\tremaining: 41.8ms",[["val_metric",1.0,22.0,22,24]],false,[22.0,22,null]],
+["boosting",25,"23:\ttest: 1.0000000\tbest: 1.0000000 (0)\ttotal: 138ms\tremaining: 34.4ms",[["val_metric",1.0,23.0,23,25]],false,[23.0,23,null]],
+["boosting",26,"24:\ttest: 1.0000000\tbest: 1.0000000 (0)\ttotal: 138ms\tremaining: 27.6ms",[["val_metric",1.0,24.0,24,26]],false,[24.0,24,null]],
+["boosting",27,"25:\ttest: 1.0000000\tbest: 1.0000000 (0)\ttotal: 138ms\tremaining: 21.3ms",[["val_metric",1.0,25.0,25,27]],false,[25.0,25,null]],
+["boosting",28,"26:\ttest: 1.0000000\tbest: 1.0000000 (0)\ttotal: 138ms\tremaining: 15.4ms",[["val_metric",1.0,26.0,26,28]],false,[26.0,26,null]],
+["boosting",29,"27:\ttest: 1.0000000\tbest: 1.0000000 (0)\ttotal: 139ms\tremaining: 9.9ms",[["val_metric",1.0,27.0,27,29]],false,[27.0,27,null]],
+["boosting",30,"28:\ttest: 1.0000000\tbest: 1.0000000 (0)\ttotal: 139ms\tremaining: 4.78ms",[["val_metric",1.0,28.0,28,30]],false,[28.0,28,null]],
+["boosting",31,"29:\ttest: 1.0000000\tbest: 1.0000000 (0)\ttotal: 139ms\tremaining: 0us",[["val_metric",1.0,29.0,29,31]],false,[29.0,29,null]],
+["boosting",32,"",[],false,[29.0,29,null]],
+["boosting",33,"bestTest = 1",[],true,[29.0,29,null]],
+["boosting",34,"bestIteration = 0",[],true,[29.0,29,null]],
+["boosting",35,"",[],false,[29.0,29,null]],
+["boosting",36,"Shrink model to first 1 iterations.",[],false,[29.0,29,null]],
+["boosting",37,"",[],false,[29.0,29,null]],
+["boosting","flush",[]]
+]}
+],
 "tests/integration/test_parsers_read_their_logs.py::test_the_chosen_parser_reads_the_log_alone[catboost_real_no_eval_set.log]":[
 {"start":[null,null,null],"events":[
 ["boosting",1,"0:\tlearn: 0.5397279\ttotal: 140ms\tremaining: 5.45s",[["train_loss",0.5397279,0.0,0,1]],false,[0.0,0,null]],

@@ -527,6 +527,26 @@ async def run_pipeline(
             if ep is not None:
                 last_epoch = ep
         sniff_buffer = []
+        _sync_run()
+
+    # What the run turned out to be — task, parser, the story's metric — written
+    # to its record as soon as a frame exists and again whenever it changes.
+    # The record is created holding placeholders (`val_loss`, parser
+    # `unknown`), and finish_run alone used to correct them: a live run never
+    # finishes, so its learning curve drew validation accuracy as an inverted
+    # "val loss" for as long as it ran, and the run list called it CUSTOM.
+    written: tuple[TaskType, str, str] | None = None
+
+    def _sync_run() -> None:
+        nonlocal written
+        if parser is None or last_epoch is None:
+            return
+        now = (engine._effective_task(), parser.name, engine._effective_primary_key())
+        if now != written:
+            store.update_run_identity(
+                run_id, task_type=now[0], parser_used=now[1], primary_metric=now[2]
+            )
+            written = now
 
     def _process_line(raw_line: object) -> None:
         nonlocal last_seq, arch_detected, last_epoch
@@ -579,6 +599,7 @@ async def run_pipeline(
         )
         if ep is not None:
             last_epoch = ep
+            _sync_run()
 
     # Consume the ingester with an idle timeout (see IDLE_SNIFF_SECS).
     _line_iter = ingester.lines().__aiter__()

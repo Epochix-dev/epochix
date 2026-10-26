@@ -50,6 +50,22 @@
   "final_grade_basis": "improvement",
   "final_phase": "understanding"
  },
+ "catboost_real_flat_auc.log": {
+  "path": "tests/fixtures/logs/catboost_real_flat_auc.log",
+  "task": "custom",
+  "metric": "val_metric",
+  "frames": 30,
+  "last_value": 1.0,
+  "keys": [
+   "val_metric"
+  ],
+  "metric_from_epoch": 0.0,
+  "grade_note": null,
+  "cross_validation": null,
+  "final_grade": "D",
+  "final_grade_basis": "improvement",
+  "final_phase": "awakening"
+ },
  "catboost_real_no_eval_set.log": {
   "path": "tests/fixtures/logs/catboost_real_no_eval_set.log",
   "task": "custom",

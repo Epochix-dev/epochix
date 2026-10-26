@@ -83,6 +83,19 @@ export const PERCENT_METRICS = new Set([
   'AUC', 'auc', 'top1', 'top5', 'precision', 'recall',
 ]);
 
+/**
+ * The metric the story is told on, as its latest frame names it — not
+ * run.primary_metric, which is written before the metric is known.
+ * @param {{primary_metric?: string|null}[]|null|undefined} frames
+ * @returns {string|null}
+ */
+export function latestPrimaryKey(frames) {
+  for (let i = (frames?.length ?? 0) - 1; i >= 0; i--) {
+    if (frames[i]?.primary_metric) return frames[i].primary_metric;
+  }
+  return null;
+}
+
 /** True when the primary metric should be displayed as a percentage. */
 export function isPercentMetric(key) {
   return PERCENT_METRICS.has(key);

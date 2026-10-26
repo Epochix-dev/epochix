@@ -7,6 +7,7 @@
  */
 import { readGap } from '../generalisation.js';
 import { escapeHtml as _esc } from '../escape.js';
+import { LOWER_IS_BETTER, latestPrimaryKey, metricLabel } from '../viz-util.js';
 
 const PHASE_EMOJI = {
   awakening: '🌱', learning: '📈', understanding: '💡', mastering: '🎯', polishing: '✨',
@@ -47,40 +48,46 @@ export class Educational {
 
     const first = frames[0].primary_metric_value ?? last.primary_metric_value;
     const lastV = last.primary_metric_value;
-    const epochs = Math.round(last.epoch ?? frames.length);
+    const epochs = _epochsTold(frames);
     const grade = last.grade ?? '—';
     const phase = last.phase ?? 'learning';
 
-    // Infer direction from the data itself (the stored primary value can be an
-    // accuracy even when run.primary_metric is named "val_loss"): a value bounded
-    // in [0,1] that rises over training is accuracy-like.
-    const vals = frames.map((f) => f.primary_metric_value).filter(Number.isFinite);
-    const inUnit = vals.length > 0 && vals.every((v) => v >= 0 && v <= 1);
-    const accLike = inUnit && lastV >= first;
+    // Say only what the metric's name supports. The panel used to call any
+    // value between 0 and 1 that rose "accuracy" and count it as "N in 10
+    // right on data it hasn't seen": an AUC, an F1, an mAP50 or CatBoost's
+    // unnamed score were all told that way. The frames name the metric (the
+    // run record can still hold its creation-time placeholder).
+    const key = latestPrimaryKey(frames);
+    const label = metricLabel(key ?? 'metric');
+    const isAccuracy = key === 'accuracy' || key === 'val_accuracy';
+    const lowerBetter =
+      key != null && (LOWER_IS_BETTER.has(key) || LOWER_IS_BETTER.has(key.replace(/^val_/, '')));
+    const show = (v) => (isAccuracy ? _pct(v) : _num(v));
 
     let lead;
-    if (accLike) {
+    if (isAccuracy) {
       lead = `Over <b>${epochs} epochs</b> your model went from <b>${_pct(first)}</b> to
         <b>${_pct(lastV)}</b> accuracy — earning a grade of <b>${_esc(grade)}</b>.`;
-    } else if (lastV < first) {
-      lead = `Over <b>${epochs} epochs</b> your model reduced its error from <b>${_num(first)}</b>
-        to <b>${_num(lastV)}</b> — earning a grade of <b>${_esc(grade)}</b>.`;
+    } else if (lowerBetter && lastV < first) {
+      lead = `Over <b>${epochs} epochs</b> your model reduced its ${_esc(label)} from
+        <b>${_num(first)}</b> to <b>${_num(lastV)}</b> — earning a grade of <b>${_esc(grade)}</b>.`;
     } else {
-      lead = `Over <b>${epochs} epochs</b> your model moved from <b>${_num(first)}</b> to
+      lead = `Over <b>${epochs} epochs</b> its ${_esc(label)} went from <b>${_num(first)}</b> to
         <b>${_num(lastV)}</b> — earning a grade of <b>${_esc(grade)}</b>.`;
     }
 
     // What happened between the first reading and now, as a number. It read
     // "knew little" and "found the patterns" for every run, whatever it did.
-    const improved = accLike || lastV < first;
-    const moved = accLike
+    // "Learned" only where the name says which way is better.
+    const improved = isAccuracy ? lastV > first : lowerBetter ? lastV < first : false;
+    const moved = isAccuracy
       ? `${lastV >= first ? '+' : ''}${((lastV - first) * 100).toFixed(1)} points since then`
       : `${lastV >= first ? '+' : '−'}${_num(Math.abs(lastV - first))} since then`;
 
     const steps = `
       <div class="edu-step">
         <span class="edu-emoji">🌱</span>
-        <div class="edu-step-body"><b>Started</b><span>${accLike ? _pct(first) : _num(first)} · first reading</span></div>
+        <div class="edu-step-body"><b>Started</b><span>${show(first)} · first reading</span></div>
       </div>
       <div class="edu-arrow">→</div>
       <div class="edu-step">
@@ -90,10 +97,12 @@ export class Educational {
       <div class="edu-arrow">→</div>
       <div class="edu-step is-now">
         <span class="edu-emoji">🎯</span>
-        <div class="edu-step-body"><b>Now</b><span>${accLike ? _pct(lastV) : _num(lastV)} · grade ${_esc(grade)}</span></div>
+        <div class="edu-step-body"><b>Now</b><span>${show(lastV)} · grade ${_esc(grade)}</span></div>
       </div>`;
 
-    const meter = accLike ? _meter(lastV) : '';
+    // "Right on data it hasn't seen" is true only of validation accuracy:
+    // training accuracy was measured on the data it learned from.
+    const meter = key === 'val_accuracy' ? _meter(lastV) : '';
     const analogy = _analogy(s.metrics ?? []);
 
     this._el.innerHTML = `
@@ -181,6 +190,22 @@ function _analogy(metrics) {
 }
 
 // ── helpers ─────────────────────────────────────────────────────────────────
+
+/**
+ * How many epochs the story spans. It was the last epoch's number, one short
+ * for every log that counts from 0 (CatBoost, XGBoost, Lightning's
+ * `Epoch 0:`): sixty rounds read "over 59 epochs". Whole-numbered epochs are
+ * counted from the first reading to the last; fractional ones (a Trainer
+ * logging every half epoch) keep the last epoch's number.
+ */
+function _epochsTold(frames) {
+  const epochs = frames.map((f) => f.epoch).filter(Number.isFinite);
+  if (epochs.length === 0) return frames.length;
+  const first = epochs[0];
+  const last = epochs[epochs.length - 1];
+  if (epochs.every(Number.isInteger)) return last - first + 1;
+  return Math.round(last);
+}
 
 function _pct(v) { return `${(v * 100).toFixed(1)}%`; }
 function _num(v) {

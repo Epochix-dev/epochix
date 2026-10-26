@@ -71,7 +71,12 @@ npm --prefix epochix-vscode test    # launches a real VS Code host
   before a delimiter is O(n²) on a long line. Bound them (`\w{1,64}`).
 - **Streaming has no end.** The server ingests live runs through
   `StoryEngine.process()`, which never sees an end-of-stream. Do not gate
-  emitting a frame on an event that may never arrive.
+  emitting a frame on an event that may never arrive — nor writing the run's
+  record: it is created holding placeholders (`val_loss`, parser `unknown`),
+  and a live run's learning curve drew validation accuracy as an inverted
+  "val loss" until the pipeline wrote the real values as soon as they were
+  known. The dashboard names the story's metric from the frames
+  (`latestPrimaryKey`), never from `run.primary_metric`.
 - **One truth for two engines.** `tests/fixtures/corpus_truth.json` (every
   log in `demo/` and `tests/fixtures/logs/`: task, story metric, frames, last
   value, metric names, where the story's metric starts, the final grade, phase

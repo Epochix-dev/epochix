@@ -190,7 +190,7 @@ export function dashboardReportBody({ hasRun, diag, run, frames }) {
     '```',
     `epochix      ${diag}`,
     `surface      dashboard`,
-    `metric       ${run.primary_metric ?? '(unknown)'}`,
+    `metric       ${last.primary_metric ?? run.primary_metric ?? '(unknown)'}`,
     `task         ${run.task_type ?? '(unknown)'}`,
     `run loaded   ${hasRun ? 'yes' : 'no'}`,
     `epochs       ${frames.length}`,
