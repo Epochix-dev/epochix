@@ -136,10 +136,16 @@ jobs:
     # macOS row: WebKit on macos-latest is the closest thing to real Safari on
     # a real Mac that CI can provide — it closes the "does the dashboard render
     # on macOS" gap that no machine in this project could reach.
+    #
+    # Linux row pinned to Ubuntu 24.04. The browsers need ~120-140 MB of
+    # system packages on either release; on 24.04 the runner's mirror served
+    # them at 11 MB/s (11 seconds), while the Ubuntu 26 image ubuntu-latest
+    # moved to on 2026-10-19 got them at 25-100 KB/s — 6-minute attempts that
+    # never finished, and every PR blocked behind them.
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest]
+        os: [ubuntu-24.04, macos-latest]
     name: browser (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     # Normally 2 minutes. Without a limit a stalled step runs for GitHub's
@@ -165,11 +171,9 @@ jobs:
         run: uv run --extra dev playwright --version
       - name: Install the browsers' system packages
         if: runner.os == 'Linux'
-        # apt usually takes about a minute here. Since ubuntu-latest moved to
-        # Ubuntu 26 its mirror sometimes crawls at ~100 KB/s: on 2026-10-26
-        # this ran 19 and 10 minutes before being cancelled, a fresh attempt
-        # took 50 seconds both times, and a slow one that still finished took
-        # 3m54s. So an attempt is stopped after 6 minutes and tried again.
+        # apt takes seconds here on Ubuntu 24.04. Should its mirror crawl as
+        # Ubuntu 26's did (19- and 10-minute installs, cancelled), an attempt
+        # is stopped after 6 minutes and tried again.
         #
         # Stopping one is not enough: timeout ends uv and Playwright, but the
         # apt-get Playwright starts under sudo runs as root and outlives them,
@@ -179,7 +183,7 @@ jobs:
         timeout-minutes: 20
         env:
           # Seconds allowed for each attempt, in order.
-          APT_ATTEMPT_SECONDS: "25 360 360"
+          APT_ATTEMPT_SECONDS: "360 360 360"
         run: |
           attempt=0
           for limit in $APT_ATTEMPT_SECONDS; do
