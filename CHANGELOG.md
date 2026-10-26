@@ -7,6 +7,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.7.34] — 2026-10-26
+
+### Changed
+
+- **The dashboard's charts are drawn by Chart.js 4.6.1** (was 4.4.4), and the
+  dashboard is built with Vite 8.3.5 and vite-plugin-singlefile 2.3.4. A real
+  run's charts were compared between the two Chart.js versions and look the
+  same.
+
+### Internal — which test logs are real
+
+- **Every test log now says whether it is a recording.** `tests/fixtures/logs/`
+  has a README listing each log as a recorded run, with the script that
+  produced it, or a hand-written format sample, with the layout it imitates
+  and whether a library really prints it; a test fails on a log in neither
+  list. Checking them found that the `pytorch_lightning_*` samples are not
+  Lightning's layout (they are a hand-written loop's tqdm bars) and that
+  `yolo_100ep` and its siblings match no Ultralytics version. No parser code
+  exists only for an invented layout.
+- **New and re-made recordings, each with its script:** a hand-written PyTorch
+  loop with tqdm bars, and Accelerate and fastai runs whose 0.5.16 captures had
+  no script.
+- **Corrected:** 0.7.33 said the extension replays 3,876 recorded parser calls.
+  The test feeding real logs split every progress-bar redraw into a line of
+  its own, which the pipeline never does; read as the pipeline reads them,
+  there are about 2,900, and the extension still matches Python on all of
+  them.
+- CI no longer waits for hours on a slow package mirror: the browser job's
+  system-package install is limited and retried.
+
+---
+
 ## [0.7.33] — 2026-10-21
 
 ### Fixed — CatBoost with two eval sets

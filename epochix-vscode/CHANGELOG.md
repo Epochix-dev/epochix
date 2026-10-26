@@ -14,6 +14,15 @@ which covers the extension too; entries here resume with 0.7.16.
 
 ---
 
+## [0.7.34] — 2026-10-26
+
+### Changed
+
+- **The panel's charts are drawn by Chart.js 4.6.1** (was 4.4.4). A real run's
+  charts were compared between the two versions and look the same.
+
+---
+
 ## [0.7.33] — 2026-10-21
 
 ### Fixed
