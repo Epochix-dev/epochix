@@ -16,6 +16,7 @@ import {
   LOWER_IS_BETTER,
   isPercentMetric,
   formatPrimaryMetric,
+  latestPrimaryKey,
   metricLabel,
 } from '../viz-util.js';
 import { escapeHtml as _esc } from '../escape.js';
@@ -70,7 +71,11 @@ export class GradeArcChart {
     this._unsub = store.subscribe((s) => {
       this._frames  = s.frames  ?? [];
       this._metrics = s.metrics ?? [];
-      this._primaryKey = s.run?.primary_metric ?? null;
+      // The story's metric as its frames name it. The run record is written
+      // before the metric is known and, for a live run, was not corrected
+      // until the stream ended: validation accuracy drew as an inverted
+      // "val loss" for the whole of a live run.
+      this._primaryKey = latestPrimaryKey(this._frames) ?? s.run?.primary_metric ?? null;
       this._draw();
     });
     this._resizeObs = new ResizeObserver(() => this._resize());

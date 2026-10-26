@@ -14,6 +14,7 @@ paths they use); never edit a capture by hand.
 |---|---|---|
 | `accelerate_real.log` | `accelerator.print({...})` of a dict with the global `step`, from a small loop run through Accelerate 1.15, 4 epochs. | `accelerate_real_source.py` |
 | `catboost_real_classifier.log` | CatBoost classifier, `eval_metric="AUC"`, breast cancer data. | `boosting_real_source.py` (`cb_clf`) |
+| `catboost_real_flat_auc.log` | CatBoost on data its first tree separates: AUC 1.0 every round, so nothing says which way the metric runs. | `boosting_real_source.py` (`cb_flat_auc`) |
 | `catboost_real_no_eval_set.log` | CatBoost classifier fitted with no eval set. | `boosting_real_source.py` (`cb_no_eval_set`) |
 | `catboost_real_regressor.log` | CatBoost regressor stopped by its overfitting detector. | `boosting_real_source.py` (`cb_reg`) |
 | `catboost_real_two_eval_sets.log` | CatBoost regressor with two eval sets. | `boosting_real_source.py` (`cb_two_eval_sets`) |

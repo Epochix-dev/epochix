@@ -95,6 +95,21 @@ elif which == "cb_no_eval_set":
         allow_writing_files=False,
     )
     model.fit(x, y, verbose=1)
+elif which == "cb_flat_auc":
+    # Data the first tree separates: AUC 1.0 every round, so CatBoost's
+    # running best never says which way the metric runs.
+    import numpy as np
+    from catboost import CatBoostClassifier
+
+    rng = np.random.default_rng(0)
+    x = np.concatenate([rng.uniform(-1.0, -0.5, 200), rng.uniform(0.5, 1.0, 200)])
+    labels = np.array([0] * 200 + [1] * 200)
+    order = rng.permutation(400)
+    x, labels = x[order].reshape(-1, 1), labels[order]
+    model = CatBoostClassifier(
+        iterations=30, depth=2, eval_metric="AUC", random_seed=0, allow_writing_files=False
+    )
+    model.fit(x[:300], labels[:300], eval_set=(x[300:], labels[300:]), verbose=1)
 elif which == "cb_reg":
     from catboost import CatBoostRegressor
 
