@@ -142,6 +142,9 @@ jobs:
         os: [ubuntu-latest, macos-latest]
     name: browser (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
+    # Normally 2 minutes. Without a limit a stalled step runs for GitHub's
+    # 6-hour default and every PR waits on it.
+    timeout-minutes: 30
     env:
       UV_PYTHON: "3.12"
       EPOCHIX_REQUIRE_ALL_BROWSERS: "1"
@@ -158,7 +161,28 @@ jobs:
           mkdir -p src/epochix/_frontend/dist
           cp -r frontend/dist/. src/epochix/_frontend/dist/
       - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
-      - run: uv run --extra dev playwright install --with-deps chromium firefox webkit
+      - name: Set up Python and the dev dependencies
+        run: uv run --extra dev playwright --version
+      - name: Install the browsers' system packages
+        if: runner.os == 'Linux'
+        # apt normally takes under a minute here. Some days the runner's Ubuntu
+        # mirror crawls at ~100 KB/s: on 2026-10-26 this ran 19 and 10 minutes
+        # before being cancelled, and a fresh attempt took 50 seconds both
+        # times. So a slow attempt is stopped after 4 minutes and tried again;
+        # dpkg finishes whatever a stopped attempt left half-installed.
+        timeout-minutes: 15
+        run: |
+          for attempt in 1 2 3; do
+            if timeout 240 uv run --extra dev playwright install-deps chromium firefox webkit; then
+              exit 0
+            fi
+            echo "::warning::system packages: attempt $attempt failed or took over 4 minutes"
+            sudo dpkg --configure -a || true
+          done
+          exit 1
+      - name: Install the browsers
+        timeout-minutes: 10
+        run: uv run --extra dev playwright install chromium firefox webkit
       - name: Render on every engine
         run: |
           uv run --extra dev pytest tests/browser --junitxml=render.xml
