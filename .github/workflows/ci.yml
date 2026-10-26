@@ -169,15 +169,30 @@ jobs:
         # Ubuntu 26 its mirror sometimes crawls at ~100 KB/s: on 2026-10-26
         # this ran 19 and 10 minutes before being cancelled, a fresh attempt
         # took 50 seconds both times, and a slow one that still finished took
-        # 3m54s. So an attempt is stopped after 6 minutes and tried again;
-        # dpkg finishes whatever a stopped attempt left half-installed.
+        # 3m54s. So an attempt is stopped after 6 minutes and tried again.
+        #
+        # Stopping one is not enough: timeout ends uv and Playwright, but the
+        # apt-get Playwright starts under sudo runs as root and outlives them,
+        # holding dpkg's lock, so every later attempt failed at once (0.7.34's
+        # release PR). Before retrying, that apt-get is killed, any dpkg it
+        # started is left to finish, and dpkg completes what was cut short.
         timeout-minutes: 20
+        env:
+          # Seconds allowed for each attempt, in order.
+          APT_ATTEMPT_SECONDS: "25 360 360"
         run: |
-          for attempt in 1 2 3; do
-            if timeout 360 uv run --extra dev playwright install-deps chromium firefox webkit; then
+          attempt=0
+          for limit in $APT_ATTEMPT_SECONDS; do
+            attempt=$((attempt + 1))
+            if timeout "$limit" uv run --extra dev playwright install-deps chromium firefox webkit; then
               exit 0
             fi
-            echo "::warning::system packages: attempt $attempt failed or took over 6 minutes"
+            echo "::warning::system packages: attempt $attempt failed or took over $limit seconds"
+            sudo pkill -KILL -x apt-get || true
+            for _ in $(seq 1 60); do
+              pgrep -x dpkg >/dev/null || break
+              sleep 2
+            done
             sudo dpkg --configure -a || true
           done
           exit 1
