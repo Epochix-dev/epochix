@@ -165,18 +165,19 @@ jobs:
         run: uv run --extra dev playwright --version
       - name: Install the browsers' system packages
         if: runner.os == 'Linux'
-        # apt normally takes under a minute here. Some days the runner's Ubuntu
-        # mirror crawls at ~100 KB/s: on 2026-10-26 this ran 19 and 10 minutes
-        # before being cancelled, and a fresh attempt took 50 seconds both
-        # times. So a slow attempt is stopped after 4 minutes and tried again;
+        # apt usually takes about a minute here. Since ubuntu-latest moved to
+        # Ubuntu 26 its mirror sometimes crawls at ~100 KB/s: on 2026-10-26
+        # this ran 19 and 10 minutes before being cancelled, a fresh attempt
+        # took 50 seconds both times, and a slow one that still finished took
+        # 3m54s. So an attempt is stopped after 6 minutes and tried again;
         # dpkg finishes whatever a stopped attempt left half-installed.
-        timeout-minutes: 15
+        timeout-minutes: 20
         run: |
           for attempt in 1 2 3; do
-            if timeout 240 uv run --extra dev playwright install-deps chromium firefox webkit; then
+            if timeout 360 uv run --extra dev playwright install-deps chromium firefox webkit; then
               exit 0
             fi
-            echo "::warning::system packages: attempt $attempt failed or took over 4 minutes"
+            echo "::warning::system packages: attempt $attempt failed or took over 6 minutes"
             sudo dpkg --configure -a || true
           done
           exit 1
