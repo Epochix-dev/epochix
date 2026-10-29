@@ -340,3 +340,24 @@ suite("Standalone engine — the grade bands a letter was measured against", () 
     assert.strictEqual(r.last.gradeBands, null);
   });
 });
+
+suite("Standalone engine — the plateau warning says only what it measured", () => {
+  test("a metric flat since its first reading is not told to restart progress", () => {
+    // A CatBoost eval metric at AUC 1.0 every round: no progress, and no
+    // direction to make movement progress.
+    const r = drive(Array.from({ length: 12 }, (_, k) =>
+      `${k}:\ttest: 1.0000000\tbest: 1.0000000 (0)\ttotal: ${100 + k}ms\tremaining: 1s`));
+    const plateau = r.engine.warnings().filter((w) => w.kind === "plateau");
+    assert.strictEqual(plateau.length, 1, JSON.stringify(r.engine.warnings()));
+    assert.ok(!/progress|learning rate/i.test(plateau[0].message), plateau[0].message);
+  });
+
+  test("a run that improved and then flattened keeps the advice", () => {
+    const values = [0.4, 0.55, 0.7, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8];
+    const r = drive(values.map((v, i) =>
+      `Epoch ${i + 1}/9 - loss: ${(1 - v).toFixed(4)} - val_loss: ${(1.05 - v).toFixed(4)} - val_accuracy: ${v.toFixed(4)}`));
+    const plateau = r.engine.warnings().filter((w) => w.kind === "plateau");
+    assert.strictEqual(plateau.length, 1, JSON.stringify(r.engine.warnings()));
+    assert.ok(/learning rate/i.test(plateau[0].message), plateau[0].message);
+  });
+});

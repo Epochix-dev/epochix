@@ -808,6 +808,9 @@ async def run_pipeline(
         seq=last_seq,
         payload={
             "final_grade": final_grade.value if final_grade else None,
+            # What the "Training complete" card shows. A page watching live
+            # holds the run record from before it finished.
+            "story_summary": story_summary,
             # A page watching live loaded run.config before the folds were
             # stored; this is how it learns of them.
             "cross_validation": cv,

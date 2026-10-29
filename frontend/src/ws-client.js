@@ -5,7 +5,7 @@
  * On reconnect sends ?last_seq=N so the server replays missed frames.
  */
 
-import { store, pushFrame, pushMilestone, pushWarning } from './store.js';
+import { store, markRunFinished, pushFrame, pushMilestone, pushWarning } from './store.js';
 
 const BACKOFF_INITIAL = 1000;
 const BACKOFF_MAX = 30_000;
@@ -128,7 +128,7 @@ function _handleMessage(msg) {
       break;
 
     case 'complete':
-      store.set({ live: false, connected: false });
+      markRunFinished(msg.payload);
       // Folds are ranked once the stream ends; a live page learns of them here.
       if (msg.payload?.cross_validation) {
         store.set({ crossValidation: msg.payload.cross_validation });

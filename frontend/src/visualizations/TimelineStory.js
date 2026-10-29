@@ -78,8 +78,11 @@ export class TimelineStory {
       }
     }
 
-    // Render training_complete if run is done
-    if (!s.live && s.run && !this._seen.has('complete')) {
+    // "Training complete" only when the run's record says it finished. It was
+    // `!s.live && s.run`, and a page sets the run a moment before it marks it
+    // live: every live run opened in the dashboard read "Training complete"
+    // while it was still training.
+    if (s.run?.finished_at && !this._seen.has('complete')) {
       this._seen.add('complete');
       this._appendCard({
         emoji: '🎓',

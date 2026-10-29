@@ -31,6 +31,7 @@ MESSAGES: dict[str, dict[str, str]] = {
         "example a reduce-on-plateau schedule) may restart "
         "progress; otherwise more epochs at this rate may add "
         "little.",
+        "warn_plateau_measured": "The metric moved less than 1% over the last 5 readings.",
         "warn_plateau_cleared": "The metric is moving again: at least 1% over the last 5 readings.",
         # The sentence after a past-peak, stalled or diverged story: what to do
         # about it. Appended to every variant, so no run draws one without it.
@@ -74,6 +75,7 @@ MESSAGES: dict[str, dict[str, str]] = {
         "زمان‌بندی reduce-on-plateau) ممکن است پیشرفت را از سر "
         "بگیرد؛ وگرنه ادامهٔ آموزش با همین نرخ شاید چیز زیادی اضافه "
         "نکند.",
+        "warn_plateau_measured": "سنجه در ۵ اندازه‌گیری اخیر کمتر از ۱٪ تغییر کرده است.",
         "warn_plateau_cleared": "سنجه دوباره در حال تغییر است: دست‌کم ۱٪ در ۵ اندازه‌گیری اخیر.",
         "next_pastpeak": "گام بعدی: اگر نقطهٔ ذخیرهٔ دوره {best_epoch} را دارید همان را "
         "نگه دارید، و برای این سنجه توقف زودهنگام (early stopping) بگذارید تا اجرای "
@@ -118,6 +120,7 @@ MESSAGES: dict[str, dict[str, str]] = {
         "le taux d'apprentissage (par exemple un planificateur "
         "reduce-on-plateau) peut relancer la progression ; sinon, "
         "d'autres époques à ce taux risquent d'apporter peu.",
+        "warn_plateau_measured": "La métrique a varié de moins de 1 % sur les 5 dernières mesures.",
         "warn_plateau_cleared": "La métrique évolue de nouveau : au moins 1 % sur les 5 "
         "dernières mesures.",
         "next_pastpeak": "Étape suivante : conservez le point de contrôle de l'époque "

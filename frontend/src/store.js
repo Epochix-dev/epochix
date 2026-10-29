@@ -147,6 +147,30 @@ function _withWarnings(s, incoming) {
  * Push a milestone into the milestones list.
  * @param {object} milestone
  */
+/**
+ * The stream said the run has ended: record it on the run itself. Whether a
+ * run is finished is read from `run.finished_at` — the record's own word —
+ * not from the `live` flag, which is false for a moment on every page load:
+ * the timeline read that moment as the end and showed "Training complete" on
+ * runs that were still training.
+ * @param {{final_grade?: string|null, story_summary?: string|null}|undefined} payload
+ */
+export function markRunFinished(payload) {
+  const run = store.get().run;
+  store.set({
+    live: false,
+    connected: false,
+    ...(run ? {
+      run: {
+        ...run,
+        finished_at: run.finished_at ?? new Date().toISOString(),
+        final_grade: payload?.final_grade ?? run.final_grade,
+        story_summary: payload?.story_summary ?? run.story_summary,
+      },
+    } : {}),
+  });
+}
+
 export function pushMilestone(milestone) {
   const s = store.get();
   store.set({ milestones: [...s.milestones, milestone] });

@@ -5,7 +5,7 @@
  * last_seq tracking on top so missed frames are replayed.
  */
 
-import { store, pushFrame, pushMilestone, pushWarning } from './store.js';
+import { store, markRunFinished, pushFrame, pushMilestone, pushWarning } from './store.js';
 
 let _es = null;
 let _lastSeq = -1;
@@ -88,7 +88,7 @@ function _handleMessage(msg) {
       }
       break;
     case 'complete':
-      store.set({ live: false, connected: false });
+      markRunFinished(msg.payload);
       disconnectSSE();
       break;
     default:

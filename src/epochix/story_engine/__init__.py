@@ -871,6 +871,7 @@ class StoryEngine:
             val_loss=last("val_loss"),
             primary_value=primary_value,
             lr=last("lr"),
+            direction_known=not direction_unknown,
         )
 
         # Build skill dimensions (radar data)
