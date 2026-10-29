@@ -14,6 +14,21 @@ which covers the extension too; entries here resume with 0.7.16.
 
 ---
 
+## [0.7.37] — 2026-10-29
+
+### Fixed
+
+- **A metric nothing says the direction of is not graded.** A CatBoost run
+  whose AUC is 1.0 every round was graded D on an assumed direction; it is now
+  an "I", and the card says it was not graded and why.
+- **Awakening no longer says the run has just begun**, in any language — it
+  is also told of a run that stays near its first reading, at any epoch.
+- **The learning curve's grade lines are the bands the letter was graded
+  on.** They were a typed copy of classification's, which matched no task's
+  bands, drawn for mAP and AUC too. The letters beside them no longer pile up.
+
+---
+
 ## [0.7.36] — 2026-10-26
 
 ### Fixed
