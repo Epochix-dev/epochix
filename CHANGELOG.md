@@ -7,6 +7,42 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.7.37] — 2026-10-29
+
+### Fixed — a grade only where the log supports one
+
+- **A metric nothing says the direction of is no longer graded.** For a run
+  whose story metric has a name that does not say which way is better, with no
+  `.epochix.yaml` to say either, the engine assumed higher was better and
+  graded the improvement on that. A recorded CatBoost run whose AUC is 1.0
+  every round came out D. It is now an "I", in both engines, and the card
+  under it says it was not graded and why, in English, French and Persian,
+  instead of claiming the letter came from thresholds or improvement.
+- **Awakening no longer says the run has just begun.** It is told whenever a
+  run has advanced less than 10% — by the clock when the run's length is
+  known, otherwise by how much of the possible improvement it has realised —
+  so "an opening reading" and "only beginning" were false of any run that
+  stays near its first reading, at any epoch. The Awakening stories, for every
+  task in all three languages, now state the reading and name the phase.
+- **The phase journey's flavour lines are gone** — "first signal from noise",
+  "beyond memorisation" and the rest were English-only and not drawn from the
+  log.
+
+### Fixed — the learning curve's grade lines are the grader's
+
+- **The dashed grade lines did not match the grades.** They were a typed copy
+  of classification's bands (A+ 0.97, A 0.93, … C 0.55), drawn for every
+  percentage metric. The engine grades classification at A+ 0.95, A 0.90, …
+  C 0.60, detection's mAP from 0.75 down, and AUC on bands of its own: a run
+  graded A+ at 0.95 sat below the chart's A+ line. The engine now records the
+  bands a letter was measured against — a project's own `.epochix.yaml` bands
+  included — and the chart draws exactly those, in the dashboard and the
+  VS Code panel; a run graded on improvement shows none.
+- **The grade letters no longer pile up.** A+ to C sit close together near
+  the top; a letter too close to the one above is now left out, its line kept.
+
+---
+
 ## [0.7.36] — 2026-10-26
 
 ### Fixed — the Engineer panel names its chart
