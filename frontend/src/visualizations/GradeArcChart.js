@@ -30,17 +30,32 @@ const PHASE_BG = {
   polishing:     'rgba(244,114,182,0.10)',
 };
 
-// Classification grade thresholds (higher = better)
-const GRADE_LINES = [
-  { grade: 'A+', v: 0.97, color: '#34d399' },
-  { grade: 'A',  v: 0.93, color: '#60a5fa' },
-  { grade: 'A-', v: 0.87, color: '#818cf8' },
-  { grade: 'B+', v: 0.82, color: '#a78bfa' },
-  { grade: 'B',  v: 0.76, color: '#c084fc' },
-  { grade: 'B-', v: 0.70, color: '#e879f9' },
-  { grade: 'C+', v: 0.63, color: '#fb923c' },
-  { grade: 'C',  v: 0.55, color: '#f97316' },
-];
+// Colours for the grade lines. The lines themselves are the bands the grader
+// used, written to the run (config.grade_bands). They used to be a typed copy
+// of classification's, drawn for every percentage metric — mAP and AUC
+// included — and the copy did not match: a run graded A+ at 0.95 sat below
+// the chart's A+ line at 0.97.
+const GRADE_COLORS = {
+  'A+': '#34d399', 'A': '#60a5fa', 'A-': '#818cf8', 'B+': '#a78bfa', 'B': '#c084fc',
+  'B-': '#e879f9', 'C+': '#fb923c', 'C': '#f97316', 'C-': '#f59e0b', 'D': '#ef4444',
+};
+
+/**
+ * The grade lines to draw: the bands the run was graded against, for a
+ * higher-is-better metric on the chart's 0–1 axis. None when the letter was
+ * not measured against bands (graded on improvement, or "I").
+ * @returns {{grade: string, v: number, color: string}[]}
+ */
+export function gradeLines(run) {
+  const used = run?.config?.grade_bands;
+  if (!used || used.lower_better || !Array.isArray(used.bands)) return [];
+  return used.bands
+    .filter((b) => b.grade !== 'F' && Number.isFinite(b.value) && b.value > 0 && b.value <= 1)
+    .map((b) => ({ grade: b.grade, v: b.value, color: GRADE_COLORS[b.grade] ?? '#9ca3af' }));
+}
+
+// Labels closer than this (px) to the one above are dropped; the line stays.
+const MIN_LABEL_GAP = 10;
 
 export class GradeArcChart {
   /** @param {HTMLCanvasElement} canvas */
@@ -76,6 +91,7 @@ export class GradeArcChart {
       // until the stream ended: validation accuracy drew as an inverted
       // "val loss" for the whole of a live run.
       this._primaryKey = latestPrimaryKey(this._frames) ?? s.run?.primary_metric ?? null;
+      this._gradeLines = gradeLines(s.run);
       this._draw();
     });
     this._resizeObs = new ResizeObserver(() => this._resize());
@@ -243,13 +259,17 @@ export class GradeArcChart {
     }
 
     // ── Grade threshold lines ──────────────────────────────────────────────
-    // These are ACCURACY thresholds (0.55–0.97). They only make sense when the
-    // primary metric is an accuracy-style fraction; for MAE/RMSE/loss the line
-    // is drawn in quality space with a data-range axis, so we omit them.
+    // The bands the letter was measured against (gradeLines keeps only a
+    // higher-is-better metric's, inside 0–1), and only where the curve is
+    // plotted on its raw 0–1 values: any other metric is drawn rescaled to its
+    // own range (below), where a band's raw value would sit in the wrong place.
     const primaryIsPct = isPercentMetric(this._primaryKey);
     ctx.font         = '9px DM Sans, sans-serif';
     ctx.textAlign    = 'left';
-    for (const { grade, v, color } of (primaryIsPct ? GRADE_LINES : [])) {
+    // A+…C sit close together near the top; their letters stacked into an
+    // unreadable column. A letter too close to the one above is left out.
+    let lastLabelY = -Infinity;
+    for (const { grade, v, color } of (primaryIsPct ? this._gradeLines ?? [] : [])) {
       const y = yScale(v);
       if (y < MT || y > MT + ch) continue;
       ctx.beginPath();
@@ -260,8 +280,11 @@ export class GradeArcChart {
       ctx.lineWidth   = 1;
       ctx.stroke();
       ctx.setLineDash([]);
-      ctx.fillStyle = color + 'cc';     // brighter labels
-      ctx.fillText(grade, 2, y + 3.5);
+      if (y - lastLabelY >= MIN_LABEL_GAP) {
+        ctx.fillStyle = color + 'cc';   // brighter labels
+        ctx.fillText(grade, 2, y + 3.5);
+        lastLabelY = y;
+      }
     }
 
     // ── Axes ──────────────────────────────────────────────────────────────

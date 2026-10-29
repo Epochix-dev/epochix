@@ -312,3 +312,31 @@ suite("Standalone engine — warnings and milestones do not lie", () => {
     assert.deepStrictEqual(r.engine.warnings(), []);
   });
 });
+
+suite("Standalone engine — the grade bands a letter was measured against", () => {
+  test("a classification run sends the engine's bands, not the chart's old copy", () => {
+    const r = drive(range(10, (e) =>
+      `Epoch ${e}/10 - loss: ${(2 * 0.8 ** e).toFixed(4)} - val_loss: ${(2 * 0.82 ** e).toFixed(4)} - val_accuracy: ${Math.min(0.96, 0.5 + 0.05 * e).toFixed(4)}`));
+    assert.strictEqual(r.last.primaryMetric, "val_accuracy");
+    const bands = r.last.gradeBands;
+    assert.ok(bands, "a letter graded on bands sent none");
+    assert.strictEqual(bands.lower_better, false);
+    // The dashboard's typed copy put A+ at 0.97 and A at 0.93.
+    assert.deepStrictEqual(bands.bands.slice(0, 2), [
+      { grade: "A+", value: 0.95 },
+      { grade: "A", value: 0.9 },
+    ]);
+    assert.ok(bands.bands.every((b) => Number.isFinite(b.value)));
+  });
+
+  test("a run graded on improvement sends none", () => {
+    const r = drive([
+      "0:\ttest: 0.9790356\tbest: 0.9790356 (0)\ttotal: 137ms\tremaining: 8.11s",
+      "1:\ttest: 0.9854298\tbest: 0.9854298 (1)\ttotal: 139ms\tremaining: 4.02s",
+      "2:\ttest: 0.9842767\tbest: 0.9854298 (1)\ttotal: 140ms\tremaining: 2.66s",
+      "3:\ttest: 0.9864780\tbest: 0.9864780 (3)\ttotal: 141ms\tremaining: 1.97s",
+    ]);
+    assert.strictEqual(r.last.gradeBasis, "improvement");
+    assert.strictEqual(r.last.gradeBands, null);
+  });
+});

@@ -100,6 +100,15 @@ export function startVscodeBridge(applyTheme) {
       case 'frame':
         if (msg.frame) {
           if (!store.get().attached) store.set({ attached: true });
+          // The bands the letter was graded on, where the server's runs keep
+          // them (run.config.grade_bands), for the learning curve's lines.
+          if ('gradeBands' in msg.frame) {
+            const run = store.get().run ?? {};
+            const bands = msg.frame.gradeBands ?? undefined;
+            if (JSON.stringify(run.config?.grade_bands) !== JSON.stringify(bands)) {
+              store.set({ run: { ...run, config: { ...(run.config ?? {}), grade_bands: bands } } });
+            }
+          }
           pushFrame(mapFrame(msg.frame));
         }
         break;
@@ -140,6 +149,8 @@ export function startVscodeBridge(applyTheme) {
             final_grade: r.finalGrade,
             story_summary: r.storySummary,
             finished_at: new Date().toISOString(),
+            // The grade bands the frames brought (see 'frame' above).
+            config: store.get().run?.config,
           },
           crossValidation: r.crossValidation ?? store.get().crossValidation ?? null,
           live: false,

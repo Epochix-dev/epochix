@@ -1,3 +1,2 @@
-The story opens at epoch {epoch} with IoU {value}. It is too early to read much into it.
-Awakening: IoU {value} at epoch {epoch} — an opening reading, not a verdict.
-Epoch {epoch}: IoU {value}. The run is only beginning; the readings that follow will say more.
+Awakening: IoU {value} at epoch {epoch}.
+Epoch {epoch}: IoU {value}, in the Awakening phase.

@@ -1,2 +1,2 @@
-L'histoire commence à l'époque {epoch} : perplexité {value}. Il est trop tôt pour en tirer des conclusions.
-Éveil : perplexité {value} à l'époque {epoch} — une première mesure, pas un verdict.
+Éveil : perplexité {value} à l'époque {epoch}.
+Époque {epoch} : perplexité {value}, en phase d'éveil.

@@ -62,8 +62,8 @@
   "metric_from_epoch": 0.0,
   "grade_note": null,
   "cross_validation": null,
-  "final_grade": "D",
-  "final_grade_basis": "improvement",
+  "final_grade": "I",
+  "final_grade_basis": null,
   "final_phase": "awakening"
  },
  "catboost_real_no_eval_set.log": {

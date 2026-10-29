@@ -21,6 +21,7 @@ import {
 import type { Grade, TaskType } from "../story/grader";
 import type { GradeBasis } from "../story/grading.generated";
 import {
+  bandRows,
   bandsFor,
   bandsLowerBetter,
   gradeWithBands,
@@ -28,6 +29,7 @@ import {
 } from "../story/gradeConfig";
 import {
   computeGrade,
+  gradeBands,
   gradeByTrajectory,
   gradeNote,
   gradeRank,
@@ -58,7 +60,7 @@ import {
   type Locale,
 } from "../story/narrator";
 import type {
-  CrossValidation, StoryFrameMsg, MilestoneMsg, WarningMsg, RunSummaryMsg,
+  CrossValidation, GradeBandsMsg, StoryFrameMsg, MilestoneMsg, WarningMsg, RunSummaryMsg,
 } from "./messages";
 import { parseArchitecture, type ArchLayer } from "../story/architecture";
 import {
@@ -135,6 +137,16 @@ function cleanLine(text: string): string {
   if (t.endsWith("\r")) t = t.slice(0, -1);
   const cr = t.lastIndexOf("\r");
   return cr >= 0 ? t.slice(cr + 1) : t;
+}
+
+/** The bands a letter was graded on, as the dashboard draws them (an
+ *  open-ended F band is not a line, and JSON has no infinity). Mirrors the
+ *  run config Python's pipeline writes (`grade_bands`). */
+function bandsMsg(rows: ReadonlyArray<readonly [Grade, number]>, lowerBetter: boolean): GradeBandsMsg {
+  return {
+    lower_better: lowerBetter,
+    bands: rows.filter(([, v]) => Number.isFinite(v)).map(([grade, value]) => ({ grade, value })),
+  };
 }
 
 /** Every built-in parser, best first — fresh instances. */
@@ -650,10 +662,14 @@ export class StandaloneEngine {
     // Direction from the metric's own name first: the task default is right
     // for the task's headline metric and silently inverts every other one.
     // Where the name says nothing, the project's thresholds file may.
-    const lowerBetter =
-      metricLowerBetter(key) ??
-      this._gradeConfig?.lowerBetter[this._task] ??
-      taskLowerBetter(this._task);
+    const nameSays = metricLowerBetter(key);
+    const fileSays = this._gradeConfig?.lowerBetter[this._task];
+    const lowerBetter = nameSays ?? fileSays ?? taskLowerBetter(this._task);
+    // A CUSTOM run's unrecognised name with no thresholds file: the direction
+    // above is a default, not a reading of the log, so it cannot be graded on
+    // improvement (as in the Python engine).
+    const directionUnknown =
+      nameSays === undefined && fileSays === undefined && this._task === "custom";
 
     // Best so far, updated BEFORE the past-peak check, as in the Python engine.
     const newBest =
@@ -683,7 +699,7 @@ export class StandaloneEngine {
     let progress = clock !== null ? clock : rel !== null ? rel : 0.0;
     if (!Number.isFinite(progress)) progress = 0.0;
     progress = Math.max(0.0, Math.min(1.0, progress));
-    const [grade, gradeBasis] = this._grade(value, lowerBetter);
+    const [grade, gradeBasis, gradeBands] = this._grade(value, lowerBetter, directionUnknown);
 
     let pastPeak = false;
     if (Math.abs(this._best) > 1e-9) {
@@ -744,6 +760,7 @@ export class StandaloneEngine {
         hasEpoch: epoch !== null, newBest,
       }),
       gradeBasis,
+      gradeBands,
       narrative,
       taskType: this._task,
     };
@@ -754,24 +771,34 @@ export class StandaloneEngine {
    * apply only to its on-scale metric; anything else is graded on how far it
    * improved, and with a single reading there is nothing to measure against.
    */
-  private _grade(value: number, lowerBetter: boolean): [Grade, GradeBasis | null] {
+  private _grade(
+    value: number,
+    lowerBetter: boolean,
+    directionUnknown: boolean,
+  ): [Grade, GradeBasis | null, GradeBandsMsg | null] {
     const key = this._primaryMetric;
     // A project's own thresholds come first, and only for the metric they
     // were written for. The bands' own order says whether lower is better.
     const own = this._gradeConfig ? bandsFor(this._gradeConfig, this._task, key) : null;
     if (own !== null) {
-      return [gradeWithBands(own, value, bandsLowerBetter(own) ?? lowerBetter), "thresholds"];
+      const ownLower = bandsLowerBetter(own) ?? lowerBetter;
+      return [
+        gradeWithBands(own, value, ownLower),
+        "thresholds",
+        bandsMsg(bandRows(own, ownLower), ownLower),
+      ];
     }
     const onScale = [...ON_SCALE[this._task]].some((k) => k.toLowerCase() === key.toLowerCase());
     if (onScale || hasAbsoluteScale(key)) {
-      return [computeGrade(this._task, value, key), "thresholds"];
+      const [rows, rowsLower] = gradeBands(this._task, key);
+      return [computeGrade(this._task, value, key), "thresholds", bandsMsg(rows, rowsLower)];
     }
-    if (this._baseline !== null && this._primaryReadings >= 2) {
-      return [gradeByTrajectory(this._baseline, value, lowerBetter), "improvement"];
+    if (!directionUnknown && this._baseline !== null && this._primaryReadings >= 2) {
+      return [gradeByTrajectory(this._baseline, value, lowerBetter), "improvement", null];
     }
-    // One reading of a metric with no known scale: anything else is a guess
-    // dressed as a verdict.
-    return ["I", null];
+    // One reading of a metric with no known scale, or one nothing says which
+    // way is better: anything else is a guess dressed as a verdict.
+    return ["I", null, null];
   }
 
   /**

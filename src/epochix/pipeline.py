@@ -19,6 +19,7 @@ import asyncio
 import contextlib
 import dataclasses
 import logging
+import math
 import re
 from datetime import datetime, timezone
 from typing import TYPE_CHECKING, cast
@@ -536,9 +537,14 @@ async def run_pipeline(
     # finishes, so its learning curve drew validation accuracy as an inverted
     # "val loss" for as long as it ran, and the run list called it CUSTOM.
     written: tuple[TaskType, str, str] | None = None
+    # The grade bands the latest letter was measured against, as written to
+    # the run's config. The dashboard drew a typed copy of classification's
+    # for every percentage metric — mAP and AUC included — and the copy did
+    # not match: a run graded A+ at 0.95 sat below the chart's A+ line at 0.97.
+    bands_written: object = None
 
     def _sync_run() -> None:
-        nonlocal written
+        nonlocal written, bands_written
         if parser is None or last_epoch is None:
             return
         now = (engine._effective_task(), parser.name, engine._effective_primary_key())
@@ -547,6 +553,29 @@ async def run_pipeline(
                 run_id, task_type=now[0], parser_used=now[1], primary_metric=now[2]
             )
             written = now
+        used = engine.grade_bands_used
+        bands = None
+        if used is not None:
+            thresholds, lower_better = used
+            bands = {
+                "lower_better": lower_better,
+                # An open-ended F band is not a line on any chart, and JSON has
+                # no infinity.
+                "bands": [
+                    {"grade": grade.value, "value": value}
+                    for grade, value in thresholds
+                    if math.isfinite(value)
+                ],
+            }
+        if bands != bands_written:
+            current = store.get_run(run_id)
+            config = dict(current.config) if current and current.config else {}
+            if bands is None:
+                config.pop("grade_bands", None)
+            else:
+                config["grade_bands"] = bands
+            store.update_run_config(run_id, config)
+            bands_written = bands
 
     def _process_line(raw_line: object) -> None:
         nonlocal last_seq, arch_detected, last_epoch

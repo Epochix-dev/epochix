@@ -78,7 +78,8 @@
     "gradeCaveat": "The grade comes from fixed thresholds for this task type or, for a metric with no fixed scale such as a loss, from how far it has improved since its first reading. Either way it does not know how hard your dataset is. The trend and the best-epoch call are the reliable parts.",
     "gradeCaveats": {
       "thresholds": "Graded against fixed thresholds for this metric — it does not know how hard your dataset is. The trend and the best-epoch call are the reliable parts.",
-      "improvement": "Graded on how far this metric has improved since its first reading, because it has no fixed scale. That measures the change, not how good the model is. The trend and the best-epoch call are the reliable parts."
+      "improvement": "Graded on how far this metric has improved since its first reading, because it has no fixed scale. That measures the change, not how good the model is. The trend and the best-epoch call are the reliable parts.",
+      "ungraded": "Not graded: this metric has no fixed scale, and the log gives nothing to measure it against — a single reading, or nothing that says whether a higher or a lower value is better."
     },
     "gradeNotes": {
       "few_readings": "Provisional: this grade rests on fewer than five readings of the metric.",

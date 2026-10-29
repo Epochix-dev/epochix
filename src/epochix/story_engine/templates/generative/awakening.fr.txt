@@ -1,2 +1,2 @@
-L'histoire commence à l'époque {epoch} : FID {value}. Il est trop tôt pour en tirer des conclusions.
-Éveil : FID {value} à l'époque {epoch} — une première mesure, pas un verdict.
+Éveil : FID {value} à l'époque {epoch}.
+Époque {epoch} : FID {value}, en phase d'éveil.

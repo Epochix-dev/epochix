@@ -136,3 +136,81 @@ describe('the learning curve', () => {
     expect(latestPrimaryKey(undefined)).toBeNull();
   });
 });
+
+describe('the phase journey', () => {
+  it('names each phase and its epochs, with no flavour line no log shows', async () => {
+    const { PhaseJourney } = await import('../visualizations/PhaseJourney.js');
+    const el = document.createElement('div');
+    const phases = ['awakening', 'learning', 'understanding', 'mastering', 'polishing'];
+    const frames = phases.map((phase, i) => ({
+      seq: i, epoch: i, phase, grade: 'B', primary_metric: 'val_accuracy', primary_metric_value: 0.5,
+    }));
+    const state = { frames, currentFrame: frames[frames.length - 1] };
+    new PhaseJourney(el).mount({ get: () => state, subscribe: () => () => {} });
+    const text = el.textContent.replace(/\s+/g, ' ');
+    expect(text).toContain('Awakening');
+    expect(text).toContain('Polishing');
+    expect(text).not.toMatch(/signal from noise|patterns forming|memoris|refining the edges|final gains/);
+  });
+});
+
+describe('the learning curve\'s grade lines', () => {
+  const CLASSIFICATION = {
+    lower_better: false,
+    bands: [
+      ['A+', 0.95], ['A', 0.9], ['A-', 0.87], ['B+', 0.82], ['B', 0.75], ['B-', 0.7],
+      ['C+', 0.65], ['C', 0.6], ['C-', 0.55], ['D', 0.5], ['F', 0.0],
+    ].map(([grade, value]) => ({ grade, value })),
+  };
+
+  it('are the bands the run was graded on, without F', async () => {
+    const { gradeLines } = await import('../visualizations/GradeArcChart.js');
+    const lines = gradeLines({ config: { grade_bands: CLASSIFICATION } });
+    expect(lines.map((l) => [l.grade, l.v])).toEqual([
+      ['A+', 0.95], ['A', 0.9], ['A-', 0.87], ['B+', 0.82], ['B', 0.75], ['B-', 0.7],
+      ['C+', 0.65], ['C', 0.6], ['C-', 0.55], ['D', 0.5],
+    ]);
+    // The typed copy it replaced put A+ at 0.97 and A at 0.93.
+    expect(lines.find((l) => l.grade === 'A+').v).toBe(0.95);
+  });
+
+  it('are none for a run not graded on bands, or a lower-is-better one', async () => {
+    const { gradeLines } = await import('../visualizations/GradeArcChart.js');
+    expect(gradeLines({ config: {} })).toEqual([]);
+    expect(gradeLines({})).toEqual([]);
+    expect(gradeLines(undefined)).toEqual([]);
+    expect(gradeLines({ config: { grade_bands: { ...CLASSIFICATION, lower_better: true } } })).toEqual([]);
+  });
+
+  it('never stack two letters on top of each other', async () => {
+    const { GradeArcChart } = await import('../visualizations/GradeArcChart.js');
+    const drawn = [];
+    HTMLCanvasElement.prototype.getContext = () => ({
+      clearRect() {}, beginPath() {}, moveTo() {}, lineTo() {}, stroke() {},
+      fillText(text, x, y) { drawn.push({ text, x, y }); },
+      fillRect() {}, arc() {}, fill() {}, closePath() {},
+      save() {}, restore() {}, setLineDash() {}, setTransform() {}, scale() {},
+      translate() {}, rect() {}, clip() {}, createLinearGradient: () => ({ addColorStop() {} }),
+      measureText: () => ({ width: 10 }),
+    });
+    globalThis.ResizeObserver = class { observe() {} unobserve() {} disconnect() {} };
+    const wrap = document.createElement('div');
+    const canvas = document.createElement('canvas');
+    wrap.appendChild(canvas);
+    document.body.appendChild(wrap);
+    const state = {
+      run: { config: { grade_bands: CLASSIFICATION } },
+      frames: framesOf(RISING, 'val_accuracy'),
+      metrics: [],
+    };
+    const chart = new GradeArcChart(canvas);
+    chart.mount({ get: () => state, subscribe: (fn) => { fn(state); return () => {}; } });
+    drawn.length = 0; // mount drew once already
+    chart._draw();
+    const letters = drawn.filter((d) => d.x === 2).map((d) => d.y).sort((a, b) => a - b);
+    expect(letters.length).toBeGreaterThan(0);
+    for (let i = 1; i < letters.length; i++) {
+      expect(letters[i] - letters[i - 1]).toBeGreaterThanOrEqual(10);
+    }
+  });
+});
