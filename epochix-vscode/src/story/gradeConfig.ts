@@ -209,7 +209,8 @@ export function bandsFor(config: GradeConfig, task: string, metric: string): Ban
  * The letter `bands` give `value` — compute_grade with custom_thresholds and
  * an explicit direction.
  */
-export function gradeWithBands(bands: Bands, value: number, lowerBetter: boolean): Grade {
+/** A project's bands as rows, strictest first — the order they are tried in. */
+export function bandRows(bands: Bands, lowerBetter: boolean): Array<[Grade, number]> {
   const rows: Array<[Grade, number]> = Object.entries(bands).map(([label, threshold]) => [
     canonicalLabel(label) as Grade,
     threshold,
@@ -220,6 +221,11 @@ export function gradeWithBands(bands: Bands, value: number, lowerBetter: boolean
     const ascending = a < b ? -1 : 1;
     return lowerBetter ? ascending : -ascending;
   });
+  return rows;
+}
+
+export function gradeWithBands(bands: Bands, value: number, lowerBetter: boolean): Grade {
+  const rows = bandRows(bands, lowerBetter);
   for (const [grade, threshold] of rows) {
     if (lowerBetter ? value <= threshold : value >= threshold) return grade;
   }

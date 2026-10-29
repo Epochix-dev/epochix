@@ -162,7 +162,7 @@ export class JourneyPanel {
 
     // ── How this letter was reached ─────────────────────────────────────────
     const caveatEl = document.getElementById('grade-caveat');
-    if (caveatEl) caveatEl.textContent = gradeCaveatText(frame?.grade_basis);
+    if (caveatEl) caveatEl.textContent = gradeCaveatText(frame?.grade_basis, frame?.grade);
 
     // ── Metaphor cards  ─────────────────────────────────────────────────────
     // Model uses { title, body, icon } — render all three.
@@ -380,9 +380,16 @@ function _renderEmpty(el, s) {
  * `grade_basis`, so the card says the one that is true; a frame without it (a
  * run stored by an older version, an "I", a diverged run) keeps the sentence
  * that names both.
+ * An "I" is not graded at all, and the sentence naming both ways said it was;
+ * it gets its own.
  * @param {string|null|undefined} basis
+ * @param {string|null|undefined} [grade]
  */
-export function gradeCaveatText(basis) {
+export function gradeCaveatText(basis, grade) {
+  if (grade === 'I') {
+    return t('ui.gradeCaveats.ungraded',
+      'Not graded: this metric has no fixed scale, and the log gives nothing to measure it against — a single reading, or nothing that says whether a higher or a lower value is better.');
+  }
   if (basis === 'thresholds') {
     return t('ui.gradeCaveats.thresholds',
       'Graded against fixed thresholds for this metric — it does not know how hard your dataset is. The trend and the best-epoch call are the reliable parts.');

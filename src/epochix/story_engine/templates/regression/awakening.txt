@@ -1,3 +1,2 @@
-The story opens at epoch {epoch} with {metric} {value}. It is too early to read much into it.
-Awakening: {metric} {value} at epoch {epoch} — an opening reading, not a verdict.
-Epoch {epoch}: {metric} {value}. The run is only beginning; the readings that follow will say more.
+Awakening: {metric} {value} at epoch {epoch}.
+Epoch {epoch}: {metric} {value}, in the Awakening phase.

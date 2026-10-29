@@ -1,2 +1,2 @@
-L'histoire commence à l'époque {epoch} : {metric} {value}. Il est trop tôt pour en tirer des conclusions.
-Éveil : {metric} {value} à l'époque {epoch} — une première mesure, pas un verdict.
+Éveil : {metric} {value} à l'époque {epoch}.
+Époque {epoch} : {metric} {value}, en phase d'éveil.

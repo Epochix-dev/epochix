@@ -17,6 +17,7 @@ from epochix.normalizer.canonical_keys import canonicalize_key, is_recognised
 from epochix.story_engine.config_loader import GradeConfig, bands_lower_better
 from epochix.story_engine.grade import (
     compute_grade,
+    grade_bands,
     grade_by_trajectory,
     grade_note,
     has_absolute_scale,
@@ -306,6 +307,12 @@ class StoryEngine:
     _baseline: float | None = field(default=None, init=False)
     _best_primary: float | None = field(default=None, init=False)
     _best_epoch: float | None = field(default=None, init=False)
+    # The bands the latest letter was measured against (best first) and
+    # whether lower is better; None when it was not graded on bands. Written
+    # to the run so a chart draws the lines the grader used, not a copy.
+    grade_bands_used: tuple[list[tuple[Grade, float]], bool] | None = field(
+        default=None, init=False
+    )
     _primary_key_used: str | None = field(default=None, init=False)
     _prev_frame: StoryFrame | None = field(default=None, init=False)
     _prev_primary: float | None = field(default=None, init=False)
@@ -629,6 +636,7 @@ class StoryEngine:
         # than a worsening one. Trust the metric name whenever it is known and
         # fall back to the task only when it is not.
         name_dir = metric_lower_better(event.canonical_key or self.primary_metric)
+        direction_unknown = False
         if name_dir is not None:
             lower_better = name_dir
         elif task is TaskType.CUSTOM:
@@ -636,6 +644,7 @@ class StoryEngine:
             # project's own thresholds file does.
             override = self.grade_config.get_lower_better(task) if self.grade_config else None
             lower_better = bool(override)
+            direction_unknown = override is None
         else:
             lower_better = is_lower_better(task, self.grade_config)
 
@@ -716,6 +725,11 @@ class StoryEngine:
                 direction=lower_better if stated is None else stated,
             )
             grade_basis = "thresholds"
+            self.grade_bands_used = grade_bands(
+                task,
+                custom_thresholds=own_bands,
+                direction=lower_better if stated is None else stated,
+            )
         elif not needs_trajectory or has_absolute_scale(primary_key):
             grade = compute_grade(
                 task=task,
@@ -723,10 +737,23 @@ class StoryEngine:
                 metric=primary_key,
             )
             grade_basis = "thresholds"
-        elif self._baseline is not None and len(self._metric_history.get(primary_key, ())) >= 2:
+            self.grade_bands_used = grade_bands(task, metric=primary_key)
+        elif (
+            not direction_unknown
+            and self._baseline is not None
+            and len(self._metric_history.get(primary_key, ())) >= 2
+        ):
             grade = grade_by_trajectory(self._baseline, primary_value, lower_better)
             grade_basis = "improvement"
+            self.grade_bands_used = None
         else:
+            # Grading on improvement needs to know which way is better. For a
+            # name nothing pins down, a CUSTOM task and no thresholds file,
+            # nothing does: `lower_better` above is a default, not a reading
+            # of the log. CatBoost's unnamed eval metric at AUC 1.0 every
+            # round was graded D on it ("essentially flat") and placed in
+            # Awakening — a verdict on a run nobody can judge from its log.
+            #
             # No scale to measure against and no movement to measure: one
             # reading of a metric whose units we do not know. Anything else
             # here is a guess dressed as a verdict — a single MAE used to be
@@ -735,6 +762,7 @@ class StoryEngine:
             # for this, and both the dashboard and the extension already
             # colour it.
             grade = Grade.INCOMPLETE
+            self.grade_bands_used = None
 
         delta = primary_value - self._prev_primary if self._prev_primary is not None else 0.0
 

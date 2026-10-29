@@ -123,6 +123,29 @@ def test_an_unrecognised_metric_is_only_named() -> None:
             assert not re.search(r"best|perfect|first reading|\d+%|quarters", line), line
 
 
+_TOO_EARLY = {
+    ".txt": re.compile(r"\b(begin\w{0,4}|open\w{0,4}|early|first)\b", re.I),
+    ".fr.txt": re.compile(r"commenc\w{0,6}|première|début\w{0,2}|tôt", re.I),
+    ".fa.txt": re.compile(r"آغاز|تازه|زود|نخستین"),
+}
+
+
+@pytest.mark.parametrize("suffix", sorted(_TOO_EARLY))
+def test_awakening_does_not_say_the_run_has_just_begun(suffix: str) -> None:
+    """Awakening is told whenever advancement is under 10% — the share of the
+    epochs done when the run's length is known, otherwise the share of the
+    possible improvement realised. A run that stays near its first reading is
+    in Awakening at any epoch: the recorded CatBoost run whose AUC is 1.0
+    every round was told "an opening reading" at its thirtieth."""
+    offenders = [
+        f"{task}/awakening{suffix}: {line}"
+        for task in TASKS
+        for line in _lines(task, "awakening", suffix)
+        if _TOO_EARLY[suffix].search(line)
+    ]
+    assert not offenders, "\n".join(offenders)
+
+
 # ── the quantities stated in words ───────────────────────────────────────────
 
 

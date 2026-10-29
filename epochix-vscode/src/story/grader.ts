@@ -55,6 +55,22 @@ export function metricLowerBetter(metric: string | undefined | null): boolean | 
  * R² by the task's direction scored a perfect fit as F.
  */
 export function computeGrade(task: TaskType, primaryValue: number, metric?: string | null): Grade {
+  const [thresholds, lowerBetter] = gradeBands(task, metric);
+  for (const [grade, threshold] of thresholds) {
+    if (lowerBetter ? primaryValue <= threshold : primaryValue >= threshold) return grade;
+  }
+  return "F";
+}
+
+/**
+ * The bands computeGrade grades against, best first, and whether lower is
+ * better — grade_bands. The dashboard draws these, so its lines are the ones
+ * the letter was measured against.
+ */
+export function gradeBands(
+  task: TaskType,
+  metric?: string | null,
+): [ReadonlyArray<readonly [Grade, number]>, boolean] {
   let thresholds = DEFAULT_THRESHOLDS[task] ?? DEFAULT_THRESHOLDS.classification;
   let lowerBetter = LOWER_BETTER_TASKS.has(task);
   const metricBands = metric ? METRIC_THRESHOLDS[metric] : undefined;
@@ -63,10 +79,7 @@ export function computeGrade(task: TaskType, primaryValue: number, metric?: stri
     const nameDir = metricLowerBetter(metric);
     if (nameDir !== undefined) lowerBetter = nameDir;
   }
-  for (const [grade, threshold] of thresholds) {
-    if (lowerBetter ? primaryValue <= threshold : primaryValue >= threshold) return grade;
-  }
-  return "F";
+  return [thresholds, lowerBetter];
 }
 
 /**

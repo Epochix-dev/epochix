@@ -1,3 +1,2 @@
-The story opens at epoch {epoch} with perplexity {value}. It is too early to read much into it.
-Awakening: perplexity {value} at epoch {epoch} — an opening reading, not a verdict.
-Epoch {epoch}: perplexity {value}. The run is only beginning; the readings that follow will say more.
+Awakening: perplexity {value} at epoch {epoch}.
+Epoch {epoch}: perplexity {value}, in the Awakening phase.

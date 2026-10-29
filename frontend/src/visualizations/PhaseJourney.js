@@ -13,12 +13,17 @@ import { t } from '../i18n/apply.js';
 
 const PHASE_ORDER = ['awakening', 'learning', 'understanding', 'mastering', 'polishing'];
 
+// A phase card shows its name, letter and epochs. Each also carried a line of
+// English flavour — "first signal from noise", "beyond memorisation" — that
+// no log shows, untranslated in French and Persian, and false of a run that
+// sat at its first reading for thirty epochs (AGENTS.md: a story sentence may
+// say only what the numbers support).
 const PHASE_META = {
-  awakening:     { icon: '🌱', label: 'Awakening',     plain: 'first signal from noise' },
-  learning:      { icon: '📈', label: 'Learning',      plain: 'patterns forming' },
-  understanding: { icon: '💡', label: 'Understanding', plain: 'beyond memorisation' },
-  mastering:     { icon: '🎯', label: 'Mastering',     plain: 'refining the edges' },
-  polishing:     { icon: '✨', label: 'Polishing',     plain: 'final gains' },
+  awakening:     { icon: '🌱', label: 'Awakening' },
+  learning:      { icon: '📈', label: 'Learning' },
+  understanding: { icon: '💡', label: 'Understanding' },
+  mastering:     { icon: '🎯', label: 'Mastering' },
+  polishing:     { icon: '✨', label: 'Polishing' },
 };
 
 export class PhaseJourney {
@@ -59,7 +64,7 @@ export class PhaseJourney {
 
     const parts = [];
     segs.forEach((g, idx) => {
-      const base = PHASE_META[g.phase] ?? { icon: '•', label: g.phase, plain: '' };
+      const base = PHASE_META[g.phase] ?? { icon: '•', label: g.phase };
       const meta = { ...base, label: t(`phases.${g.phase}`, base.label) };
       const widthPct = ((g.endEpoch - g.startEpoch + 1) / totalSpan) * 100;
       const active = curEpoch != null && curEpoch >= g.startEpoch && curEpoch <= g.endEpoch;
@@ -74,7 +79,6 @@ export class PhaseJourney {
             <span class="pj-seg-grade">${_esc(g.grade ?? '')}</span>
           </div>
           <div class="pj-seg-name">${_esc(meta.label)}</div>
-          <div class="pj-seg-sub">${_esc(meta.plain)}</div>
           <div class="pj-seg-range">${_esc(epochRange)}</div>
         </div>`);
       if (idx < segs.length - 1) parts.push(`<div class="pj-arrow">→</div>`);

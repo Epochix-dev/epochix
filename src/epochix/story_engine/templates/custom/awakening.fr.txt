@@ -1,2 +1,2 @@
-Époque {epoch} : {metric} {value}. L'histoire ne fait que commencer.
-Éveil : {metric} {value} à l'époque {epoch} — une première mesure.
+Éveil : {metric} {value} à l'époque {epoch}.
+Époque {epoch} : {metric} {value}, en phase d'éveil.

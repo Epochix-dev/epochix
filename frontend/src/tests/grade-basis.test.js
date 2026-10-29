@@ -51,6 +51,20 @@ describe('gradeCaveatText', () => {
     setActiveI18n(null);
     for (const basis of BASES) expect(gradeCaveatText(basis)).toBe(en.ui.gradeCaveats[basis]);
     expect(gradeCaveatText(null)).toBe(en.ui.gradeCaveat);
+    expect(gradeCaveatText(null, 'I')).toBe(en.ui.gradeCaveats.ungraded);
+  });
+
+  it('says an "I" was not graded, in every locale, instead of naming both ways', () => {
+    // The flat CatBoost run's "I" read "The grade comes from fixed thresholds
+    // … or … how far it has improved": neither was true of it.
+    for (const cat of [en, fa, fr]) {
+      setActiveI18n(cat);
+      expect(cat.ui.gradeCaveats.ungraded).toBeTruthy();
+      expect(gradeCaveatText(null, 'I')).toBe(cat.ui.gradeCaveats.ungraded);
+      expect(gradeCaveatText(null, 'I')).not.toBe(cat.ui.gradeCaveat);
+    }
+    expect(en.ui.gradeCaveats.ungraded).toMatch(/^Not graded/);
+    expect(en.ui.gradeCaveats.ungraded).not.toMatch(/fixed thresholds for this|how far it has improved/);
   });
 });
 
@@ -88,9 +102,12 @@ describe('the grade card', () => {
       .toBe(en.ui.gradeCaveats.thresholds);
   });
 
-  it('names both for a frame that does not say', () => {
-    expect(render({ narrative: 'x', grade: 'I', grade_basis: null })).toBe(en.ui.gradeCaveat);
+  it('names both for a lettered frame that does not say', () => {
     expect(render({ narrative: 'x', grade: 'A' })).toBe(en.ui.gradeCaveat);
+  });
+
+  it('says an "I" frame was not graded', () => {
+    expect(render({ narrative: 'x', grade: 'I', grade_basis: null })).toBe(en.ui.gradeCaveats.ungraded);
   });
 });
 

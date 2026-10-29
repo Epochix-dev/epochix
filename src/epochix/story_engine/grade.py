@@ -501,6 +501,31 @@ def compute_grade(
     The engine passes it with *custom_thresholds* taken from a project's
     ``.epochix.yaml``, whose bands say which way they run.
     """
+    thresholds, lower_better = grade_bands(
+        task, custom_thresholds, config, metric, direction=direction
+    )
+    for grade, threshold in thresholds:
+        if lower_better:
+            if primary_value <= threshold:
+                return grade
+        else:
+            if primary_value >= threshold:
+                return grade
+
+    return Grade.F
+
+
+def grade_bands(
+    task: TaskType,
+    custom_thresholds: dict[str, float] | None = None,
+    config: GradeConfig | None = None,
+    metric: str | None = None,
+    *,
+    direction: bool | None = None,
+) -> tuple[list[tuple[Grade, float]], bool]:
+    """The bands compute_grade grades against, best first, and whether lower
+    is better — the one place they are chosen, so what a chart draws is what
+    the letter was measured against."""
     thresholds = _DEFAULT_THRESHOLDS.get(task, _DEFAULT_THRESHOLDS[TaskType.CLASSIFICATION])
 
     # Determine lower-better direction first — config override takes precedence
@@ -526,16 +551,7 @@ def compute_grade(
         cfg_thresholds = config.get_thresholds(task)
         if cfg_thresholds:
             thresholds = _dict_to_thresholds(cfg_thresholds, lower_better=lower_better)
-
-    for grade, threshold in thresholds:
-        if lower_better:
-            if primary_value <= threshold:
-                return grade
-        else:
-            if primary_value >= threshold:
-                return grade
-
-    return Grade.F
+    return list(thresholds), lower_better
 
 
 # Metrics that live in [0, 1] by construction. A value outside that range is not

@@ -1,2 +1,2 @@
-دوره {epoch}: {metric} برابر {value} است. داستان تازه آغاز شده است.
-بیداری: {metric} {value} در دوره {epoch} — یک اندازه‌گیری آغازین.
+بیداری: {metric} {value} در دوره {epoch}.
+دوره {epoch}: {metric} {value}، در مرحلهٔ بیداری.

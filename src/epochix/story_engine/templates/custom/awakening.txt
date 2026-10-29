@@ -1,3 +1,2 @@
-Epoch {epoch}: {metric} is {value}. The story is only beginning.
-Awakening: {metric} {value} at epoch {epoch} — an opening reading.
-The run opens with {metric} at {value} (epoch {epoch}).
+Awakening: {metric} {value} at epoch {epoch}.
+Epoch {epoch}: {metric} {value}, in the Awakening phase.

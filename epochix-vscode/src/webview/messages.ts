@@ -31,8 +31,16 @@ export interface StoryFrameMsg {
    *  first reading. Null where there is no letter to explain (an "I", or the
    *  F of a diverged run). Mirrors StoryFrame.grade_basis. */
   gradeBasis: GradeBasis | null;
+  /** The bands the letter was measured against, for the chart's grade
+   *  lines; null when it was not graded on bands. */
+  gradeBands?: GradeBandsMsg | null;
   narrative: string;
   taskType: TaskType;
+}
+
+export interface GradeBandsMsg {
+  lower_better: boolean;
+  bands: Array<{ grade: Grade; value: number }>;
 }
 
 export type GradeNote = "few_readings" | "still_improving";
