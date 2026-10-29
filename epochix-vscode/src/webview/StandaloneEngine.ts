@@ -228,6 +228,9 @@ export class StandaloneEngine {
   private _frames: StoryFrameMsg[] = [];
   private _milestones: MilestoneMsg[] = [];
   private _warnings: WarningMsg[] = [];
+  /** Whether nothing says which way the latest frame's metric runs — the
+   *  plateau warning then states its measurement and no advice. */
+  private _directionUnknown = false;
   private _seenMilestones = new Set<string>();
   private _buffer = "";
   // Lines kept only long enough to look for a model summary. A summary is
@@ -670,6 +673,7 @@ export class StandaloneEngine {
     // improvement (as in the Python engine).
     const directionUnknown =
       nameSays === undefined && fileSays === undefined && this._task === "custom";
+    this._directionUnknown = directionUnknown;
 
     // Best so far, updated BEFORE the past-peak check, as in the Python engine.
     const newBest =
@@ -904,7 +908,15 @@ export class StandaloneEngine {
       const span = Math.max(...w) - Math.min(...w);
       const flat = span / (Math.abs(w[0]) + 1e-9) < PLATEAU_DELTA;
       if (flat) {
-        warn("plateau_warning", "plateau", message("warn_plateau", this._locale));
+        // "Progress has slowed … may restart progress" presupposes progress:
+        // not of a metric that has not moved since its first reading, nor of
+        // one nothing says the direction of. Mirrors _plateau_message.
+        const all = this._frames.map((f) => f.primaryMetricValue).filter(Number.isFinite);
+        const unmoved =
+          all.length > 0 &&
+          (Math.max(...all) - Math.min(...all)) / (Math.abs(all[0]) + 1e-9) < PLATEAU_DELTA;
+        const key = !this._directionUnknown && !unmoved ? "warn_plateau" : "warn_plateau_measured";
+        warn("plateau_warning", "plateau", message(key, this._locale));
       } else if (this._seenMilestones.has("plateau_warning")) {
         this._seenMilestones.delete("plateau_warning");
         this._warnings.push({

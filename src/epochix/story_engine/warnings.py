@@ -58,6 +58,31 @@ class WarningDetector:
     # disproves the warning; see the overfit block below.
     _overfit_mark: float | None = field(default=None, init=False)
     _fired: set[str] = field(default_factory=set, init=False)
+    # Every reading of the primary metric so far, as its first, lowest and
+    # highest: "progress has slowed" presupposes progress, and a metric that
+    # has not moved since its first reading never made any.
+    _primary_first: float | None = field(default=None, init=False)
+    _primary_low: float | None = field(default=None, init=False)
+    _primary_high: float | None = field(default=None, init=False)
+
+    def _plateau_message(self, direction_known: bool) -> str:
+        """Which plateau sentence the readings support.
+
+        "Progress has slowed … may restart progress" presupposes progress. A
+        metric that has moved less than the plateau threshold since its first
+        reading never made any, and where nothing says which way the metric
+        runs, movement is not progress: the recorded CatBoost run whose AUC is
+        1.0 every round was told to lower its learning rate to "restart
+        progress". There the warning states its measurement and nothing more.
+        """
+        first, low, high = self._primary_first, self._primary_low, self._primary_high
+        unmoved = (
+            first is not None
+            and low is not None
+            and high is not None
+            and (high - low) / (abs(first) + 1e-9) < _PLATEAU_DELTA
+        )
+        return "warn_plateau" if direction_known and not unmoved else "warn_plateau_measured"
 
     def update(
         self,
@@ -66,6 +91,8 @@ class WarningDetector:
         val_loss: float | None = None,
         primary_value: float | None = None,
         lr: float | None = None,
+        *,
+        direction_known: bool = True,
     ) -> list[Warning]:
         warnings: list[Warning] = []
 
@@ -75,6 +102,13 @@ class WarningDetector:
             self._val_losses.append(val_loss)
         if primary_value is not None:
             self._primary.append(primary_value)
+            if math.isfinite(primary_value):
+                if self._primary_first is None:
+                    self._primary_first = primary_value
+                if self._primary_low is None or primary_value < self._primary_low:
+                    self._primary_low = primary_value
+                if self._primary_high is None or primary_value > self._primary_high:
+                    self._primary_high = primary_value
 
         # Divergence: loss is NaN or spiked 10×
         if train_loss is not None:
@@ -184,7 +218,7 @@ class WarningDetector:
                     Warning(
                         kind="plateau",
                         epoch=epoch,
-                        message=message("warn_plateau", self.locale),
+                        message=message(self._plateau_message(direction_known), self.locale),
                     )
                 )
             elif not flat and "plateau" in self._fired:

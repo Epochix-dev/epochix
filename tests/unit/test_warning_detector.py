@@ -282,7 +282,7 @@ class TestTheWarningsStateWhatWasMeasured:
         assert set(MESSAGES) == {"en", "fr", "fa"}, "a new locale needs its numbers checked"
         for locale, table in MESSAGES.items():
             percent, window = self._numbers(locale)
-            for key in ("warn_plateau", "warn_plateau_cleared"):
+            for key in ("warn_plateau", "warn_plateau_cleared", "warn_plateau_measured"):
                 assert percent in table[key], (locale, key, percent)
                 assert window in table[key], (locale, key, window)
 
@@ -335,3 +335,56 @@ class TestStandingWarnings:
 
     def test_the_same_message_is_listed_once(self) -> None:
         assert self._standing(("divergence", "a"), ("divergence", "a")) == ["divergence"]
+
+
+class TestPlateauSaysOnlyWhatItMeasured:
+    """ "Progress has slowed ... may restart progress" presupposes progress.
+
+    A recorded CatBoost run whose AUC is 1.0 every round, and whose metric
+    nothing names the direction of, was told to lower its learning rate to
+    "restart progress". Where the metric has not moved since its first
+    reading, or its direction is unknown, the warning states its measurement.
+    """
+
+    def _message(self, values: list[float], *, direction_known: bool = True) -> str:
+        det = WarningDetector()
+        said = []
+        for epoch, value in enumerate(values, start=1):
+            said += [
+                w.message
+                for w in det.update(epoch, primary_value=value, direction_known=direction_known)
+                if w.kind == "plateau"
+            ]
+        assert len(said) == 1, said
+        return said[0]
+
+    def test_a_metric_flat_since_its_first_reading_gets_the_measurement(self) -> None:
+        from epochix.story_engine.messages import MESSAGES
+
+        said = self._message([1.0] * 8)
+        assert said == MESSAGES["en"]["warn_plateau_measured"]
+        assert "progress" not in said.lower() and "learning rate" not in said.lower()
+
+    def test_a_metric_whose_direction_is_unknown_gets_the_measurement(self) -> None:
+        from epochix.story_engine.messages import MESSAGES
+
+        moved_then_flat = [0.4, 0.55, 0.7, 0.8, 0.8, 0.8, 0.8, 0.8]
+        assert (
+            self._message(moved_then_flat, direction_known=False)
+            == (MESSAGES["en"]["warn_plateau_measured"])
+        )
+
+    def test_a_run_that_made_progress_keeps_the_advice(self) -> None:
+        from epochix.story_engine.messages import MESSAGES
+
+        moved_then_flat = [0.4, 0.55, 0.7, 0.8, 0.8, 0.8, 0.8, 0.8]
+        assert self._message(moved_then_flat) == MESSAGES["en"]["warn_plateau"]
+
+    def test_every_locale_has_the_measurement_without_advice(self) -> None:
+        from epochix.story_engine.messages import MESSAGES
+
+        for locale, table in MESSAGES.items():
+            text = table.get("warn_plateau_measured")
+            assert text, locale
+            assert text != table["warn_plateau"], locale
+            assert len(text) < len(table["warn_plateau"]) / 2, (locale, "it carries advice")
