@@ -14,8 +14,10 @@ prints the candidate's hyperparameters on the same row.
 
 from __future__ import annotations
 
+from pathlib import Path
 from statistics import fmean
 
+from epochix import parse
 from epochix.parsers.base import ParserContext
 from epochix.parsers.universal import UniversalParser
 
@@ -172,6 +174,45 @@ class TestASearchReportsTheCandidateItChose:
         """cross_val_score tries one setting and prints no parameters."""
         assert _candidates(CV_VERBOSE) == {}
         assert _candidates(CV_HANDWRITTEN) == {}
+
+
+class TestTheTestScoreIsTheResult:
+    """With `return_train_score` a row carries both scores, the training one first.
+
+    Reading the first number reported a real search's 0.9538 as 0.9913: how well
+    the model fit the data it was trained on, under the name of the result.
+    """
+
+    def test_a_score_pair_is_read_as_its_test_score(self) -> None:
+        rows = [
+            "[CV 1/2] END C=1, gamma=0.01;, score=(train=0.995, test=0.940) total time=   0.0s",
+            "[CV 2/2] END C=1, gamma=0.01;, score=(train=0.990, test=0.972) total time=   0.0s",
+        ]
+        assert _candidates(rows) == {"C=1, gamma=0.01": {"score": [0.94, 0.972]}}
+
+    def test_a_named_pair_is_read_as_its_test_score(self) -> None:
+        rows = [
+            "[CV 1/2] END C=1; accuracy: (train=0.995, test=0.940) "
+            "f1_macro: (train=0.990, test=0.930) total time=   0.2s",
+        ]
+        assert _candidates(rows) == {"C=1": {"accuracy": [0.94], "f1_macro": [0.93]}}
+
+    def test_cross_validate_s_pair_is_read_as_its_test_score(self) -> None:
+        _during, _flushed, folds = _parse(
+            ["[CV] END .......... score: (train=0.995, test=0.940) total time=   0.0s"]
+        )
+        assert folds == {"score": [0.94]}
+
+    def test_the_recorded_search_reports_what_it_printed(self, tmp_path: Path) -> None:
+        """The script prints `Best score: 0.9538`; its rows are rounded to three figures."""
+        logs = Path(__file__).parents[1] / "fixtures" / "logs"
+        for name in ("gridsearch_real.log", "gridsearch_real_train_score.log"):
+            log = logs / name
+            assert "Best score: 0.9538" in log.read_text(encoding="utf-8")
+            run = parse(log, db=str(tmp_path / f"{name}.db"), run_name="t")
+            cv = (run.config or {})["cross_validation"]
+            assert cv["candidates"]["C=10, gamma=0.01"]["score"] == [0.95, 0.972, 0.94], name
+            assert all(max(v["score"]) <= 0.972 for v in cv["candidates"].values()), name
 
 
 class TestOrdinaryLogsAreUnaffected:

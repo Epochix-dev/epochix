@@ -6,6 +6,9 @@ and the dictionaries it prints at each logging and evaluation step.
 
     Needs:  pip install transformers accelerate torch scikit-learn
     Run:    python huggingface_real_source.py > huggingface_real_trainer.log 2>&1
+
+The script runs unchanged on `transformers` 4, whose log is
+huggingface_real_trainer_v4.log. Version 4 prints the numbers bare.
 """
 
 from __future__ import annotations

@@ -11,7 +11,10 @@
 import { claim, type Parser, type ParserContext, type RawMetric } from "./base";
 import { NEVER_METRICS, isSetting } from "./neverMetrics";
 
-const HF_DICT_LINE = /^\s*\{['"]loss['"].*\}/;
+// The Trainer's tqdm bar can still be on the line when the dict is printed:
+//    20%|##        | 86/430 [00:00<00:03, 103.62it/s]{'eval_loss': 1.367, ...}
+const BAR_BEFORE_DICT = /^\s*\d{1,3}%\|[^{}]{0,200}\]\s*(?=\{)/;
+const HF_DICT_LINE = /^\s*(?:\d{1,3}%\|[^{}]{0,200}\]\s*)?\{['"]loss['"].*\}/;
 const NUMBER = /^[-+]?(?:\d+\.?\d*|\.\d+)(?:[eE][-+]?\d{1,4})?$/;
 
 // The dict the Trainer prints once, when training ends. Its `train_loss` is
@@ -37,7 +40,7 @@ export class HuggingFaceParser implements Parser {
   }
 
   parseLine(line: string, ctx: ParserContext): RawMetric[] {
-    const stripped = line.trim();
+    const stripped = line.replace(BAR_BEFORE_DICT, "").trim();
     if (!stripped.startsWith("{")) return [];
 
     // Normalize Python dict literals to valid JSON

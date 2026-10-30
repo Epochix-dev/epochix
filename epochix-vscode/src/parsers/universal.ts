@@ -38,8 +38,10 @@ const COMPOUND = new RegExp(String.raw`\b([A-Za-z]\w{0,31})[\s_]+(\w{1,32})\s*[:
 const CONSTRUCTOR = /\b[A-Z]\w*\((?:[^()]|\([^()]*\))*\)/g;
 
 const FOLD_ROW = /^\s*(?:\[cv(?:\s+\d+\s*\/\s*\d+)?\]|fold\s+\d+\b)/i;
-const CV_SCORE = new RegExp(String.raw`\bscore\s*[:=]\s*\(?\s*(?:test|train)?\s*=?\s*(${NUM})`, "i");
-const CV_NAMED_SCORE = new RegExp(String.raw`(\w{1,32})\s*:\s*\(\s*(?:test|train)\s*=\s*(${NUM})\s*\)`, "gi");
+// With `return_train_score` a row carries both, "score=(train=0.995, test=0.940)":
+// the test score is the result.
+const CV_SCORE = new RegExp(String.raw`\bscore\s*[:=]\s*\(?\s*(?:train\s*=\s*${NUM}\s*,\s*)?(?:test|train)?\s*=?\s*(${NUM})`, "i");
+const CV_NAMED_SCORE = new RegExp(String.raw`(\w{1,32})\s*:\s*\(\s*(?:train\s*=\s*${NUM}\s*,\s*)?(?:test|train)\s*=\s*(${NUM})\s*\)`, "gi");
 const CV_PARAMS = /^\s*\[cv[^\]]*\]\s+END\s+\.*(.*?);/i;
 
 const EPOCH_KEYS = new Set(["epoch", "ep", "e"]);

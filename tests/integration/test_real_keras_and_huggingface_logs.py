@@ -37,6 +37,11 @@ KERAS_BAR = REPO / "demo" / "keras_image_classifier.log"
 KERAS_LINES = REPO / "tests" / "fixtures" / "logs" / "keras_real_verbose2.log"
 VSCODE_DEMO = REPO / "epochix-vscode" / "media" / "demo.log"
 HF = REPO / "tests" / "fixtures" / "logs" / "huggingface_real_trainer.log"
+HF_V4 = REPO / "tests" / "fixtures" / "logs" / "huggingface_real_trainer_v4.log"
+KERAS2 = [
+    REPO / "tests" / "fixtures" / "logs" / "keras2_real_verbose1.log",
+    REPO / "tests" / "fixtures" / "logs" / "keras2_real_verbose2.log",
+]
 
 
 def _told(log: Path) -> tuple[Run, list[StoryFrame], Counter[str]]:
@@ -166,10 +171,62 @@ def test_a_real_trainer_log_is_read() -> None:
     assert not [k for k in counts if "runtime" in k or "per_second" in k], counts
 
 
+def test_a_transformers_4_log_is_read() -> None:
+    """Its bar shares a line with the dict: `…103.62it/s]{'eval_loss': 1.367, …}`.
+
+    Reading only from a leading "{" lost 9 of the 10 evaluations and the first
+    training loss, and the run was told on one reading of its metric.
+    """
+    assert "it/s]{'eval_loss': " in HF_V4.read_text(encoding="utf-8"), "the bar is gone"
+    run, frames, counts = _told(HF_V4)
+    assert run.parser_used == "huggingface"
+    assert run.primary_metric == "val_accuracy"
+    told = [f for f in frames if f.primary_metric == "val_accuracy"]
+    assert [f.epoch for f in told] == [float(e) for e in range(1, 11)]
+    assert told[0].primary_metric_value == pytest.approx(0.8178, abs=1e-4)
+    assert told[-1].primary_metric_value == pytest.approx(0.9444, abs=1e-4)
+    assert counts["train_loss"] == 10 and counts["val_loss"] == 10
+
+
+# ── Keras 2 ──────────────────────────────────────────────────────────────────
+
+
+@pytest.mark.parametrize("log", KERAS2, ids=lambda p: p.name)
+def test_a_real_keras_2_log_is_read(log: Path) -> None:
+    run, frames, counts = _told(log)
+    assert run.parser_used == "keras_tensorflow"
+    assert run.primary_metric == "val_accuracy"
+    assert [f.epoch for f in frames] == [float(e) for e in range(1, 13)]
+    assert frames[0].primary_metric_value == pytest.approx(0.5089)
+    assert frames[-1].primary_metric_value == pytest.approx(0.9422)
+    # One reading an epoch: the first batch's partial bar is not one.
+    assert counts["train_loss"] == 12 and counts["lr"] == 12
+
+
+def test_keras_2_s_partial_bar_is_in_the_recording() -> None:
+    assert "ETA:" in KERAS2[0].read_text(encoding="utf-8"), "it would test nothing"
+
+
 class TestTrainerDicts:
     def _parse(self, line: str) -> tuple[list[tuple[str, float]], ParserContext]:
         ctx = ParserContext(run_id="t")
         return [(m.key, m.value) for m in HFParser().parse_line(line, ctx)], ctx
+
+    def test_a_dict_after_the_bar_is_read(self) -> None:
+        got, ctx = self._parse(
+            " 20%|##        | 86/430 [00:00<00:03, 103.62it/s]"
+            "{'eval_loss': 1.3678, 'eval_accuracy': 0.8177, 'epoch': 1.0}"
+        )
+        assert got == [("eval_loss", 1.3678), ("eval_accuracy", 0.8177)]
+        assert ctx.current_epoch == 1.0
+
+    def test_a_bar_alone_is_nothing(self) -> None:
+        got, _ctx = self._parse(" 20%|##        | 86/430 [00:00<00:03, 103.62it/s]")
+        assert got == []
+
+    def test_the_dict_after_a_bar_counts_for_detection(self) -> None:
+        line = " 10%|#         | 43/430 [00:00<00:03, 124.05it/s]{'loss': 1.92, 'epoch': 1.0}"
+        assert HFParser().sniff([line]) > 0
 
     def test_quoted_numbers_are_numbers(self) -> None:
         got, ctx = self._parse("{'loss': '0.9596', 'learning_rate': '6.977e-06', 'epoch': '2'}")

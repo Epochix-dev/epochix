@@ -1,0 +1,21 @@
+Fitting 3 folds for each of 6 candidates, totalling 18 fits
+[CV 1/3] END ................C=0.1, gamma=0.001;, score=0.292 total time=   0.1s
+[CV 2/3] END ................C=0.1, gamma=0.001;, score=0.102 total time=   0.1s
+[CV 3/3] END ................C=0.1, gamma=0.001;, score=0.102 total time=   0.1s
+[CV 1/3] END .................C=0.1, gamma=0.01;, score=0.583 total time=   0.1s
+[CV 2/3] END .................C=0.1, gamma=0.01;, score=0.601 total time=   0.1s
+[CV 3/3] END .................C=0.1, gamma=0.01;, score=0.598 total time=   0.1s
+[CV 1/3] END ..................C=1, gamma=0.001;, score=0.616 total time=   0.1s
+[CV 2/3] END ..................C=1, gamma=0.001;, score=0.631 total time=   0.1s
+[CV 3/3] END ..................C=1, gamma=0.001;, score=0.626 total time=   0.1s
+[CV 1/3] END ...................C=1, gamma=0.01;, score=0.925 total time=   0.0s
+[CV 2/3] END ...................C=1, gamma=0.01;, score=0.935 total time=   0.0s
+[CV 3/3] END ...................C=1, gamma=0.01;, score=0.915 total time=   0.0s
+[CV 1/3] END .................C=10, gamma=0.001;, score=0.922 total time=   0.0s
+[CV 2/3] END .................C=10, gamma=0.001;, score=0.935 total time=   0.0s
+[CV 3/3] END .................C=10, gamma=0.001;, score=0.915 total time=   0.0s
+[CV 1/3] END ..................C=10, gamma=0.01;, score=0.950 total time=   0.0s
+[CV 2/3] END ..................C=10, gamma=0.01;, score=0.972 total time=   0.0s
+[CV 3/3] END ..................C=10, gamma=0.01;, score=0.940 total time=   0.0s
+Best parameters: {'C': 10, 'gamma': 0.01}
+Best score: 0.9538

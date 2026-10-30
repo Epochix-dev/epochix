@@ -304,6 +304,306 @@
   "final_grade_basis": null,
   "final_phase": "polishing"
  },
+ "gridsearch_real.log": {
+  "path": "tests/fixtures/logs/gridsearch_real.log",
+  "task": "custom",
+  "metric": "score",
+  "frames": 1,
+  "last_value": 0.954,
+  "keys": [
+   "score"
+  ],
+  "metric_from_epoch": null,
+  "grade_note": null,
+  "cross_validation": {
+   "folds": {
+    "score": [
+     0.292,
+     0.102,
+     0.102,
+     0.583,
+     0.601,
+     0.598,
+     0.616,
+     0.631,
+     0.626,
+     0.925,
+     0.935,
+     0.915,
+     0.922,
+     0.935,
+     0.915,
+     0.95,
+     0.972,
+     0.94
+    ]
+   },
+   "candidates": {
+    "C=0.1, gamma=0.001": {
+     "score": [
+      0.292,
+      0.102,
+      0.102
+     ]
+    },
+    "C=0.1, gamma=0.01": {
+     "score": [
+      0.583,
+      0.601,
+      0.598
+     ]
+    },
+    "C=1, gamma=0.001": {
+     "score": [
+      0.616,
+      0.631,
+      0.626
+     ]
+    },
+    "C=1, gamma=0.01": {
+     "score": [
+      0.925,
+      0.935,
+      0.915
+     ]
+    },
+    "C=10, gamma=0.001": {
+     "score": [
+      0.922,
+      0.935,
+      0.915
+     ]
+    },
+    "C=10, gamma=0.01": {
+     "score": [
+      0.95,
+      0.972,
+      0.94
+     ]
+    }
+   }
+  },
+  "final_grade": "I",
+  "final_grade_basis": null,
+  "final_phase": "polishing"
+ },
+ "gridsearch_real_multimetric.log": {
+  "path": "tests/fixtures/logs/gridsearch_real_multimetric.log",
+  "task": "classification",
+  "metric": "accuracy",
+  "frames": 1,
+  "last_value": 0.954,
+  "keys": [
+   "accuracy",
+   "f1_macro"
+  ],
+  "metric_from_epoch": null,
+  "grade_note": null,
+  "cross_validation": {
+   "folds": {
+    "accuracy": [
+     0.292,
+     0.102,
+     0.102,
+     0.583,
+     0.601,
+     0.598,
+     0.616,
+     0.631,
+     0.626,
+     0.925,
+     0.935,
+     0.915,
+     0.922,
+     0.935,
+     0.915,
+     0.95,
+     0.972,
+     0.94
+    ],
+    "f1_macro": [
+     0.141,
+     0.018,
+     0.018,
+     0.508,
+     0.547,
+     0.55,
+     0.546,
+     0.58,
+     0.579,
+     0.926,
+     0.935,
+     0.915,
+     0.923,
+     0.935,
+     0.915,
+     0.95,
+     0.972,
+     0.94
+    ]
+   },
+   "candidates": {
+    "C=0.1, gamma=0.001": {
+     "accuracy": [
+      0.292,
+      0.102,
+      0.102
+     ],
+     "f1_macro": [
+      0.141,
+      0.018,
+      0.018
+     ]
+    },
+    "C=0.1, gamma=0.01": {
+     "accuracy": [
+      0.583,
+      0.601,
+      0.598
+     ],
+     "f1_macro": [
+      0.508,
+      0.547,
+      0.55
+     ]
+    },
+    "C=1, gamma=0.001": {
+     "accuracy": [
+      0.616,
+      0.631,
+      0.626
+     ],
+     "f1_macro": [
+      0.546,
+      0.58,
+      0.579
+     ]
+    },
+    "C=1, gamma=0.01": {
+     "accuracy": [
+      0.925,
+      0.935,
+      0.915
+     ],
+     "f1_macro": [
+      0.926,
+      0.935,
+      0.915
+     ]
+    },
+    "C=10, gamma=0.001": {
+     "accuracy": [
+      0.922,
+      0.935,
+      0.915
+     ],
+     "f1_macro": [
+      0.923,
+      0.935,
+      0.915
+     ]
+    },
+    "C=10, gamma=0.01": {
+     "accuracy": [
+      0.95,
+      0.972,
+      0.94
+     ],
+     "f1_macro": [
+      0.95,
+      0.972,
+      0.94
+     ]
+    }
+   }
+  },
+  "final_grade": "A+",
+  "final_grade_basis": "thresholds",
+  "final_phase": "polishing"
+ },
+ "gridsearch_real_train_score.log": {
+  "path": "tests/fixtures/logs/gridsearch_real_train_score.log",
+  "task": "custom",
+  "metric": "score",
+  "frames": 1,
+  "last_value": 0.954,
+  "keys": [
+   "score"
+  ],
+  "metric_from_epoch": null,
+  "grade_note": null,
+  "cross_validation": {
+   "folds": {
+    "score": [
+     0.292,
+     0.102,
+     0.102,
+     0.583,
+     0.601,
+     0.598,
+     0.616,
+     0.631,
+     0.626,
+     0.925,
+     0.935,
+     0.915,
+     0.922,
+     0.935,
+     0.915,
+     0.95,
+     0.972,
+     0.94
+    ]
+   },
+   "candidates": {
+    "C=0.1, gamma=0.001": {
+     "score": [
+      0.292,
+      0.102,
+      0.102
+     ]
+    },
+    "C=0.1, gamma=0.01": {
+     "score": [
+      0.583,
+      0.601,
+      0.598
+     ]
+    },
+    "C=1, gamma=0.001": {
+     "score": [
+      0.616,
+      0.631,
+      0.626
+     ]
+    },
+    "C=1, gamma=0.01": {
+     "score": [
+      0.925,
+      0.935,
+      0.915
+     ]
+    },
+    "C=10, gamma=0.001": {
+     "score": [
+      0.922,
+      0.935,
+      0.915
+     ]
+    },
+    "C=10, gamma=0.01": {
+     "score": [
+      0.95,
+      0.972,
+      0.94
+     ]
+    }
+   }
+  },
+  "final_grade": "I",
+  "final_grade_basis": null,
+  "final_phase": "polishing"
+ },
  "hf_classification.log": {
   "path": "tests/fixtures/logs/hf_classification.log",
   "task": "classification",
@@ -401,6 +701,26 @@
   "final_grade_basis": "thresholds",
   "final_phase": "understanding"
  },
+ "huggingface_real_trainer_v4.log": {
+  "path": "tests/fixtures/logs/huggingface_real_trainer_v4.log",
+  "task": "classification",
+  "metric": "val_accuracy",
+  "frames": 11,
+  "last_value": 0.9444,
+  "keys": [
+   "grad_norm",
+   "lr",
+   "train_loss",
+   "val_accuracy",
+   "val_loss"
+  ],
+  "metric_from_epoch": 1.0,
+  "grade_note": null,
+  "cross_validation": null,
+  "final_grade": "A",
+  "final_grade_basis": "thresholds",
+  "final_phase": "understanding"
+ },
  "interrupted.log": {
   "path": "tests/fixtures/logs/interrupted.log",
   "task": "classification",
@@ -417,6 +737,46 @@
   "final_grade": "D",
   "final_grade_basis": "thresholds",
   "final_phase": "awakening"
+ },
+ "keras2_real_verbose1.log": {
+  "path": "tests/fixtures/logs/keras2_real_verbose1.log",
+  "task": "classification",
+  "metric": "val_accuracy",
+  "frames": 12,
+  "last_value": 0.9422,
+  "keys": [
+   "accuracy",
+   "lr",
+   "train_loss",
+   "val_accuracy",
+   "val_loss"
+  ],
+  "metric_from_epoch": 1.0,
+  "grade_note": "still_improving",
+  "cross_validation": null,
+  "final_grade": "A",
+  "final_grade_basis": "thresholds",
+  "final_phase": "mastering"
+ },
+ "keras2_real_verbose2.log": {
+  "path": "tests/fixtures/logs/keras2_real_verbose2.log",
+  "task": "classification",
+  "metric": "val_accuracy",
+  "frames": 12,
+  "last_value": 0.9422,
+  "keys": [
+   "accuracy",
+   "lr",
+   "train_loss",
+   "val_accuracy",
+   "val_loss"
+  ],
+  "metric_from_epoch": 1.0,
+  "grade_note": "still_improving",
+  "cross_validation": null,
+  "final_grade": "A",
+  "final_grade_basis": "thresholds",
+  "final_phase": "mastering"
  },
  "keras_100ep.log": {
   "path": "tests/fixtures/logs/keras_100ep.log",
