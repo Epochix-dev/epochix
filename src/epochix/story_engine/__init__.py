@@ -321,8 +321,9 @@ class StoryEngine:
     _metric_history: dict[str, list[float]] = field(default_factory=dict, init=False)
     # Events seen during the task-detection warmup (before frames start emitting)
     # are buffered here and replayed once emission begins, so early epochs aren't
-    # silently dropped from the story (grade-arc chart / stat chip).
-    _warmup: list[MetricEvent] = field(default_factory=list, init=False)
+    # silently dropped from the story (grade-arc chart / stat chip). Each keeps
+    # how many readings every metric had when it arrived; see _replay_warmup.
+    _warmup: list[tuple[MetricEvent, dict[str, int]]] = field(default_factory=list, init=False)
     _started: bool = field(default=False, init=False)
     # (metric key, epoch) of the first non-numeric reading the log reported.
     # A MetricEvent's value is a FiniteFloat, so a NaN can never travel as one
@@ -438,22 +439,40 @@ class StoryEngine:
         # events so early primary-metric epochs produce frames too (previously
         # anything logged in the first <3 events was lost from the story).
         if not self._started:
-            self._warmup.append(event)
+            self._warmup.append((event, {key: len(h) for key, h in self._metric_history.items()}))
             if self._events_count < 3:
                 return []
             self._started = True
             self._ensure_milestones()
-            frames: list[StoryFrame] = []
-            for buffered in self._warmup:
-                f = self._emit(buffered)
-                if f is not None:
-                    frames.append(f)
-            self._warmup = []
-            return frames
+            return self._replay_warmup()
 
         self._ensure_milestones()
         f = self._emit(event)
         return [f] if f is not None else []
+
+    def _replay_warmup(self) -> list[StoryFrame]:
+        """Build the buffered events' frames, each from the history of its reading.
+
+        By now the history holds the readings after them too, and a frame reads
+        it: every replayed frame handed the detector the newest loss, so a run
+        going 0.5, 500, 400, 300 never showed it the 0.5 and reported nothing.
+        Every key stays, empty if it had not arrived yet, because the story's
+        metric is chosen from the names and that choice must not go back in time.
+        """
+        history = self._metric_history
+        frames: list[StoryFrame] = []
+        try:
+            for buffered, lengths in self._warmup:
+                self._metric_history = {
+                    key: values[: lengths.get(key, 0)] for key, values in history.items()
+                }
+                frame = self._emit(buffered)
+                if frame is not None:
+                    frames.append(frame)
+        finally:
+            self._metric_history = history
+        self._warmup = []
+        return frames
 
     def flush_warmup(self) -> list[StoryFrame]:
         """Emit buffered events when the run ends before warmup completes.
@@ -488,13 +507,7 @@ class StoryEngine:
 
         self._started = True
         self._ensure_milestones()
-        frames: list[StoryFrame] = []
-        for buffered in self._warmup:
-            frame = self._emit(buffered)
-            if frame is not None:
-                frames.append(frame)
-        self._warmup = []
-        return frames
+        return self._replay_warmup()
 
     def announce(self, keys: set[str]) -> None:
         """Name every metric on a line before its events are processed.
