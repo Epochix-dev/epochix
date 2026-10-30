@@ -14,6 +14,19 @@ which covers the extension too; entries here resume with 0.7.16.
 
 ---
 
+## [0.7.38] — 2026-10-30
+
+### Fixed
+
+- **The plateau warning gives its advice only where the log supports it.**
+  Where the metric has moved less than 1% since its first reading, or nothing
+  says which way it runs, it states its measurement alone instead of telling
+  the run to "restart progress" it never made.
+- **"Training complete" appears only when a run has finished**, not while it
+  is still training.
+
+---
+
 ## [0.7.37] — 2026-10-29
 
 ### Fixed
