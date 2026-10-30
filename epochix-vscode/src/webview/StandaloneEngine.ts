@@ -56,6 +56,7 @@ import {
   narrateStalled,
   message,
   displayMetric,
+  lossText,
   resolveLocale,
   type Locale,
 } from "../story/narrator";
@@ -224,6 +225,8 @@ export class StandaloneEngine {
   private _valSeen = 0;
   /** Best validation loss when the overfit warning fired; beating it withdraws the warning. */
   private _overfitMark: number | null = null;
+  /** Best training loss when the divergence warning fired; beating it withdraws the warning. */
+  private _divergenceMark: number | null = null;
   private _allMetrics: RawMetric[] = [];
   private _frames: StoryFrameMsg[] = [];
   private _milestones: MilestoneMsg[] = [];
@@ -818,9 +821,13 @@ export class StandaloneEngine {
     this._warnings.push({
       kind: "divergence",
       epoch,
-      message: message("warn_nan", this._locale),
+      message: message("warn_nan", this._locale, {
+        metric: displayMetric(metric, this._locale),
+      }),
     });
+    // No later reading can withdraw this: a metric stopped being a number.
     this._seenMilestones.add("divergence_warning");
+    this._divergenceMark = null;
     return {
       ...prev,
       seq: this._ctx.seq,
@@ -966,23 +973,40 @@ export class StandaloneEngine {
 
     // Divergence: a single 10x jump, or a climb to 10x the best loss seen. The
     // gradual case is the common one — 3.59 -> 2881 over eight epochs never
-    // takes a single 10x step.
-    if (t.length >= 2) {
-      const last = t[t.length - 1];
-      const prev = t[t.length - 2];
-      if (last > prev * DIVERGE_GROWTH) {
-        warn("divergence_warning", "divergence", message("warn_spike", this._locale));
-      } else if (
-        this._bestTrainLoss !== null && this._bestTrainLoss > 0 &&
-        last > this._bestTrainLoss * DIVERGE_GROWTH
-      ) {
-        warn("divergence_warning", "divergence", message("warn_climb", this._locale));
-      }
-    }
-    // Fold in only the losses seen since the last check: rescanning the whole
-    // series on every frame is quadratic over a long run.
+    // takes a single 10x step. The ratios need a positive loss to mean anything.
+    // A loss that later beats its best from before the rise was not diverging:
+    // withdraw the warning, and let it fire again if it recurs. Each reading
+    // once, in order: rescanning the whole series on every frame is quadratic
+    // over a long run. Mirrors story_engine/warnings.py.
     for (; this._trainSeen < t.length; this._trainSeen++) {
       const x = t[this._trainSeen];
+      const prev = this._trainSeen > 0 ? t[this._trainSeen - 1] : null;
+      const best = this._bestTrainLoss;
+      if (!this._seenMilestones.has("divergence_warning")) {
+        let said: string | null = null;
+        if (prev !== null && prev > 0 && x > prev * DIVERGE_GROWTH) {
+          said = message("warn_spike", this._locale, { old: lossText(prev), new: lossText(x) });
+        } else if (best !== null && best > 0 && x > best * DIVERGE_GROWTH) {
+          said = message("warn_climb", this._locale, { new: lossText(x), best: lossText(best) });
+        }
+        if (said !== null) {
+          this._divergenceMark = best;
+          warn("divergence_warning", "divergence", said);
+        }
+      }
+      const mark = this._divergenceMark;
+      if (mark !== null && x < mark) {
+        this._seenMilestones.delete("divergence_warning");
+        this._divergenceMark = null;
+        this._warnings.push({
+          kind: "divergence_cleared",
+          epoch,
+          message: message("warn_divergence_cleared", this._locale, {
+            new: lossText(x),
+            best: lossText(mark),
+          }),
+        });
+      }
       if (Number.isFinite(x) && (this._bestTrainLoss === null || x < this._bestTrainLoss)) {
         this._bestTrainLoss = x;
       }

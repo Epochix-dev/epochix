@@ -579,6 +579,15 @@ def render_grading_golden() -> str:
                     got = grade.grade_note(g, readings, has_epoch=has_epoch, new_best=new_best)
                     note.append([g.value, readings, has_epoch, new_best, got])
 
+    # No value that is an exact tie at four figures: Python rounds those to
+    # even and JavaScript up, and a warning's last digit is not worth a port of
+    # float formatting.
+    loss = [
+        [m * 10.0**p, warnings_mod.loss_text(m * 10.0**p)]
+        for m in (1.0, 1.5, 2.5, 3.59, 9.999, 9.9996, 1.2346)
+        for p in range(-8, 9)
+    ]
+
     golden = {
         "compute_grade": compute,
         "grade_by_trajectory": trajectory,
@@ -586,6 +595,7 @@ def render_grading_golden() -> str:
         "relative_improvement": relative,
         "compute_phase": phase,
         "grade_note": note,
+        "loss_text": loss,
     }
     return json.dumps(golden, indent=0, ensure_ascii=False, sort_keys=True) + "\n"
 

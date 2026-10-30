@@ -19,6 +19,7 @@
     "plateau_cleared": "Progress resumed",
     "lr_drop": "Learning rate reduced",
     "divergence": "Training diverged",
+    "divergence_cleared": "Loss recovered",
     "training_complete": "Training complete",
     "first_metric": "First reading",
     "grade_transition": "Grade change",

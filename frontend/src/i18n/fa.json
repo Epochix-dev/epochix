@@ -19,6 +19,7 @@
     "plateau_cleared": "پیشرفت از سر گرفته شد",
     "lr_drop": "کاهش نرخ یادگیری",
     "divergence": "واگرایی آموزش",
+    "divergence_cleared": "خطا دوباره کاهش یافت",
     "training_complete": "آموزش کامل شد",
     "first_metric": "اولین اندازه‌گیری",
     "grade_transition": "تغییر نمره",
