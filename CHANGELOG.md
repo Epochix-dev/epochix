@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.7.38] — 2026-10-30
+
+### Fixed
+
+- **A live run no longer says "Training complete" while it is training.** The
+  timeline showed the card whenever the page was not marked live, and a page
+  sets the run a moment before it marks it live, so every live run opened in
+  the dashboard said it had finished. The card now goes by the run's record,
+  which says so only when the stream has ended; a page watching when that
+  happens shows it then, with the run's summary.
+- **The plateau warning gives its advice only where the log supports it.** It
+  said "Progress has slowed … a lower learning rate may restart progress" of
+  runs that had made none: a CatBoost run whose AUC is 1.0 every round was told
+  to restart progress. Where the metric has moved less than 1% since its first
+  reading, or nothing says which way it runs, the warning now states its
+  measurement alone. A run that improved and then flattened keeps the advice.
+
+---
+
 ## [0.7.37] — 2026-10-29
 
 ### Fixed — a grade only where the log supports one
