@@ -99,7 +99,7 @@ class TestWhatTheRunReports:
             f"Epoch {e}/4 - loss: {v:.4f} - val_loss: {0.9 - e * 0.01:.4f}"
             for e, v in enumerate([0.5, 500.0, 400.0, 300.0], start=1)
         ]
-        assert _kinds(_story(tmp_path, lines))[0] == (2.0, "divergence")
+        assert _kinds(_story(tmp_path, lines)) == [(2.0, "divergence")]
 
     def test_a_learning_rate_drop_in_the_warm_up_is_dated_to_its_reading(
         self, tmp_path: Path

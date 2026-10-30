@@ -420,7 +420,6 @@ class TestDivergenceSentences:
 class TestDivergenceThroughThePipeline:
     """The journey: a log, the store, and what a report says stands."""
 
-    # Past the engine's warm-up, which replays its first readings together.
     SETTLED = [2.0, 1.5, 1.2, 1.0, 0.8, 0.6, 0.5, 0.4]
 
     def _run(self, tmp_path: Path, lines: list[str]) -> tuple[list[str], list[str], str]:
