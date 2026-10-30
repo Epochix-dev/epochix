@@ -74,7 +74,9 @@ redis     = []
 docs      = ["mkdocs>=1.6,<2", "mkdocs-material>=9.5", "mkdocstrings[python]>=0.25"]
 all       = ["epochix[pdf,gif,lightning,hf,llm]"]
 dev       = [
-  "pytest>=8",
+  # <9.2: pytest-benchmark 5.3.0 (the latest) reads `node._nodeid`, which 9.2
+  # removed, and every benchmark errors at setup. Lift it when a release fixes that.
+  "pytest>=8,<9.2",
   "pytest-asyncio>=0.24",
   "pytest-benchmark>=4.0",
   "hypothesis>=6.108",

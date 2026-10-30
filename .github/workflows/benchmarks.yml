@@ -7,6 +7,8 @@ on:
       - "src/epochix/store/**"
       - "src/epochix/normalizer/**"
       - "scripts/benchmark-parsers.py"
+      - "tests/benchmarks/**"
+      - ".github/workflows/benchmarks.yml"
   workflow_dispatch:
 
 # Least privilege by default: every job gets a read-only token unless it
@@ -42,11 +44,13 @@ jobs:
       - name: Run parser benchmark
         run: python scripts/benchmark-parsers.py --lines 100000
 
-      - name: Run store benchmark (pytest-benchmark)
+      # Fails on a crash, not on a slow run: the speeds here are not asserted.
+      # Ignoring the exit code once hid every benchmark erroring at setup; all
+      # that showed was a missing artifact in the next job.
+      - name: Run parser and store benchmarks (pytest-benchmark)
         run: |
-          pip install pytest-benchmark
           pytest tests/benchmarks/ -v --benchmark-min-rounds=3 \
-            --benchmark-json=benchmark-results.json || true
+            --benchmark-json=benchmark-results.json
 
       - name: Upload benchmark results
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
