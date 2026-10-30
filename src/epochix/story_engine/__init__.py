@@ -3,6 +3,7 @@ from __future__ import annotations
 import math
 from collections.abc import Sequence, Set
 from dataclasses import dataclass, field
+from itertools import groupby
 
 from epochix.enums import Grade, Phase, TaskType
 from epochix.models import (
@@ -387,13 +388,19 @@ class StoryEngine:
         reported its epoch 26 -> 27 change, and the last line's never arrived.
         The end of a line always arrives with the line, so this waits on
         nothing that might not come.
+
+        One call can carry several readings: CatBoost's parser holds its first
+        rounds until `best:` names the metric, then hands them over together.
+        Each epoch is its own reading, or round 0 would read round 9's history.
         """
         self.announce({event.canonical_key for event in events})
-        for event in events:
-            self._record(event)
         frames: list[StoryFrame] = []
-        for event in events:
-            frames.extend(self._advance(event))
+        for _epoch, group in groupby(events, key=lambda event: event.epoch):
+            reading = list(group)
+            for event in reading:
+                self._record(event)
+            for event in reading:
+                frames.extend(self._advance(event))
         return frames
 
     def _record(self, event: MetricEvent) -> None:

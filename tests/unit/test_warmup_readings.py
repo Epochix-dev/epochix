@@ -116,7 +116,10 @@ class TestWhatTheRunReports:
         "log",
         [
             "demo/huggingface_bert.log",
+            "tests/fixtures/logs/catboost_real_classifier.log",
             "tests/fixtures/logs/catboost_real_no_eval_set.log",
+            "tests/fixtures/logs/catboost_real_regressor.log",
+            "tests/fixtures/logs/catboost_real_two_eval_sets.log",
             "tests/fixtures/logs/multiline_json.log",
         ],
     )
