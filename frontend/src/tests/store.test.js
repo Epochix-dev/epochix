@@ -279,6 +279,17 @@ describe('overfit_cleared', () => {
 // to its best at the last one. The banner still said progress had slowed,
 // beside a grade card saying "still improving at the last reading".
 
+describe('divergence_cleared', () => {
+  beforeEach(resetStore);
+
+  it('withdraws the divergence warning, whatever numbers it quoted', () => {
+    pushWarning({ kind: 'divergence', epoch: 7, message: 'Training loss reached 1.2.' });
+    pushWarning({ kind: 'lr_drop', epoch: 8, message: 'Learning rate decreased.' });
+    pushWarning({ kind: 'divergence_cleared', epoch: 10, message: 'Training loss fell to 0.09.' });
+    expect(store.get().warnings).toEqual(['Learning rate decreased.']);
+  });
+});
+
 describe('plateau_cleared', () => {
   beforeEach(resetStore);
 

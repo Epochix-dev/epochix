@@ -341,6 +341,52 @@ suite("Standalone engine — the grade bands a letter was measured against", () 
   });
 });
 
+suite("Standalone engine — a divergence warning stands only while it is true", () => {
+  const run = (losses: number[]): ReturnType<typeof drive> => drive(losses.map((v, k) =>
+    `Epoch ${k + 1}/${losses.length} - loss: ${v.toFixed(4)} - val_loss: ${(0.9 - k * 0.01).toFixed(4)}`));
+  const kinds = (r: ReturnType<typeof drive>): string[] =>
+    r.engine.warnings().map((w) => w.kind).filter((k) => k.startsWith("divergence"));
+
+  test("a climb states its numbers and is withdrawn by a new best", () => {
+    const r = run([2, 1, 0.5, 0.1, 0.3, 0.6, 1.2, 0.5, 0.2, 0.09]);
+    assert.deepStrictEqual(kinds(r), ["divergence", "divergence_cleared"]);
+    const said = r.engine.warnings()[0].message;
+    assert.ok(said.includes("1.2") && said.includes("0.1"), said);
+    assert.ok(!said.includes("where it started"), said);
+  });
+
+  test("a spike quotes both readings and is withdrawn by a new best", () => {
+    const r = run([2, 1, 0.5, 0.05, 0.6, 0.04]);
+    assert.deepStrictEqual(kinds(r), ["divergence", "divergence_cleared"]);
+    const said = r.engine.warnings()[0].message;
+    assert.ok(said.includes("0.05") && said.includes("0.6"), said);
+  });
+
+  test("it fires again if the run diverges later", () => {
+    const r = run([2, 0.05, 0.6, 0.04, 0.5]);
+    assert.deepStrictEqual(kinds(r), ["divergence", "divergence_cleared", "divergence"]);
+  });
+
+  test("a loss that never comes back keeps its warning", () => {
+    assert.deepStrictEqual(kinds(run([0.5, 500, 400, 300])), ["divergence"]);
+  });
+
+  test("a falling negative loss is not a spike", () => {
+    assert.deepStrictEqual(kinds(run([-5, -6, -7, -8])), []);
+  });
+
+  test("a NaN is not withdrawn by a later reading", () => {
+    const r = drive([
+      "Epoch 1/5 - loss: 2.0000 - val_loss: 0.9000",
+      "Epoch 2/5 - loss: 0.0500 - val_loss: 0.8000",
+      "Epoch 3/5 - loss: 0.6000 - val_loss: 0.7000",
+      "Epoch 4/5 - loss: nan - val_loss: nan",
+      "Epoch 5/5 - loss: 0.0100 - val_loss: 0.6000",
+    ]);
+    assert.ok(!kinds(r).includes("divergence_cleared"), JSON.stringify(r.engine.warnings()));
+  });
+});
+
 suite("Standalone engine — the plateau warning says only what it measured", () => {
   test("a metric flat since its first reading is not told to restart progress", () => {
     // A CatBoost eval metric at AUC 1.0 every round: no progress, and no

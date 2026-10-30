@@ -13,12 +13,14 @@ from __future__ import annotations
 
 MESSAGES: dict[str, dict[str, str]] = {
     "en": {
-        "warn_nan": "Something went wrong — the loss became undefined. "
-        "The teacher may need to lower the learning rate.",
-        "warn_spike": "The loss has spiked unexpectedly. "
-        "The model may have stepped too far in one direction.",
-        "warn_climb": "The loss is climbing away from where it started. "
-        "The teacher may need to lower the learning rate.",
+        "warn_nan": "The value of {metric} became undefined (NaN or infinite). "
+        "A lower learning rate or gradient clipping may help.",
+        "warn_spike": "Training loss jumped from {old} to {new} in one reading, more "
+        "than 10 times the reading before. A lower learning rate or gradient clipping may help.",
+        "warn_climb": "Training loss reached {new}, more than 10 times its best of "
+        "{best}. A lower learning rate or gradient clipping may help.",
+        "warn_divergence_cleared": "Training loss fell to {new}, below the {best} it "
+        "reached before the rise, so the rise did not last.",
         "warn_overfit": "Validation loss has risen for two readings in a row while "
         "training loss kept falling, so the model may be memorising "
         "its training data. Next step: stop at the best validation "
@@ -58,11 +60,14 @@ MESSAGES: dict[str, dict[str, str]] = {
         "phase_polishing": "polishing",
     },
     "fa": {
-        "warn_nan": "مشکلی پیش آمد — مقدار loss تعریف‌نشده شد. "
-        "شاید معلم باید نرخ یادگیری را پایین بیاورد.",
-        "warn_spike": "loss ناگهان جهش کرد. شاید مدل در یک جهت بیش از حد پیش رفته باشد.",
-        "warn_climb": "loss از نقطه‌ی شروعش دور می‌شود و بالا می‌رود. "
-        "شاید معلم باید نرخ یادگیری را پایین بیاورد.",
+        "warn_nan": "مقدار {metric} تعریف‌نشده شد (NaN یا بی‌نهایت). "
+        "نرخ یادگیری پایین‌تر یا برش گرادیان ممکن است کمک کند.",
+        "warn_spike": "خطای آموزش در یک اندازه‌گیری از {old} به {new} جهید، بیش از "
+        "۱۰ برابر اندازه‌گیری قبلی. نرخ یادگیری پایین‌تر یا برش گرادیان ممکن است کمک کند.",
+        "warn_climb": "خطای آموزش به {new} رسید، بیش از ۱۰ برابر بهترین مقدارش یعنی "
+        "{best}. نرخ یادگیری پایین‌تر یا برش گرادیان ممکن است کمک کند.",
+        "warn_divergence_cleared": "خطای آموزش به {new} رسید، پایین‌تر از {best} "
+        "پیش از افزایش؛ پس افزایش دوام نیاورد.",
         "warn_overfit": "خطای اعتبارسنجی دو اندازه‌گیری پیاپی افزایش یافته، در حالی "
         "که خطای آموزش همچنان کاهش می‌یافت؛ شاید مدل داده‌های "
         "آموزشی را حفظ می‌کند. گام بعدی: در بهترین دورهٔ اعتبارسنجی "
@@ -100,12 +105,16 @@ MESSAGES: dict[str, dict[str, str]] = {
         "phase_polishing": "پالایش",
     },
     "fr": {
-        "warn_nan": "Quelque chose s'est mal passé — la loss est devenue indéfinie. "
-        "Le professeur devrait peut-être baisser le taux d'apprentissage.",
-        "warn_spike": "La loss a bondi brusquement. "
-        "Le modèle a peut-être fait un pas trop grand dans une direction.",
-        "warn_climb": "La loss remonte et s'éloigne de son point de départ. "
-        "Le professeur devrait peut-être baisser le taux d'apprentissage.",
+        "warn_nan": "La valeur de {metric} est devenue indéfinie (NaN ou infinie). "
+        "Un taux d'apprentissage plus bas ou un écrêtage des gradients peut aider.",
+        "warn_spike": "La perte d'entraînement a bondi de {old} à {new} en une mesure, "
+        "soit plus de 10 fois la mesure précédente. Un taux d'apprentissage plus bas "
+        "ou un écrêtage des gradients peut aider.",
+        "warn_climb": "La perte d'entraînement a atteint {new}, soit plus de 10 fois son "
+        "meilleur niveau de {best}. Un taux d'apprentissage plus bas ou un écrêtage des "
+        "gradients peut aider.",
+        "warn_divergence_cleared": "La perte d'entraînement est redescendue à {new}, sous "
+        "les {best} atteints avant la hausse : la hausse n'a pas duré.",
         "warn_overfit": "La perte de validation a augmenté deux mesures de suite "
         "alors que la perte d'entraînement continuait de baisser : "
         "le modèle mémorise peut-être ses données d'entraînement. "

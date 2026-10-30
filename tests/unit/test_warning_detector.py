@@ -17,6 +17,8 @@ pipeline sentinel in `tests/unit/test_diverged_nan.py`.
 
 from __future__ import annotations
 
+from pathlib import Path
+
 from epochix.story_engine.warnings import WarningDetector
 
 
@@ -303,6 +305,171 @@ class TestTheWarningsStateWhatWasMeasured:
         assert "stopped finding" not in english["warn_plateau"]
         assert "unlikely to help" not in english["warn_plateau"]
         assert "may be memorising" in english["warn_overfit"]
+
+
+class TestDivergenceWithdrawn:
+    """A loss that gets back below where it was before the rise was not diverging.
+
+    "The loss is climbing away from where it started" compared against the best
+    reading, not the first, and fired on a loss still below its start. It then
+    stood to the end of a run whose last reading was its best.
+    """
+
+    CLIMB = [2.0, 1.0, 0.5, 0.1, 0.3, 0.6, 1.2, 0.5, 0.2, 0.09]
+    SPIKE = [2.0, 1.0, 0.5, 0.05, 0.6, 0.04]
+
+    def _replay(self, losses: list[float]) -> list[tuple[int, str]]:
+        det = WarningDetector()
+        fired: list[tuple[int, str]] = []
+        for epoch, loss in enumerate(losses, start=1):
+            fired += [(epoch, k) for k in _kinds(det.update(epoch, train_loss=loss))]
+        return fired
+
+    def test_a_new_best_withdraws_a_climb(self) -> None:
+        assert self._replay(self.CLIMB) == [(7, "divergence"), (10, "divergence_cleared")]
+
+    def test_a_new_best_withdraws_a_spike(self) -> None:
+        assert self._replay(self.SPIKE) == [(5, "divergence"), (6, "divergence_cleared")]
+
+    def test_it_fires_again_if_the_run_diverges_later(self) -> None:
+        assert self._replay([*self.SPIKE, 0.5]) == [
+            (5, "divergence"),
+            (6, "divergence_cleared"),
+            (7, "divergence"),
+        ]
+
+    def test_a_loss_that_never_comes_back_keeps_its_warning(self) -> None:
+        assert self._replay([0.5, 500.0, 400.0, 300.0]) == [(2, "divergence")]
+
+    def test_a_second_spike_is_not_a_second_warning(self) -> None:
+        assert self._replay([1.0, 20.0, 1.5, 30.0]) == [(2, "divergence")]
+
+    def test_a_falling_negative_loss_is_not_a_spike(self) -> None:
+        assert self._replay([-5.0, -6.0, -7.0, -8.0]) == []
+
+    def test_a_nan_is_not_withdrawn_by_a_later_reading(self) -> None:
+        det = WarningDetector()
+        fired = _kinds(det.update(1, train_loss=0.5))
+        fired += _kinds(det.update(2, train_loss=float("nan")))
+        fired += _kinds(det.update(3, train_loss=0.1))
+        assert fired == ["divergence"]
+
+    def test_the_engine_s_nan_seals_an_earlier_warning(self) -> None:
+        det = WarningDetector()
+        fired: list[str] = []
+        for epoch, loss in enumerate([2.0, 0.05, 0.6], start=1):
+            fired += _kinds(det.update(epoch, train_loss=loss))
+        det.note_undefined()
+        fired += _kinds(det.update(4, train_loss=0.01))
+        fired += _kinds(det.update(5, train_loss=5.0))
+        assert fired == ["divergence"]
+
+
+class TestDivergenceSentences:
+    """Each sentence quotes its readings and the threshold that fired it."""
+
+    def _said(self, losses: list[float], locale: str = "en") -> list[str]:
+        det = WarningDetector(locale=locale)
+        out: list[str] = []
+        for epoch, loss in enumerate(losses, start=1):
+            out += [w.message for w in det.update(epoch, train_loss=loss)]
+        return out
+
+    def test_a_climb_quotes_the_reading_and_the_best_it_is_measured_against(self) -> None:
+        said = self._said(TestDivergenceWithdrawn.CLIMB)
+        assert said[0].startswith("Training loss reached 1.2, more than 10 times its best of 0.1.")
+        assert "where it started" not in said[0]
+        assert said[1].startswith("Training loss fell to 0.09, below the 0.1")
+
+    def test_a_spike_quotes_both_readings(self) -> None:
+        said = self._said(TestDivergenceWithdrawn.SPIKE)
+        assert said[0].startswith("Training loss jumped from 0.05 to 0.6 in one reading")
+
+    def test_every_language_states_the_threshold_and_the_numbers(self) -> None:
+        from epochix.story_engine import warnings as w
+        from epochix.story_engine.messages import MESSAGES
+
+        assert set(MESSAGES) == {"en", "fr", "fa"}, "a new locale needs its numbers checked"
+        assert f"{w._DIVERGE_GROWTH:g}" == "10"
+        ten = {"en": "10 times", "fr": "10 fois", "fa": "۱۰ برابر"}
+        for locale, phrase in ten.items():
+            assert phrase in MESSAGES[locale]["warn_spike"], locale
+            assert phrase in MESSAGES[locale]["warn_climb"], locale
+        for locale in MESSAGES:
+            said = self._said(TestDivergenceWithdrawn.CLIMB, locale)
+            assert "1.2" in said[0] and "0.1" in said[0], (locale, said[0])
+            assert "0.09" in said[1] and "0.1" in said[1], (locale, said[1])
+            assert all("{" not in s for s in said), (locale, said)
+
+    def test_no_language_blames_a_teacher(self) -> None:
+        from epochix.story_engine.messages import MESSAGES
+
+        words = {"en": "teacher", "fr": "professeur", "fa": "معلم"}
+        for locale, word in words.items():
+            for key in ("warn_nan", "warn_spike", "warn_climb"):
+                assert word not in MESSAGES[locale][key], (locale, key)
+
+    def test_loss_text_keeps_a_small_loss_readable(self) -> None:
+        from epochix.story_engine.warnings import loss_text
+
+        assert loss_text(0.00009) == "9e-05"
+        assert loss_text(2881.0) == "2881"
+        assert loss_text(0.1) == "0.1"
+
+
+class TestDivergenceThroughThePipeline:
+    """The journey: a log, the store, and what a report says stands."""
+
+    # Past the engine's warm-up, which replays its first readings together.
+    SETTLED = [2.0, 1.5, 1.2, 1.0, 0.8, 0.6, 0.5, 0.4]
+
+    def _run(self, tmp_path: Path, lines: list[str]) -> tuple[list[str], list[str], str]:
+        from epochix import parse
+        from epochix.exporters.markdown_export import build_markdown
+        from epochix.store.sqlite_store import RunStore
+        from epochix.story_engine.warnings import standing_warnings
+
+        log = tmp_path / "t.log"
+        log.write_text("\n".join(lines) + "\n", encoding="utf-8")
+        db = str(tmp_path / "t.db")
+        run = parse(log, db=db, run_name="t")
+        store = RunStore(db_path=db)
+        frames = store.get_story_frames(run.id)
+        standing = standing_warnings(w for f in frames for w in f.warnings)
+        fired = [w.kind for f in frames for w in f.warnings]
+        return fired, [w.kind for w in standing], build_markdown(run.id, store)
+
+    def _lines(self, losses: list[float]) -> list[str]:
+        return [
+            f"Epoch {e}/{len(losses)} - loss: {v:.4f} - val_loss: {0.9 - e * 0.01:.4f}"
+            for e, v in enumerate(losses, start=1)
+        ]
+
+    def test_a_recovered_run_reports_no_divergence(self, tmp_path: Path) -> None:
+        losses = [*self.SETTLED, 0.05, 0.1, 0.3, 0.6, 0.3, 0.1, 0.04]
+        fired, kinds, report = self._run(tmp_path, self._lines(losses))
+        assert fired == ["divergence", "divergence_cleared"], "nothing to withdraw otherwise"
+        assert "divergence" not in kinds
+        assert "Training loss reached" not in report
+
+    def test_a_run_that_stays_diverged_reports_it(self, tmp_path: Path) -> None:
+        _fired, kinds, report = self._run(
+            tmp_path, self._lines([*self.SETTLED, 500.0, 400.0, 300.0])
+        )
+        assert kinds == ["divergence"]
+        assert "Training loss jumped from 0.4 to 500" in report
+
+    def test_a_nan_after_a_spike_survives_a_later_new_best(self, tmp_path: Path) -> None:
+        lines = [
+            *self._lines([*self.SETTLED, 0.05, 0.6]),
+            "Epoch 11/13 - loss: nan - val_loss: nan",
+            "Epoch 12/13 - loss: 0.0100 - val_loss: 0.7000",
+        ]
+        fired, kinds, report = self._run(tmp_path, lines)
+        assert "divergence_cleared" not in fired, fired
+        assert kinds.count("divergence") == 2, kinds
+        assert "became undefined" in report
+        assert "Training loss jumped from 0.05 to 0.6" in report
 
 
 class TestStandingWarnings:

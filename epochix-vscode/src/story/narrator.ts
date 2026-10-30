@@ -180,6 +180,19 @@ export function message(
   return text;
 }
 
+/** A loss as a warning quotes it. Python's `:.4g`; see loss_text in warnings.py. */
+export function lossText(value: number): string {
+  if (value === 0) return "0";
+  const [mantissa, exponent] = value.toExponential(3).split("e");
+  const power = Number(exponent);
+  const trim = (s: string): string => (s.includes(".") ? s.replace(/\.?0+$/, "") : s);
+  if (power < -4 || power >= 4) {
+    const digits = String(Math.abs(power)).padStart(2, "0");
+    return `${trim(mantissa)}e${power < 0 ? "-" : "+"}${digits}`;
+  }
+  return trim(value.toFixed(3 - power));
+}
+
 /** Every variant in every locale, so tests can assert over all of them. */
 export const _VARIANTS = {
   PAST_PEAK: LOCALES.flatMap((l) => SPECIAL_TEMPLATES[l].pastPeak),

@@ -29,6 +29,7 @@ from epochix.story_engine.grade import (
 from epochix.story_engine.messages import message
 from epochix.story_engine.milestones import MilestoneTracker
 from epochix.story_engine.narrator import (
+    _display_metric,
     narrate,
     narrate_diverged,
     narrate_past_peak,
@@ -599,11 +600,14 @@ class StoryEngine:
                 Warning(
                     kind="divergence",
                     epoch=epoch,
-                    message=message("warn_nan", self.locale),
+                    message=message(
+                        "warn_nan", self.locale, metric=_display_metric(key, self.locale)
+                    ),
                 )
             ],
             task_type=self._effective_task(),
         )
+        self._warnings.note_undefined()
         self._prev_frame = frame
         self._divergence_emitted = True
         return frame

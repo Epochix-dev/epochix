@@ -25,6 +25,7 @@ import {
   type Grade,
   type TaskType,
 } from "../../story/grader";
+import { lossText } from "../../story/narrator";
 import { computePhase, relativeImprovement } from "../../story/phases";
 
 interface Golden {
@@ -34,6 +35,7 @@ interface Golden {
   relative_improvement: [number, number, boolean, number | null][];
   compute_phase: [number | null, number, number, boolean, string][];
   grade_note: [Grade, number, boolean, boolean, string | null][];
+  loss_text: [number, string][];
 }
 
 function golden(): Golden {
@@ -86,6 +88,13 @@ suite("Grading matches the Python engine", () => {
     check(g.compute_phase, "compute_phase", ([progress, value, baseline, lower, want]) => {
       const got = computePhase(progress, value, baseline, lower);
       return got === want ? null : `p=${progress} ${value} from ${baseline} (${lower}): ${got} != ${want}`;
+    });
+  });
+
+  test("loss_text", () => {
+    check(g.loss_text, "loss_text", ([value, want]) => {
+      const got = lossText(value);
+      return got === want ? null : `${value}: ${got} != ${want}`;
     });
   });
 

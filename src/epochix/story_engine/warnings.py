@@ -8,9 +8,16 @@ from typing import Literal
 
 from epochix.models import Warning
 from epochix.story_engine.messages import message
+from epochix.story_engine.narrator import _display_metric
 
 WarningKind = Literal[
-    "overfit", "overfit_cleared", "plateau", "plateau_cleared", "divergence", "lr_drop"
+    "overfit",
+    "overfit_cleared",
+    "plateau",
+    "plateau_cleared",
+    "divergence",
+    "divergence_cleared",
+    "lr_drop",
 ]
 
 _OVERFIT_WINDOW = 3  # val_loss must rise for N consecutive epochs
@@ -25,6 +32,11 @@ _PLATEAU_DELTA = 0.01
 _DIVERGE_GROWTH = 10.0
 
 _CLEARED = "_cleared"
+
+
+def loss_text(value: float) -> str:
+    """A loss as a warning quotes it: four significant figures, any magnitude."""
+    return f"{value:.4g}"
 
 
 def standing_warnings(warnings: Iterable[Warning]) -> list[Warning]:
@@ -57,6 +69,9 @@ class WarningDetector:
     # The best validation loss when the overfit warning fired. Beating it later
     # disproves the warning; see the overfit block below.
     _overfit_mark: float | None = field(default=None, init=False)
+    # The best training loss when the divergence warning fired. Beating it later
+    # disproves the warning; see the divergence block below.
+    _divergence_mark: float | None = field(default=None, init=False)
     _fired: set[str] = field(default_factory=set, init=False)
     # Every reading of the primary metric so far, as its first, lowest and
     # highest: "progress has slowed" presupposes progress, and a metric that
@@ -64,6 +79,15 @@ class WarningDetector:
     _primary_first: float | None = field(default=None, init=False)
     _primary_low: float | None = field(default=None, init=False)
     _primary_high: float | None = field(default=None, init=False)
+
+    def note_undefined(self) -> None:
+        """A metric stopped being a number: no later reading can withdraw that.
+
+        `standing_warnings` withdraws by kind, so a `divergence_cleared` after
+        this would take the NaN warning with it.
+        """
+        self._fired.add("divergence")
+        self._divergence_mark = None
 
     def _plateau_message(self, direction_known: bool) -> str:
         """Which plateau sentence the readings support.
@@ -110,36 +134,59 @@ class WarningDetector:
                 if self._primary_high is None or primary_value > self._primary_high:
                     self._primary_high = primary_value
 
-        # Divergence: loss is NaN or spiked 10×
+        # Divergence: the loss is NaN, jumped 10x in one reading, or climbed to
+        # 10x its best. The ratios need a positive loss to mean anything: -5 ->
+        # -6 is a falling loss, and it is also "greater than 10 x -5".
         if train_loss is not None:
+            best = self._best_train_loss
+            previous = self._train_losses[-2] if len(self._train_losses) >= 2 else None
+            said: str | None = None
             if math.isnan(train_loss) or math.isinf(train_loss):
+                self.note_undefined()
                 warnings.append(
                     Warning(
                         kind="divergence",
                         epoch=epoch,
-                        message=message("warn_nan", self.locale),
+                        message=message(
+                            "warn_nan",
+                            self.locale,
+                            metric=_display_metric("train_loss", self.locale),
+                        ),
                     )
                 )
-            elif len(self._train_losses) >= 2 and train_loss > self._train_losses[-2] * 10:
-                warnings.append(
-                    Warning(
-                        kind="divergence",
-                        epoch=epoch,
-                        message=message("warn_spike", self.locale),
-                    )
+            elif "divergence" in self._fired:
+                pass
+            elif previous is not None and previous > 0 and train_loss > previous * _DIVERGE_GROWTH:
+                said = message(
+                    "warn_spike", self.locale, old=loss_text(previous), new=loss_text(train_loss)
                 )
-            elif (
-                self._best_train_loss is not None
-                and self._best_train_loss > 0
-                and train_loss > self._best_train_loss * _DIVERGE_GROWTH
-                and "divergence" not in self._fired
-            ):
+            elif best is not None and best > 0 and train_loss > best * _DIVERGE_GROWTH:
+                said = message(
+                    "warn_climb", self.locale, new=loss_text(train_loss), best=loss_text(best)
+                )
+            if said is not None:
                 self._fired.add("divergence")
+                self._divergence_mark = best
+                warnings.append(Warning(kind="divergence", epoch=epoch, message=said))
+
+            # A loss that later beats its best from before the rise was not
+            # diverging. The warning stood to the end of such a run, beside a
+            # last reading that was its best. Withdraw it, and let it fire again
+            # if it recurs. A loss that never gets back keeps its warning.
+            mark = self._divergence_mark
+            if mark is not None and train_loss < mark:
+                self._fired.discard("divergence")
+                self._divergence_mark = None
                 warnings.append(
                     Warning(
-                        kind="divergence",
+                        kind="divergence_cleared",
                         epoch=epoch,
-                        message=message("warn_climb", self.locale),
+                        message=message(
+                            "warn_divergence_cleared",
+                            self.locale,
+                            new=loss_text(train_loss),
+                            best=loss_text(mark),
+                        ),
                     )
                 )
 
