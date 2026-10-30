@@ -19,7 +19,13 @@ paths they use); never edit a capture by hand.
 | `catboost_real_regressor.log` | CatBoost regressor stopped by its overfitting detector. | `boosting_real_source.py` (`cb_reg`) |
 | `catboost_real_two_eval_sets.log` | CatBoost regressor with two eval sets. | `boosting_real_source.py` (`cb_two_eval_sets`) |
 | `fastai_real.log` | fastai 2.8's results table from a tabular learner, 4 epochs. | `fastai_real_source.py` |
+| `gridsearch_real.log` | scikit-learn 1.9's `GridSearchCV` at `verbose=3`, an SVC on the digits. | `gridsearch_real_source.py` (`plain`) |
+| `gridsearch_real_multimetric.log` | The same with two `scoring` names and `return_train_score`: `accuracy: (train=…, test=…) f1_macro: (…)`. | `gridsearch_real_source.py` (`multi`) |
+| `gridsearch_real_train_score.log` | The same with `return_train_score`: `score=(train=…, test=…)`. | `gridsearch_real_source.py` (`train`) |
 | `huggingface_real_trainer.log` | A small MLP trained with `transformers.Trainer` (transformers 5). | `huggingface_real_source.py` |
+| `huggingface_real_trainer_v4.log` | The same script on transformers 4.57: bare numbers, and the bar on the same line as the dict. | `huggingface_real_source.py` |
+| `keras2_real_verbose1.log` | A small MLP with Keras 2 (TensorFlow 2.15), `verbose=1`, redirected to a file. | `keras2_real_source.py` (`1`) |
+| `keras2_real_verbose2.log` | The same, `verbose=2`. | `keras2_real_source.py` (`2`) |
 | `keras_real_verbose2.log` | The demo CNN with Keras 3, `verbose=2`. | `../../../demo/keras_image_classifier_source.py` (`steady 2`) |
 | `lightgbm_real_classifier.log` | LightGBM classifier, two eval sets. | `boosting_real_source.py` (`lgb_clf`) |
 | `lightgbm_real_early_stopping.log` | LightGBM's native API with early stopping. | `boosting_real_source.py` (`lgb_native`) |
@@ -41,12 +47,12 @@ nothing about a real run.
 | `diverging_loss.log` | The tqdm-loop layout below, with the loss climbing. | An edge case. |
 | `empty.log` | Nothing. | An edge case. |
 | `garbage.log` | A web server's log. | Not training output. |
-| `gridsearch_cv.log` | scikit-learn's `GridSearchCV` at `verbose=3`. | Yes; the scores were typed. |
-| `hf_classification.log` | Older `transformers.Trainer` dicts, numbers as floats. | Yes (transformers 4); `transformers 5` prints strings — see `huggingface_real_trainer.log`. |
+| `gridsearch_cv.log` | scikit-learn's `GridSearchCV` at `verbose=3`. | Yes; the scores were typed — see `gridsearch_real.log`. |
+| `hf_classification.log` | Older `transformers.Trainer` dicts, numbers as floats. | Yes (transformers 4), minus the bar it shares a line with — see `huggingface_real_trainer_v4.log`; `transformers 5` prints strings — see `huggingface_real_trainer.log`. |
 | `huggingface_5ep.log` | The same, 5 epochs. | As above. |
 | `huggingface_nlp_10ep.log` | The same, with an `eval_perplexity` a `compute_metrics` would add. | As above. |
 | `interrupted.log` | The tqdm-loop layout, cut off mid-epoch. | An edge case. |
-| `keras_100ep.log` | Keras 2 (`tf.keras`) at `verbose=1`: `1563/1563 [====] - 8s 5ms/step - loss: …`. | Yes, Keras 2; Keras 3 prints `━━━` bars — see `keras_real_verbose2.log`. |
+| `keras_100ep.log` | Keras 2 (`tf.keras`) at `verbose=1`: `1563/1563 [====] - 8s 5ms/step - loss: …`. | Yes, Keras 2 — see `keras2_real_verbose1.log`, which also prints the first batch's partial bar; Keras 3 prints `━━━` bars — see `keras_real_verbose2.log`. |
 | `keras_50ep.log` | The same, 50 epochs. | As above. |
 | `keras_short.log` | The same, 10 epochs. | As above. |
 | `mixed_frameworks.log` | Keras 2 lines, then older `Trainer` dicts, in one log. | An edge case. |

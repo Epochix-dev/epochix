@@ -15,7 +15,14 @@ from epochix.parsers.registry import register_parser
 #   {'eval_loss': '1.368', 'eval_accuracy': '0.8178', 'eval_runtime': '0.0353', 'epoch': '1'}
 # Only bare numbers were accepted, so a real log from a current version
 # produced no metric, no frame and no story.
-_HF_DICT_LINE = re.compile(r"^\s*\{['\"]loss['\"].*\}")
+#
+# The Trainer's tqdm bar is still on the line when the dict is printed, with no
+# line break between them when it has just redrawn:
+#    20%|##        | 86/430 [00:00<00:03, 103.62it/s]{'eval_loss': 1.367, ...}
+# Read only from a leading "{", a real transformers 4 run lost 9 of its 10
+# evaluations and its first training loss.
+_BAR_BEFORE_DICT = re.compile(r"^\s*\d{1,3}%\|[^{}]{0,200}\]\s*(?=\{)")
+_HF_DICT_LINE = re.compile(r"^\s*(?:\d{1,3}%\|[^{}]{0,200}\]\s*)?\{['\"]loss['\"].*\}")
 _NUMBER = re.compile(r"[-+]?(?:\d+\.?\d*|\.\d+)(?:[eE][-+]?\d{1,4})?")
 
 # The dict the Trainer prints once, when training ends:
@@ -47,7 +54,7 @@ class HFParser:
         return min(hits / max(len(sample_lines), 1) * 5, 0.93)
 
     def parse_line(self, line: str, ctx: ParserContext) -> list[RawMetric]:
-        stripped = line.strip()
+        stripped = _BAR_BEFORE_DICT.sub("", line).strip()
         if not stripped.startswith("{"):
             return []
 

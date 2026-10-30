@@ -127,9 +127,11 @@ _FOLD_ROW = re.compile(r"^\s*(?:\[cv(?:\s+\d+\s*/\s*\d+)?\]|fold\s+\d+\b)", re.I
 # The score on a fold row. GridSearchCV also prints the parameter set being
 # tried ("max_depth=3"), which is configuration and not a measurement — taking
 # only the score keeps a hyperparameter from being charted as a result, the
-# same fault as an estimator repr.
+# same fault as an estimator repr. With `return_train_score` the row carries both,
+# "score=(train=0.995, test=0.940)", and the test score is the result: reading
+# the first number reported a real search's 0.9538 as 0.9913.
 _CV_SCORE = re.compile(
-    rf"\bscore\s*[:=]\s*\(?\s*(?:test|train)?\s*=?\s*({_NUM})",
+    rf"\bscore\s*[:=]\s*\(?\s*(?:train\s*=\s*{_NUM}\s*,\s*)?(?:test|train)?\s*=?\s*({_NUM})",
     re.IGNORECASE,
 )
 
@@ -138,7 +140,7 @@ _CV_SCORE = re.compile(
 # `max_depth` from the parameter set and `test` twice — the parameters charted
 # as results, and two different metrics merged under one meaningless key.
 _CV_NAMED_SCORE = re.compile(
-    rf"(\w{{1,32}})\s*:\s*\(\s*(?:test|train)\s*=\s*({_NUM})\s*\)",
+    rf"(\w{{1,32}})\s*:\s*\(\s*(?:train\s*=\s*{_NUM}\s*,\s*)?(?:test|train)\s*=\s*({_NUM})\s*\)",
     re.IGNORECASE,
 )
 
