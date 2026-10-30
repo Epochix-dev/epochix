@@ -114,6 +114,7 @@ const CLEARED = '_cleared';
  * epoch", which was epoch 30 — and `plateau_cleared` when the metric has moved
  * more than 1% over its last five readings again: a Keras run that flattened
  * mid-way otherwise ended on "progress has slowed" beside "still improving".
+ * `divergence_cleared` when the training loss beats its best from before a rise.
  * @param {{warnings: string[], warningKinds?: Map<string,string>}} s
  * @param {Array<string|{kind?: string, message?: string}>} incoming
  */
