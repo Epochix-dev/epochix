@@ -50,7 +50,7 @@ def _make_event(run_id: str, seq: int) -> MetricEvent:
 # Advisory throughput reference (writes/sec). NOT asserted: single-row commit
 # rate is hardware-dependent and a hard floor flakes near the boundary across
 # machines. benchmarks.yml records the numbers as a JSON artifact and prints
-# them; nothing compares them with a base branch or fails on a slow run.
+# them; scripts/compare_benchmarks.py compares parsers only, not the store.
 ADVISORY_WPS = 10_000
 
 

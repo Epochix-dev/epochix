@@ -153,6 +153,10 @@ npm --prefix epochix-vscode test    # launches a real VS Code host
   both engines, and pinned per log in `corpus_truth.json`. The card under the
   grade reads it. A new way of grading needs a new value and a sentence for it
   in all three languages — not a sentence that is true of most runs.
+- **Throughput from separate CI runs cannot be compared.** GitHub's runners come
+  in at least two speeds: the same code reads ~30k or ~45k lines/sec on the
+  universal parser depending on which it got. `scripts/compare_benchmarks.py`
+  measures the base branch and the change on one runner, and is what fails a PR.
 - **Test what the release builds.** 0.7.5–0.7.10 shipped a blank VS Code panel
   because the extension tests ran against `frontend/dist` (the server build)
   while the release packages `build:webview` output. When a release step
