@@ -46,10 +46,9 @@ def _make_ctx() -> ParserContext:
 
 # Advisory throughput reference (lines/sec). NOT asserted here: the per-call
 # pytest-benchmark harness adds fixture overhead and is load-sensitive, so an
-# absolute floor flakes near the boundary (esp. the universal parser). The hard
-# >= 50k gate lives in scripts/benchmark-parsers.py (a tight loop with real
-# headroom), which is the step benchmarks.yml actually fails on. These tests
-# record throughput for the JSON artifact + base-branch comparison instead.
+# absolute floor flakes near the boundary (esp. the universal parser). The gate
+# is scripts/compare_benchmarks.py, a tight loop measuring the base branch and
+# the change on one machine. These tests record throughput for the JSON artifact.
 ADVISORY_LPS = 50_000
 
 
