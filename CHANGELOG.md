@@ -7,6 +7,48 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.7.39] — 2026-10-30
+
+### Fixed
+
+- **`GridSearchCV` with `return_train_score` reports the test score.** A row
+  reading `score=(train=0.995, test=0.940)` was read as its first number, so a
+  recorded search that printed a best score of 0.9538 was reported as 0.9913:
+  how well the model fit its training data, under the name of the result. The
+  named form, `accuracy: (train=…, test=…)`, did not match at all. Both now
+  read the test score, in both engines.
+- **A real `transformers` 4 run keeps its evaluations.** The Trainer's progress
+  bar can share a line with the results it prints, and only a line starting
+  with `{` was read, so a recorded run lost 9 of its 10 evaluations and its
+  first training loss. Both engines now read past the bar.
+- **A divergence warning states its readings and stands only while it is
+  true.** "The loss is climbing away from where it started" compared against
+  the best reading, not the first, so it fired on a loss still below its start,
+  and it and the "spiked" warning stood to the end of a run whose last reading
+  was its best. They now quote the readings and the 10x threshold in all three
+  languages, and a `divergence_cleared` withdraws them once the training loss
+  beats its best from before the rise. A NaN is not withdrawn. A falling
+  negative loss no longer reports a spike, and the spike warning fires once in
+  both engines, where Python repeated it on every jump.
+- **Early frames read the history of their own reading.** The engine holds a
+  run's first readings until it can tell the task, and each frame then built
+  from them read the later readings too. A spike in those readings could go
+  unreported and a learning-rate drop could vanish. On 6 of the 50 bundled logs
+  a first frame was graded D "on improvement" from one reading, and on 11 its
+  skill scores used later values. No log's final grade or metric changes.
+  CatBoost's held rounds had the same fault and are fixed with it.
+
+### Tests
+
+- **Real recordings of Keras 2, `transformers` 4 and `GridSearchCV`,** six logs
+  with their scripts. These formats were only hand-written samples before. Keras
+  2 and plain `GridSearchCV` were already read correctly and are now pinned.
+- **The benchmark job runs again, and fails if the benchmarks crash.**
+  pytest-benchmark 5.3.0 breaks on pytest 9.2, and `|| true` hid all seven
+  erroring at setup. The `dev` extra now caps pytest below 9.2.
+
+---
+
 ## [0.7.38] — 2026-10-30
 
 ### Fixed
