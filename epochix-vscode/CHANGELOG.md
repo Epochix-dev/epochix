@@ -14,6 +14,21 @@ which covers the extension too; entries here resume with 0.7.16.
 
 ---
 
+## [0.7.39] — 2026-10-30
+
+### Fixed
+
+- **`GridSearchCV` with `return_train_score` reports the test score**, not the
+  training score it printed first. A recorded search that printed 0.9538 was
+  reported as 0.9913.
+- **A real `transformers` 4 run keeps its evaluations.** The progress bar can
+  share a line with the results, and a recorded run lost 9 of its 10.
+- **A divergence warning states its readings and stands only while it is
+  true.** It quotes the readings and the 10x threshold, and is withdrawn once
+  the training loss beats its best from before the rise. A NaN is not withdrawn.
+
+---
+
 ## [0.7.38] — 2026-10-30
 
 ### Fixed
