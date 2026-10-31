@@ -1234,7 +1234,7 @@ A `docker-compose.yml` ships in the repo: server + Redis + Postgres + an optiona
 | Metric                                  | Target               |
 |-----------------------------------------|----------------------|
 | Parse throughput (framework parsers)    | ≥ 50k lines/sec      |
-| Parse throughput (universal fallback)   | ≥ 24k lines/sec (measured ~31k on CI; see ROADMAP) |
+| Parse throughput (universal fallback)   | ≥ 24k lines/sec (measured ~30k or ~45k on CI, by runner; see ROADMAP) |
 | Live latency (parse → browser render)   | < 500 ms p95         |
 | First meaningful paint                  | < 300 ms (local)     |
 | WS connections per worker               | ≥ 1000 concurrent    |

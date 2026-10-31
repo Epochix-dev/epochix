@@ -6,6 +6,8 @@ Usage::
     python scripts/benchmark-parsers.py
     python scripts/benchmark-parsers.py --lines 100000 --parsers pytorch_lightning,keras
     python scripts/benchmark-parsers.py --json
+    python scripts/benchmark-parsers.py --rounds 5
+    python scripts/benchmark-parsers.py --src ../base/src --json
 """
 from __future__ import annotations
 
@@ -14,13 +16,6 @@ import json
 import sys
 import time
 from pathlib import Path
-
-# Ensure src/ is on the path when run from the project root
-sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
-
-from epochix.parsers.registry import detect_parser
-from epochix.parsers.base import ParserContext
-
 
 # Lines per second each parser must sustain on a GitHub-hosted runner.
 #
@@ -62,6 +57,10 @@ SAMPLE_LINES: dict[str, list[str]] = {
 
 def benchmark_parser(parser_name: str, lines: list[str], n: int) -> dict[str, object]:
     """Run parser on lines × n repetitions; return timing stats."""
+    import epochix
+    from epochix.parsers.base import ParserContext
+    from epochix.parsers.registry import detect_parser
+
     # Build a combined log to detect from
     sample = lines * 10
     parser = detect_parser(sample)
@@ -83,6 +82,7 @@ def benchmark_parser(parser_name: str, lines: list[str], n: int) -> dict[str, ob
 
     return {
         "parser": parser.name,
+        "source": epochix.__file__,
         "lines": total_lines,
         "metrics": total_metrics,
         "elapsed_s": round(elapsed, 4),
@@ -99,7 +99,13 @@ def main() -> None:
     ap.add_argument("--parsers", default="all",
                     help="Comma-separated list of parsers, or 'all'")
     ap.add_argument("--json", action="store_true", help="Output JSON")
+    ap.add_argument("--rounds", type=int, default=1,
+                    help="Keep each parser's best of this many passes (default 1)")
+    ap.add_argument("--src", type=Path, default=Path(__file__).parent.parent / "src",
+                    help="The src/ directory to measure (default: this tree's)")
     args = ap.parse_args()
+
+    sys.path.insert(0, str(args.src))
 
     targets = (
         list(SAMPLE_LINES.keys())
@@ -114,14 +120,15 @@ def main() -> None:
             print(f"Unknown parser: {name}", file=sys.stderr)
             continue
         n = max(1, args.lines // len(sample))
-        r = benchmark_parser(name, sample, n)
+        passes = [benchmark_parser(name, sample, n) for _ in range(max(1, args.rounds))]
+        r = max(passes, key=lambda p: p.get("lines_per_sec", 0))
         results.append(r)
         if not args.json:
-            status = "✓" if r.get("target_met") else "✗"
+            status = "ok  " if r.get("target_met") else "SLOW"
             print(
                 f"{status} {r['parser']:25s}  "
                 f"{r.get('lines_per_sec', 0):>10,} lines/sec  "
-                f"(target ≥ {r.get('target', DEFAULT_TARGET):,})"
+                f"(target >= {r.get('target', DEFAULT_TARGET):,})"
             )
 
     if args.json:
