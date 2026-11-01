@@ -34,16 +34,13 @@ def test_list_help_routes_to_list() -> None:
     assert "saved runs" in result.output.lower()
 
 
-def test_open_requires_run_id() -> None:
-    result = runner.invoke(cli.app, ["open"])
-    assert result.exit_code != 0
-    assert "RUN_ID" in result.output
-
-
-def test_export_requires_run_id() -> None:
-    result = runner.invoke(cli.app, ["export"])
-    assert result.exit_code != 0
-    assert "RUN_ID" in result.output
+@pytest.mark.parametrize("command", ["open", "export"])
+def test_a_command_refuses_to_run_without_its_run_id(command: str) -> None:
+    """It names what is missing. Typer prints RUN_ID before 0.27 and {run_id} after."""
+    result = runner.invoke(cli.app, [command])
+    assert result.exit_code == 2
+    assert "missing argument" in result.output.lower()
+    assert "run_id" in result.output.lower()
 
 
 def test_run_command_reports_missing_file() -> None:
