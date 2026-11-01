@@ -31,7 +31,9 @@ dependencies = [
   "fastapi>=0.116",
   "uvicorn[standard]>=0.30",
   "sqlalchemy>=2.0.31",
-  "typer>=0.15",
+  # 0.18: Typer does not cap Click, and before this `--help` or a missing
+  # argument crashes on current Click.
+  "typer>=0.18",
   "structlog>=24.1",
   "python-ulid>=3.0",
   "anyio>=4.4",
