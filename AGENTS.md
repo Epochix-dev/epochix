@@ -153,6 +153,11 @@ npm --prefix epochix-vscode test    # launches a real VS Code host
   both engines, and pinned per log in `corpus_truth.json`. The card under the
   grade reads it. A new way of grading needs a new value and a sentence for it
   in all three languages — not a sentence that is true of most runs.
+- **CI installs the lock; users get the newest.** `pyproject.toml` holds floors,
+  so a fresh `pip install` can differ from everything CI runs: pytest 9.2 and
+  Typer 0.27 were both found by accident. `newest-deps.yml` runs the tests
+  weekly on an upgraded lock, off the PR path, and keeps one issue open while
+  they fail. Fix what it finds; never commit its lock.
 - **Test what the release builds.** 0.7.5–0.7.10 shipped a blank VS Code panel
   because the extension tests ran against `frontend/dist` (the server build)
   while the release packages `build:webview` output. When a release step

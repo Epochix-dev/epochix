@@ -4,8 +4,13 @@ version: 2
 # package, the dashboard bundle, and the VS Code extension. A single entry
 # would silently watch only one of them.
 updates:
-  - package-ecosystem: "pip"
+  # uv, not pip: the pip ecosystem edited pyproject and never moved uv.lock, which
+  # is what CI installs from. The strategy keeps pyproject's floors where they
+  # are, since they promise users a range, and changes a cap only to admit a
+  # release.
+  - package-ecosystem: "uv"
     directory: "/"
+    versioning-strategy: "increase-if-necessary"
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 5

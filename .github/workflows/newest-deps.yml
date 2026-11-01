@@ -1,0 +1,119 @@
+name: Newest dependencies
+
+# pyproject's dependencies are floors, so `pip install epochix` resolves to
+# whatever is newest that day, while every other job installs from uv.lock.
+# pytest 9.2 and Typer 0.27 both reached users' installs before anything here
+# ran them, and both were found by accident. This asks once a week instead, off
+# the PR path, so an upstream release does not turn unrelated PRs red.
+#
+# Python only: the npm dependencies are bundled at build time, so what is locked
+# is what ships. The upgraded lock stays on the runner and is never committed.
+on:
+  schedule:
+    - cron: "41 5 * * 1"
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - ".github/workflows/newest-deps.yml"
+      - "tests/unit/test_newest_deps_workflow.py"
+
+permissions:
+  contents: read
+
+jobs:
+  tests:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        python: ["3.10", "3.13"]
+    name: tests (${{ matrix.os }}, ${{ matrix.python }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    defaults:
+      run:
+        # Not the default on Windows, and only an explicit bash sets pipefail.
+        shell: bash
+    env:
+      UV_PYTHON: ${{ matrix.python }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+      - run: uv python install ${{ matrix.python }}
+      - name: Move the lock to the newest versions, and say what moved
+        run: uv lock --upgrade 2>&1 | tee -a "$GITHUB_STEP_SUMMARY"
+      - run: uv run --extra dev pytest tests/unit tests/integration
+        env:
+          EPOCHIX_DB: ":memory:"
+      - run: uv run --extra dev pytest tests/e2e
+
+  frameworks:
+    # The same files as ci.yml's integrations job, whose "latest" row upgrades
+    # only the frameworks and runs only when something is pushed.
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      UV_PYTHON: "3.12"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+      - name: Move the lock to the newest versions, and say what moved
+        shell: bash
+        run: uv lock --upgrade 2>&1 | tee -a "$GITHUB_STEP_SUMMARY"
+      - name: Add the real frameworks to the project env (CPU-only torch)
+        run: |
+          uv sync --extra dev
+          uv pip install torch --index-url https://download.pytorch.org/whl/cpu
+          uv pip install lightning "transformers>=4.40" "accelerate>=1.1.0" numpy
+          uv pip install tensorboard pandas wandb pypdfium2
+      - name: Real Lightning / HuggingFace training + real TensorBoard import
+        run: |
+          # --no-sync: a plain `uv run` would re-sync the env and drop the
+          # frameworks just installed, leaving the tests to skip.
+          uv run --no-sync pytest -v --junitxml=integrations.xml \
+            tests/integration/test_framework_callbacks.py \
+            tests/integration/test_importers.py \
+            tests/integration/test_wandb_offline_import.py \
+            tests/integration/test_live_activations.py \
+            tests/unit/test_activations_sdk.py \
+            tests/unit/test_architecture_sdk.py \
+            tests/unit/test_accelerator_report.py \
+            tests/unit/test_pdf_export.py \
+            tests/unit/test_pdf_persian.py
+          # An all-skipped run still exits 0, so demand that they executed.
+          uv run --no-sync python - <<'PY'
+          import sys, xml.etree.ElementTree as ET
+
+          root = ET.parse("integrations.xml").getroot()
+          suite = root.find("testsuite") if root.tag == "testsuites" else root
+          total = int(suite.get("tests", 0))
+          skipped = int(suite.get("skipped", 0))
+          bad = int(suite.get("failures", 0)) + int(suite.get("errors", 0))
+          passed = total - skipped - bad
+          print(f"integration tests exercised: {passed} (skipped={skipped}, failed={bad})")
+          if skipped or bad or not passed:
+              sys.exit("::error::framework/importer tests must all run, none may skip")
+          PY
+
+  report:
+    # A red scheduled run mails one person at most and is gone from view by the
+    # next week. One open issue collects them; a PR's own checks already show.
+    needs: [tests, frameworks]
+    if: failure() && github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+      TITLE: The newest dependencies break the tests
+    steps:
+      - name: Open the issue, or add this run to the open one
+        run: |
+          number=$(gh issue list --state open --search "in:title \"$TITLE\"" --json number --jq '.[0].number // empty')
+          if [ -n "$number" ]; then
+            gh issue comment "$number" --body "Still failing: $RUN_URL"
+          else
+            gh issue create --title "$TITLE" --label dependencies --body "A release upstream fails the tests. The run lists what moved in the lock: $RUN_URL"
+          fi
