@@ -158,6 +158,10 @@ npm --prefix epochix-vscode test    # launches a real VS Code host
   Typer 0.27 were both found by accident. `newest-deps.yml` runs the tests
   weekly on an upgraded lock, off the PR path, and keeps one issue open while
   they fail. Fix what it finds; never commit its lock.
+- **Throughput from separate CI runs cannot be compared.** GitHub's runners come
+  in at least two speeds: the same code reads ~30k or ~45k lines/sec on the
+  universal parser depending on which it got. `scripts/compare_benchmarks.py`
+  measures the base branch and the change on one runner, and is what fails a PR.
 - **Test what the release builds.** 0.7.5–0.7.10 shipped a blank VS Code panel
   because the extension tests ran against `frontend/dist` (the server build)
   while the release packages `build:webview` output. When a release step
