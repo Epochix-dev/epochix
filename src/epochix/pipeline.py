@@ -107,6 +107,10 @@ _NON_FINITE_ASSIGNMENT = re.compile(
 )
 
 
+def _is_builtin(parser: BaseParser) -> bool:
+    return parser.name != "llm_fallback" and type(parser).__module__.startswith("epochix.parsers.")
+
+
 def _fallback_parsers(chosen: BaseParser) -> list[BaseParser]:
     """Fresh instances of every other built-in line parser, best first.
 
@@ -115,13 +119,24 @@ def _fallback_parsers(chosen: BaseParser) -> list[BaseParser]:
     instances, because some parsers keep state between lines (fastai's column
     headers) that must not be shared with the run's own parser.
     """
-    return [
-        type(p)()
-        for p in get_registry()
-        if type(p) is not type(chosen)
-        and p.name != "llm_fallback"
-        and type(p).__module__.startswith("epochix.parsers.")
-    ]
+    return [type(p)() for p in get_registry() if type(p) is not type(chosen) and _is_builtin(p)]
+
+
+def _sample_has_metric(lines: list[str]) -> bool:
+    """Whether any built-in parser reads a metric off the buffered lines.
+
+    Each reads on a fresh instance and a scratch context, so nothing it keeps
+    between lines reaches the run. A plugin's format is its own: when one is
+    detected the caller trusts its sniff instead of asking this.
+    """
+    for proto in get_registry():
+        if not _is_builtin(proto):
+            continue
+        reader = type(proto)()
+        scratch = ParserContext(run_id="")
+        if any(reader.parse_line(text, scratch) for text in lines):
+            return True
+    return False
 
 
 def _fallback_metrics(
@@ -504,11 +519,20 @@ async def run_pipeline(
     # Sniff on the buffered sample and replay it (idempotent once a parser is
     # set). Called when the sniff window fills, when the live stream goes idle
     # between epochs, or at end-of-stream.
-    def _flush_sniff() -> None:
+    #
+    # An idle sniff chooses only once there is something to tell. CatBoost
+    # prints "Learning rate set to 0.108196" and then trains; when its first
+    # round took longer than the idle wait, the parser was chosen on that one
+    # line — the universal parser, for good — and every round was told without
+    # its iteration, under the name "test".
+    def _flush_sniff(*, idle: bool = False) -> None:
         nonlocal parser, fallback, run, sniff_buffer, last_epoch
         if parser is not None or not sample_lines:
             return
-        parser = detect_parser(sample_lines)
+        candidate = detect_parser(sample_lines)
+        if idle and _is_builtin(candidate) and not _sample_has_metric(sample_lines):
+            return
+        parser = candidate
         fallback = _fallback_parsers(parser)
         run = Run(**{**run.model_dump(), "parser_used": parser.name})
         logger.debug("Detected parser (%d lines): %s", len(sample_lines), parser.name)
@@ -648,7 +672,7 @@ async def run_pipeline(
             try:
                 item = await asyncio.wait_for(asyncio.shield(_pending), IDLE_SNIFF_SECS)
             except asyncio.TimeoutError:
-                _flush_sniff()  # live stream idle → emit what we have
+                _flush_sniff(idle=True)  # live stream idle → emit what we have
                 continue
             _pending = None
             if item is _done:

@@ -150,6 +150,16 @@ function bandsMsg(rows: ReadonlyArray<readonly [Grade, number]>, lowerBetter: bo
   };
 }
 
+/** Whether any parser reads a metric off these lines (Python's
+ *  `_sample_has_metric`): fresh instances on a scratch context, so nothing a
+ *  parser keeps between lines reaches the run. */
+function sampleHasMetric(lines: readonly string[]): boolean {
+  return makeParsers().some((p) => {
+    const scratch = makeContext();
+    return lines.some((line) => p.parseLine(line, scratch).length > 0);
+  });
+}
+
 /** Every built-in parser, best first — fresh instances. */
 function makeParsers(): Parser[] {
   return [
@@ -323,7 +333,7 @@ export class StandaloneEngine {
       else newFrames.push(...this._processLine(last));
     }
 
-    newFrames.push(...this.settle());
+    newFrames.push(...this._commitPending());
 
     // Metrics that only exist once the stream ends: a cross-validation's mean.
     const parser = this._activeParsers?.[0];
@@ -338,8 +348,20 @@ export class StandaloneEngine {
    * Choose the parser now, on whatever has been sampled — Python's idle
    * flush. A live run shorter than the sniff window would otherwise draw
    * nothing until it ended; callers invoke this when output goes quiet.
+   *
+   * It chooses only once there is something to tell. CatBoost prints
+   * "Learning rate set to 0.108196" and then trains; when its first round
+   * took longer than the quiet wait, the parser was chosen on that one line —
+   * the universal parser, for good — and every round was told without its
+   * iteration.
    */
   settle(): StoryFrameMsg[] {
+    if (!sampleHasMetric(this._pending)) return [];
+    return this._commitPending();
+  }
+
+  /** Choose the parser on what is held, whatever it is, and replay it. */
+  private _commitPending(): StoryFrameMsg[] {
     if (this._activeParsers !== null || this._pending.length === 0) return [];
     this._activeParsers = this._selectParsers(this._pending);
     const backlog = this._pending;
