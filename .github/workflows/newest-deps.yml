@@ -38,7 +38,7 @@ jobs:
       UV_PYTHON: ${{ matrix.python }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
       - run: uv python install ${{ matrix.python }}
       - name: Move the lock to the newest versions, and say what moved
         run: uv lock --upgrade 2>&1 | tee -a "$GITHUB_STEP_SUMMARY"
@@ -56,7 +56,7 @@ jobs:
       UV_PYTHON: "3.12"
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
       - name: Move the lock to the newest versions, and say what moved
         shell: bash
         run: uv lock --upgrade 2>&1 | tee -a "$GITHUB_STEP_SUMMARY"
