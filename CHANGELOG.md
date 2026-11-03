@@ -7,6 +7,42 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.7.40] — 2026-11-03
+
+### Fixed
+
+- **A live run that pauses after its first line is read in its own format.**
+  When a live stream goes quiet before 200 lines have arrived, the parser is
+  chosen on what has arrived, so a short run is told while it runs. It was
+  chosen even when nothing readable had arrived. CatBoost prints `Learning rate
+  set to 0.108196` and then trains, so a first round slower than the 1.5 s wait
+  had the parser chosen on that one line: the universal parser, for the whole
+  run. A recorded run's 30 rounds were told without their iteration, under the
+  name `test`, and its record kept the placeholder parser `unknown`. A Keras run
+  that paused in its preamble had its record name the universal parser. A
+  parser is now chosen on a pause only once a line carries a metric some parser
+  reads; a plugin's format is still chosen at once. Both engines.
+- **`pip install epochix` no longer allows a Typer that crashes the CLI.** The
+  floor was `typer>=0.15`, and before 0.18 Typer crashes on `--help` or a
+  missing argument with current Click, which it does not cap. It is now
+  `typer>=0.18`.
+
+### Tests
+
+- **The tests run every week against the newest version of every dependency.**
+  CI installs the lock while users get the newest release, so pytest 9.2 and
+  Typer 0.27 broke tests that no CI run saw. A weekly job upgrades the lock,
+  runs the suites and the framework integrations on it, and keeps one issue open
+  while they fail. Dependabot now moves the lock, not the floors.
+- **Benchmarks compare a change with its base branch on one runner.** GitHub's
+  runners come in two speeds, so separate runs could not be compared. A parser
+  more than 10% slower than base fails by name, and the pytest cap from 0.7.39
+  is lifted.
+- **The CLI tests assert the refusal, not how Typer prints it.** Typer 0.27
+  writes a missing argument as `{run_id}`.
+
+---
+
 ## [0.7.39] — 2026-10-30
 
 ### Fixed
