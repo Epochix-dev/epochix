@@ -14,6 +14,18 @@ which covers the extension too; entries here resume with 0.7.16.
 
 ---
 
+## [0.7.40] — 2026-11-03
+
+### Fixed
+
+- **A watched terminal that pauses after its first line is read in its own
+  format.** CatBoost prints its learning rate and then trains; a first round
+  slower than the 1.5 s quiet wait had the parser chosen on that one line, and
+  every round was told without its iteration. A parser is now chosen on a quiet
+  terminal only once a line carries a metric.
+
+---
+
 ## [0.7.39] — 2026-10-30
 
 ### Fixed
