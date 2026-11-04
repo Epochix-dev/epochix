@@ -122,23 +122,6 @@ def _fallback_parsers(chosen: BaseParser) -> list[BaseParser]:
     return [type(p)() for p in get_registry() if type(p) is not type(chosen) and _is_builtin(p)]
 
 
-def _sample_has_metric(lines: list[str]) -> bool:
-    """Whether any built-in parser reads a metric off the buffered lines.
-
-    Each reads on a fresh instance and a scratch context, so nothing it keeps
-    between lines reaches the run. A plugin's format is its own: when one is
-    detected the caller trusts its sniff instead of asking this.
-    """
-    for proto in get_registry():
-        if not _is_builtin(proto):
-            continue
-        reader = type(proto)()
-        scratch = ParserContext(run_id="")
-        if any(reader.parse_line(text, scratch) for text in lines):
-            return True
-    return False
-
-
 def _fallback_metrics(
     fallbacks: list[BaseParser], text: str, ctx: ParserContext
 ) -> list[RawMetric]:
@@ -165,6 +148,39 @@ def _fallback_metrics(
             ctx.total_epochs = scratch.total_epochs
             return metrics
     return []
+
+
+def _would_tell(candidate: BaseParser, lines: list[str]) -> bool:
+    """Whether a run read by `candidate` would tell anything from these lines.
+
+    Read as the run would read them — the candidate first, then the fallbacks —
+    on fresh instances and a scratch context, so nothing a parser keeps between
+    lines reaches the run.
+
+    A framework parser was chosen because it recognised the format, so what it
+    and the fallbacks read counts. The universal parser is chosen when nothing
+    did, so only what it reads itself counts, and only a known name or a
+    reading tied to an epoch or step: Lightning's "IPU available: False, using:
+    0 IPU cores" read as `using`, and Ultralytics' "Fast image access (ping:
+    0.1 ms …" as `ping`. A framework's own rows, read by a fallback, mean its
+    sniff has not seen enough of them yet: YOLO's first epoch reads as
+    `box_loss` before its parser is chosen.
+    """
+    framework = candidate.name != "universal"
+    reader = type(candidate)()
+    fallbacks = _fallback_parsers(candidate) if framework else []
+    scratch = ParserContext(run_id="")
+    for text in lines:
+        own = reader.parse_line(text, scratch)
+        claimed = bool(scratch.extra.pop(LINE_CLAIMED, False))
+        if own:
+            if framework or any(
+                is_recognised(m.key) or m.epoch is not None or m.step is not None for m in own
+            ):
+                return True
+        elif fallbacks and not claimed and _fallback_metrics(fallbacks, text, scratch):
+            return True
+    return False
 
 
 def _emit_line(
@@ -520,17 +536,19 @@ async def run_pipeline(
     # set). Called when the sniff window fills, when the live stream goes idle
     # between epochs, or at end-of-stream.
     #
-    # An idle sniff chooses only once there is something to tell. CatBoost
-    # prints "Learning rate set to 0.108196" and then trains; when its first
-    # round took longer than the idle wait, the parser was chosen on that one
-    # line — the universal parser, for good — and every round was told without
-    # its iteration, under the name "test".
+    # An idle sniff chooses only once the parser it would choose has something
+    # to tell (_would_tell). CatBoost prints "Learning rate set to 0.108196"
+    # and then trains; when its first round took longer than the idle wait, the
+    # parser was chosen on that one line — the universal parser, for good — and
+    # every round was told without its iteration, under the name "test". A
+    # pause in Lightning's or Ultralytics' preamble did the same once a setup
+    # line read as a number. A plugin's format is its own: its sniff is trusted.
     def _flush_sniff(*, idle: bool = False) -> None:
         nonlocal parser, fallback, run, sniff_buffer, last_epoch
         if parser is not None or not sample_lines:
             return
         candidate = detect_parser(sample_lines)
-        if idle and _is_builtin(candidate) and not _sample_has_metric(sample_lines):
+        if idle and _is_builtin(candidate) and not _would_tell(candidate, sample_lines):
             return
         parser = candidate
         fallback = _fallback_parsers(parser)
