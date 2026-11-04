@@ -150,14 +150,100 @@ function bandsMsg(rows: ReadonlyArray<readonly [Grade, number]>, lowerBetter: bo
   };
 }
 
-/** Whether any parser reads a metric off these lines (Python's
- *  `_sample_has_metric`): fresh instances on a scratch context, so nothing a
- *  parser keeps between lines reaches the run. */
-function sampleHasMetric(lines: readonly string[]): boolean {
-  return makeParsers().some((p) => {
-    const scratch = makeContext();
-    return lines.some((line) => p.parseLine(line, scratch).length > 0);
-  });
+/** detect_parser: the highest score in priority order, universal below the threshold. */
+function detectParser(parsers: readonly Parser[], sampleLines: readonly string[]): Parser {
+  let best: Parser | null = null;
+  let bestScore = -1;
+  for (const p of parsers) {
+    let score: number;
+    try {
+      score = p.sniff(sampleLines);
+    } catch {
+      score = 0;
+    }
+    if (score > bestScore) {
+      bestScore = score;
+      best = p;
+    }
+  }
+  const universal = parsers.find((p) => p.name === "universal")!;
+  return best === null || bestScore < SNIFF_THRESHOLD ? universal : best;
+}
+
+/**
+ * Recognised metrics the chosen parser could not read on this line —
+ * Python's _fallback_metrics. Every other parser gets a look, best first,
+ * each on a scratch context so prose cannot move the step axis: a
+ * Lightning progress line inside a Keras log is read by the Lightning
+ * parser (the universal one skips progress bars by design). A line that
+ * carried real metrics also carried their epoch.
+ */
+function fallbackMetrics(
+  fallbacks: readonly Parser[],
+  line: string,
+  ctx: ParserContext,
+): RawMetric[] {
+  for (const fallback of fallbacks) {
+    const scratch: ParserContext = {
+      ...ctx,
+      axis: null,
+      heldUnrecognised: new Map(),
+      emittedKeys: new Set(),
+      cvFolds: new Map(),
+      cvCandidates: new Map(),
+      plPrinted: null,
+      plValues: null,
+      yoloFinalValidation: false,
+      boostingReprintNext: false,
+      kerasTold: new Map(),
+      kerasToldEpoch: null,
+      lineClaimed: false,
+    };
+    const metrics = fallback.parseLine(line, scratch).filter((m) => isRecognised(m.key));
+    if (metrics.length > 0) {
+      ctx.currentEpoch = scratch.currentEpoch;
+      ctx.totalEpochs = scratch.totalEpochs;
+      return metrics;
+    }
+  }
+  return [];
+}
+
+/**
+ * Whether a run read by `candidate` would tell anything from these lines —
+ * Python's _would_tell. Read as the run reads them, the candidate first and
+ * then the fallbacks, on fresh instances and a scratch context.
+ *
+ * A framework parser was chosen because it recognised the format, so what it
+ * and the fallbacks read counts. The universal parser is chosen when nothing
+ * did, so only what it reads itself counts, and only a known name or a
+ * reading tied to an epoch or step: Lightning's "IPU available: False, using:
+ * 0 IPU cores" read as `using`, and Ultralytics' "Fast image access (ping:
+ * 0.1 ms …" as `ping`. A framework's own rows, read by a fallback, mean its
+ * sniff has not seen enough of them yet.
+ */
+function wouldTell(candidate: Parser, lines: readonly string[]): boolean {
+  const framework = candidate.name !== "universal";
+  const fresh = makeParsers();
+  const reader = fresh.find((p) => p.name === candidate.name)!;
+  const fallbacks = framework ? fresh.filter((p) => p !== reader) : [];
+  const scratch = makeContext();
+  for (const line of lines) {
+    const own = reader.parseLine(line, scratch);
+    const claimed = scratch.lineClaimed;
+    scratch.lineClaimed = false;
+    if (own.length > 0) {
+      if (
+        framework ||
+        own.some((m) => isRecognised(m.key) || m.epoch !== null || m.step !== null)
+      ) {
+        return true;
+      }
+    } else if (fallbacks.length > 0 && !claimed && fallbackMetrics(fallbacks, line, scratch).length > 0) {
+      return true;
+    }
+  }
+  return false;
 }
 
 /** Every built-in parser, best first — fresh instances. */
@@ -349,14 +435,16 @@ export class StandaloneEngine {
    * flush. A live run shorter than the sniff window would otherwise draw
    * nothing until it ended; callers invoke this when output goes quiet.
    *
-   * It chooses only once there is something to tell. CatBoost prints
-   * "Learning rate set to 0.108196" and then trains; when its first round
-   * took longer than the quiet wait, the parser was chosen on that one line —
-   * the universal parser, for good — and every round was told without its
-   * iteration.
+   * It chooses only once the parser it would choose has something to tell
+   * (wouldTell). CatBoost prints "Learning rate set to 0.108196" and then
+   * trains; when its first round took longer than the quiet wait, the parser
+   * was chosen on that one line — the universal parser, for good — and every
+   * round was told without its iteration. A pause in Lightning's or
+   * Ultralytics' preamble did the same once a setup line read as a number.
    */
   settle(): StoryFrameMsg[] {
-    if (!sampleHasMetric(this._pending)) return [];
+    if (this._activeParsers !== null || this._pending.length === 0) return [];
+    if (!wouldTell(detectParser(this._parsers, this._pending), this._pending)) return [];
     return this._commitPending();
   }
 
@@ -499,39 +587,9 @@ export class StandaloneEngine {
     return frames;
   }
 
-  /**
-   * Recognised metrics the chosen parser could not read on this line —
-   * Python's _fallback_metrics. Every other parser gets a look, best first,
-   * each on a scratch context so prose cannot move the step axis: a
-   * Lightning progress line inside a Keras log is read by the Lightning
-   * parser (the universal one skips progress bars by design). A line that
-   * carried real metrics also carried their epoch.
-   */
+  /** Recognised metrics the chosen parser could not read (fallbackMetrics). */
   private _fallbackMetrics(line: string): RawMetric[] {
-    for (const fallback of this._fallbacks) {
-      const scratch: ParserContext = {
-        ...this._ctx,
-        axis: null,
-        heldUnrecognised: new Map(),
-        emittedKeys: new Set(),
-        cvFolds: new Map(),
-        cvCandidates: new Map(),
-        plPrinted: null,
-        plValues: null,
-        yoloFinalValidation: false,
-        boostingReprintNext: false,
-        kerasTold: new Map(),
-        kerasToldEpoch: null,
-        lineClaimed: false,
-      };
-      const metrics = fallback.parseLine(line, scratch).filter((m) => isRecognised(m.key));
-      if (metrics.length > 0) {
-        this._ctx.currentEpoch = scratch.currentEpoch;
-        this._ctx.totalEpochs = scratch.totalEpochs;
-        return metrics;
-      }
-    }
-    return [];
+    return fallbackMetrics(this._fallbacks, line, this._ctx);
   }
 
   /**
@@ -634,22 +692,7 @@ export class StandaloneEngine {
 
   /** detect_parser: the highest score in priority order, universal below the threshold. */
   private _selectParsers(sampleLines: readonly string[]): Parser[] {
-    let best: Parser | null = null;
-    let bestScore = -1;
-    for (const p of this._parsers) {
-      let score: number;
-      try {
-        score = p.sniff(sampleLines);
-      } catch {
-        score = 0;
-      }
-      if (score > bestScore) {
-        bestScore = score;
-        best = p;
-      }
-    }
-    const universal = this._parsers.find((p) => p.name === "universal")!;
-    const chosen = best === null || bestScore < SNIFF_THRESHOLD ? universal : best;
+    const chosen = detectParser(this._parsers, sampleLines);
     // Fresh instances: some parsers keep state between lines (fastai's headers).
     this._fallbacks = makeParsers().filter((p) => p.name !== chosen.name);
     return [chosen];
