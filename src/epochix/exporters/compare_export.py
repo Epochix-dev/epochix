@@ -109,7 +109,10 @@ def build_comparison(run_ids: list[str], store: RunStore, locale: str | None = N
             # value is real and is shown as what it is.
             metric = run_frames[-1].primary_metric or run.primary_metric
             final = f"{run_frames[-1].primary_metric_value:.4g}"
-            best, epochs = "—", str(len(run_frames))
+            # Readings of this metric, not of whatever the story began on.
+            named = run_frames[-1].primary_metric
+            best = "—"
+            epochs = str(sum(1 for f in run_frames if named is None or f.primary_metric == named))
         else:
             metric, final, best, epochs = run.primary_metric, "—", "—", "0"
         last = run_frames[-1] if run_frames else None
