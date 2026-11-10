@@ -95,6 +95,16 @@ npm --prefix epochix-vscode test    # launches a real VS Code host
   was wrong whenever they did. And a metric whose direction is not pinned
   inherits its task's default silently, so its grade simply comes out
   inverted. Tests assert the direction of every preferred key; keep it so.
+- **A run's metric is the one its story ended on, not the one most frames
+  carry.** A story can start on one metric and move to another: training
+  accuracy until the first validation pass, a box loss until the first mAP
+  (12 of the 55 corpus logs that tell a story). The comparison and the default
+  GIF took the majority, so a run graded A- on validation accuracy was
+  tabulated as training accuracy beside that grade, and two detection runs
+  were ranked on their box loss. Read it with `told_on(frames)`
+  (`story_engine/comparison.py`), as the dashboard does with
+  `latestPrimaryKey`; `test_compared_on_the_graded_metric.py` holds every
+  corpus log to it.
 - **A story sentence may say only what the numbers support.** The phase
   templates once claimed "near-expert performance", "ready to ship" and "the
   model handles glasses, makeup, and partial occlusion", and told the
