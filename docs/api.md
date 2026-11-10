@@ -6,6 +6,22 @@ Everything below is importable straight from the top-level package:
 from epochix import parse, parse_string, compare, export, visualize, LiveReporter
 ```
 
+A parsed run can be handed straight to the others:
+
+```python
+from epochix import parse, compare, export
+
+run = parse("train.log")                 # kept in memory; nothing is written to disk
+export(run, "md", output="report.md")
+print(compare(run, parse("baseline.log")).narrative)
+```
+
+`parse()` stores a run in memory unless it is given `db=`. `export()`,
+`compare()` and `visualize()` read it from wherever it was parsed into, for as
+long as the `Run` object is kept. For a run from anywhere else (an earlier
+session, the CLI, `LiveReporter`), they read the configured database, or the
+one passed as `db=`.
+
 ## Parsing
 
 ::: epochix.sdk.parse.parse
