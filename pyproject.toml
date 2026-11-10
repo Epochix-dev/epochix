@@ -79,6 +79,8 @@ dev       = [
   "pytest>=8",
   "pytest-asyncio>=0.24",
   "pytest-benchmark>=4.0",
+  # Measured by one CI job (`coverage` in ci.yml), not the matrix.
+  "pytest-cov>=6.0",
   "hypothesis>=6.108",
   # Pinned exactly so `ruff format --check` is a reproducible CI gate — a new
   # ruff style release must not turn the format check red without a deliberate
@@ -245,3 +247,13 @@ pythonpath   = ["src"]
 [tool.coverage.run]
 source = ["src/epochix"]
 omit   = ["src/epochix/_frontend/*"]
+# The CLI is tested by starting `python -m epochix`. Without this a child
+# process is not measured: cli.py read 41.6% instead of 58.6%, and
+# `__main__.py` 0%. A test that starts one with an environment of its own must
+# pass the COVERAGE_* variables on, or it is invisible again.
+patch  = ["subprocess"]
+# Paths relative to the repository, so the data of two CI jobs can be combined.
+relative_files = true
+
+[tool.coverage.report]
+precision = 2

@@ -278,12 +278,20 @@ jobs:
           # importer without a single red job.
           uv pip install tensorboard pandas wandb pypdfium2
       - name: Real Lightning / HuggingFace training + real TensorBoard import
+        env:
+          COVERAGE_FILE: coverage-integrations-${{ matrix.deps }}
         run: |
           # --no-sync: a plain `uv run` would re-sync the env and drop the
           # frameworks we just installed, leaving the tests to skip.
           # Every file here skips without an optional dependency and so ran
           # nowhere else in CI.
+          #
+          # --cov: these files are the only place the Lightning and Hugging
+          # Face callbacks, the importers and the torch hooks run, so what
+          # they execute is handed to the `coverage` job below. No floor here
+          # (--cov-fail-under=0): the floor is for the whole, not this part.
           uv run --no-sync pytest -v --junitxml=integrations.xml \
+            --cov --cov-report= --cov-fail-under=0 \
             tests/integration/test_framework_callbacks.py \
             tests/integration/test_importers.py \
             tests/integration/test_wandb_offline_import.py \
@@ -308,6 +316,68 @@ jobs:
           if skipped or bad:
               sys.exit("::error::framework/importer tests must all run, none may skip")
           PY
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: coverage-integrations-${{ matrix.deps }}
+          path: coverage-integrations-${{ matrix.deps }}
+          if-no-files-found: error
+          retention-days: 3
+
+  coverage:
+    # Which statements of src/epochix the tests execute. This project's
+    # recurring bug is code that shipped without ever having run (AGENTS.md,
+    # "Tests must execute the path"): `[tool.coverage.run]` sat in pyproject
+    # and nothing ran it.
+    #
+    # One cell, not the matrix: measuring slows the run, and the answer barely
+    # differs between cells. It is the unit and integration suites on the
+    # locked dependencies, plus what the two `integrations` rows executed with
+    # the real frameworks: without those, the Lightning and Hugging Face
+    # callbacks read 0% while being run for real one job over.
+    #
+    # Not measured, so not under the floor: tests/e2e and tests/browser (their
+    # own jobs), the macOS- and Windows-only branches, and anything that needs
+    # a service CI does not have (the LLM fallback's real Ollama call).
+    #
+    # The summary is the point: the files nothing executed, by name. Read it
+    # when it changes. The floor (`fail_under` in pyproject.toml) only catches
+    # a drop.
+    needs: integrations
+    runs-on: ubuntu-latest
+    env:
+      UV_PYTHON: "3.12"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+      - name: Run the unit and integration tests under coverage
+        # --cov-fail-under=0: the floor is held in the last step, once the
+        # integrations jobs' data has been added.
+        run: uv run --extra dev pytest tests/unit tests/integration --cov --cov-report= --cov-fail-under=0
+        env:
+          EPOCHIX_DB: ":memory:"
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
+        with:
+          pattern: coverage-integrations-*
+          path: coverage-integrations
+          merge-multiple: true
+      - name: Add what the integrations jobs executed
+        run: |
+          ls -l coverage-integrations
+          # Both rows, by name: a row that stopped uploading would otherwise
+          # only show up as a lower number.
+          test -s coverage-integrations/coverage-integrations-latest
+          test -s coverage-integrations/coverage-integrations-floor
+          uv run --extra dev coverage combine --append coverage-integrations/*
+      - name: Publish the number and what nothing executed
+        run: |
+          # --fail-under=0: `coverage json` applies the floor too, and would
+          # stop here, before the summary that says what dropped.
+          uv run --extra dev coverage json -o coverage.json --fail-under=0
+          uv run --extra dev python scripts/coverage_summary.py coverage.json \
+            --measured "tests/unit and tests/integration on ubuntu, Python 3.12, plus both integrations rows" \
+            | tee -a "$GITHUB_STEP_SUMMARY"
+      - name: Hold the floor
+        run: uv run --extra dev coverage report --skip-covered
 
   e2e:
     # Full-pipeline tests (7 demo logs → parser → story engine → store → API).

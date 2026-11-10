@@ -164,19 +164,83 @@ extension. (b) would have caught both bugs above in the port without a
 hand-written mirror test. Measure before deciding; the extension working with
 no Python installed is a feature and stays.
 
-### 8. Measure coverage in CI
+### 8. Code no test executes
 
-Coverage is configured (`[tool.coverage.run]`) and never run: no workflow
-measures it and `pytest-cov` is not a dev dependency. This project's
-recurring bug is code that shipped and was never executed
-([AGENTS.md](AGENTS.md), "Tests must execute the path"), and coverage is the
-cheapest detector of exactly that.
+**Measured.** Coverage ran for the first time on 2026-11-10 (CI job
+`coverage`: `tests/unit` and `tests/integration` on ubuntu and Python 3.12,
+plus what both `integrations` rows execute with the real frameworks).
+Without the frameworks, on Windows, it read 81.12% of 6,959 statements; CI's own figure follows once the job has run. The job's summary names every file
+at 0%, every module under 50% and every function never entered; the floor
+(`fail_under` in `pyproject.toml`) only catches a drop. The per-module
+figures below are from that day's run.
 
-Add it to one CI job (not the whole matrix — it slows the run), publish the
-number and the list of never-executed files, and read that list before
-setting any floor: a module at 0% is a finding to file here, not a number to
-raise. Then a floor just under the measured value, so it can only catch a
-drop. The extension and frontend suites can follow the same way.
+What the list showed, worst first. Each is something that ships, and each
+ends in a test that runs it the way a person would, not in a number.
+
+- **Three of the four plugin groups are loaded by nothing.**
+  `docs/plugins.md` documents the entry points `epochix.metaphor_packs`,
+  `epochix.exporters` and `epochix.tasks`, and says a registered exporter is
+  used with `epochix export <run-id> --format latex`. `load_all_plugins()`
+  has no caller: it and the three `_load_*_plugins` functions executed zero
+  statements. Nothing outside `src/epochix/plugins/` imports the three
+  registries, and the CLI's export knows html, pdf, md, json and gif.
+  `test_plugins.py` registers by hand and reads back, which is the
+  `.epochix.yaml` loader over again ([AGENTS.md](AGENTS.md), "Grading reads
+  the project's `.epochix.yaml`"). Parser plugins are a separate path
+  (`parsers/registry.py`) and do work. Either wire the three in, each proved
+  by a test that installs a real plugin package and sees it used, or take
+  them out of the docs and the package.
+- **`export(parse("train.log"))` fails.** `sdk/export.py` 19.2%,
+  `sdk/compare.py` 19.8%, `sdk/visualize.py` 13.9%: `export`, `compare`,
+  `visualize` and `serve` are documented in `docs/api.md` and no test calls
+  any of them. Run by hand on 2026-11-10: `parse()` stores into `:memory:`
+  unless given `db=`, and the others read the configured database, so
+  `export(run)` raises `ValueError: Run not found` in all four formats, and
+  `compare(a, b)` returns its verdict with an empty `narrative` because the
+  failed lookup is swallowed. With the same `db=` passed to both, json, md
+  and pdf export and the narrative is written. `visualize(run)` reads the
+  same database, so by the code it opens a page for a run its server does
+  not have; that was not run. The Jupyter magic had this bug and it was
+  fixed there (`test_jupyter_magic.py`). Decide what `parse()` does by
+  default, then test the journey as documented. `parse_string` has no test
+  either.
+- **The Jupyter magics are not run by their own test.**
+  `integrations/jupyter.py` 19.6%. `test_jupyter_magic.py` loads the
+  extension in a real IPython shell and then tests the helpers the magics
+  call; `_line_magic`, `_cell_magic` and `_ensure_server` never execute. Run
+  `%epochix train.log` and `%%epochix --live` through the shell.
+- **`/sse/live/{run_id}` is never requested.** `server/sse.py` 38.3%: the
+  whole route. The dashboard falls back to it when a WebSocket cannot be
+  opened (`frontend/src/sse-client.js`), and the README documents its token.
+  Test the replay from `last_seq`, that `complete` ends the stream, and that
+  a wrong token is refused.
+- **Five commands no test runs:** `epochix open`, `export`, `race`, `prune`
+  and `config` (85 statements of `cli.py`, which is 62% overall). `open` and
+  `export` are tested only for refusing a missing argument.
+- **Two tests skip in every CI job.** Not a coverage figure, but found by
+  reading one: `exporters/html_export.py` is 50.0% because both tests that
+  take `build_html` past its bundle check skip with "frontend bundle not
+  built". Only the `browser` job builds the bundle and it runs only
+  `tests/browser`, so the HTML export's inlining, and the test that run data
+  cannot break out of its `<script>` block, run nowhere.
+  `test_the_watermark_carries_the_brand_mark` skips in a source checkout,
+  which is every job. Run them where the bundle and the wheel exist, and
+  fail on a skip there.
+- **`GET /api/raw/{run_id}` has no caller** in the dashboard, the extension
+  or the docs, and no test. Document and test it, or remove it.
+
+Not findings: the Lightning and Hugging Face callbacks, the TensorBoard and
+W&B importers and the torch hooks in `sdk/activations.py` read 0% to 45%
+without the frameworks installed and are run by the `integrations` jobs,
+whose data the `coverage` job adds. The LLM fallback's three request
+functions need a running Ollama, which CI does not have. Reading standard
+input (`python train.py | epochix`) had never run either; it is small, so it
+now has a test (`test_stdin_pipe.py`).
+
+Left to do the same way: the frontend (Vitest has a coverage script that CI
+does not run, limited to two files) and the extension (Mocha inside the VS
+Code host). What each takes is written in the pull request that added the
+`coverage` job.
 
 ### 9. The parser docs leave out four libraries
 
