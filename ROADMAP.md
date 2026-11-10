@@ -168,11 +168,11 @@ no Python installed is a feature and stays.
 
 **Measured.** Coverage ran for the first time on 2026-11-10 (CI job
 `coverage`: `tests/unit` and `tests/integration` on ubuntu and Python 3.12,
-plus what both `integrations` rows execute with the real frameworks).
-Without the frameworks, on Windows, it read 81.12% of 6,959 statements; CI's own figure follows once the job has run. The job's summary names every file
-at 0%, every module under 50% and every function never entered; the floor
-(`fail_under` in `pyproject.toml`) only catches a drop. The per-module
-figures below are from that day's run.
+plus what both `integrations` rows execute with the real frameworks): 85.93%,
+5,980 of 6,959 statements, and no file at 0%. The job's summary names every
+file at 0%, every module under 50% and every function never entered; the
+floor (`fail_under = 85.5` in `pyproject.toml`) only catches a drop. The
+per-module figures below are from that run.
 
 What the list showed, worst first. Each is something that ships, and each
 ends in a test that runs it the way a person would, not in a number.

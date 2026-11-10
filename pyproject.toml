@@ -257,3 +257,15 @@ relative_files = true
 
 [tool.coverage.report]
 precision = 2
+# Measured at 85.93% (5,980 of 6,959 statements) on 2026-11-10 by CI's
+# `coverage` job: tests/unit and tests/integration on ubuntu and Python 3.12,
+# plus what both `integrations` rows execute. Set just under that, so it only
+# catches a drop; the half point is about 30 statements, because the
+# integrations rows install the newest frameworks, not the lock. Raise it when
+# the measured figure rises, never to get ahead of it.
+#
+# It is the floor for that whole. A run of part of the suite, or one without
+# torch, Lightning and transformers (81.12% the same day), reads lower and
+# needs `--cov-fail-under=0`, as `make coverage` passes. Not measured at all:
+# tests/e2e, tests/browser, and the macOS- and Windows-only branches.
+fail_under = 85.5

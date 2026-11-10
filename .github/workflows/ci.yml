@@ -373,9 +373,13 @@ jobs:
           # --fail-under=0: `coverage json` applies the floor too, and would
           # stop here, before the summary that says what dropped.
           uv run --extra dev coverage json -o coverage.json --fail-under=0
+          # To a file first, not through a pipe: a step's shell has no
+          # pipefail, so `script | tee` passes when the script fails.
           uv run --extra dev python scripts/coverage_summary.py coverage.json \
             --measured "tests/unit and tests/integration on ubuntu, Python 3.12, plus both integrations rows" \
-            | tee -a "$GITHUB_STEP_SUMMARY"
+            > coverage-summary.md
+          cat coverage-summary.md
+          cat coverage-summary.md >> "$GITHUB_STEP_SUMMARY"
       - name: Hold the floor
         run: uv run --extra dev coverage report --skip-covered
 
