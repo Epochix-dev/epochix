@@ -1,4 +1,4 @@
-.PHONY: install dev test lint typecheck build clean fmt bench e2e bump land gen-ts-tables
+.PHONY: install dev test lint typecheck build clean fmt bench e2e bump land gen-ts-tables coverage
 
 install:
 	pip install -e ".[dev]"
@@ -22,6 +22,13 @@ typecheck:
 
 bench:
 	pytest tests/benchmarks --benchmark-only --benchmark-sort=mean
+
+# Which statements of src/epochix the unit and integration tests execute, with
+# the lines they miss. No floor here (--cov-fail-under=0): the floor in
+# pyproject.toml is for CI's `coverage` job, which adds what the integrations
+# jobs execute with torch, Lightning and transformers installed.
+coverage:
+	uv run --extra dev pytest tests/unit tests/integration --cov --cov-report=term-missing:skip-covered --cov-fail-under=0
 
 e2e:
 	playwright test tests/e2e
