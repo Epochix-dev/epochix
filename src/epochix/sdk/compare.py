@@ -60,7 +60,10 @@ def compare(
         Either a :class:`~epochix.models.Run` object, or a path to a
         JSON export file (produced by ``epochix export --format json``).
     db:
-        SQLite DB path (used when *run_a*/*run_b* is a run ID string).
+        SQLite DB path.  Used to look up a run given as an ID string, and to
+        read each run's frames for the narrative.  Not needed for runs
+        returned by :func:`~epochix.sdk.parse.parse`: each is read from where
+        it was parsed into, so two runs parsed separately can be compared.
 
     Returns
     -------
@@ -109,21 +112,17 @@ def compare(
 
 def _comparison_narrative(a: Run, b: Run, *, db: str | None) -> str:
     """Best-effort explanation of the difference; never fatal to `compare`."""
-    from epochix.config import get_settings
-    from epochix.store.sqlite_store import RunStore
-    from epochix.story_engine.comparison import narrate_comparison, trajectory_from_frames
+    from epochix.sdk._stores import store_for
+    from epochix.story_engine.comparison import narrate_comparison, run_trajectories
 
     try:
-        store = RunStore(db_path=db or get_settings().db)
-        trajectories = []
-        for run in (a, b):
-            traj = trajectory_from_frames(
-                run.name or run.id,
-                list(store.get_story_frames(run.id)),
-                grade=run.final_grade.value if run.final_grade else None,
-            )
-            if traj is not None:
-                trajectories.append(traj)
+        # Each run from its own store, not one store for both: two parse()
+        # calls with the default db write into two separate in-memory
+        # databases. Looking both up in the configured one found neither, and
+        # the narrative came back empty without a word.
+        entries = [(run, store_for(run, db).get_story_frames(run.id)) for run in (a, b)]
+        # The same trajectories the server and the comparison export build.
+        trajectories = [traj for traj in run_trajectories(entries) if traj is not None]
         if len(trajectories) < 2:
             return ""
         return narrate_comparison(trajectories)
