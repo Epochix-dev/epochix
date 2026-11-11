@@ -9,6 +9,7 @@ import aiofiles  # type: ignore[import-untyped]
 
 from epochix.ingester import BaseIngester
 from epochix.models import RawLogLine
+from epochix.parsers.step_bar import finished_step_bar_redraws
 
 # Flush an un-terminated line once it exceeds this, so a newline-free file can't
 # grow the buffer without bound. Far larger than any real log line.
@@ -61,6 +62,19 @@ class FileTailIngester(BaseIngester):
                             timestamp=datetime.now(tz=timezone.utc),
                             source="file",
                             text=line,
+                        )
+                        seq += 1
+                    # A bar that runs for the whole training ends no line until
+                    # the training does, and a tailed LoRA run would show
+                    # nothing for hours. Its finished redraws go on as they are
+                    # written; the one still being drawn waits for its end.
+                    finished, partial = finished_step_bar_redraws(partial)
+                    if finished is not None:
+                        yield RawLogLine(
+                            seq=seq,
+                            timestamp=datetime.now(tz=timezone.utc),
+                            source="file",
+                            text=finished,
                         )
                         seq += 1
                     # A file with no newlines (a binary blob, or one giant JSON

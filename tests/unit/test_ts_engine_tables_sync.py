@@ -113,7 +113,9 @@ def test_parsers_golden_reaches_every_port() -> None:
         "fastai",
         "huggingface",
         "keras_tensorflow",
+        "progress_meter",
         "pytorch_lightning",
+        "step_bar",
         "ultralytics_yolo",
         "universal",
     }
