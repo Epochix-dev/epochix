@@ -27,8 +27,10 @@ export interface ParserContext {
   totalEpochs: number | null;
   currentStep: number | null;
   totalSteps: number | null;
-  /** "iteration" once an `iter N` / `round N` counter has become the x-axis. */
-  axis: "iteration" | null;
+  /** "iteration" once an `iter N` / `round N` counter has become the x-axis;
+   *  "step" while a `step N` counter is, in a run that has printed no epoch;
+   *  "epoch" once such a run prints one after all. */
+  axis: "iteration" | "step" | "epoch" | null;
   /** First reading of each unrecognised name, held until the name recurs;
    *  null once it has been released. */
   heldUnrecognised: Map<string, RawMetric | null>;
@@ -54,6 +56,13 @@ export interface ParserContext {
    *  printed twice when there is validation data). */
   kerasTold: Map<string, string>;
   kerasToldEpoch: number | null;
+  /** PyTorch example meters: the epoch (counted from 0) of the last training
+   *  row, and that row's running top-1 accuracy, told with the validation
+   *  result. */
+  meterEpoch: number | null;
+  meterTrainAccuracy: [string, number] | null;
+  /** Step bar: the values last read off the bar, to tell a redraw from a reading. */
+  stepBarValues: string | null;
   /** Set by a parser that recognises a line as its own and reads no result
    *  from it; the engine then does not offer the line to the fallback
    *  parsers. Cleared after every line. Python's LINE_CLAIMED. */
@@ -87,6 +96,9 @@ export function makeContext(): ParserContext {
     catboostHeld: [],
     kerasTold: new Map(),
     kerasToldEpoch: null,
+    meterEpoch: null,
+    meterTrainAccuracy: null,
+    stepBarValues: null,
     lineClaimed: false,
   };
 }

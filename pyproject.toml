@@ -121,6 +121,8 @@ ultralytics_yolo  = "epochix.parsers.ultralytics_yolo:YOLOParser"
 fastai            = "epochix.parsers.fastai:FastAIParser"
 accelerate        = "epochix.parsers.accelerate:AccelerateParser"
 boosting          = "epochix.parsers.boosting:BoostingParser"
+progress_meter    = "epochix.parsers.progress_meter:ProgressMeterParser"
+step_bar          = "epochix.parsers.step_bar:StepBarParser"
 universal         = "epochix.parsers.universal:UniversalParser"
 
 # Metaphor packs: entry point value = path to a YAML file

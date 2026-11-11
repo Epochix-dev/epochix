@@ -14,10 +14,12 @@ import pytest
 
 from epochix.parsers.base import ParserContext
 from epochix.parsers.keras_tensorflow import KerasParser
+from epochix.parsers.progress_meter import ProgressMeterParser
 from epochix.parsers.pytorch_lightning import PLParser
+from epochix.parsers.step_bar import StepBarParser
 from epochix.parsers.universal import UniversalParser
 
-_PARSERS = [UniversalParser, KerasParser, PLParser]
+_PARSERS = [UniversalParser, KerasParser, PLParser, ProgressMeterParser, StepBarParser]
 
 
 def _time_parse(factory: type, line: str) -> float:
@@ -36,6 +38,11 @@ _LINES = {
     "digits": lambda n: "loss=" + "9" * (25_000 * n),  # digits are \w
     "words": lambda n: "a" * (25_000 * n) + " loss=0.5",
     "long_keys": lambda n: ("x" * 60 + "=1 ") * (500 * n),
+    # "name value" pairs with no delimiter, on a row that opens with a counter.
+    "leader_words": lambda n: "step 1: " + "a" * (25_000 * n) + " 0.5, loss 0.3",
+    "leader_pairs": lambda n: "step 1: " + "train x " * (5_000 * n),
+    "meter_row": lambda n: "Epoch: [0][1/2]" + chr(9) + "Loss 1.0 " * (5_000 * n),
+    "step_bar": lambda n: "Steps:  10%|" + "#" * (25_000 * n) + "| 1/2 [",
 }
 
 

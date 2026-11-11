@@ -1,5 +1,7 @@
 {
  "acc": "accuracy",
+ "acc@1": "accuracy",
+ "acc@5": "top5_accuracy",
  "accuracy": "accuracy",
  "auc": "AUC",
  "auc_roc": "AUC",
@@ -263,6 +265,7 @@
  "training_wer": "WER",
  "trn_loss": "train_loss",
  "val_acc": "val_accuracy",
+ "val_acc@1": "val_accuracy",
  "val_accuracy": "val_accuracy",
  "val_accy": "val_accuracy",
  "val_auc": "val_AUC",
