@@ -27,6 +27,10 @@ CANONICAL_MAP: dict[str, str] = {
     "eval_accuracy": "val_accuracy",
     "test_accuracy": "val_accuracy",
     "top1": "accuracy",
+    # The PyTorch ImageNet example's meters (parsers/progress_meter.py).
+    "acc@1": "accuracy",
+    "val_acc@1": "val_accuracy",
+    "acc@5": "top5_accuracy",
     "top_1": "accuracy",
     "top1_accuracy": "accuracy",
     # Learning rate

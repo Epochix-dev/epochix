@@ -74,6 +74,8 @@ import {
 import { canonicalise, isRecognised } from "../story/canonical";
 import { FastAIParser } from "../parsers/fastai";
 import { AccelerateParser } from "../parsers/accelerate";
+import { ProgressMeterParser } from "../parsers/progressMeter";
+import { isStepBar, StepBarParser, stepBarRedraws } from "../parsers/stepBar";
 
 // Metric names are canonicalised by story/canonical.ts — Python's
 // canonicalize_key over tables generated from it.
@@ -140,6 +142,23 @@ function cleanLine(text: string): string {
   return cr >= 0 ? t.slice(cr + 1) : t;
 }
 
+/**
+ * What to read from one line — Python's _line_states: its final state, and
+ * with one exception nothing before it. The exception is a bar that runs for
+ * the whole training and counts its steps (a LoRA trainer's): its redraws are
+ * the run's only readings, so they are returned in order, the line's final
+ * state last. The length cap then applies to each redraw, not to the line.
+ */
+function lineStates(text: string): string[] {
+  if (text.includes("\r") && (text.includes("teps:") || text.includes("TEPS:"))) {
+    let whole = text.replace(ANSI, "").replace(ORPHAN_SGR, "");
+    if (whole.endsWith("\r")) whole = whole.slice(0, -1);
+    const redraws = stepBarRedraws(whole);
+    if (redraws !== null) return redraws.map(cleanLine);
+  }
+  return [cleanLine(text)];
+}
+
 /** The bands a letter was graded on, as the dashboard draws them (an
  *  open-ended F band is not a line, and JSON has no infinity). Mirrors the
  *  run config Python's pipeline writes (`grade_bands`). */
@@ -197,6 +216,9 @@ function fallbackMetrics(
       boostingReprintNext: false,
       kerasTold: new Map(),
       kerasToldEpoch: null,
+      meterEpoch: null,
+      meterTrainAccuracy: null,
+      stepBarValues: null,
       lineClaimed: false,
     };
     const metrics = fallback.parseLine(line, scratch).filter((m) => isRecognised(m.key));
@@ -256,6 +278,8 @@ function makeParsers(): Parser[] {
     new BoostingParser(),
     new FastAIParser(),
     new AccelerateParser(),
+    new ProgressMeterParser(),
+    new StepBarParser(),
     new UniversalParser(),
   ].sort((a, b) => b.priority - a.priority);
 }
@@ -367,14 +391,19 @@ export class StandaloneEngine {
     // Process complete lines
     const parts = this._buffer.split(/\r?\n/);
     this._buffer = parts.pop() ?? "";
-    const lines = parts.map(cleanLine);
+    const states = parts.map(lineStates);
+    const lines = states.flat();
+    // A bar that runs for the whole training ends no line until the training
+    // does (AGENTS.md: streaming has no end). Its finished redraws are read
+    // as they arrive; the one still being drawn stays in the buffer.
+    lines.push(...this._finishedRedraws());
 
     // A model summary is printed once, at the top. Scan a bounded window for
     // one and stop as soon as it is found.
     if (this._archScan.length < _ARCH_SCAN_LINES) {
-      for (const ln of lines) {
+      for (const group of states) {
         if (this._archScan.length >= _ARCH_SCAN_LINES) break;
-        this._archScan.push(ln);
+        this._archScan.push(group[group.length - 1]);
       }
       // Keep the LONGEST parse rather than latching on the first success. A
       // summary arrives one line at a time, so the first successful parse sees
@@ -413,10 +442,10 @@ export class StandaloneEngine {
     const newFrames: StoryFrameMsg[] = [];
 
     if (this._buffer.length > 0) {
-      const last = cleanLine(this._buffer);
+      const last = lineStates(this._buffer);
       this._buffer = "";
-      if (this._activeParsers === null) this._pending.push(last);
-      else newFrames.push(...this._processLine(last));
+      if (this._activeParsers === null) this._pending.push(...last);
+      else for (const state of last) newFrames.push(...this._processLine(state));
     }
 
     newFrames.push(...this._commitPending());
@@ -457,6 +486,21 @@ export class StandaloneEngine {
     const out: StoryFrameMsg[] = [];
     for (const held of backlog) out.push(...this._processLine(held));
     return out;
+  }
+
+  /**
+   * The finished redraws of a run-long step bar still waiting for its line to
+   * end. Everything before the buffer's last carriage return is complete; what
+   * follows it may be half written, and stays.
+   */
+  private _finishedRedraws(): string[] {
+    const buffer = this._buffer;
+    const cut = buffer.lastIndexOf("\r");
+    if (cut < 0 || !(buffer.includes("teps:") || buffer.includes("TEPS:"))) return [];
+    const bars = buffer.slice(0, cut).split("\r").map(cleanLine).filter(isStepBar);
+    if (bars.length === 0) return [];
+    this._buffer = buffer.slice(cut + 1);
+    return bars;
   }
 
   /** Finish the run; returns a summary. */
