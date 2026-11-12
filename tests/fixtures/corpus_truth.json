@@ -150,11 +150,11 @@
    "train_loss"
   ],
   "metric_from_epoch": 1.0,
-  "grade_note": null,
+  "grade_note": "unsteady",
   "cross_validation": null,
-  "final_grade": "A",
-  "final_grade_basis": "improvement",
-  "final_phase": "understanding"
+  "final_grade": "I",
+  "final_grade_basis": null,
+  "final_phase": "learning"
  },
  "diverging_loss.log": {
   "path": "tests/fixtures/logs/diverging_loss.log",

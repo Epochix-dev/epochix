@@ -151,6 +151,27 @@ export function narrateDiverged(o: {
 }
 
 /**
+ * What the readings are, and why one of them does not place the run — mirrors
+ * narrate_unsteady. For a metric whose readings rise and fall from one to the
+ * next by more than any trend in them (steadiness.ts).
+ */
+export function narrateUnsteady(o: {
+  epoch: number | null; value: number; metric: string;
+  turns: number; readings: number; step: string; runId: string; locale?: string;
+}): string {
+  const loc = resolveLocale(o.locale);
+  const story = pick(SPECIAL_TEMPLATES[loc].unsteady, o.runId)
+    .replace(/\{epoch\}/g, fmtEpoch(o.epoch))
+    .replace(/\{value\}/g, o.value.toFixed(4))
+    .replace(/\{metric\}/g, displayMetric(o.metric, loc))
+    .replace(/\{turns\}/g, String(o.turns))
+    .replace(/\{readings\}/g, String(o.readings))
+    .replace(/\{step\}/g, o.step);
+  // A template that opens with the metric's name opens with a capital.
+  return `${story.slice(0, 1).toUpperCase()}${story.slice(1)} ${message("next_unsteady", loc)}`;
+}
+
+/**
  * A result, not a stage of training — mirrors narrate_single_reading. A script
  * that fits once and prints a score has no arc; narrating it with the phase
  * templates described "the model awakens" for a model that had already
