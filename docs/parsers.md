@@ -153,9 +153,9 @@ checkpoint or at the end of the run.
 
 What the bar carries is the loss of ONE batch. For a diffusion model that
 number depends mostly on which noise level the batch drew, so it jumps from
-step to step by an order of magnitude on a healthy run; the story, the grade
-and the warnings are computed from it as from any other loss, and deserve
-that much less weight.
+step to step by an order of magnitude on a healthy run. Such a run is charted
+as logged and [not given a letter](training-loop.md#readings-that-cannot-be-compared):
+one reading does not say where it is.
 
 ---
 

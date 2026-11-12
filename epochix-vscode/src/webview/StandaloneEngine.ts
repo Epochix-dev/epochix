@@ -47,6 +47,8 @@ import {
   PLATEAU_WINDOW,
   STALL_MIN_EPOCHS,
   STALL_REL_IMPROVEMENT,
+  UNSTEADY_MIN_READINGS,
+  UNSTEADY_WINDOW,
 } from "../story/grading.generated";
 import {
   narrate,
@@ -54,6 +56,7 @@ import {
   narratePastPeak,
   narrateSingleReading,
   narrateStalled,
+  narrateUnsteady,
   message,
   displayMetric,
   lossText,
@@ -72,6 +75,7 @@ import {
   TASK_SIGNALS,
 } from "../story/engineTables.generated";
 import { canonicalise, isRecognised } from "../story/canonical";
+import { stepText, unsteady } from "../story/steadiness";
 import { FastAIParser } from "../parsers/fastai";
 import { AccelerateParser } from "../parsers/accelerate";
 import { ProgressMeterParser } from "../parsers/progressMeter";
@@ -317,6 +321,8 @@ export class StandaloneEngine {
   private _seenKeys: string[] = [];
   private _rawKeys = new Set<string>();
   private _keyCounts = new Map<string, number>();
+  // Every reading of every metric, in order — Python's _metric_history.
+  private _history = new Map<string, number[]>();
   private _eventsCount = 0;
   private _taskLocked = false;
   private _primaryKeyUsed: string | null = null;
@@ -347,6 +353,11 @@ export class StandaloneEngine {
   private _overfitMark: number | null = null;
   /** Best training loss when the divergence warning fired; beating it withdraws the warning. */
   private _divergenceMark: number | null = null;
+  /** The highest training loss before the reading being checked. */
+  private _highTrainLoss: number | null = null;
+  /** The reading a standing divergence warning was raised on and the highest
+   *  before it, while the warning rests on one reading's jump. */
+  private _divergenceAt: [number, number | null] | null = null;
   private _allMetrics: RawMetric[] = [];
   private _frames: StoryFrameMsg[] = [];
   private _milestones: MilestoneMsg[] = [];
@@ -660,6 +671,9 @@ export class StandaloneEngine {
       const key = canonicalise(m.key);
       if (!this._keyCounts.has(key)) this._seenKeys.push(key);
       this._keyCounts.set(key, (this._keyCounts.get(key) ?? 0) + 1);
+      const readings = this._history.get(key);
+      if (readings === undefined) this._history.set(key, [m.value]);
+      else readings.push(m.value);
       this._rawKeys.add(m.key);
       if (key === "train_loss") this._trainLosses.push(m.value);
       else if (key === "val_loss") this._valLosses.push(m.value);
@@ -803,24 +817,34 @@ export class StandaloneEngine {
     // metric, where the value sits on its own scale is the honest reading
     // until there is movement to measure. Python's phase_baseline; this
     // engine never had it.
+    // Everything below sets this reading against another: the first, the
+    // best, the one before. A metric whose readings rise and fall from one to
+    // the next by more than any trend in them supports none of that
+    // (steadiness.ts): no improvement is claimed, no letter is given, and the
+    // story says what the readings are. As in the Python engine.
+    const swing = unsteady(this._history.get(key) ?? []);
     const phaseBaseline =
-      this._primaryReadings < 2 && !lowerBetter && value >= 0 && value <= 1
-        ? 0.0
-        : this._baseline;
+      swing !== null
+        ? value
+        : this._primaryReadings < 2 && !lowerBetter && value >= 0 && value <= 1
+          ? 0.0
+          : this._baseline;
     const phase: Phase = computePhase(clock, value, phaseBaseline, lowerBetter);
-    const rel = relativeImprovement(value, this._baseline, lowerBetter);
+    const rel = swing !== null ? null : relativeImprovement(value, this._baseline, lowerBetter);
     // Honest advancement: the clock when the length is known, otherwise the
     // fraction of achievable improvement realised. Not a made-up constant,
     // which pinned runs without a length in their first phase for life.
     let progress = clock !== null ? clock : rel !== null ? rel : 0.0;
     if (!Number.isFinite(progress)) progress = 0.0;
     progress = Math.max(0.0, Math.min(1.0, progress));
-    const [grade, gradeBasis, gradeBands] = this._grade(value, lowerBetter, directionUnknown);
+    const [grade, gradeBasis, gradeBands]: [Grade, GradeBasis | null, GradeBandsMsg | null] =
+      swing !== null ? ["I", null, null] : this._grade(value, lowerBetter, directionUnknown);
 
     let pastPeak = false;
     if (Math.abs(this._best) > 1e-9) {
       const drop = (lowerBetter ? value - this._best : this._best - value) / Math.abs(this._best);
-      pastPeak = drop > PAST_PEAK_REL_DROP;
+      // Not for an unsteady metric: its best is its luckiest batch.
+      pastPeak = drop > PAST_PEAK_REL_DROP && swing === null;
     }
     // Stalled means FLAT. A run that got worse clears "less than 3% improvement"
     // exactly as a flat one does, and was told it was "not learning yet".
@@ -836,6 +860,11 @@ export class StandaloneEngine {
     if (epoch === null && this._primaryReadings <= 1) {
       narrative = narrateSingleReading({
         value, metric: key, runId: this._runId, locale: this._locale,
+      });
+    } else if (swing !== null) {
+      narrative = narrateUnsteady({
+        epoch, value, metric: key, turns: swing.turns, readings: swing.readings,
+        step: stepText(swing), runId: this._runId, locale: this._locale,
       });
     } else if (stalled) {
       narrative = narrateStalled({
@@ -873,7 +902,7 @@ export class StandaloneEngine {
       // confidence in the line, which this carried and nothing displayed.
       confidence: progress,
       gradeNote: gradeNote(grade, this._primaryReadings, {
-        hasEpoch: epoch !== null, newBest,
+        hasEpoch: epoch !== null, newBest, unsteady: swing !== null,
       }),
       gradeBasis,
       gradeBands,
@@ -937,6 +966,7 @@ export class StandaloneEngine {
     // No later reading can withdraw this: a metric stopped being a number.
     this._seenMilestones.add("divergence_warning");
     this._divergenceMark = null;
+    this._divergenceAt = null;
     return {
       ...prev,
       seq: this._ctx.seq,
@@ -1091,15 +1121,53 @@ export class StandaloneEngine {
       const x = t[this._trainSeen];
       const prev = this._trainSeen > 0 ? t[this._trainSeen - 1] : null;
       const best = this._bestTrainLoss;
-      if (!this._seenMilestones.has("divergence_warning")) {
+      const high = this._highTrainLoss;
+      // "The reading before" and "its best" are references only when one
+      // reading can be set against another. For a loss that cannot be read
+      // that way the reference is the highest reading there has been, and a
+      // warning already raised on one reading's jump is withdrawn unless it
+      // clears that bar too. Mirrors story_engine/warnings.py.
+      const at0 = Math.max(0, this._trainSeen + 1 - UNSTEADY_WINDOW);
+      const trainSwing =
+        this._trainSeen + 1 >= UNSTEADY_MIN_READINGS
+          ? unsteady(t.slice(at0, this._trainSeen + 1))
+          : null;
+      if (this._seenMilestones.has("divergence_warning")) {
+        const at = this._divergenceAt;
+        if (
+          trainSwing !== null &&
+          at !== null &&
+          !(at[1] !== null && at[1] > 0 && at[0] > at[1] * DIVERGE_GROWTH)
+        ) {
+          this._seenMilestones.delete("divergence_warning");
+          this._divergenceMark = null;
+          this._divergenceAt = null;
+          this._warnings.push({
+            kind: "divergence_cleared",
+            epoch,
+            message: message("warn_divergence_unsteady", this._locale, {
+              turns: String(trainSwing.turns),
+              readings: String(trainSwing.readings),
+              step: stepText(trainSwing),
+            }),
+          });
+        }
+      } else {
         let said: string | null = null;
-        if (prev !== null && prev > 0 && x > prev * DIVERGE_GROWTH) {
+        let markAt = best;
+        if (trainSwing !== null) {
+          if (high !== null && high > 0 && x > high * DIVERGE_GROWTH) {
+            said = message("warn_above", this._locale, { new: lossText(x), high: lossText(high) });
+            markAt = high;
+          }
+        } else if (prev !== null && prev > 0 && x > prev * DIVERGE_GROWTH) {
           said = message("warn_spike", this._locale, { old: lossText(prev), new: lossText(x) });
         } else if (best !== null && best > 0 && x > best * DIVERGE_GROWTH) {
           said = message("warn_climb", this._locale, { new: lossText(x), best: lossText(best) });
         }
         if (said !== null) {
-          this._divergenceMark = best;
+          this._divergenceMark = markAt;
+          this._divergenceAt = [x, high];
           warn("divergence_warning", "divergence", said);
         }
       }
@@ -1107,6 +1175,7 @@ export class StandaloneEngine {
       if (mark !== null && x < mark) {
         this._seenMilestones.delete("divergence_warning");
         this._divergenceMark = null;
+        this._divergenceAt = null;
         this._warnings.push({
           kind: "divergence_cleared",
           epoch,
@@ -1118,6 +1187,9 @@ export class StandaloneEngine {
       }
       if (Number.isFinite(x) && (this._bestTrainLoss === null || x < this._bestTrainLoss)) {
         this._bestTrainLoss = x;
+      }
+      if (Number.isFinite(x) && (this._highTrainLoss === null || x > this._highTrainLoss)) {
+        this._highTrainLoss = x;
       }
     }
   }
