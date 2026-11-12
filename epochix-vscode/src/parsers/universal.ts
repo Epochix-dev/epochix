@@ -10,7 +10,7 @@
  * Every quantifier is bounded: an unbounded run before a delimiter is O(n^2)
  * on a long line (AGENTS.md).
  */
-import type { Parser, ParserContext, RawMetric } from "./base";
+import { claim, type Parser, type ParserContext, type RawMetric } from "./base";
 import { isRecognised } from "../story/canonical";
 import { isSetting } from "./neverMetrics";
 import {
@@ -26,8 +26,16 @@ const KV_EQ = new RegExp(String.raw`([A-Za-z_]\w{0,63})\s*=\s*(${NUM})`, "g");
 const KV_COLON = new RegExp(String.raw`([A-Za-z_]\w{0,63})\s*:\s*(${NUM})`, "g");
 const JSON_FRAG = /\{[^{}]+\}/g;
 const EPOCH_HEADER = /\bepoch\s+(\d{1,9})(?:\s*\/\s*(\d{1,9}))?\b/i;
-const KV_SPACE = new RegExp(String.raw`\b([A-Za-z]\w{0,63})\s+(${NUM})(?=\s|$)`, "g");
-const ROW_LEADER = /^\s*(?:epoch|ep|iter|iteration|step|batch|round)\s+\d{1,9}\b/i;
+// A value may end at a comma or a semicolon, and a split word in front of the
+// name belongs to it: "step 250: train loss 2.4293, val loss 2.4447".
+const KV_SPACE = new RegExp(
+  String.raw`\b(?:(train|training|test|val|valid|validation|eval|holdout)\s+)?([A-Za-z]\w{0,63})\s+(${NUM})(?=[\s,;]|$)`,
+  "gi",
+);
+const ROW_LEADER = /^\s*(epoch|ep|iter|iteration|step|batch|round)\s+(\d{1,9})\b/i;
+// Python source echoed to the console (nanoGPT's config file and overrides):
+// settings, not results.
+const SOURCE_LINE = /^\s*(?:Overriding\b|[A-Za-z_]\w{0,63}\s+=\s+[^\s#]{1,64}\s+#)/;
 const ITERATION_LEADER = /^\s*(?:iter|iteration|round)\s+(\d{1,9})\b/i;
 const QUALIFIED = new RegExp(
   String.raw`\b(train|training|test|val|valid|validation|eval|holdout)\s+(\w{1,64})\s*[:=]\s*(${NUM})`,
@@ -98,6 +106,9 @@ export class UniversalParser implements Parser {
   parseLine(line: string, ctx: ParserContext): RawMetric[] {
     if (line.includes("%|") && PROGRESS_BAR.test(line)) return [];
     if (isConfigDump(line)) return [];
+    if ((line.includes("#") || line.includes("Overriding")) && SOURCE_LINE.test(line)) {
+      return claim(ctx);
+    }
 
     if (FOLD_ROW.test(line)) {
       this._collectFold(line, ctx);
@@ -108,10 +119,15 @@ export class UniversalParser implements Parser {
     if (eh !== null) {
       ctx.currentEpoch = parseFloat(eh[1]);
       if (eh[2] !== undefined) ctx.totalEpochs = parseInt(eh[2], 10);
+      // The run has epochs after all; its steps count within them.
+      if (ctx.axis === "step") ctx.axis = "epoch";
     }
 
     const it = ITERATION_LEADER.exec(line);
-    if (it !== null && (ctx.currentEpoch === null || ctx.axis === "iteration")) {
+    if (
+      it !== null &&
+      (ctx.currentEpoch === null || ctx.axis === "iteration" || ctx.axis === "step")
+    ) {
       ctx.axis = "iteration";
       ctx.currentEpoch = parseFloat(it[1]);
     }
@@ -181,13 +197,39 @@ export class UniversalParser implements Parser {
     }
     text = blanked(text, spans);
 
-    if (ROW_LEADER.test(line)) {
+    const leader = ROW_LEADER.exec(line);
+    if (leader !== null) {
+      let counted = false;
       for (const m of text.matchAll(KV_SPACE)) {
-        const key = m[1];
+        let key = m[2];
         const lo = key.toLowerCase();
-        if (!EPOCH_KEYS.has(lo) && !STEP_KEYS.has(lo) && !isRecognised(key)) continue;
-        const v = parseFloat(m[2]);
+        if (EPOCH_KEYS.has(lo) || STEP_KEYS.has(lo)) {
+          counted = true; // a control key, needed for the x-axis
+        } else {
+          if (m[1] !== undefined) {
+            key = `${VAL_WORDS.has(m[1].toLowerCase()) ? "val" : "train"}_${key}`;
+          }
+          // Only a metric we recognise — and not the verb: "loss is 0.5".
+          if (key === "is" || !isRecognised(key)) continue;
+        }
+        const v = parseFloat(m[3]);
         if (!Number.isNaN(v)) candidates.push([key, v, 0.5]);
+      }
+      // "step 250: train loss …" — the colon kept the counter from being read
+      // as a pair.
+      if (!counted && line.charAt(leader[0].length) === ":") {
+        candidates.push([leader[1], parseFloat(leader[2]), 0.5]);
+      }
+      // A run that counts steps and never an epoch is told by step. Only on a
+      // row carrying a reading we recognise, and only until an epoch is
+      // printed (see universal.py).
+      if (
+        leader[1].toLowerCase() === "step" &&
+        (ctx.currentEpoch === null || ctx.axis === "iteration" || ctx.axis === "step") &&
+        candidates.some(([key]) => !STEP_KEYS.has(key.toLowerCase()) && isRecognised(key))
+      ) {
+        if (ctx.axis === null) ctx.axis = "step";
+        ctx.currentEpoch = parseFloat(leader[2]);
       }
     }
 

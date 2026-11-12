@@ -31,6 +31,7 @@ from epochix.normalizer import normalize
 from epochix.normalizer.canonical_keys import canonicalize_key, is_recognised
 from epochix.parsers.base import LINE_CLAIMED, ParserContext
 from epochix.parsers.registry import SNIFF_SAMPLE_LINES, detect_parser, get_registry
+from epochix.parsers.step_bar import step_bar_redraws
 from epochix.scrub import scrub_secrets
 from epochix.story_engine import StoryEngine
 from epochix.story_engine.config_loader import active_grade_config
@@ -65,6 +66,26 @@ def _clean_line(text: str) -> str:
     if "\r" in cleaned:
         cleaned = cleaned.rsplit("\r", 1)[-1]
     return cleaned
+
+
+def _line_states(text: str) -> list[str]:
+    """What to read from one line: its final state, and with one exception
+    nothing before it.
+
+    The exception is a bar that runs for the whole training and counts its
+    steps. A LoRA trainer draws one and prints nothing else, so in a file the
+    run is a handful of lines, each holding hundreds of redraws; read in its
+    final state, a recorded 120-step run was four readings. That bar's redraws
+    are returned in order, the line's final state last. The length cap is then
+    applied to each redraw: a real run's bar line is far longer than any line
+    of text, and capping the line would cut its later steps off.
+    """
+    if "\r" in text and ("teps:" in text or "TEPS:" in text):
+        whole = _ORPHAN_SGR_RE.sub("", _ANSI_RE.sub("", text))
+        redraws = step_bar_redraws(whole[:-1] if whole.endswith("\r") else whole)
+        if redraws is not None:
+            return [_clean_line(redraw) for redraw in redraws]
+    return [_clean_line(text)]
 
 
 if TYPE_CHECKING:
@@ -484,6 +505,9 @@ async def run_pipeline(
 
     last_seq = 0
     last_epoch: float | None = None
+    # A line read as several states (_line_states) needs a seq for each: a
+    # frame's seq is its key in the store. Every later line moves up by as many.
+    seq_shift = 0
 
     # Buffer lines received before the parser is detected so we can replay
     # them.  This is critical for short log files (< SNIFF_SAMPLE_LINES lines)
@@ -620,20 +644,23 @@ async def run_pipeline(
             bands_written = bands
 
     def _process_line(raw_line: object) -> None:
-        nonlocal last_seq, arch_detected, last_epoch
-        ctx.seq = raw_line.seq  # type: ignore[attr-defined]
-        last_seq = raw_line.seq  # type: ignore[attr-defined]
+        nonlocal last_seq, arch_detected, last_epoch, seq_shift
 
         # Strip ANSI escapes + carriage-return progress-bar updates so the
-        # downstream parsers see clean text.
-        clean_text = _clean_line(raw_line.text)  # type: ignore[attr-defined]
+        # downstream parsers see clean text. Almost always one state: the line
+        # as the terminal would show it.
+        states = _line_states(raw_line.text)  # type: ignore[attr-defined]
+        first_seq: int = raw_line.seq + seq_shift  # type: ignore[attr-defined]
+        seq_shift += len(states) - 1
+        final_seq = first_seq + len(states) - 1
+        clean_text = states[-1]
 
         # Stored and transmitted copies are scrubbed; the parsers below still
         # read the line as printed, so no metric can change.
         outbound = scrub_secrets(clean_text) if settings.scrub_secrets else clean_text
 
         if settings.llm_enabled and clean_text.strip() and len(llm_lines) < _LLM_MAX_LINES:
-            llm_lines.append((raw_line.seq, outbound))  # type: ignore[attr-defined]
+            llm_lines.append((final_seq, outbound))
 
         if len(arch_scan_lines) < _ARCH_SCAN_LIMIT:
             arch_scan_lines.append(clean_text)
@@ -643,34 +670,36 @@ async def run_pipeline(
         if effective_keep:
             store.append_raw_line(
                 run_id=run_id,
-                seq=raw_line.seq,  # type: ignore[attr-defined]
+                seq=final_seq,
                 ts=raw_line.timestamp,  # type: ignore[attr-defined]
                 text=outbound,
             )
 
-        if parser is None:
-            sample_lines.append(clean_text)
-            sniff_buffer.append(
-                (raw_line.seq, raw_line.timestamp, clean_text)  # type: ignore[attr-defined]
-            )
-            if len(sample_lines) >= SNIFF_SAMPLE_LINES:
-                _flush_sniff()
-            return
+        for seq, state in enumerate(states, start=first_seq):
+            ctx.seq = seq
+            last_seq = seq
 
-        ep = _emit_line(
-            text=clean_text,
-            timestamp=raw_line.timestamp,  # type: ignore[attr-defined]
-            parser=parser,
-            fallback=fallback,
-            ctx=ctx,
-            run_id=run_id,
-            engine=engine,
-            store=store,
-            hub=hub,
-        )
-        if ep is not None:
-            last_epoch = ep
-            _sync_run()
+            if parser is None:
+                sample_lines.append(state)
+                sniff_buffer.append((seq, raw_line.timestamp, state))  # type: ignore[attr-defined]
+                if len(sample_lines) >= SNIFF_SAMPLE_LINES:
+                    _flush_sniff()
+                continue
+
+            ep = _emit_line(
+                text=state,
+                timestamp=raw_line.timestamp,  # type: ignore[attr-defined]
+                parser=parser,
+                fallback=fallback,
+                ctx=ctx,
+                run_id=run_id,
+                engine=engine,
+                store=store,
+                hub=hub,
+            )
+            if ep is not None:
+                last_epoch = ep
+                _sync_run()
 
     # Consume the ingester with an idle timeout (see IDLE_SNIFF_SECS).
     _line_iter = ingester.lines().__aiter__()

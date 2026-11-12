@@ -27,6 +27,9 @@ export const CANONICAL_MAP: ReadonlyMap<string, string> = new Map([
   ["eval_accuracy", "val_accuracy"],
   ["test_accuracy", "val_accuracy"],
   ["top1", "accuracy"],
+  ["acc@1", "accuracy"],
+  ["val_acc@1", "val_accuracy"],
+  ["acc@5", "top5_accuracy"],
   ["top_1", "accuracy"],
   ["top1_accuracy", "accuracy"],
   ["lr", "lr"],
@@ -239,7 +242,7 @@ export const ON_SCALE: Readonly<Record<TaskType, ReadonlySet<string>>> = {
 
 /** Names that are never a metric: run config, model-summary totals, units
  *  (parsers/_never_metrics.py). */
-export const NEVER_METRICS: ReadonlySet<string> = new Set(["accumulate_grad_batches", "batch_size", "batchsize", "bs", "devices", "epochs", "eval_runtime", "eval_samples_per_second", "eval_steps_per_second", "flops", "gpus", "img_size", "imgsz", "log_every_n_steps", "macs", "max_epochs", "ms", "node", "non_trainable_params", "ns", "num_epochs", "num_workers", "params", "patience", "pid", "port", "rank", "runtime", "s", "samples_per_second", "save_top_k", "seed", "steps_per_second", "test_runtime", "test_samples_per_second", "test_steps_per_second", "total_epochs", "total_flos", "total_params", "train_runtime", "train_samples_per_second", "train_steps_per_second", "trainable_params", "us", "verbose", "workers", "world_size"]);
+export const NEVER_METRICS: ReadonlySet<string> = new Set(["accumulate_grad_batches", "batch_size", "batchsize", "bs", "devices", "epochs", "eval_runtime", "eval_samples_per_second", "eval_steps_per_second", "flops", "gpus", "img_size", "imgsz", "log_every_n_steps", "macs", "max_epochs", "ms", "node", "non_trainable_params", "ns", "num_epochs", "num_workers", "params", "patience", "pid", "port", "rank", "runtime", "s", "samples_per_second", "save_top_k", "seed", "steps_per_second", "tensors", "test_runtime", "test_samples_per_second", "test_steps_per_second", "total_epochs", "total_flos", "total_params", "train_runtime", "train_samples_per_second", "train_steps_per_second", "trainable_params", "us", "verbose", "workers", "world_size"]);
 
 /** Names that are a setting or a metric depending on the value (is_setting). */
 export const VALUE_DECIDES: ReadonlySet<string> = new Set(["precision"]);

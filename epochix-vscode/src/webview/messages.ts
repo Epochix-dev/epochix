@@ -43,7 +43,7 @@ export interface GradeBandsMsg {
   bands: Array<{ grade: Grade; value: number }>;
 }
 
-export type GradeNote = "few_readings" | "still_improving";
+export type GradeNote = "few_readings" | "still_improving" | "unsteady";
 export type { GradeBasis };
 
 export interface MilestoneMsg {

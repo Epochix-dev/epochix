@@ -101,6 +101,42 @@ def narrate_single_reading(
     )
 
 
+def narrate_unsteady(
+    epoch: float | None,
+    primary_value: float,
+    *,
+    turns: int,
+    readings: int,
+    step: str,
+    run_id: str,
+    locale: str = "en",
+    metric: str | None = None,
+) -> str:
+    """Say what the readings are, and why one of them does not place the run.
+
+    For a metric whose readings rise and fall from one to the next by more
+    than any trend in them (story_engine/steadiness.py). Every other sentence
+    compares this reading with another — "past its best", "a change of …
+    since the previous reading", "has barely moved" — and here that
+    comparison measures the luck of a batch.
+    """
+    templates = _load_special(
+        "_unsteady", locale, "Epoch {epoch}: {metric} {value}. One reading says little here."
+    )
+    seed = int(hashlib.md5(run_id.encode(), usedforsecurity=False).hexdigest()[:8], 16)
+    template = random.Random(seed).choice(templates)
+    story = (
+        template.replace("{epoch}", str(int(epoch)) if epoch is not None else "?")
+        .replace("{value}", f"{primary_value:.4f}")
+        .replace("{metric}", _display_metric(metric, locale))
+        .replace("{turns}", str(turns))
+        .replace("{readings}", str(readings))
+        .replace("{step}", step)
+    )
+    # A template that opens with the metric's name opens with a capital.
+    return f"{story[:1].upper()}{story[1:]} {message('next_unsteady', locale)}"
+
+
 def _load_stalled(locale: str = "en") -> list[str]:
     """Templates for a run whose metric has not meaningfully moved."""
     key = f"_stalled/{locale}"

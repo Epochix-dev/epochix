@@ -52,6 +52,9 @@ describe('gradeCaveatText', () => {
     for (const basis of BASES) expect(gradeCaveatText(basis)).toBe(en.ui.gradeCaveats[basis]);
     expect(gradeCaveatText(null)).toBe(en.ui.gradeCaveat);
     expect(gradeCaveatText(null, 'I')).toBe(en.ui.gradeCaveats.ungraded);
+    // Not graded because its readings cannot be compared: the note beside the
+    // letter says so, and "nothing to measure it against" would be untrue.
+    expect(gradeCaveatText(null, 'I', 'unsteady')).toBe('');
   });
 
   it('says an "I" was not graded, in every locale, instead of naming both ways', () => {

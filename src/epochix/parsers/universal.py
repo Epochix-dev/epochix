@@ -8,7 +8,7 @@ from typing import cast
 from epochix.models import RawMetric
 from epochix.normalizer.canonical_keys import canonicalize_key, is_recognised
 from epochix.parsers._never_metrics import NEVER_METRICS, VALUE_DECIDES
-from epochix.parsers.base import ParserContext
+from epochix.parsers.base import ParserContext, claim
 from epochix.parsers.registry import register_parser
 
 # Pattern 1: key=value
@@ -46,9 +46,27 @@ _NUM = r"[-+]?\d+(?:\.\d+)?(?:[eE][-+]?\d+)?"
 #      metric row rather than a sentence, and
 #   2. the key must be a name the normalizer already recognises.
 # Anything else still needs `=` or `:`.
-_KV_SPACE = re.compile(rf"\b([A-Za-z][\w]{{0,63}})\s+({_NUM})(?=\s|$)")
+#
+# A step-counted loop prints the same pairs with a comma between them and the
+# split in front of the name, and a real nanoGPT run was read wrongly twice
+# over (tests/fixtures/logs/nanogpt_real.log):
+#
+#   step 250: train loss 2.4293, val loss 2.4447
+#   iter 260: loss 2.4461, time 16.42ms, mfu 0.08%
+#
+# The value had to be followed by a space, so only the line's last pair
+# counted, and without its split: the VALIDATION loss was recorded as the
+# training loss, and the loss printed every ten iterations was never read at
+# all. So the value may end at a comma or a semicolon, and a split word in
+# front of the name belongs to it. A number glued to its unit ("16.42ms",
+# "0.08%") ends in neither and is still not read. Every quantifier is bounded.
+_KV_SPACE = re.compile(
+    rf"\b(?:(train|training|test|val|valid|validation|eval|holdout)\s+)?"
+    rf"([A-Za-z]\w{{0,63}})\s+({_NUM})(?=[\s,;]|$)",
+    re.IGNORECASE,
+)
 _ROW_LEADER = re.compile(
-    r"^\s*(?:epoch|ep|iter|iteration|step|batch|round)\s+\d{1,9}\b", re.IGNORECASE
+    r"^\s*(epoch|ep|iter|iteration|step|batch|round)\s+(\d{1,9})\b", re.IGNORECASE
 )
 
 # A whole-pass counter for code that has no epochs — sklearn's partial_fit
@@ -60,6 +78,20 @@ _ROW_LEADER = re.compile(
 # framework that prints "Step 500 …" before its first epoch line would
 # otherwise have the run's epoch pinned to 500.
 _ITERATION_LEADER = re.compile(r"^\s*(?:iter|iteration|round)\s+(\d{1,9})\b", re.IGNORECASE)
+
+# A line of settings, not of results: Python source echoed to the console.
+# nanoGPT prints its whole config file and then one line per override before it
+# trains, and a real run's story began with nine "metrics" read from them
+# (`n_layer`, `max_iters`, a learning rate that was the configured peak and not
+# a reading):
+#
+#   learning_rate = 1e-3 # with baby networks can afford to go a bit higher
+#   Overriding: n_layer = 4
+#
+# An assignment written as source is (`name = value`, spaces round the `=`) and
+# followed by a `#` comment is a line of a program, and "Overriding" is the
+# word nanoGPT's configurator opens every such line with.
+_SOURCE_LINE = re.compile(r"^\s*(?:Overriding\b|[A-Za-z_]\w{0,63}\s+=\s+[^\s#]{1,64}\s+#)")
 
 # Pattern 5: a qualifier in front of the metric — "Train accuracy: 0.98".
 #
@@ -264,6 +296,8 @@ class UniversalParser:
             return []
         if is_config_dump(line):
             return []
+        if ("#" in line or "Overriding" in line) and _SOURCE_LINE.match(line):
+            return claim(ctx)
 
         if _FOLD_ROW.match(line):
             self._collect_fold(line, ctx)
@@ -275,9 +309,14 @@ class UniversalParser:
             ctx.current_epoch = float(eh.group(1))
             if eh.group(2) is not None:
                 ctx.total_epochs = int(eh.group(2))
+            if ctx.extra.get("axis") == "step":
+                # The run has epochs after all; its steps count within them.
+                ctx.extra["axis"] = "epoch"
 
         it = _ITERATION_LEADER.match(line)
-        if it is not None and (ctx.current_epoch is None or ctx.extra.get("axis") == "iteration"):
+        if it is not None and (
+            ctx.current_epoch is None or ctx.extra.get("axis") in ("iteration", "step")
+        ):
             # Latched: the guard has to be "no epoch has EVER been seen", not
             # "no epoch right now". Checking only the latter pinned the whole
             # run to iteration 1, because after the first row current_epoch was
@@ -358,22 +397,48 @@ class UniversalParser:
         # Whitespace-separated pairs, last and only on a metric row (see
         # _KV_SPACE). Everything a delimiter already claimed has been blanked
         # out above, so this cannot double-count a reading.
-        if _ROW_LEADER.match(line):
+        leader = _ROW_LEADER.match(line)
+        if leader is not None:
+            counted = False
             for m in _KV_SPACE.finditer(text):
-                key = m.group(1)
+                key = m.group(2)
                 key_lo = key.lower()
-                # Recognised metric, or a control key we need for the x-axis.
-                if (
-                    key_lo not in _EPOCH_KEYS
-                    and key_lo not in _STEP_KEYS
-                    and canonicalize_key(key) == "custom"
-                ):
-                    continue
+                if key_lo in _EPOCH_KEYS or key_lo in _STEP_KEYS:
+                    # A control key we need for the x-axis.
+                    counted = True
+                else:
+                    split = m.group(1)
+                    if split is not None:
+                        key = f"{'val' if split.lower() in _VAL_WORDS else 'train'}_{key}"
+                    # Otherwise only a metric the normalizer recognises — and
+                    # not the verb: "loss is 0.5, …" is not an inception score.
+                    if key == "is" or canonicalize_key(key) == "custom":
+                        continue
                 try:  # noqa: SIM105 - not contextlib.suppress: it costs more per call than
                     # the rest of the statement, and this runs several times per line
-                    candidates.append((key, float(m.group(2)), 0.50))
+                    candidates.append((key, float(m.group(3)), 0.50))
                 except ValueError:
                     pass
+            # "step 250: train loss …" — the colon after the counter kept it
+            # from being read as a pair, so the row's readings carried the step
+            # of whichever line had last set one.
+            if not counted and line[leader.end() : leader.end() + 1] == ":":
+                candidates.append((leader.group(1), float(leader.group(2)), 0.50))
+            # A run that counts steps and never an epoch is told by step: the
+            # step is its x-axis, as an iteration or a boosting round is. Only
+            # on a row carrying a reading we recognise ("Step 3: fetching the
+            # data" is not one), and only until an epoch is printed — a step
+            # then counts within the epoch (see _ITERATION_LEADER).
+            if (
+                leader.group(1).lower() == "step"
+                and (ctx.current_epoch is None or ctx.extra.get("axis") in ("iteration", "step"))
+                and any(
+                    key.lower() not in _STEP_KEYS and is_recognised(key)
+                    for key, _val, _conf in candidates
+                )
+            ):
+                ctx.extra.setdefault("axis", "step")
+                ctx.current_epoch = float(leader.group(2))
 
         # Pass 1 — control keys (epoch/step) take effect BEFORE any metric on
         # this line is stamped. They can legitimately appear last: the SDK

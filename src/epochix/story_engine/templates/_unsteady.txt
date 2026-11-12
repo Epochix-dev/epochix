@@ -1,0 +1,2 @@
+Epoch {epoch}: {metric} {value}. Its readings changed direction {turns} times in the last {readings} and typically differ by {step} from one to the next, so one reading does not show where the run is.
+{metric} {value} at epoch {epoch}. One reading does not show where the run is: the last {readings} changed direction {turns} times and typically differ by {step} from one to the next.

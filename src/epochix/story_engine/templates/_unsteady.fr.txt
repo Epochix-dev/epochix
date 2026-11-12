@@ -1,0 +1,2 @@
+Époque {epoch} : {metric} {value}. Ses mesures ont changé de sens {turns} fois sur les {readings} dernières et diffèrent typiquement de {step} de l'une à la suivante : une seule mesure ne montre pas où en est l'entraînement.
+{metric} {value} à l'époque {epoch}. Une seule mesure ne montre pas où en est l'entraînement : les {readings} dernières ont changé de sens {turns} fois et diffèrent typiquement de {step} de l'une à la suivante.
