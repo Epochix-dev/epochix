@@ -85,6 +85,8 @@ _EN: dict[str, str] = {
     "readings of the metric.",
     "grade_note.still_improving": "Still improving at the last reading — the grade "
     "shows where the run got to, not where it was heading.",
+    "grade_note.unsteady": "Not graded: this metric's readings rise and fall too much "
+    "from one to the next for a single reading to place the run.",
     "md.final_phase": "Final phase",
     "md.primary_metric": "Primary metric",
     "md.epochs": "Epochs",
@@ -157,6 +159,8 @@ _FA: dict[str, str] = {
     "grade_note.few_readings": "موقت: این نمره بر کمتر از پنج خوانش از سنجه تکیه دارد.",
     "grade_note.still_improving": "در آخرین خوانش هنوز در حال بهبود بود — نمره نشان "
     "می‌دهد اجرا به کجا رسید، نه به کجا می‌رفت.",
+    "grade_note.unsteady": "نمره داده نشد: خوانش‌های این سنجه از یکی به بعدی بیش از آن بالا و "
+    "پایین می‌روند که یک خوانش جای اجرا را نشان دهد.",
     "md.final_phase": "مرحله نهایی",
     "md.primary_metric": "معیار اصلی",
     "md.epochs": "دوره‌ها",
@@ -232,6 +236,8 @@ _FR: dict[str, str] = {
     "mesures de la métrique.",
     "grade_note.still_improving": "Encore en progrès à la dernière mesure — la note "
     "montre où l'exécution est arrivée, pas où elle allait.",
+    "grade_note.unsteady": "Non noté : les mesures de cette métrique montent et descendent "
+    "trop de l'une à la suivante pour qu'une seule situe l'entraînement.",
     "md.final_phase": "Phase finale",
     "md.primary_metric": "Métrique principale",
     "md.epochs": "Époques",

@@ -79,6 +79,61 @@ suite("Runs that count steps", () => {
     assert.strictEqual(engine.metrics().filter((m) => m.canonical_key === "lr").length, 120);
   });
 
+  // Python: tests/integration/test_unsteady_readings.py. The loss on the bar
+  // is one batch's, and moves tenfold between neighbours with nothing wrong:
+  // it was told "past its best … use early stopping" from its second step,
+  // graded F to A+ and back, and warned of divergence four times.
+  test("a loss printed per batch is not graded, told to stop early, or called diverging", () => {
+    const { engine, frames } = told(fixture("diffusers_lora_real.log"));
+    const judged = frames.slice(5); // from the sixth reading on
+    assert.strictEqual(judged.length, 115);
+    assert.deepStrictEqual(
+      [...new Set(judged.map((f) => `${f.grade} ${f.gradeBasis} ${f.gradeNote}`))],
+      ["I null unsteady"],
+    );
+    for (const f of judged) {
+      assert.ok(!/early stopping|ast its best|since the previous reading/.test(f.narrative), f.narrative);
+      assert.ok(f.narrative.includes(f.primaryMetricValue.toFixed(4)), f.narrative);
+    }
+    const last = frames[frames.length - 1].narrative;
+    for (const phrase of ["changed direction 34 times", "the last 50", "differ by 66%", "Next step:"]) {
+      assert.ok(last.includes(phrase), last);
+    }
+    assert.deepStrictEqual(engine.warnings(), []);
+    assert.deepStrictEqual(
+      judged.map((f) => f.phase),
+      [...Array<string>(6).fill("awakening"), ...Array<string>(109).fill("learning")],
+    );
+    // The readings are untouched: charted as logged.
+    assert.strictEqual(frames[frames.length - 1].primaryMetricValue, 0.00357);
+  });
+
+  test("the unsteady story is told in the run's language", () => {
+    const text = fixture("diffusers_lora_real.log");
+    const wants: Record<string, string[]> = {
+      fr: ["changé de sens 34 fois", "50 dernières", "de 66%", "Étape suivante"],
+      fa: ["34 بار تغییر جهت", "50 خوانش اخیر", "66%", "گام بعدی"],
+    };
+    for (const [locale, phrases] of Object.entries(wants)) {
+      const engine = new StandaloneEngine(undefined, locale);
+      const frames = [...engine.feed(text), ...engine.flush()];
+      const last = frames[frames.length - 1].narrative;
+      for (const phrase of phrases) assert.ok(last.includes(phrase), `${locale}: ${last}`);
+    }
+  });
+
+  test("the other step-counted runs are graded as before", () => {
+    for (const [name, grade, basis] of [
+      ["nanogpt_real.log", "A-", "improvement"],
+      ["pytorch_imagenet_real.log", "A-", "thresholds"],
+    ]) {
+      const { frames } = told(fixture(name));
+      const last = frames[frames.length - 1];
+      assert.deepStrictEqual([last.grade, last.gradeBasis], [grade, basis], name);
+      assert.ok(frames.every((f) => f.gradeNote !== "unsteady"), name);
+    }
+  });
+
   test("a bar still being drawn is read as it arrives", () => {
     const engine = new StandaloneEngine();
     const bar = (n: number, post: string): string =>

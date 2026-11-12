@@ -84,7 +84,8 @@
     },
     "gradeNotes": {
       "few_readings": "Provisoire : cette note repose sur moins de cinq mesures de la métrique.",
-      "still_improving": "Encore en progrès à la dernière mesure — la note montre où l'exécution est arrivée, pas où elle allait."
+      "still_improving": "Encore en progrès à la dernière mesure — la note montre où l'exécution est arrivée, pas où elle allait.",
+      "unsteady": "Non noté : les mesures de cette métrique montent et descendent trop de l'une à la suivante pour qu'une seule situe l'entraînement."
     }
   },
   "compare": {

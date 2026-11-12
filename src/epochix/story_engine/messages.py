@@ -21,6 +21,15 @@ MESSAGES: dict[str, dict[str, str]] = {
         "{best}. A lower learning rate or gradient clipping may help.",
         "warn_divergence_cleared": "Training loss fell to {new}, below the {best} it "
         "reached before the rise, so the rise did not last.",
+        # A training loss whose readings cannot be compared one with another
+        # (story_engine/steadiness.py): a jump is measured against the highest
+        # reading there has been, and a warning raised on one reading's jump
+        # is withdrawn once the readings show that is how this loss moves.
+        "warn_above": "Training loss reached {new}, more than 10 times the highest "
+        "reading before it ({high}). A lower learning rate or gradient clipping may help.",
+        "warn_divergence_unsteady": "Training loss changed direction {turns} times in its "
+        "last {readings} readings and typically differs by {step} from one to the next, "
+        "so one jump does not show that it is diverging.",
         "warn_overfit": "Validation loss has risen for two readings in a row while "
         "training loss kept falling, so the model may be memorising "
         "its training data. Next step: stop at the best validation "
@@ -43,6 +52,8 @@ MESSAGES: dict[str, dict[str, str]] = {
         "and the label mapping.",
         "next_diverged": "Next step: lower the learning rate or clip the gradients, and "
         "restart from a checkpoint saved at or before epoch {last_epoch}.",
+        "next_unsteady": "Next step: log a validation metric, or this one averaged over "
+        "many batches, for readings that can be compared.",
         "warn_lr_drop": "Learning rate decreased from {old} to {new}.",
         "ms_best": "New best: {value}",
         "ms_crossed": "Crossed {pct}%: {value}",
@@ -89,6 +100,13 @@ MESSAGES: dict[str, dict[str, str]] = {
         "و نگاشت برچسب‌ها را.",
         "next_diverged": "گام بعدی: نرخ یادگیری را کاهش دهید یا گرادیان‌ها را برش دهید، "
         "و از نقطهٔ ذخیره‌ای در دوره {last_epoch} یا پیش از آن دوباره شروع کنید.",
+        "next_unsteady": "گام بعدی: یک سنجهٔ اعتبارسنجی ثبت کنید، یا میانگین همین سنجه "
+        "روی دسته‌های بسیار را، تا خوانش‌ها با هم قابل مقایسه باشند.",
+        "warn_above": "خطای آموزش به {new} رسید، بیش از ۱۰ برابر بالاترین اندازه‌گیری "
+        "پیش از آن ({high}). نرخ یادگیری پایین‌تر یا برش گرادیان ممکن است کمک کند.",
+        "warn_divergence_unsteady": "خطای آموزش در {readings} خوانش اخیر {turns} بار تغییر "
+        "جهت داده و معمولاً {step} با خوانش قبلی فرق دارد؛ پس یک جهش به‌تنهایی نشان "
+        "نمی‌دهد که واگرا می‌شود.",
         "warn_lr_drop": "نرخ یادگیری از {old} به {new} کاهش یافت.",
         "ms_best": "بهترین مقدار تازه: {value}",
         "ms_crossed": "از {pct}% گذشت: {value}",
@@ -140,6 +158,14 @@ MESSAGES: dict[str, dict[str, str]] = {
         "next_diverged": "Étape suivante : réduisez le taux d'apprentissage ou écrêtez "
         "les gradients, et reprenez depuis un point de contrôle de l'époque {last_epoch} "
         "ou antérieur.",
+        "next_unsteady": "Étape suivante : enregistrez une métrique de validation, ou "
+        "celle-ci moyennée sur de nombreux lots, pour des mesures comparables entre elles.",
+        "warn_above": "La perte d'entraînement a atteint {new}, soit plus de 10 fois sa "
+        "plus haute mesure précédente ({high}). Un taux d'apprentissage plus bas ou un "
+        "écrêtage des gradients peut aider.",
+        "warn_divergence_unsteady": "La perte d'entraînement a changé de sens {turns} fois "
+        "sur ses {readings} dernières mesures et diffère typiquement de {step} de l'une à "
+        "la suivante : un seul saut ne montre pas qu'elle diverge.",
         "warn_lr_drop": "Le taux d'apprentissage est passé de {old} à {new}.",
         "ms_best": "Nouveau meilleur résultat : {value}",
         "ms_crossed": "Seuil de {pct} % franchi : {value}",

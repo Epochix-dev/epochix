@@ -87,7 +87,7 @@ class Warning(BaseModel):
 # Why a frame's letter deserves less weight than it looks, derived from the
 # log alone. None when there is nothing to qualify. The surfaces render it in
 # the reader's language; see story_engine.grade.grade_note.
-GradeNote = Literal["few_readings", "still_improving"]
+GradeNote = Literal["few_readings", "still_improving", "unsteady"]
 
 # How a frame's letter was reached: against fixed thresholds (built in, or a
 # project's own), or by how far the metric improved since its first reading.
