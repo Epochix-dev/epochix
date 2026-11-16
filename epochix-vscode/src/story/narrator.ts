@@ -9,6 +9,7 @@
 import type { Phase } from "./phases";
 import type { TaskType } from "./grader";
 import {
+  COUNTER_FORMS,
   LOCALES,
   MESSAGES,
   METRIC_SPLIT_WORDS,
@@ -16,10 +17,11 @@ import {
   PHASE_TEMPLATES,
   PROSE_ASSUMES,
   SPECIAL_TEMPLATES,
+  type Counter,
   type Locale,
 } from "./narratives.generated";
 
-export type { Locale };
+export type { Counter, Locale };
 
 /** A locale the templates exist for, or English. */
 export function resolveLocale(locale: string | undefined): Locale {
@@ -54,6 +56,8 @@ export interface NarrateOptions {
   /** The series the numbers came from, e.g. "val_loss". */
   metric?: string;
   locale?: string;
+  /** What the number in `epoch` counts; the sentence names it by that. */
+  counter?: Counter | null;
 }
 
 /**
@@ -80,6 +84,22 @@ export function displayMetric(metric: string | undefined, locale?: string): stri
   return metric.replace(/_/g, " ");
 }
 
+/**
+ * Fill a template's counter placeholders ({Counter}, {at_counter}, …) with
+ * the forms for what the run counts by — mirrors counter_words. Null is a
+ * frame with nothing in its epoch slot: worded as an epoch, as every frame
+ * used to be.
+ */
+export function counterWords(
+  text: string, counter: Counter | null | undefined, locale?: string,
+): string {
+  const forms = COUNTER_FORMS[resolveLocale(locale)][counter ?? "epoch"];
+  for (const [name, word] of Object.entries(forms)) {
+    text = text.split(`{${name}}`).join(word);
+  }
+  return text;
+}
+
 function fmtEpoch(epoch: number | null): string {
   return epoch !== null ? String(Math.trunc(epoch)) : "?";
 }
@@ -97,7 +117,7 @@ export function narrate(opts: NarrateOptions): string {
   const deltaPct =
     opts.delta !== 0 ? (opts.delta >= 0 ? "+" : "") + (opts.delta * 100).toFixed(1) : "0";
 
-  return pick(templates, opts.runId)
+  return counterWords(pick(templates, opts.runId), opts.counter, loc)
     .replace(/\{epoch\}/g, fmtEpoch(opts.epoch))
     .replace(/\{value\}/g, opts.primaryValue.toFixed(4))
     .replace(/\{delta_pct\}/g, deltaPct)
@@ -113,22 +133,24 @@ export function narrate(opts: NarrateOptions): string {
 
 export function narratePastPeak(o: {
   epoch: number | null; value: number; best: number;
-  bestEpoch: number | null; runId: string; locale?: string;
+  bestEpoch: number | null; runId: string; locale?: string; counter?: Counter | null;
 }): string {
   const bestAt = fmtEpoch(o.bestEpoch);
-  const story = pick(SPECIAL_TEMPLATES[resolveLocale(o.locale)].pastPeak, o.runId)
+  const loc = resolveLocale(o.locale);
+  const story = counterWords(pick(SPECIAL_TEMPLATES[loc].pastPeak, o.runId), o.counter, loc)
     .replace(/\{epoch\}/g, fmtEpoch(o.epoch))
     .replace(/\{value\}/g, o.value.toFixed(4))
     .replace(/\{best\}/g, o.best.toFixed(4))
     .replace(/\{best_epoch\}/g, bestAt);
-  return `${story} ${message("next_pastpeak", o.locale, { best_epoch: bestAt })}`;
+  return `${story} ${message("next_pastpeak", o.locale, { best_epoch: bestAt }, o.counter)}`;
 }
 
 export function narrateStalled(o: {
   epoch: number | null; value: number; baseline: number;
-  epochsSeen: number; runId: string; locale?: string;
+  epochsSeen: number; runId: string; locale?: string; counter?: Counter | null;
 }): string {
-  const story = pick(SPECIAL_TEMPLATES[resolveLocale(o.locale)].stalled, o.runId)
+  const loc = resolveLocale(o.locale);
+  const story = counterWords(pick(SPECIAL_TEMPLATES[loc].stalled, o.runId), o.counter, loc)
     .replace(/\{epoch\}/g, fmtEpoch(o.epoch))
     .replace(/\{value\}/g, o.value.toFixed(4))
     .replace(/\{baseline\}/g, o.baseline.toFixed(4))
@@ -138,16 +160,16 @@ export function narrateStalled(o: {
 
 export function narrateDiverged(o: {
   epoch: number | null; metric: string; lastValue: number;
-  lastEpoch: number | null; runId: string; locale?: string;
+  lastEpoch: number | null; runId: string; locale?: string; counter?: Counter | null;
 }): string {
   const loc = resolveLocale(o.locale);
   const lastAt = fmtEpoch(o.lastEpoch);
-  const story = pick(SPECIAL_TEMPLATES[loc].diverged, o.runId)
+  const story = counterWords(pick(SPECIAL_TEMPLATES[loc].diverged, o.runId), o.counter, loc)
     .replace(/\{epoch\}/g, fmtEpoch(o.epoch))
     .replace(/\{last_epoch\}/g, lastAt)
     .replace(/\{value\}/g, o.lastValue.toFixed(4))
     .replace(/\{metric\}/g, displayMetric(o.metric, loc));
-  return `${story} ${message("next_diverged", loc, { last_epoch: lastAt })}`;
+  return `${story} ${message("next_diverged", loc, { last_epoch: lastAt }, o.counter)}`;
 }
 
 /**
@@ -158,9 +180,10 @@ export function narrateDiverged(o: {
 export function narrateUnsteady(o: {
   epoch: number | null; value: number; metric: string;
   turns: number; readings: number; step: string; runId: string; locale?: string;
+  counter?: Counter | null;
 }): string {
   const loc = resolveLocale(o.locale);
-  const story = pick(SPECIAL_TEMPLATES[loc].unsteady, o.runId)
+  const story = counterWords(pick(SPECIAL_TEMPLATES[loc].unsteady, o.runId), o.counter, loc)
     .replace(/\{epoch\}/g, fmtEpoch(o.epoch))
     .replace(/\{value\}/g, o.value.toFixed(4))
     .replace(/\{metric\}/g, displayMetric(o.metric, loc))
@@ -189,12 +212,16 @@ export function narrateSingleReading(o: {
 /**
  * A warning or milestone message in the story's language — mirrors
  * story_engine/messages.py. These were English literals, so a Farsi or
- * French run showed English in its warning strip and timeline.
+ * French run showed English in its warning strip and timeline. `counter` is
+ * what the run counts by, for a message that names it.
  */
 export function message(
   key: string, locale: string | undefined, fields: Record<string, string> = {},
+  counter: Counter | null = null,
 ): string {
-  let text = MESSAGES[resolveLocale(locale)][key] ?? MESSAGES.en[key] ?? key;
+  // A message taken from the English table takes the English forms.
+  const loc = MESSAGES[resolveLocale(locale)][key] === undefined ? "en" : resolveLocale(locale);
+  let text = counterWords(MESSAGES[loc][key] ?? key, counter, loc);
   for (const [name, value] of Object.entries(fields)) {
     text = text.split(`{${name}}`).join(value);
   }

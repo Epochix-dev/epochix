@@ -13,6 +13,8 @@ from pathlib import Path
 
 import pytest
 
+from epochix.story_engine.messages import COUNTER_FORMS
+
 TEMPLATES = Path(__file__).parents[2] / "src" / "epochix" / "story_engine" / "templates"
 LOCALES = ("fa", "fr")
 
@@ -41,6 +43,18 @@ def test_every_template_is_translated(locale: str) -> None:
     assert not missing, f"templates with no {locale} translation: {missing}"
 
 
+def _fields(text: str, locale: str) -> set[str]:
+    """A template's placeholders, every form of the counter's name as one.
+
+    Each language names the counter in the forms its own grammar needs
+    (messages.COUNTER_FORMS): "{at_counter}" in French where English writes
+    "at {counter}". A form the language's table does not hold stays as it is,
+    and so is reported.
+    """
+    forms = COUNTER_FORMS[locale]["epoch"]
+    return {"<counter>" if name in forms else name for name in _PLACEHOLDER.findall(text)}
+
+
 @pytest.mark.parametrize("locale", LOCALES)
 def test_translations_use_the_same_placeholders(locale: str) -> None:
     """A translation that drops {value} or invents {foo} breaks narrate()'s
@@ -50,8 +64,8 @@ def test_translations_use_the_same_placeholders(locale: str) -> None:
         tr = en.with_name(f"{en.stem}.{locale}.txt")
         if not tr.is_file():
             continue  # covered by the completeness test
-        en_keys = set(_PLACEHOLDER.findall(en.read_text(encoding="utf-8")))
-        tr_keys = set(_PLACEHOLDER.findall(tr.read_text(encoding="utf-8")))
+        en_keys = _fields(en.read_text(encoding="utf-8"), "en")
+        tr_keys = _fields(tr.read_text(encoding="utf-8"), locale)
         extra = tr_keys - en_keys
         if extra:
             problems.append(f"{tr.relative_to(TEMPLATES)}: unknown placeholders {sorted(extra)}")

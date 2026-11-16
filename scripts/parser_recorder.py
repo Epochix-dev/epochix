@@ -14,6 +14,9 @@ integration test is the corpus test's business, and would make the file huge.
 Each test's calls are grouped by the context they share. A context that came
 to its first call carrying state the extension's context cannot hold — any
 ``extra`` entry — is left out and counted, not guessed at.
+
+A call that put something other than an epoch in the epoch slot records what
+it said the number counts (``count_by``): the story names it by that.
 """
 
 from __future__ import annotations
@@ -30,7 +33,7 @@ import pytest
 
 from epochix.models import RawMetric
 from epochix.parsers.accelerate import AccelerateParser
-from epochix.parsers.base import LINE_CLAIMED, BaseParser, ParserContext
+from epochix.parsers.base import COUNTED_BY, LINE_CLAIMED, BaseParser, ParserContext
 from epochix.parsers.boosting import BoostingParser
 from epochix.parsers.fastai import FastAIParser
 from epochix.parsers.huggingface import HFParser
@@ -106,11 +109,17 @@ def _wrap_parse(original: Callable[..., list[RawMetric]]) -> Callable[..., Any]:
             return original(self, line, ctx)
         seq = _sequence(ctx)
         before = ctx.extra.pop(LINE_CLAIMED, None)
+        counted_before = ctx.extra.pop(COUNTED_BY, None)
         at = ctx.seq
         out = original(self, line, ctx)
         claimed = bool(ctx.extra.get(LINE_CLAIMED))
         if before is not None and not claimed:
             ctx.extra[LINE_CLAIMED] = before
+        # What the parser said this line counts by (a round, a step), if it
+        # is not an epoch; what an earlier line said is the caller's to keep.
+        counted = ctx.extra.get(COUNTED_BY)
+        if counted_before is not None and counted is None:
+            ctx.extra[COUNTED_BY] = counted_before
         if seq is not None:
             seq["events"].append(
                 {
@@ -120,6 +129,7 @@ def _wrap_parse(original: Callable[..., list[RawMetric]]) -> Callable[..., Any]:
                     "out": _metrics(out),
                     "claimed": claimed,
                     "state": _state(ctx),
+                    "counted": counted,
                 }
             )
         return out

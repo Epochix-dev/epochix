@@ -134,8 +134,8 @@ python train_xgb.py 2>&1 | epochix --live
 [9]	validation_0-logloss:0.12455	validation_1-logloss:0.28033
 ```
 ↓
-> **Past its best: 0.2611 at epoch 6, now 0.2803. The later epochs are not
-> improving on it. Next step: keep the checkpoint from epoch 6 if one was
+> **Past its best: 0.2611 at round 6, now 0.2803. The later rounds are not
+> improving on it. Next step: keep the checkpoint from round 6 if one was
 > saved, and use early stopping on this metric so the next run ends there.**
 <!-- /readme-example:xgboost -->
 

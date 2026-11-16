@@ -1,2 +1,2 @@
-Awakening: EER {value_pct} at epoch {epoch}.
-Epoch {epoch}: EER {value_pct}, in the Awakening phase.
+Awakening: EER {value_pct} at {counter} {epoch}.
+{Counter} {epoch}: EER {value_pct}, in the Awakening phase.

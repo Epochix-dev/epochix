@@ -24,6 +24,7 @@ the story is a loss told by step.
 from __future__ import annotations
 
 import asyncio
+import re
 from collections import Counter
 from pathlib import Path
 
@@ -365,3 +366,72 @@ def test_the_step_bar_parser_leaves_other_bars_alone() -> None:
     for line in others:
         assert _read(parser, line, ctx) == ([], False)
     assert parser.sniff(others) == 0.0
+
+
+# ── The counter is named for what it is ──────────────────────────────────────
+
+CATBOOST = LOGS / "catboost_real_classifier.log"
+# The word for an epoch in each language the story is told in.
+_EPOCH = {"en": "epoch", "fr": "poque", "fa": "دوره"}
+# What each run counts by, and the last number it counts to.
+_COUNTS = {NANOGPT: ("step", 2000), CATBOOST: ("round", 59), LORA: ("step", 120)}
+
+
+@pytest.mark.parametrize("locale", ["en", "fr", "fa"])
+@pytest.mark.parametrize("log", sorted(_COUNTS), ids=lambda p: p.stem)
+def test_a_run_without_epochs_is_told_by_its_own_counter(log: Path, locale: str) -> None:
+    """ "Epoch 2000: validation loss 1.8857" was told of nanoGPT's step 2000,
+    "Epoch 59" of CatBoost's round 59, and "at epoch 120" of a LoRA's step 120.
+
+    Which sentence a run draws depends on its id, so nothing here is one
+    sentence's wording: every reading must name its counter in one of the
+    forms the language has for it, and no sentence may name an epoch.
+    """
+    from epochix.story_engine.messages import COUNTER_FORMS
+
+    assert log.stat().st_size > 0
+    kind, last = _COUNTS[log]
+    forms = COUNTER_FORMS[locale][kind]  # type: ignore[index]
+    for run_id in ("s", "a-second-run", "third"):
+        store = RunStore(":memory:")
+        asyncio.run(
+            run_pipeline(
+                ingester=FileBatchIngester(run_id, str(log)),
+                run_id=run_id,
+                store=store,
+                hub=Hub(),
+                locale=locale,
+            )
+        )
+        frames = store.get_story_frames(run_id)
+        assert len(frames) >= 9
+        assert frames[-1].epoch == last and frames[-1].counter == kind
+        for frame in frames:
+            # Followed by a number: this reading's, or the one its best was at.
+            named = [rf"{re.escape(form)} \d" for form in forms.values()]
+            assert any(re.search(n, frame.narrative) for n in named), frame.narrative
+        assert any(f"{form} {last}" in frames[-1].narrative for form in forms.values())
+        told = [f.narrative for f in frames]
+        told += [w.message for f in frames for w in f.warnings]
+        told += [m.message for f in frames for m in f.milestones]
+        # None of these runs has an epoch, in any sentence of its story.
+        assert not [text for text in told if _EPOCH[locale] in text.lower()]
+
+
+def test_check_counts_what_the_run_counts(tmp_path: Path) -> None:
+    """ "epochs seen 201" for nanoGPT's 201 iterations, and 60 for 60 rounds."""
+    from typer.testing import CliRunner
+
+    from epochix.cli import app
+
+    runner = CliRunner()
+    for log, seen in (
+        (NANOGPT, "iterations seen 201"),
+        (CATBOOST, "rounds seen   60"),
+        (LORA, "steps seen    120"),
+        (IMAGENET, "epochs seen   "),
+    ):
+        result = runner.invoke(app, ["check", str(log)])
+        assert result.exit_code == 0, result.output
+        assert seen in result.output, result.output
+        assert ("epochs seen" in result.output) == (log is IMAGENET), result.output

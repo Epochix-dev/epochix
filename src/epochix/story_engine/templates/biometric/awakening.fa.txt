@@ -1,2 +1,2 @@
-بیداری: EER {value_pct} در دوره {epoch}.
-دوره {epoch}: EER {value_pct}، در مرحلهٔ بیداری.
+بیداری: EER {value_pct} در {counter} {epoch}.
+{counter} {epoch}: EER {value_pct}، در مرحلهٔ بیداری.

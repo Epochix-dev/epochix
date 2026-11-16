@@ -1,2 +1,2 @@
-Maîtrise : {metric} {value}° à l'époque {epoch} — au moins trois quarts de moins qu'à la première mesure.
-Époque {epoch} : {metric} {value}°, soit {delta} par rapport à la mesure précédente. Sa valeur est désormais un quart de la première mesure, ou moins.
+Maîtrise : {metric} {value}° {at_counter} {epoch} — au moins trois quarts de moins qu'à la première mesure.
+{Counter} {epoch} : {metric} {value}°, soit {delta} par rapport à la mesure précédente. Sa valeur est désormais un quart de la première mesure, ou moins.

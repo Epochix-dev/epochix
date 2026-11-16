@@ -11,7 +11,7 @@
  * step is the run's x-axis and the bar's total its length. The rationale is
  * in the Python file.
  */
-import { claim, type Parser, type ParserContext, type RawMetric } from "./base";
+import { claim, countBy, type Parser, type ParserContext, type RawMetric } from "./base";
 import { isSetting } from "./neverMetrics";
 import { NEVER_METRICS } from "../story/engineTables.generated";
 
@@ -78,7 +78,7 @@ export class StepBarParser implements Parser {
     const step = parseInt(bar[1], 10);
     const total = parseInt(bar[2], 10);
     ctx.currentStep = step;
-    ctx.currentEpoch = step;
+    countBy(ctx, "step", step);
     if (total > 0) ctx.totalEpochs = total;
 
     const metrics: RawMetric[] = [];

@@ -1,2 +1,2 @@
-بیداری: {metric} {value}° در دوره {epoch}.
-دوره {epoch}: {metric} {value}°، در مرحلهٔ بیداری.
+بیداری: {metric} {value}° در {counter} {epoch}.
+{counter} {epoch}: {metric} {value}°، در مرحلهٔ بیداری.

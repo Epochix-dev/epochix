@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Protocol, runtime_checkable
+from typing import Protocol, cast, runtime_checkable
 
-from epochix.models import RawMetric
+from epochix.models import Counter, RawMetric
 
 
 @dataclass
@@ -28,6 +28,33 @@ def claim(ctx: ParserContext) -> list[RawMetric]:
     """Mark the current line as recognised-but-empty; returns no metrics."""
     ctx.extra[LINE_CLAIMED] = True
     return []
+
+
+# Set in ``ctx.extra`` by a parser that puts something other than an epoch in
+# ``current_epoch`` — a boosting round, an iteration, a step — naming what it
+# is. Cleared after every line, as LINE_CLAIMED is: it says what THIS line
+# counted by, so the kind always belongs to whoever wrote the number last.
+COUNTED_BY = "counted_by"
+
+
+def count_by(ctx: ParserContext, counter: Counter, value: float) -> None:
+    """Put *value* in the epoch slot and say what it counts."""
+    ctx.current_epoch = value
+    ctx.extra[COUNTED_BY] = counter
+
+
+def counter_after(ctx: ParserContext, before: float | None, current: Counter) -> Counter:
+    """What the epoch slot counts once a line has been read.
+
+    *before* is the slot as it stood before the line and *current* what it
+    counted then. A parser that wrote a round or a step said so (`count_by`);
+    one that moved the slot and said nothing wrote an epoch; a line that left
+    the slot alone changes nothing.
+    """
+    said = cast("Counter | None", ctx.extra.pop(COUNTED_BY, None))
+    if said is not None:
+        return said
+    return "epoch" if ctx.current_epoch != before else current
 
 
 @runtime_checkable

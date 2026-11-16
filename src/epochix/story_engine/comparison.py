@@ -22,12 +22,13 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 from epochix.story_engine.grade import metric_lower_better
+from epochix.story_engine.messages import counter_words
 from epochix.story_engine.narrator import _load_special
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
 
-    from epochix.models import Run, StoryFrame
+    from epochix.models import Counter, Run, StoryFrame
 
 # A gap must exceed this multiple of the runs' own median epoch-to-epoch
 # movement before it is called a difference. Two runs of the same config
@@ -47,6 +48,8 @@ class RunTrajectory:
     primary_metric: str
     values: list[tuple[float, float]]  # (epoch, value), in epoch order
     grade: str | None = None
+    # What the first number of each pair counts (StoryFrame.counter).
+    counter: Counter | None = None
 
     @property
     def lower_better(self) -> bool:
@@ -138,14 +141,21 @@ def narrate_comparison(runs: list[RunTrajectory], locale: str = "en") -> str:
         # This named the first two runs given, so with three the sentence
         # could quote the best-to-worst gap between a pair it did not describe.
         pair = [r for r in usable if r is winner or r is loser]
+        # The movement is from one reading to the next. That is one epoch only
+        # where both runs count epochs; any other counter says "reading".
+        counted = [r.counter for r in pair if r.counter not in (None, "epoch")]
         return _fill(
-            _load_special(
-                "_compare_noise",
+            counter_words(
+                _load_special(
+                    "_compare_noise",
+                    locale,
+                    "{a} and {b} finished within {gap} of each other ({metric}), which is "
+                    "no larger than the {counter_to_counter} movement in either run. On "
+                    "this evidence there is no meaningful difference between them.",
+                )[0],
+                counted[0] if counted else None,
                 locale,
-                "{a} and {b} finished within {gap} of each other ({metric}), which is "
-                "no larger than the epoch-to-epoch movement in either run. On this "
-                "evidence there is no meaningful difference between them.",
-            )[0],
+            ),
             a=pair[0].name,
             b=pair[1].name,
             gap=_fmt(gap),
@@ -172,13 +182,17 @@ def narrate_comparison(runs: list[RunTrajectory], locale: str = "en") -> str:
         recovered = abs(best_value - winner.final_value)
         parts.append(
             _fill(
-                _load_special(
-                    "_compare_pastpeak",
+                counter_words(
+                    _load_special(
+                        "_compare_pastpeak",
+                        locale,
+                        "{loser} peaked at {best} on {counter} {best_epoch} and ended "
+                        "worse, at {lose_value}. Had it stopped at its best the gap would "
+                        "have been {recovered} rather than {gap}.",
+                    )[0],
+                    loser.counter,
                     locale,
-                    "{loser} peaked at {best} on epoch {best_epoch} and ended worse, at "
-                    "{lose_value}. Had it stopped at its best the gap would have been "
-                    "{recovered} rather than {gap}.",
-                )[0],
+                ),
                 loser=loser.name,
                 best=_fmt(best_value),
                 best_epoch=_epoch(best_epoch),
@@ -234,6 +248,7 @@ def trajectory_from_frames(
         return None
 
     values: list[tuple[float, float]] = []
+    counter: Counter | None = None
     for frame in frames:
         if dominant is not None and getattr(frame, "primary_metric", None) != dominant:
             continue
@@ -242,6 +257,7 @@ def trajectory_from_frames(
         if epoch is None or value is None:
             continue
         values.append((float(epoch), float(value)))
+        counter = getattr(frame, "counter", None)
 
     if len(values) < 2:
         return None
@@ -251,6 +267,7 @@ def trajectory_from_frames(
         primary_metric=dominant or fallback_metric or "",
         values=values,
         grade=grade,
+        counter=counter,
     )
 
 

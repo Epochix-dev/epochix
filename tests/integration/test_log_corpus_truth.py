@@ -123,6 +123,32 @@ def test_the_final_letter_and_phase(name: str) -> None:
     assert (last.phase.value if last else None) == want["final_phase"]
 
 
+@pytest.mark.parametrize("name", sorted(TRUTH))
+def test_what_the_run_counts_by(name: str) -> None:
+    """A boosting round, an iteration and a step were each told as an epoch.
+
+    Every frame of a log counts by the one thing its truth entry names — a
+    recorded nanoGPT run by steps, although its `iter` rows share the slot —
+    and a frame with nothing in its epoch slot counts by nothing.
+    """
+    store = RunStore(":memory:")
+    asyncio.run(
+        run_pipeline(
+            ingester=FileBatchIngester("c", str(LOGS[name])), run_id="c", store=store, hub=Hub()
+        )
+    )
+    frames = store.get_story_frames("c")
+    want = TRUTH[name]["counter"]
+    assert {f.counter for f in frames} == ({want} if frames else set())
+    assert all((f.counter is None) == (f.epoch is None) for f in frames)
+
+
+def test_the_corpus_has_a_run_of_each_kind_it_can() -> None:
+    # Or the test above passes on "epoch" alone.
+    kinds = {t["counter"] for t in TRUTH.values()}
+    assert {"epoch", "round", "step", None} <= kinds, kinds
+
+
 def test_one_story_metric_per_run() -> None:
     """The first frame is not a different series from the rest."""
     for name in ("pytorch_lightning_30ep.log", "keras_short.log", "pl_high_accuracy.log"):

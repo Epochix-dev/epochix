@@ -96,11 +96,19 @@ GradeNote = Literal["few_readings", "still_improving", "unsteady"]
 # which was false of each one graded on improvement.
 GradeBasis = Literal["thresholds", "improvement"]
 
+# What the number in a frame's `epoch` slot counts. A run with no epochs has
+# its own counter there — a boosting round, an iteration, a step — and the
+# story called every one of them an epoch. Set where the parser reads the
+# number (parsers.base.count_by) and carried to the frame; None when the slot
+# is empty, and on a frame stored before this was recorded.
+Counter = Literal["epoch", "step", "iteration", "round"]
+
 
 class StoryFrame(BaseModel):
     run_id: str
     seq: int
     epoch: float | None = None
+    counter: Counter | None = None
     progress: float = Field(ge=0.0, le=1.0)
     phase: Phase
     grade: Grade

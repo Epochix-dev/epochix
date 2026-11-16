@@ -1,2 +1,2 @@
-Awakening: mAP50 {value_pct} at epoch {epoch}.
-Epoch {epoch}: mAP50 {value_pct}, in the Awakening phase.
+Awakening: mAP50 {value_pct} at {counter} {epoch}.
+{Counter} {epoch}: mAP50 {value_pct}, in the Awakening phase.

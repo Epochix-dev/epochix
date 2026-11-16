@@ -1,2 +1,2 @@
-Awakening: IoU {value} at epoch {epoch}.
-Epoch {epoch}: IoU {value}, in the Awakening phase.
+Awakening: IoU {value} at {counter} {epoch}.
+{Counter} {epoch}: IoU {value}, in the Awakening phase.

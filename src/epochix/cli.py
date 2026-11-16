@@ -862,9 +862,10 @@ def cmd_check(
         typer.echo(f"No such file: {log_file}", err=True)
         raise typer.Exit(1)
 
+    from epochix.models import Counter
     from epochix.normalizer import normalize
     from epochix.parsers.architecture_parser import parse_architecture
-    from epochix.parsers.base import ParserContext
+    from epochix.parsers.base import ParserContext, counter_after
     from epochix.parsers.registry import SNIFF_SAMPLE_LINES, detect_parser
     from epochix.pipeline import _clean_line
     from epochix.story_engine import story_metric
@@ -873,6 +874,7 @@ def cmd_check(
         configured_path,
         load_grade_config,
     )
+    from epochix.story_engine.messages import counter_words
     from epochix.story_engine.task_classifier import classify_task
 
     raw_lines = log_file.read_text(encoding="utf-8", errors="replace").splitlines()
@@ -887,10 +889,15 @@ def cmd_check(
     found: dict[str, list[float]] = {}
     seen_keys: set[str] = set()
     epochs: set[float] = set()
+    # What the run counts by: 201 iterations were reported as "epochs seen 201".
+    counter: Counter = "epoch"
 
     for i, line in enumerate(lines):
         ctx.seq = i
-        for raw in parser.parse_line(line, ctx):
+        slot = ctx.current_epoch
+        raw_metrics = parser.parse_line(line, ctx)
+        counter = counter_after(ctx, slot, counter)
+        for raw in raw_metrics:
             try:
                 event = normalize(raw, run_id="check")
             except ValueError:
@@ -934,7 +941,8 @@ def cmd_check(
     typer.echo(f"  lines         {len(lines)}")
     typer.echo(f"  parser        {parser.name}")
     typer.echo(f"  task          {task.value}")
-    typer.echo(f"  epochs seen   {len(epochs) or '-'}")
+    seen = f"{counter_words('{counters}', counter)} seen"
+    typer.echo(f"  {seen:<13} {len(epochs) or '-'}")
     typer.echo("")
 
     if found:

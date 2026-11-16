@@ -1,2 +1,2 @@
-Awakening: accuracy {value_pct} at epoch {epoch}.
-Epoch {epoch}: accuracy {value_pct}, in the Awakening phase.
+Awakening: accuracy {value_pct} at {counter} {epoch}.
+{Counter} {epoch}: accuracy {value_pct}, in the Awakening phase.

@@ -8,7 +8,7 @@ from typing import cast
 from epochix.models import RawMetric
 from epochix.normalizer.canonical_keys import canonicalize_key, is_recognised
 from epochix.parsers._never_metrics import NEVER_METRICS, VALUE_DECIDES
-from epochix.parsers.base import ParserContext, claim
+from epochix.parsers.base import COUNTED_BY, ParserContext, claim, count_by
 from epochix.parsers.registry import register_parser
 
 # Pattern 1: key=value
@@ -77,7 +77,7 @@ _ROW_LEADER = re.compile(
 # Deliberately excludes `step` and `batch`: those count WITHIN an epoch, and a
 # framework that prints "Step 500 …" before its first epoch line would
 # otherwise have the run's epoch pinned to 500.
-_ITERATION_LEADER = re.compile(r"^\s*(?:iter|iteration|round)\s+(\d{1,9})\b", re.IGNORECASE)
+_ITERATION_LEADER = re.compile(r"^\s*(iter|iteration|round)\s+(\d{1,9})\b", re.IGNORECASE)
 
 # A line of settings, not of results: Python source echoed to the console.
 # nanoGPT prints its whole config file and then one line per override before it
@@ -322,7 +322,12 @@ class UniversalParser:
             # run to iteration 1, because after the first row current_epoch was
             # no longer None and every later row was ignored.
             ctx.extra["axis"] = "iteration"
-            ctx.current_epoch = float(it.group(1))
+            # Named by the word the row itself opens with.
+            count_by(
+                ctx,
+                "round" if it.group(1).lower() == "round" else "iteration",
+                float(it.group(2)),
+            )
 
         # Blank out model configuration before anything reads the line. Spaces,
         # so every span below still lines up with the original.
@@ -438,7 +443,7 @@ class UniversalParser:
                 )
             ):
                 ctx.extra.setdefault("axis", "step")
-                ctx.current_epoch = float(leader.group(2))
+                count_by(ctx, "step", float(leader.group(2)))
 
         # Pass 1 — control keys (epoch/step) take effect BEFORE any metric on
         # this line is stamped. They can legitimately appear last: the SDK
@@ -454,6 +459,9 @@ class UniversalParser:
             if key_lo in _EPOCH_KEYS:
                 claimed.add(key_lo)
                 ctx.current_epoch = val
+                # "step 40: epoch=2 loss=…" — the row names its epoch, and
+                # that is what its readings are stamped with.
+                ctx.extra.pop(COUNTED_BY, None)
             elif key_lo in _STEP_KEYS:
                 claimed.add(key_lo)
                 ctx.current_step = int(val)

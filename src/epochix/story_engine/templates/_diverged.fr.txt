@@ -1,3 +1,3 @@
-Époque {epoch} : {metric} est devenu indéfini (NaN). L'entraînement a divergé — la dernière valeur exploitable était {value} à l'époque {last_epoch}.
-{metric} n'est plus un nombre à l'époque {epoch}. L'entraînement a divergé ; la dernière valeur réelle était {value} à l'époque {last_epoch}.
-L'entraînement a divergé à l'époque {epoch} : {metric} n'est plus un nombre. Rien après l'époque {last_epoch} ({value}) n'est lisible.
+{Counter} {epoch} : {metric} est devenu indéfini (NaN). L'entraînement a divergé — la dernière valeur exploitable était {value} {at_counter} {last_epoch}.
+{metric} n'est plus un nombre {at_counter} {epoch}. L'entraînement a divergé ; la dernière valeur réelle était {value} {at_counter} {last_epoch}.
+L'entraînement a divergé {at_counter} {epoch} : {metric} n'est plus un nombre. Rien après {the_counter} {last_epoch} ({value}) n'est lisible.

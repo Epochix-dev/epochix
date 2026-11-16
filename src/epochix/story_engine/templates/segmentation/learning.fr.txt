@@ -1,2 +1,2 @@
-L'entraînement est en cours : IoU {value} à l'époque {epoch}, à 1 % près de son meilleur niveau jusqu'ici.
-Époque {epoch} : IoU {value}, soit {delta} par rapport à la mesure précédente. La phase d'apprentissage se poursuit.
+L'entraînement est en cours : IoU {value} {at_counter} {epoch}, à 1 % près de son meilleur niveau jusqu'ici.
+{Counter} {epoch} : IoU {value}, soit {delta} par rapport à la mesure précédente. La phase d'apprentissage se poursuit.

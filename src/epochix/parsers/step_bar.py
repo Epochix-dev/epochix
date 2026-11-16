@@ -30,7 +30,7 @@ import re
 
 from epochix.models import RawMetric
 from epochix.parsers._never_metrics import NEVER_METRICS, is_setting
-from epochix.parsers.base import ParserContext, claim
+from epochix.parsers.base import ParserContext, claim, count_by
 from epochix.parsers.registry import register_parser
 
 _NUM = r"[-+]?\d+(?:\.\d+)?(?:[eE][-+]?\d+)?"
@@ -109,7 +109,7 @@ class StepBarParser:
 
         step, total = int(bar.group(1)), int(bar.group(2))
         ctx.current_step = step
-        ctx.current_epoch = float(step)
+        count_by(ctx, "step", float(step))
         if total > 0:
             ctx.total_epochs = total
 

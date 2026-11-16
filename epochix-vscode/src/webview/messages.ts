@@ -8,6 +8,7 @@
 import type { Phase } from "../story/phases";
 import type { Grade, TaskType } from "../story/grader";
 import type { GradeBasis } from "../story/grading.generated";
+import type { Counter } from "../story/narratives.generated";
 
 // ── Shared data shapes ────────────────────────────────────────────────────────
 
@@ -15,6 +16,9 @@ export interface StoryFrameMsg {
   runId: string;
   seq: number;
   epoch: number | null;
+  /** What the number in `epoch` counts — an epoch, a step, an iteration, a
+   *  boosting round. Null when the slot is empty. Mirrors StoryFrame.counter. */
+  counter: Counter | null;
   progress: number;
   phase: Phase;
   grade: Grade;
@@ -44,7 +48,7 @@ export interface GradeBandsMsg {
 }
 
 export type GradeNote = "few_readings" | "still_improving" | "unsteady";
-export type { GradeBasis };
+export type { Counter, GradeBasis };
 
 export interface MilestoneMsg {
   kind: string;

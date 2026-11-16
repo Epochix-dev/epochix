@@ -5,7 +5,8 @@ import random
 from pathlib import Path
 
 from epochix.enums import Phase, TaskType
-from epochix.story_engine.messages import message
+from epochix.models import Counter
+from epochix.story_engine.messages import counter_words, message
 
 # Template variants per task × phase (loaded lazily, cached)
 _template_cache: dict[str, list[str]] = {}
@@ -56,6 +57,7 @@ def narrate_past_peak(
     best_epoch: float | None,
     run_id: str,
     locale: str = "en",
+    counter: Counter | None = None,
 ) -> str:
     """Say the run is past its best instead of calling it "peak form".
 
@@ -66,7 +68,7 @@ def narrate_past_peak(
     """
     templates = _load_special("_pastpeak", locale, "The run is past its best value.")
     seed = int(hashlib.md5(run_id.encode(), usedforsecurity=False).hexdigest()[:8], 16)
-    template = random.Random(seed).choice(templates)
+    template = counter_words(random.Random(seed).choice(templates), counter, locale)
     best_at = str(int(best_epoch)) if best_epoch is not None else "?"
     story = (
         template.replace("{epoch}", str(int(epoch)) if epoch is not None else "?")
@@ -74,7 +76,7 @@ def narrate_past_peak(
         .replace("{best}", f"{best_value:.4f}")
         .replace("{best_epoch}", best_at)
     )
-    return f"{story} {message('next_pastpeak', locale, best_epoch=best_at)}"
+    return f"{story} {message('next_pastpeak', locale, counter, best_epoch=best_at)}"
 
 
 def narrate_single_reading(
@@ -111,6 +113,7 @@ def narrate_unsteady(
     run_id: str,
     locale: str = "en",
     metric: str | None = None,
+    counter: Counter | None = None,
 ) -> str:
     """Say what the readings are, and why one of them does not place the run.
 
@@ -121,10 +124,10 @@ def narrate_unsteady(
     comparison measures the luck of a batch.
     """
     templates = _load_special(
-        "_unsteady", locale, "Epoch {epoch}: {metric} {value}. One reading says little here."
+        "_unsteady", locale, "{Counter} {epoch}: {metric} {value}. One reading says little here."
     )
     seed = int(hashlib.md5(run_id.encode(), usedforsecurity=False).hexdigest()[:8], 16)
-    template = random.Random(seed).choice(templates)
+    template = counter_words(random.Random(seed).choice(templates), counter, locale)
     story = (
         template.replace("{epoch}", str(int(epoch)) if epoch is not None else "?")
         .replace("{value}", f"{primary_value:.4f}")
@@ -162,6 +165,7 @@ def narrate_stalled(
     epochs_seen: int,
     run_id: str,
     locale: str = "en",
+    counter: Counter | None = None,
 ) -> str:
     """Narrate a run that is not learning — honestly, instead of encouragement.
 
@@ -172,7 +176,7 @@ def narrate_stalled(
     """
     templates = _load_stalled(locale)
     seed = int(hashlib.md5(run_id.encode(), usedforsecurity=False).hexdigest()[:8], 16)
-    template = random.Random(seed).choice(templates)
+    template = counter_words(random.Random(seed).choice(templates), counter, locale)
     story = (
         template.replace("{epoch}", str(int(epoch)) if epoch is not None else "?")
         .replace("{value}", f"{primary_value:.4f}")
@@ -207,6 +211,7 @@ def narrate_diverged(
     last_epoch: float | None,
     run_id: str,
     locale: str = "en",
+    counter: Counter | None = None,
 ) -> str:
     """Narrate a run that ended with a NaN/infinite metric.
 
@@ -217,7 +222,7 @@ def narrate_diverged(
     """
     templates = _load_diverged(locale)
     seed = int(hashlib.md5(run_id.encode(), usedforsecurity=False).hexdigest()[:8], 16)
-    template = random.Random(seed).choice(templates)
+    template = counter_words(random.Random(seed).choice(templates), counter, locale)
     last_at = str(int(last_epoch)) if last_epoch is not None else "?"
     story = (
         template.replace("{epoch}", str(int(epoch)) if epoch is not None else "?")
@@ -225,7 +230,7 @@ def narrate_diverged(
         .replace("{value}", "?" if last_value is None else f"{last_value:.4f}")
         .replace("{metric}", _display_metric(metric, locale))
     )
-    return f"{story} {message('next_diverged', locale, last_epoch=last_at)}"
+    return f"{story} {message('next_diverged', locale, counter, last_epoch=last_at)}"
 
 
 # Most task template sets name their metric in the prose — "Accuracy
@@ -300,8 +305,12 @@ def narrate(
     run_id: str,
     locale: str = "en",
     metric: str | None = None,
+    counter: Counter | None = None,
 ) -> str:
     """Select and fill a narrative template deterministically for this run + epoch.
+
+    ``counter`` is what the number in ``epoch`` counts — an epoch, a step, an
+    iteration, a boosting round — and the sentence names it by that.
 
     ``metric`` names the series the numbers came from. The regression and gaze
     templates used to write "MAE" into the sentence regardless, so an XGBoost
@@ -315,7 +324,7 @@ def narrate(
     # MD5 here is a non-cryptographic seed only (not a security primitive).
     seed = int(hashlib.md5(run_id.encode(), usedforsecurity=False).hexdigest()[:8], 16)
     rng = random.Random(seed)
-    template = rng.choice(templates)
+    template = counter_words(rng.choice(templates), counter, locale)
 
     epoch_str = str(int(epoch)) if epoch is not None else "?"
     delta_str = f"{delta:+.4f}" if delta != 0 else "0"

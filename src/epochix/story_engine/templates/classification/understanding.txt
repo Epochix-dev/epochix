@@ -1,3 +1,3 @@
-The run is taking shape: accuracy {value_pct} at epoch {epoch}, at or within 1% of its best so far.
-Epoch {epoch}: accuracy {value_pct}, a change of {delta_pct} points since the previous reading. The run has reached its understanding phase.
-Understanding: accuracy {value_pct} at epoch {epoch} — holding at, or within 1% of, the best this run has reached.
+The run is taking shape: accuracy {value_pct} at {counter} {epoch}, at or within 1% of its best so far.
+{Counter} {epoch}: accuracy {value_pct}, a change of {delta_pct} points since the previous reading. The run has reached its understanding phase.
+Understanding: accuracy {value_pct} at {counter} {epoch} — holding at, or within 1% of, the best this run has reached.

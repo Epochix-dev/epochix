@@ -108,9 +108,16 @@ def test_the_xgboost_example_is_what_the_engine_says(tmp_path: Path) -> None:
     best = min(series, key=lambda f: f.primary_metric_value)  # a log loss: lower is better
     variants = _phrasings(
         lambda rid: narrate_past_peak(
-            last.epoch, last.primary_metric_value, best.primary_metric_value, best.epoch, rid
+            last.epoch,
+            last.primary_metric_value,
+            best.primary_metric_value,
+            best.epoch,
+            rid,
+            counter=last.counter,
         )
     )
+    # XGBoost counts boosting rounds, and the README must not call them epochs.
+    assert last.counter == "round"
     assert quote in variants, f"{quote!r} is not what the engine says for this log"
     assert last.narrative in variants, "premise: the run did go past its peak"
 

@@ -1,2 +1,2 @@
-بیداری: IoU {value} در دوره {epoch}.
-دوره {epoch}: IoU {value}، در مرحلهٔ بیداری.
+بیداری: IoU {value} در {counter} {epoch}.
+{counter} {epoch}: IoU {value}، در مرحلهٔ بیداری.

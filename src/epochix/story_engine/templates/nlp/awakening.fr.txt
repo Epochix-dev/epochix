@@ -1,2 +1,2 @@
-Éveil : perplexité {value} à l'époque {epoch}.
-Époque {epoch} : perplexité {value}, en phase d'éveil.
+Éveil : perplexité {value} {at_counter} {epoch}.
+{Counter} {epoch} : perplexité {value}, en phase d'éveil.

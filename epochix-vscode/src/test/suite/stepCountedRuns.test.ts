@@ -17,6 +17,7 @@ import * as path from "path";
 import * as vscode from "vscode";
 
 import { stepBarRedraws } from "../../parsers/stepBar";
+import { COUNTER_FORMS, LOCALES, type Counter } from "../../story/narratives.generated";
 import { StandaloneEngine } from "../../webview/StandaloneEngine";
 import type { StoryFrameMsg } from "../../webview/messages";
 
@@ -37,6 +38,62 @@ function told(text: string): { engine: StandaloneEngine; frames: StoryFrameMsg[]
 
 const range = (from: number, to: number, by = 1): number[] =>
   Array.from({ length: Math.floor((to - from) / by) + 1 }, (_, i) => from + i * by);
+
+const escaped = (s: string): string => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+// The word for an epoch in each language the story is told in. Farsi's is not
+// the plural of "دور" (round), "دورها", which begins with the same letters.
+const EPOCH_WORD: Record<string, RegExp> = { en: /epoch/i, fr: /[ée]poque/i, fa: /دوره(?!ا)/ };
+
+suite("A run without epochs is told by its own counter", () => {
+  // "Epoch 2000: validation loss 1.8857" was told of nanoGPT's step 2000,
+  // "Epoch 59" of CatBoost's round 59, and "at epoch 120" of a LoRA's step 120.
+  const runs: Array<[string, Counter, number]> = [
+    ["nanogpt_real.log", "step", 2000],
+    ["catboost_real_classifier.log", "round", 59],
+    ["diffusers_lora_real.log", "step", 120],
+  ];
+  for (const [name, kind, last] of runs) {
+    for (const locale of LOCALES) {
+      test(`${name} in ${locale}`, () => {
+        const text = fixture(name);
+        const forms = Object.values(COUNTER_FORMS[locale][kind]);
+        // Which sentence a run draws depends on its id, which is new each
+        // time: every reading must name its counter in one of the forms the
+        // language has for it, whichever sentence it drew.
+        for (let i = 0; i < 3; i++) {
+          const engine = new StandaloneEngine(undefined, locale);
+          const frames = [...engine.feed(text), ...engine.flush()];
+          assert.ok(frames.length >= 9, `${frames.length} frames`);
+          const final = frames[frames.length - 1];
+          assert.deepStrictEqual([final.epoch, final.counter], [last, kind]);
+          assert.deepStrictEqual([...new Set(frames.map((f) => f.counter))], [kind]);
+          for (const f of frames) {
+            assert.ok(
+              forms.some((form) => new RegExp(`${escaped(form)} \\d`).test(f.narrative)),
+              f.narrative,
+            );
+          }
+          assert.ok(forms.some((form) => final.narrative.includes(`${form} ${last}`)), final.narrative);
+          const told = [
+            ...frames.map((f) => f.narrative),
+            ...engine.warnings().map((w) => w.message),
+            ...engine.milestones().map((m) => m.message),
+          ];
+          // None of these runs has an epoch, in any sentence of its story.
+          assert.deepStrictEqual(told.filter((t) => EPOCH_WORD[locale].test(t)), []);
+        }
+      });
+    }
+  }
+
+  test("a run that prints epochs is still told by them", () => {
+    const engine = new StandaloneEngine();
+    const frames = [...engine.feed(fixture("pytorch_imagenet_real.log")), ...engine.flush()];
+    assert.deepStrictEqual([...new Set(frames.map((f) => f.counter))], ["epoch"]);
+    assert.ok(/epoch \d/i.test(frames[frames.length - 1].narrative));
+  });
+});
 
 suite("Runs that count steps", () => {
   test("nanoGPT is told by its validation loss, step by step", () => {

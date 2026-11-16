@@ -1,2 +1,2 @@
-Éveil : IoU {value} à l'époque {epoch}.
-Époque {epoch} : IoU {value}, en phase d'éveil.
+Éveil : IoU {value} {at_counter} {epoch}.
+{Counter} {epoch} : IoU {value}, en phase d'éveil.

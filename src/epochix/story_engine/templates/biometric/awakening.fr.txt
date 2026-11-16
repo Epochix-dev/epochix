@@ -1,2 +1,2 @@
-Éveil : EER {value_pct} à l'époque {epoch}.
-Époque {epoch} : EER {value_pct}, en phase d'éveil.
+Éveil : EER {value_pct} {at_counter} {epoch}.
+{Counter} {epoch} : EER {value_pct}, en phase d'éveil.

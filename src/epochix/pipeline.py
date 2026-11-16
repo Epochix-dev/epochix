@@ -29,7 +29,7 @@ from epochix.enums import TaskType
 from epochix.models import RawMetric, Run
 from epochix.normalizer import normalize
 from epochix.normalizer.canonical_keys import canonicalize_key, is_recognised
-from epochix.parsers.base import LINE_CLAIMED, ParserContext
+from epochix.parsers.base import COUNTED_BY, LINE_CLAIMED, ParserContext, counter_after
 from epochix.parsers.registry import SNIFF_SAMPLE_LINES, detect_parser, get_registry
 from epochix.parsers.step_bar import step_bar_redraws
 from epochix.scrub import scrub_secrets
@@ -167,6 +167,9 @@ def _fallback_metrics(
             # step stays put — that is the counter prose can move.
             ctx.current_epoch = scratch.current_epoch
             ctx.total_epochs = scratch.total_epochs
+            # ... and what that number counts, if it is not an epoch.
+            if COUNTED_BY in scratch.extra:
+                ctx.extra[COUNTED_BY] = scratch.extra[COUNTED_BY]
             return metrics
     return []
 
@@ -220,6 +223,7 @@ def _emit_line(
 
     Returns the epoch from the last frame emitted (or None if no frame).
     """
+    slot = ctx.current_epoch
     raw_metrics = parser.parse_line(text, ctx)
     # A parser that recognises a line as its own and reads no result from it —
     # a progress bar caught mid-epoch, the reprint of a round already told —
@@ -229,6 +233,9 @@ def _emit_line(
     claimed = bool(ctx.extra.pop(LINE_CLAIMED, False))
     if not raw_metrics and fallback and not claimed:
         raw_metrics = _fallback_metrics(fallback, text, ctx)
+    # What the number these readings are stamped with counts: the story names
+    # a step a step and a boosting round a round, not an epoch.
+    engine.counter = counter_after(ctx, slot, engine.counter)
 
     # No parser can return this as a metric, so look for it on the raw line.
     non_finite = _NON_FINITE_ASSIGNMENT.search(text)

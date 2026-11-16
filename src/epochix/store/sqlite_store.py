@@ -86,6 +86,9 @@ story_frames_table = Table(
     Column("grade_note", String),
     # How the letter was reached: "thresholds", "improvement", or NULL.
     Column("grade_basis", String),
+    # What the epoch column counts: "epoch", "step", "iteration", "round", or
+    # NULL where it is empty and on frames stored before this was recorded.
+    Column("counter", String),
     Column("narrative", Text),
     Column("metaphor_json", Text),
     Column("skill_json", Text),
@@ -172,6 +175,7 @@ class RunStore:
                 ("story_frames", "task_type", "TEXT"),
                 ("story_frames", "grade_note", "TEXT"),
                 ("story_frames", "grade_basis", "TEXT"),
+                ("story_frames", "counter", "TEXT"),
             ):
                 info = cur.execute(f"PRAGMA table_info({table})").fetchall()
                 if not info:
@@ -450,6 +454,7 @@ class RunStore:
                     "confidence": frame.confidence,
                     "grade_note": frame.grade_note,
                     "grade_basis": frame.grade_basis,
+                    "counter": frame.counter,
                     "narrative": frame.narrative,
                     "metaphor_json": json.dumps([m.model_dump() for m in frame.metaphor_cards]),
                     "skill_json": json.dumps(frame.skill_dimensions),
@@ -500,6 +505,7 @@ class RunStore:
                     confidence=r.confidence or 0.0,
                     grade_note=r.grade_note,
                     grade_basis=r.grade_basis,
+                    counter=r.counter,
                     narrative=r.narrative or "",
                     metaphor_cards=[MetaphorCard(**m) for m in json.loads(r.metaphor_json or "[]")],
                     skill_dimensions=json.loads(r.skill_json or "{}"),

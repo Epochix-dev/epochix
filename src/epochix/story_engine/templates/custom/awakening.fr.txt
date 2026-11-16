@@ -1,2 +1,2 @@
-Éveil : {metric} {value} à l'époque {epoch}.
-Époque {epoch} : {metric} {value}, en phase d'éveil.
+Éveil : {metric} {value} {at_counter} {epoch}.
+{Counter} {epoch} : {metric} {value}, en phase d'éveil.

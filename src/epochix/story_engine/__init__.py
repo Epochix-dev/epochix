@@ -7,6 +7,7 @@ from itertools import groupby
 
 from epochix.enums import Grade, Phase, TaskType
 from epochix.models import (
+    Counter,
     GradeBasis,
     MetaphorCard,
     MetricEvent,
@@ -26,7 +27,7 @@ from epochix.story_engine.grade import (
     is_lower_better,
     metric_lower_better,
 )
-from epochix.story_engine.messages import message
+from epochix.story_engine.messages import counter_words, message
 from epochix.story_engine.milestones import MilestoneTracker
 from epochix.story_engine.narrator import (
     _display_metric,
@@ -298,6 +299,10 @@ class StoryEngine:
     total_epochs: int | None = None
     locale: str = "en"
     grade_config: GradeConfig | None = None  # loaded from .epochix.yaml
+    # What the number in an event's `epoch` slot counts. The pipeline keeps it
+    # in step with the parser, line by line (parsers.base.counter_after), as
+    # it does `total_epochs`; an event pushed by the SDK names an epoch.
+    counter: Counter = "epoch"
 
     _seen_keys: set[str] = field(default_factory=set, init=False)
     # Keys on the line being processed, announced before its events arrive
@@ -327,7 +332,11 @@ class StoryEngine:
     # are buffered here and replayed once emission begins, so early epochs aren't
     # silently dropped from the story (grade-arc chart / stat chip). Each keeps
     # how many readings every metric had when it arrived; see _replay_warmup.
-    _warmup: list[tuple[MetricEvent, dict[str, int]]] = field(default_factory=list, init=False)
+    # ... and what its epoch slot counted then: the frames are built later,
+    # by which time a nanoGPT run has gone from a `step` row to an `iter` one.
+    _warmup: list[tuple[MetricEvent, dict[str, int], Counter]] = field(
+        default_factory=list, init=False
+    )
     _started: bool = field(default=False, init=False)
     # (metric key, epoch) of the first non-numeric reading the log reported.
     # A MetricEvent's value is a FiniteFloat, so a NaN can never travel as one
@@ -449,7 +458,9 @@ class StoryEngine:
         # events so early primary-metric epochs produce frames too (previously
         # anything logged in the first <3 events was lost from the story).
         if not self._started:
-            self._warmup.append((event, {key: len(h) for key, h in self._metric_history.items()}))
+            self._warmup.append(
+                (event, {key: len(h) for key, h in self._metric_history.items()}, self.counter)
+            )
             if self._events_count < 3:
                 return []
             self._started = True
@@ -457,7 +468,7 @@ class StoryEngine:
             return self._replay_warmup()
 
         self._ensure_milestones()
-        f = self._emit(event)
+        f = self._emit(event, self.counter)
         return [f] if f is not None else []
 
     def _replay_warmup(self) -> list[StoryFrame]:
@@ -472,11 +483,11 @@ class StoryEngine:
         history = self._metric_history
         frames: list[StoryFrame] = []
         try:
-            for buffered, lengths in self._warmup:
+            for buffered, lengths, counted_by in self._warmup:
                 self._metric_history = {
                     key: values[: lengths.get(key, 0)] for key, values in history.items()
                 }
-                frame = self._emit(buffered)
+                frame = self._emit(buffered, counted_by)
                 if frame is not None:
                     frames.append(frame)
         finally:
@@ -579,11 +590,13 @@ class StoryEngine:
             last_epoch=prev.epoch,
             run_id=self.run_id,
             locale=self.locale,
+            counter=prev.counter,
         )
         frame = StoryFrame(
             run_id=self.run_id,
             seq=last_seq + 1,
             epoch=prev.epoch,
+            counter=prev.counter,
             # The run did not get further along by failing.
             progress=prev.progress,
             phase=prev.phase,
@@ -622,11 +635,17 @@ class StoryEngine:
                 locale=self.locale,
             )
 
-    def _emit(self, event: MetricEvent) -> StoryFrame | None:
-        """Build a StoryFrame for a primary-metric event, or None otherwise."""
+    def _emit(self, event: MetricEvent, counted_by: Counter) -> StoryFrame | None:
+        """Build a StoryFrame for a primary-metric event, or None otherwise.
+
+        *counted_by* is what the event's epoch slot counted when it arrived.
+        """
         primary_key = self._effective_primary_key()
         if event.canonical_key != primary_key:
             return None  # only emit frames on primary metric updates
+        # Nothing in the slot, nothing counted: a script that fits once and
+        # prints a score has no counter to name.
+        counter: Counter | None = counted_by if event.epoch is not None else None
 
         assert self._milestones is not None  # callers run _ensure_milestones first
         primary_value = event.value
@@ -873,6 +892,7 @@ class StoryEngine:
                 run_id=self.run_id,
                 locale=self.locale,
                 metric=primary_key,
+                counter=counter,
             )
         elif stalled and self._baseline is not None:
             narrative = narrate_stalled(
@@ -882,6 +902,7 @@ class StoryEngine:
                 epochs_seen=epochs_seen,
                 run_id=self.run_id,
                 locale=self.locale,
+                counter=counter,
             )
         elif past_peak and self._best_primary is not None:
             narrative = narrate_past_peak(
@@ -891,6 +912,7 @@ class StoryEngine:
                 best_epoch=self._best_epoch,
                 run_id=self.run_id,
                 locale=self.locale,
+                counter=counter,
             )
         else:
             narrative = narrate(
@@ -902,6 +924,7 @@ class StoryEngine:
                 run_id=self.run_id,
                 locale=self.locale,
                 metric=primary_key,
+                counter=counter,
             )
 
         milestones = self._milestones.check(
@@ -926,6 +949,7 @@ class StoryEngine:
             lr=last("lr"),
             direction_known=not direction_unknown,
             train_swing=unsteady(self._metric_history.get("train_loss", ())),
+            counter=counter,
         )
 
         # Build skill dimensions (radar data)
@@ -940,13 +964,14 @@ class StoryEngine:
             shown = "NaN" if primary_value is None else f"{primary_value:.4g}"
             narrative = (
                 f"{primary_key} reported {shown}, which {reason}. "
-                f"No reading is given for this epoch."
+                f"No reading is given for this {counter_words('{counter}', counter)}."
             )
 
         frame = StoryFrame(
             run_id=self.run_id,
             seq=event.seq,
             epoch=event.epoch,
+            counter=counter,
             progress=advancement,
             phase=phase,
             grade=grade,
@@ -1072,4 +1097,5 @@ class StoryEngine:
         """Return final milestones. Call when training stream ends."""
         if self._milestones is None:
             return []
-        return self._milestones.finalize(last_seq, last_epoch)
+        counter = self._prev_frame.counter if self._prev_frame is not None else None
+        return self._milestones.finalize(last_seq, last_epoch, counter)

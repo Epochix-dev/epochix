@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 
 from epochix.enums import TaskType
-from epochix.models import Milestone
+from epochix.models import Counter, Milestone
 from epochix.story_engine.grade import is_unit_bounded
 from epochix.story_engine.messages import message
 
@@ -131,7 +131,9 @@ class MilestoneTracker:
 
         return fired
 
-    def finalize(self, seq: int, epoch: float | None) -> list[Milestone]:
+    def finalize(
+        self, seq: int, epoch: float | None, counter: Counter | None = None
+    ) -> list[Milestone]:
         """Call at end-of-run to emit biggest_jump + training_complete."""
         result: list[Milestone] = []
 
@@ -146,7 +148,9 @@ class MilestoneTracker:
                     kind="biggest_jump",
                     epoch=epoch,
                     value=max_delta,
-                    message=message("ms_biggest_jump", self.locale, value=f"{max_delta:.4f}"),
+                    message=message(
+                        "ms_biggest_jump", self.locale, counter, value=f"{max_delta:.4f}"
+                    ),
                 )
             )
 

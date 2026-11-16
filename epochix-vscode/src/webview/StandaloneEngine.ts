@@ -5,7 +5,7 @@
  * (no Python sidecar).  Mirrors the high-level logic of pipeline.py.
  */
 import type { Parser, ParserContext, RawMetric } from "../parsers/base";
-import { makeContext } from "../parsers/base";
+import { counterAfter, makeContext, type Counter } from "../parsers/base";
 import { PytorchLightningParser } from "../parsers/pytorchLightning";
 import { KerasParser } from "../parsers/keras";
 import { HuggingFaceParser } from "../parsers/huggingface";
@@ -223,12 +223,15 @@ function fallbackMetrics(
       meterEpoch: null,
       meterTrainAccuracy: null,
       stepBarValues: null,
+      countedBy: null,
       lineClaimed: false,
     };
     const metrics = fallback.parseLine(line, scratch).filter((m) => isRecognised(m.key));
     if (metrics.length > 0) {
       ctx.currentEpoch = scratch.currentEpoch;
       ctx.totalEpochs = scratch.totalEpochs;
+      // ... and what that number counts, if it is not an epoch.
+      if (scratch.countedBy !== null) ctx.countedBy = scratch.countedBy;
       return metrics;
     }
   }
@@ -304,6 +307,9 @@ interface WarmupLine {
   metrics: RawMetric[];
   epoch: number | null;
   totalEpochs: number | null;
+  /** What the epoch slot counted when the line arrived: nanoGPT's first
+   *  `step` row is built into a frame after the `iter` row that follows it. */
+  counter: Counter;
 }
 
 // A model summary is printed once at the top of a run; scanning further is
@@ -330,6 +336,9 @@ export class StandaloneEngine {
   private _warmup: WarmupLine[] = [];
   private _taskDetected = false;
   private _ctx: ParserContext = makeContext();
+  // What the number in the context's epoch slot counts, kept line by line
+  // (counterAfter) — Python's StoryEngine.counter.
+  private _counter: Counter = "epoch";
 
   private _runId = generateId();
   private _task: TaskType = "custom";
@@ -611,6 +620,7 @@ export class StandaloneEngine {
   /** Parse one line and turn it into a frame (or bank it during warmup). */
   private _processLine(line: string): StoryFrameMsg[] {
     this._ctx.seq++;
+    const slot = this._ctx.currentEpoch;
     let metrics = this._activeParsers![0].parseLine(line, this._ctx);
     // A parser that recognised the line and read no result from it says so;
     // the fallbacks must not read what it declined (as in pipeline.py).
@@ -619,6 +629,9 @@ export class StandaloneEngine {
     if (metrics.length === 0 && !claimed && this._fallbacks.length > 0) {
       metrics = this._fallbackMetrics(line);
     }
+    // What the number these readings are stamped with counts: the story names
+    // a step a step and a boosting round a round, not an epoch.
+    this._counter = counterAfter(this._ctx, slot, this._counter);
 
     // `loss: nan` never reaches the parsers — none of them reads a non-number.
     // Checked on the raw line, requiring `:` or `=` so prose cannot trip it.
@@ -689,6 +702,7 @@ export class StandaloneEngine {
           metrics,
           epoch,
           totalEpochs: this._ctx.totalEpochs,
+          counter: this._counter,
         });
       }
       return this._eventsCount >= WARMUP_EVENTS ? this._drainWarmup(false) : [];
@@ -696,7 +710,7 @@ export class StandaloneEngine {
 
     if (metrics.length === 0) return [];
     this._primaryMetric = primaryMetricFrom(this._task, this._seenKeys);
-    const frame = this._buildFrame(metrics, epoch, this._ctx.totalEpochs);
+    const frame = this._buildFrame(metrics, epoch, this._ctx.totalEpochs, this._counter);
     return frame ? [this._emit(frame)] : [];
   }
 
@@ -734,7 +748,7 @@ export class StandaloneEngine {
 
     const out: StoryFrameMsg[] = [];
     for (const held of this._warmup) {
-      const frame = this._buildFrame(held.metrics, held.epoch, held.totalEpochs);
+      const frame = this._buildFrame(held.metrics, held.epoch, held.totalEpochs, held.counter);
       if (frame) out.push(this._emit(frame));
     }
     this._warmup = [];
@@ -760,7 +774,11 @@ export class StandaloneEngine {
     metrics: RawMetric[],
     epoch: number | null,
     totalEpochs: number | null,
+    countedBy: Counter,
   ): StoryFrameMsg | null {
+    // Nothing in the slot, nothing counted: a script that fits once and
+    // prints a score has no counter to name.
+    const counter: Counter | null = epoch !== null ? countedBy : null;
     const primaryMetrics = metrics.filter(
       (m) => canonicalise(m.key) === this._primaryMetric,
     );
@@ -864,17 +882,17 @@ export class StandaloneEngine {
     } else if (swing !== null) {
       narrative = narrateUnsteady({
         epoch, value, metric: key, turns: swing.turns, readings: swing.readings,
-        step: stepText(swing), runId: this._runId, locale: this._locale,
+        step: stepText(swing), runId: this._runId, locale: this._locale, counter,
       });
     } else if (stalled) {
       narrative = narrateStalled({
         epoch, value, baseline: this._baseline,
-        epochsSeen: this._primaryReadings, runId: this._runId, locale: this._locale,
+        epochsSeen: this._primaryReadings, runId: this._runId, locale: this._locale, counter,
       });
     } else if (pastPeak) {
       narrative = narratePastPeak({
         epoch, value, best: this._best, bestEpoch: this._bestEpoch, runId: this._runId,
-        locale: this._locale,
+        locale: this._locale, counter,
       });
     } else {
       narrative = narrate({
@@ -886,6 +904,7 @@ export class StandaloneEngine {
         runId: this._runId,
         metric: key,
         locale: this._locale,
+        counter,
       });
     }
 
@@ -893,6 +912,7 @@ export class StandaloneEngine {
       runId: this._runId,
       seq: this._ctx.seq,
       epoch,
+      counter,
       progress,
       phase,
       grade,
@@ -977,6 +997,7 @@ export class StandaloneEngine {
       narrative: narrateDiverged({
         epoch, metric, lastValue: prev.primaryMetricValue,
         lastEpoch: prev.epoch, runId: this._runId, locale: this._locale,
+        counter: prev.counter,
       }),
     };
   }
@@ -1039,6 +1060,7 @@ export class StandaloneEngine {
    */
   private _checkWarnings(): void {
     const epoch = this._frames.length ? this._frames[this._frames.length - 1].epoch : null;
+    const counter = this._frames.length ? this._frames[this._frames.length - 1].counter : null;
     const warn = (seen: string, kind: string, message: string): void => {
       if (this._seenMilestones.has(seen)) return;
       this._seenMilestones.add(seen);
@@ -1062,7 +1084,7 @@ export class StandaloneEngine {
           all.length > 0 &&
           (Math.max(...all) - Math.min(...all)) / (Math.abs(all[0]) + 1e-9) < PLATEAU_DELTA;
         const key = !this._directionUnknown && !unmoved ? "warn_plateau" : "warn_plateau_measured";
-        warn("plateau_warning", "plateau", message(key, this._locale));
+        warn("plateau_warning", "plateau", message(key, this._locale, {}, counter));
       } else if (this._seenMilestones.has("plateau_warning")) {
         this._seenMilestones.delete("plateau_warning");
         this._warnings.push({
@@ -1083,7 +1105,7 @@ export class StandaloneEngine {
       const trainFalling = tw.every((x, i) => i === 0 || x < tw[i - 1]);
       if (valRising && trainFalling && !this._seenMilestones.has("overfit_warning")) {
         this._overfitMark = this._bestValLoss;
-        warn("overfit_warning", "overfit", message("warn_overfit", this._locale));
+        warn("overfit_warning", "overfit", message("warn_overfit", this._locale, {}, counter));
       }
     }
 

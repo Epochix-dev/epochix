@@ -13,7 +13,7 @@
 import * as assert from "assert";
 
 import { StandaloneEngine } from "../../webview/StandaloneEngine";
-import { displayMetric, _VARIANTS } from "../../story/narrator";
+import { counterWords, displayMetric, _VARIANTS } from "../../story/narrator";
 import {
   LOCALES,
   PHASE_TEMPLATES,
@@ -48,7 +48,9 @@ function isFilledFrom(text: string, locale: (typeof LOCALES)[number]): boolean {
   ];
   return all.some((t) => {
     let at = 0;
-    for (const piece of t.split(/\{[a-z_]+\}/)) {
+    // The counter's name is a placeholder too ({Counter}, {at_counter}, …):
+    // these runs count epochs, so it is filled with the epoch forms.
+    for (const piece of counterWords(t, "epoch", locale).split(/\{[a-z_]+\}/)) {
       if (!piece) continue;
       const found = text.indexOf(piece, at);
       if (found < 0) return false;
@@ -85,7 +87,7 @@ suite("Stories are told in the configured language", () => {
     for (const locale of LOCALES) {
       test(`${shape}: no placeholder is left unfilled (${locale})`, () => {
         for (const f of frames(lines, locale)) {
-          assert.ok(!/\{[a-z_]+\}/.test(f.narrative), `unfilled placeholder: ${f.narrative}`);
+          assert.ok(!/\{[A-Za-z_]+\}/.test(f.narrative), `unfilled placeholder: ${f.narrative}`);
         }
       });
     }
@@ -171,7 +173,7 @@ suite("Warnings and milestones are told in the configured language", () => {
       assert.deepStrictEqual(other.kinds, en.kinds);
       other.texts.forEach((t, i) => {
         assert.notStrictEqual(t, en.texts[i], `untranslated under ${locale}: ${t}`);
-        assert.ok(!/\{[a-z_]+\}/.test(t), `unfilled placeholder: ${t}`);
+        assert.ok(!/\{[A-Za-z_]+\}/.test(t), `unfilled placeholder: ${t}`);
         if (locale === "fa") assert.ok(PERSIAN.test(t), `English under fa: ${t}`);
       });
     });

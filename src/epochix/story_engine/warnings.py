@@ -6,7 +6,7 @@ from collections.abc import Iterable
 from dataclasses import dataclass, field
 from typing import Literal
 
-from epochix.models import Warning
+from epochix.models import Counter, Warning
 from epochix.story_engine.messages import message
 from epochix.story_engine.narrator import _display_metric
 from epochix.story_engine.steadiness import Swing
@@ -125,6 +125,7 @@ class WarningDetector:
         *,
         direction_known: bool = True,
         train_swing: Swing | None = None,
+        counter: Counter | None = None,
     ) -> list[Warning]:
         warnings: list[Warning] = []
 
@@ -267,7 +268,7 @@ class WarningDetector:
                     Warning(
                         kind="overfit",
                         epoch=epoch,
-                        message=message("warn_overfit", self.locale),
+                        message=message("warn_overfit", self.locale, counter),
                     )
                 )
 
@@ -317,7 +318,9 @@ class WarningDetector:
                     Warning(
                         kind="plateau",
                         epoch=epoch,
-                        message=message(self._plateau_message(direction_known), self.locale),
+                        message=message(
+                            self._plateau_message(direction_known), self.locale, counter
+                        ),
                     )
                 )
             elif not flat and "plateau" in self._fired:

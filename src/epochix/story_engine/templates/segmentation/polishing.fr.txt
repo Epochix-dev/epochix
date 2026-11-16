@@ -1,2 +1,2 @@
-Perfectionnement : IoU {value} à l'époque {epoch} — à 0,05 ou moins d'un recouvrement total.
-Époque {epoch} : IoU {value}, soit {delta} par rapport à la mesure précédente. Dernières retouches, à 1 % près de son meilleur niveau.
+Perfectionnement : IoU {value} {at_counter} {epoch} — à 0,05 ou moins d'un recouvrement total.
+{Counter} {epoch} : IoU {value}, soit {delta} par rapport à la mesure précédente. Dernières retouches, à 1 % près de son meilleur niveau.

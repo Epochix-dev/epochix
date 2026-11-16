@@ -10,7 +10,7 @@
  * Every quantifier is bounded: an unbounded run before a delimiter is O(n^2)
  * on a long line (AGENTS.md).
  */
-import { claim, type Parser, type ParserContext, type RawMetric } from "./base";
+import { claim, countBy, type Parser, type ParserContext, type RawMetric } from "./base";
 import { isRecognised } from "../story/canonical";
 import { isSetting } from "./neverMetrics";
 import {
@@ -36,7 +36,7 @@ const ROW_LEADER = /^\s*(epoch|ep|iter|iteration|step|batch|round)\s+(\d{1,9})\b
 // Python source echoed to the console (nanoGPT's config file and overrides):
 // settings, not results.
 const SOURCE_LINE = /^\s*(?:Overriding\b|[A-Za-z_]\w{0,63}\s+=\s+[^\s#]{1,64}\s+#)/;
-const ITERATION_LEADER = /^\s*(?:iter|iteration|round)\s+(\d{1,9})\b/i;
+const ITERATION_LEADER = /^\s*(iter|iteration|round)\s+(\d{1,9})\b/i;
 const QUALIFIED = new RegExp(
   String.raw`\b(train|training|test|val|valid|validation|eval|holdout)\s+(\w{1,64})\s*[:=]\s*(${NUM})`,
   "gi",
@@ -129,7 +129,8 @@ export class UniversalParser implements Parser {
       (ctx.currentEpoch === null || ctx.axis === "iteration" || ctx.axis === "step")
     ) {
       ctx.axis = "iteration";
-      ctx.currentEpoch = parseFloat(it[1]);
+      // Named by the word the row itself opens with.
+      countBy(ctx, it[1].toLowerCase() === "round" ? "round" : "iteration", parseFloat(it[2]));
     }
 
     let text = line.includes("(") ? line.replace(CONSTRUCTOR, (m) => " ".repeat(m.length)) : line;
@@ -229,7 +230,7 @@ export class UniversalParser implements Parser {
         candidates.some(([key]) => !STEP_KEYS.has(key.toLowerCase()) && isRecognised(key))
       ) {
         if (ctx.axis === null) ctx.axis = "step";
-        ctx.currentEpoch = parseFloat(leader[2]);
+        countBy(ctx, "step", parseFloat(leader[2]));
       }
     }
 
@@ -241,6 +242,8 @@ export class UniversalParser implements Parser {
       if (EPOCH_KEYS.has(lo)) {
         claimed.add(lo);
         ctx.currentEpoch = val;
+        // "step 40: epoch=2 loss=…" — the row names its epoch.
+        ctx.countedBy = null;
       } else if (STEP_KEYS.has(lo)) {
         claimed.add(lo);
         ctx.currentStep = Math.trunc(val);

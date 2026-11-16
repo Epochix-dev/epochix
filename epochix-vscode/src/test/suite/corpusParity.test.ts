@@ -30,6 +30,7 @@ interface Expectation {
   last_value: number | null;
   keys: string[];
   metric_from_epoch: number | null;
+  counter: string | null;
   grade_note: string | null;
   cross_validation: CrossValidation | null;
   final_grade: string | null;
@@ -59,6 +60,7 @@ function run(file: string): Omit<Expectation, "path"> {
     .filter((f) => last !== undefined && f.primaryMetric === last.primaryMetric)
     .map((f) => f.epoch)
     .filter((e): e is number => e !== null);
+  const counters = [...new Set(frames.map((f) => f.counter))];
   return {
     task: last ? last.taskType : "custom",
     metric: last ? last.primaryMetric : null,
@@ -66,6 +68,9 @@ function run(file: string): Omit<Expectation, "path"> {
     last_value: last ? Math.round(last.primaryMetricValue * 1e4) / 1e4 : null,
     keys: keys.sort((a, b) => (a < b ? -1 : a > b ? 1 : 0)),
     metric_from_epoch: starts.length ? Math.min(...starts) : null,
+    // What the run counts by: a boosting round, an iteration and a step were
+    // each told as an epoch. Every frame of a log counts by one thing.
+    counter: counters.length === 1 ? counters[0] : counters.join("+") || null,
     grade_note: last ? last.gradeNote : null,
     cross_validation: engine.crossValidation(),
     final_grade: last ? last.grade : null,
@@ -93,6 +98,7 @@ suite("Corpus parity — the extension reads every log as Python does", () => {
       assert.strictEqual(got.frames, want.frames, "frames");
       assert.strictEqual(got.last_value, want.last_value, "last value");
       assert.strictEqual(got.metric_from_epoch, want.metric_from_epoch, "story metric starts at");
+      assert.strictEqual(got.counter, want.counter, "what the run counts by");
       assert.strictEqual(got.grade_note, want.grade_note, "grade note");
       assert.deepStrictEqual(got.cross_validation, want.cross_validation, "folds");
       assert.strictEqual(got.final_grade, want.final_grade, "final grade");

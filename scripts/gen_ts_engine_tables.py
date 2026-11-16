@@ -39,7 +39,7 @@ from epochix.enums import Grade, Phase, TaskType  # noqa: E402
 from epochix.normalizer import canonical_keys as ck  # noqa: E402
 from epochix.parsers import architecture_parser as arch  # noqa: E402
 from epochix.parsers._never_metrics import NEVER_METRICS, VALUE_DECIDES  # noqa: E402
-from epochix.parsers.base import LINE_CLAIMED, ParserContext  # noqa: E402
+from epochix.parsers.base import COUNTED_BY, LINE_CLAIMED, ParserContext  # noqa: E402
 from epochix.parsers.registry import SNIFF_SAMPLE_LINES, SNIFF_THRESHOLD, get_registry  # noqa: E402
 from epochix.parsers import universal as universal_parser  # noqa: E402
 from epochix.parsers.universal import _NN_REPR_KWARGS  # noqa: E402
@@ -333,7 +333,7 @@ def render_narratives() -> str:
             "_single_reading", loc, "A single result: {metric} {value}. There is no trend to read."
         ),
         "unsteady": lambda loc: narrator._load_special(
-            "_unsteady", loc, "Epoch {epoch}: {metric} {value}. One reading says little here."
+            "_unsteady", loc, "{Counter} {epoch}: {metric} {value}. One reading says little here."
         ),
     }
     lines = [
@@ -404,6 +404,26 @@ def render_narratives() -> str:
         "export const MESSAGES: Readonly<Record<Locale, Readonly<Record<string, string>>>> = {",
     ]
     lines += [f"  {loc}: {_js(messages.MESSAGES[loc])}," for loc in LOCALES]
+    lines += [
+        "};",
+        "",
+        "/** What the number in a frame's epoch slot counts (models.Counter). */",
+        f"export const COUNTERS = {_js(list(messages.COUNTERS))} as const;",
+        "export type Counter = (typeof COUNTERS)[number];",
+        "",
+        "/** The counter's name in every form a sentence takes it in, per locale and",
+        " *  kind (messages.COUNTER_FORMS). Whole forms, written by hand: no form is",
+        " *  built from another. */",
+        "export const COUNTER_FORMS: Readonly<",
+        "  Record<Locale, Readonly<Record<Counter, Readonly<Record<string, string>>>>>",
+        "> = {",
+    ]
+    for loc in LOCALES:
+        lines.append(f"  {loc}: {{")
+        lines += [
+            f"    {kind}: {_js(messages.COUNTER_FORMS[loc][kind])}," for kind in messages.COUNTERS
+        ]
+        lines.append("  },")
     lines += ["};", ""]
     return "\n".join(lines)
 
@@ -843,11 +863,13 @@ def _compact(value: object) -> str:
 
 def _event_row(event: dict[str, Any]) -> list[Any]:
     """A call as a row: [parser, seq, line, out, claimed, [epoch, step,
-    total_epochs] after it], or [parser, "flush", out]."""
+    total_epochs] after it], or [parser, "flush", out]. A seventh item names
+    what the line counted by, when the parser said it was not an epoch."""
     if event.get("flush"):
         return [event["parser"], "flush", event["out"]]
     keys = ("parser", "seq", "line", "out", "claimed", "state")
-    return [event[k] for k in keys]
+    row = [event[k] for k in keys]
+    return [*row, event["counted"]] if event.get("counted") else row
 
 
 def _dump_parsers_golden(tests: dict[str, list[dict[str, Any]]]) -> str:
@@ -898,15 +920,19 @@ def replay_parsers_golden(golden: dict[str, list[dict[str, Any]]]) -> list[str]:
                 if row[1] == "flush":
                     out, want, line = parser.flush(ctx), row[2], "flush"
                 else:
-                    _, ctx.seq, line, want, want_claimed, want_state = row
+                    _, ctx.seq, line, want, want_claimed, want_state, *said = row
+                    want_counted = said[0] if said else None
                     ctx.extra.pop(LINE_CLAIMED, None)
+                    ctx.extra.pop(COUNTED_BY, None)
                     out = parser.parse_line(line, ctx)
                     claimed = bool(ctx.extra.get(LINE_CLAIMED))
+                    counted = ctx.extra.get(COUNTED_BY)
                     state = [_golden_number(ctx.current_epoch), ctx.current_step, ctx.total_epochs]
-                    if (claimed, state) != (want_claimed, want_state):
+                    if (claimed, state, counted) != (want_claimed, want_state, want_counted):
                         wrong.append(
-                            f"{where} {line!r}: claimed/state "
-                            f"{claimed, state} != {want_claimed, want_state}"
+                            f"{where} {line!r}: claimed/state/counted "
+                            f"{claimed, state, counted} != "
+                            f"{want_claimed, want_state, want_counted}"
                         )
                 got = [
                     [m.key, _golden_number(m.value), _golden_number(m.epoch), m.step, m.seq]
