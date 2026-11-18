@@ -77,10 +77,17 @@ trainer.train()
 # Parse a finished log:
 %epochix train.log
 
-# Live mode — runs the next cell through epochix:
+# Live mode — runs this cell and tells its output as it prints:
 %%epochix --live
 !python train.py
 ```
+
+The dashboard appears under the cell and stays up for as long as the kernel
+runs; both magics share it, on port 7860 unless `--port` says otherwise. A
+`%%epochix` cell runs as its own process: either Python, every line, or `!`
+shell commands, every line, with `{variables}` from the notebook expanded in
+them. It runs until the process ends, and interrupting the kernel stops it.
+The story is told from whatever was printed up to then.
 
 ### Python SDK
 
