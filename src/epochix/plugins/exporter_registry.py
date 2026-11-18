@@ -148,6 +148,21 @@ def plugin_exporter(name: str) -> Callable[..., None] | None:
     return _exporter_registry.get(name)
 
 
+def plugin_format(name: str) -> str | None:
+    """The installed plugin format equal to *name*, as its package declared it.
+
+    The same text as *name*, but taken from the registry, not from the caller:
+    a server builds a file name from it, and that name must come from what is
+    installed, never from what a request said. None when no plugin provides
+    *name*, and for a built-in format.
+    """
+    _load_exporter_plugins()
+    for key in _exporter_registry:
+        if key == name and key not in BUILTIN_FORMATS:
+            return key
+    return None
+
+
 def available_formats() -> list[str]:
     """Every format that can be exported: the built-in ones, then plugins'."""
     _load_exporter_plugins()

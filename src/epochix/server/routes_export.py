@@ -245,21 +245,30 @@ async def export_with_plugin_route(run_id: str, fmt: str, store: StoreDep) -> Re
         ExporterFailed,
         available_formats,
         export_with_plugin,
-        plugin_exporter,
+        plugin_format,
     )
 
     _require_run(run_id, store)
-    if plugin_exporter(fmt) is None:
+    # From here on the format is the name the installed package declared, not
+    # the text of the request: the file below is named after it. CodeQL
+    # flagged the first version (py/path-injection), which named the file
+    # from `fmt` itself. Only a registered name got that far, and the
+    # extension cannot hold a separator, but a path built from a request is
+    # wrong in shape even where it cannot be exploited.
+    name = plugin_format(fmt)
+    if name is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"No exporter for {fmt!r}. Formats: {', '.join(available_formats())}.",
         )
-    ext = _UNSAFE_IN_FILENAME.sub("_", fmt)[:32] or "export"
+    # Kept as the extension: an exporter may hand the path to a library that
+    # picks its format from the suffix (matplotlib's savefig does).
+    ext = _UNSAFE_IN_FILENAME.sub("_", name)[:32].strip(".") or "export"
     with tempfile.TemporaryDirectory(prefix="epochix-export-") as tmp:
         out = Path(tmp) / f"export.{ext}"
         try:
             # A plugin's code, of unknown speed: off the event loop.
-            await run_in_threadpool(export_with_plugin, fmt, run_id, store, out)
+            await run_in_threadpool(export_with_plugin, name, run_id, store, out)
         except ExporterFailed as exc:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(exc)
