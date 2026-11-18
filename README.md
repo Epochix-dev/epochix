@@ -223,7 +223,7 @@ trainer = pl.Trainer(callbacks=[StoryCallback()])
 | **i18n** | English · Farsi (RTL) · French — UI *and* story narratives |
 | **VS Code** | Activity-bar panel · one-click demo · terminal auto-detect · run compare · `Ctrl+Alt+M` |
 | **Integrations** | PyTorch Lightning · HuggingFace · Keras · Jupyter magics · TensorBoard · W&B |
-| **Plugin system** | Custom parsers, metaphor packs, task types, exporters via `entry_points` |
+| **Plugin system** | Custom parsers and exporters via `entry_points` |
 
 ---
 

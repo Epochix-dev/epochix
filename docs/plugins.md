@@ -1,19 +1,23 @@
 # Plugins
 
 epochix reads plugins through Python entry points: install a package that
-declares one and epochix finds it, with no change to epochix itself. Two
-groups work today. Two more have a loader and are read by nothing yet.
+declares one and epochix finds it, with no change to epochix itself.
 
 ---
 
 ## Entry-point groups
 
-| Group | Purpose | Read |
-|--|--|--|
-| `epochix.parsers` | Register a custom log parser | Yes |
-| `epochix.exporters` | Add a custom export format | Yes |
-| `epochix.metaphor_packs` | Add domain-specific metaphor cards | **No**: installing one changes nothing |
-| `epochix.tasks` | Register a custom task type with grade thresholds | **No**: installing one changes nothing |
+| Group | Purpose |
+|--|--|
+| `epochix.parsers` | Register a custom log parser |
+| `epochix.exporters` | Add a custom export format |
+
+Earlier versions also documented `epochix.metaphor_packs` and
+`epochix.tasks`. Nothing ever read them, and they are gone: a package that
+declares them is ignored, as it always was. To change a task's grade
+thresholds, use the project's `.epochix.yaml` (template:
+`.epochix.example.yaml`); the dashboard and the VS Code extension both read
+it.
 
 Plugins are read by the Python package: the CLI, the server and the dashboard
 it serves. The VS Code extension tells a run with its own engine, written in
@@ -71,41 +75,6 @@ epochix discovers the parser automatically on next run.
 
 ---
 
-## Writing a metaphor pack
-
-**Not read yet.** Nothing loads the `epochix.metaphor_packs` group: an
-installed pack changes no card. A frame's cards are the engine's own (its
-phase and its grade). A pack's cards would be free text placed beside the
-grade, and epochix holds its own words to what the numbers support, so how a
-pack's words could be held to the same rule is an open question, not a
-missing line of code. The format below is what the loader accepts.
-
-A metaphor pack is a Python package that provides a YAML file with
-alternative narrative cards for a domain.
-
-```yaml
-# my_pack/metaphors.yaml
-task: biometric
-cards:
-  awakening:
-    - title: "Identity awakens"
-      body: "The system sees everyone as the same. EER: {value}."
-      icon: "👁️"
-  learning:
-    - title: "Faces take shape"
-      body: "Broad identity clusters are forming. EER: {value}."
-      icon: "🔍"
-```
-
-Register as:
-
-```toml
-[project.entry-points."epochix.metaphor_packs"]
-my_biometric_pack = "my_pack:METAPHORS_YAML_PATH"
-```
-
----
-
 ## Writing a custom exporter
 
 An exporter is a callable that is given the stored run, its story frames and
@@ -155,19 +124,6 @@ GET /api/export/<run-id>/latex
   written that was not.
 - `epochix export --format <anything>` for a format nobody writes lists every
   format that can be written, the installed plugins' included.
-
----
-
-## Writing a custom task type
-
-**Not read yet.** `epochix.plugins.task_registry.TaskDefinition` and the
-`epochix.tasks` group exist, and nothing reads them: no grading, detection or
-narration code consults the registry, and an installed task changes no grade.
-Task types are a fixed list (`epochix.enums.TaskType`), and the extension's
-engine grades from tables generated from the Python, so a task added by a
-Python plugin would grade one way in the dashboard and another in VS Code.
-To change the thresholds of a task epochix already has, use the project's
-`.epochix.yaml` (see `.epochix.example.yaml`), which both engines read.
 
 ---
 
