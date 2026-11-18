@@ -118,6 +118,7 @@ def test_an_unknown_run_is_refused(tmp_path: Path) -> None:
         build_gif(run_id="does-not-exist", store=store)
 
 
+@pytest.mark.packaged_assets
 def test_the_watermark_carries_the_brand_mark() -> None:
     """The GIF is the artefact that travels, so the mark rides with it.
 
@@ -131,10 +132,11 @@ def test_the_watermark_carries_the_brand_mark() -> None:
     un-skipped every GIF test in CI for the first time.
     """
     from epochix.exporters.gif_export import _MARK_H, _brand_mark
+    from tests._packaged import unavailable
 
     mark = _brand_mark(_MARK_H)
     if mark is None:
-        pytest.skip("brand mark is vendored into the wheel; absent in a source checkout")
+        unavailable("the brand mark")
     assert mark.height == _MARK_H
     assert mark.mode == "RGBA", "needs alpha so the rounded edges composite cleanly"
 

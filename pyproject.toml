@@ -237,6 +237,13 @@ disable_error_code = ["attr-defined"]
 asyncio_mode = "auto"
 testpaths    = ["tests"]
 addopts      = "-q --tb=short"
+markers      = [
+  # Needs what the wheel vendors (the dashboard bundle, the brand mark).
+  # Skips in a source checkout; CI's `packaged-assets` job runs these with
+  # EPOCHIX_REQUIRE_PACKAGED_ASSETS=1, where a skip is a failure. See
+  # tests/_packaged.py.
+  "packaged_assets: needs the assets the wheel vendors",
+]
 # Put the working tree ahead of anything installed. CI runs under `uv run`,
 # which builds from the tree, but a plain `python -m pytest` on a machine with
 # a released epochix in site-packages imports THAT instead — so the suite

@@ -309,6 +309,75 @@ jobs:
               sys.exit("::error::framework/importer tests must all run, none may skip")
           PY
 
+  packaged-assets:
+    # The tests that need what the wheel vendors: the dashboard bundle (HTML
+    # export, including the check that run data cannot break out of its
+    # <script> block) and the brand mark (the GIF watermark). A source
+    # checkout has neither, so they skipped in every other job, and two HTML
+    # route tests accepted a 501 and passed on it. See tests/_packaged.py.
+    #
+    # The wheel is built exactly as release.yml builds it, and its assets are
+    # put where the installed package has them, so these test what ships
+    # (AGENTS.md, "Test what the release builds"), not a copy made here.
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      UV_PYTHON: "3.12"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: cd frontend && npm ci && npm run build
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+      - name: Build the wheel as the release does
+        run: uv build --wheel
+      - name: Put the wheel's assets where the installed package has them
+        run: |
+          uv run --extra dev python - <<'PY'
+          import glob, sys, zipfile
+
+          wheels = glob.glob("dist/*.whl")
+          if len(wheels) != 1:
+              sys.exit(f"::error::expected one wheel, found {wheels}")
+          wanted = ("epochix/_frontend/dist/index.html", "epochix/_brand/mark.png")
+          with zipfile.ZipFile(wheels[0]) as whl:
+              names = whl.namelist()
+              missing = [w for w in wanted if w not in names]
+              if missing:
+                  sys.exit(f"::error::{wheels[0]} does not contain {missing}")
+              assets = [n for n in names if n.startswith(("epochix/_frontend/", "epochix/_brand/"))]
+              whl.extractall("src", members=assets)
+          print(f"{len(assets)} asset files from {wheels[0]} put under src/")
+          PY
+      - name: Run the tests that need them, where a skip is a failure
+        env:
+          EPOCHIX_DB: ":memory:"
+          EPOCHIX_REQUIRE_PACKAGED_ASSETS: "1"
+        run: |
+          uv run --extra dev pytest -m packaged_assets tests/unit tests/integration --junitxml=packaged.xml
+          # pytest exits 0 when everything skips, and -m reports the modules
+          # skipped at collection for a missing optional dependency (torch and
+          # so on) as skips too. So judge the marked tests themselves: every
+          # one collected must have passed, and there must be all of them.
+          uv run --extra dev python - <<'PY'
+          import sys, xml.etree.ElementTree as ET
+
+          root = ET.parse("packaged.xml").getroot()
+          suite = root.find("testsuite") if root.tag == "testsuites" else root
+          ran, bad = [], []
+          for case in suite.iter("testcase"):
+              if not case.get("classname"):
+                  continue  # a module skipped at collection: not a marked test
+              outcome = next((c.tag for c in case if c.tag in ("skipped", "failure", "error")), "passed")
+              (ran if outcome == "passed" else bad).append(f"{case.get('name')} ({outcome})")
+          print(f"packaged-asset tests passed: {len(ran)}")
+          if bad or len(ran) < 5:
+              sys.exit(f"::error::every packaged-asset test must pass here: {bad or 'fewer than 5 ran'}")
+          PY
+
   e2e:
     # Full-pipeline tests (7 demo logs → parser → story engine → store → API).
     # No browser involved — they drive the pipeline and TestClient directly.

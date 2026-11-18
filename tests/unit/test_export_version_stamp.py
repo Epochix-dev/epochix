@@ -12,6 +12,8 @@ import json
 import re
 from typing import TYPE_CHECKING
 
+import pytest
+
 from epochix import __version__, parse
 from epochix.exporters.json_export import build_json_payload
 from epochix.store.sqlite_store import RunStore
@@ -40,23 +42,23 @@ def test_the_json_payload_carries_the_version(tmp_path: Path) -> None:
     assert payload["epochix_version"] == __version__
 
 
+@pytest.mark.packaged_assets
 def test_the_html_export_embeds_it(tmp_path: Path) -> None:
-    """Skipped without a built bundle, as every build_html test here is.
+    """Skipped without a built bundle; run by CI's `packaged-assets` job.
 
     The substance — that the payload carries the version — is asserted by
     ``test_the_json_payload_carries_the_version``, which needs no bundle and so
     runs on every CI cell. This one only adds that it reaches the embedded
     script tag.
     """
-    import pytest
-
     from epochix.exporters.html_export import build_html
+    from tests._packaged import unavailable
 
     run_id, db = _run(tmp_path)
     try:
         html = build_html(run_id, RunStore(db_path=db))
     except FileNotFoundError:
-        pytest.skip("frontend bundle not built")
+        unavailable("the frontend bundle")
     match = re.search(r'<script type="application/json" id="run-data">(.*?)</script>', html, re.S)
     assert match, "no embedded run data in the export"
     assert json.loads(match.group(1))["epochix_version"] == __version__
