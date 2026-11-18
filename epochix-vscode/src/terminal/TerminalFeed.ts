@@ -60,6 +60,16 @@ export class TerminalFeed {
     return backlog;
   }
 
+  /**
+   * Treat the stream as training from here on, though it was not recognised:
+   * the person opened it in the dashboard themselves (terminal/notice.ts).
+   * Whatever was buffered is theirs to replay; it is dropped here.
+   */
+  latch(): void {
+    this._detected = true;
+    this._buffer = "";
+  }
+
   reset(): void {
     this._buffer = "";
     this._detected = false;

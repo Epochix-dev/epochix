@@ -9,19 +9,44 @@
  * Falls back gracefully when shell integration is not available.
  */
 import * as vscode from "vscode";
-import { TerminalFeed } from "./TerminalFeed";
+import { CommandReading } from "./CommandReading";
+import { TerminalNotice } from "./notice";
+import { noticeText } from "./noticeText";
 import { openExternalUrl } from "../util/uri";
+import { panelEngine } from "../webview/panelEngine";
+
+/** How long a command must be silent before what it printed is judged. */
+export const QUIET_MS = 5000;
+/** How often a command that never goes quiet is judged while it runs. */
+export const JUDGE_EVERY_MS = 30000;
+
+export interface WatcherTimings {
+  quietMs?: number;
+  judgeEveryMs?: number;
+}
 
 export class TerminalWatcher implements vscode.Disposable {
-  private readonly _feed = new TerminalFeed();
   private _autoAttached = false;
   private readonly _subscriptions: vscode.Disposable[] = [];
   private _activeTerminal: vscode.Terminal | undefined;
+  private readonly _notice: TerminalNotice;
+  private readonly _quietMs: number;
+  private readonly _judgeEveryMs: number;
 
   constructor(
     private readonly _extensionUri: vscode.Uri,
     private readonly _locale: string,
-  ) {}
+    timings: WatcherTimings = {},
+  ) {
+    this._quietMs = timings.quietMs ?? QUIET_MS;
+    this._judgeEveryMs = timings.judgeEveryMs ?? JUDGE_EVERY_MS;
+    this._notice = new TerminalNotice(_locale);
+  }
+
+  /** The notice saying a command was seen and not told, for tests. */
+  get notice(): TerminalNotice {
+    return this._notice;
+  }
 
   /**
    * Attach to all terminals and auto-open dashboard when training is detected.
@@ -99,26 +124,71 @@ export class TerminalWatcher implements vscode.Disposable {
 
   private async _consumeExecution(
     terminal: vscode.Terminal,
-    execution: vscode.TerminalShellExecution,
+    execution: Pick<vscode.TerminalShellExecution, "read">,
   ): Promise<void> {
+    // One reading per command. A single feed for the whole session latched on
+    // the first training run, and every command after it — an `ls`, a `git
+    // status` — was fed to that run's dashboard.
+    const reading = new CommandReading();
+    let quiet: ReturnType<typeof setTimeout> | undefined;
+    let judged = Date.now();
+
     const stream = execution.read();
     for await (const chunk of stream) {
       // TerminalFeed withholds output until it recognises training, then hands
       // back everything it buffered — so the epochs that TRIGGERED detection
       // still reach the dashboard instead of being dropped.
-      const feedable = this._feed.push(chunk);
-      if (feedable === null) continue;
+      const feedable = reading.push(chunk);
+      if (feedable !== null) {
+        this._activeTerminal = terminal;
+        this._openDashboardIfNeeded();
+        this._feedDashboard(feedable);
+        // Recognised after all: whatever was said about it no longer stands.
+        this._notice.withdraw(reading);
+        continue;
+      }
 
-      this._activeTerminal = terminal;
-      this._openDashboardIfNeeded();
-      this._feedDashboard(feedable);
+      // Not recognised (yet). Judge it when it goes quiet, and now and then
+      // when it never does — a run in a layout nothing reads may print for
+      // hours, and its end is too late to hear that nothing was understood.
+      if (quiet !== undefined) clearTimeout(quiet);
+      quiet = setTimeout(() => this._judge(reading), this._quietMs);
+      if (Date.now() - judged >= this._judgeEveryMs) {
+        judged = Date.now();
+        this._judge(reading);
+      }
     }
+    if (quiet !== undefined) clearTimeout(quiet);
+    reading.end();
 
     // The command finished. Let the dashboard commit anything still held back
     // by the format sniff and post the run summary.
-    if (this._feed.detected) {
+    if (reading.opened) {
       this._endOfStream();
     }
+    this._judge(reading);
+  }
+
+  /**
+   * Say what was made of a command, if there is something to say. While it
+   * runs, only a command the dashboard is not reading is judged: an open
+   * dashboard may simply not have reached its first epoch.
+   */
+  private _judge(reading: CommandReading): void {
+    if (!reading.ended && reading.opened) return;
+    const verdict = reading.verdict(panelEngine(this._locale));
+    if (verdict === null) {
+      if (reading.ended) this._notice.withdraw(reading);
+      return;
+    }
+    this._notice.show(reading, noticeText(verdict, this._locale), () => this._openReading(reading));
+  }
+
+  /** Open a command the dashboard can tell but never recognised. */
+  private _openReading(reading: CommandReading): void {
+    this._openDashboardIfNeeded();
+    this._feedDashboard(reading.open());
+    if (reading.ended) this._endOfStream();
   }
 
   private _endOfStream(): void {
@@ -166,5 +236,6 @@ export class TerminalWatcher implements vscode.Disposable {
   dispose(): void {
     for (const d of this._subscriptions) d.dispose();
     this._subscriptions.length = 0;
+    this._notice.dispose();
   }
 }

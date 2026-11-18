@@ -1,0 +1,10 @@
+Serving HTTP on 127.0.0.1 port 8766 (http://127.0.0.1:8766/) ...
+127.0.0.1 - - [18/Nov/2026 09:22:49] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [18/Nov/2026 09:22:50] code 404, message File not found
+127.0.0.1 - - [18/Nov/2026 09:22:50] "GET /api/status HTTP/1.1" 404 -
+127.0.0.1 - - [18/Nov/2026 09:22:50] "GET /train.py HTTP/1.1" 200 -
+127.0.0.1 - - [18/Nov/2026 09:22:50] code 404, message File not found
+127.0.0.1 - - [18/Nov/2026 09:22:50] "GET /missing HTTP/1.1" 404 -
+127.0.0.1 - - [18/Nov/2026 09:22:51] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [18/Nov/2026 09:22:51] code 404, message File not found
+127.0.0.1 - - [18/Nov/2026 09:22:51] "GET /api/status?id=7 HTTP/1.1" 404 -

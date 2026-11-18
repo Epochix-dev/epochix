@@ -1,0 +1,22 @@
+============================= test session starts =============================
+platform win32 -- Python 3.12.13, pytest-9.2.0, pluggy-1.7.0 -- C:\tmp\epochix_demos\terminal\venv\Scripts\python.exe
+rootdir: C:\tmp\epochix_demos\terminal\project
+collecting ... collected 4 items
+
+test_model.py::test_accuracy_is_above_chance PASSED                      [ 25%]
+test_model.py::test_learning_rate_schedule_decays PASSED                 [ 50%]
+test_model.py::test_precision_and_recall_agree_on_a_perfect_model PASSED [ 75%]
+test_model.py::test_loss_target_is_met FAILED                            [100%]
+
+================================== FAILURES ===================================
+___________________________ test_loss_target_is_met ___________________________
+
+    def test_loss_target_is_met():
+        val_loss = 0.42
+>       assert val_loss < 0.3
+E       assert 0.42 < 0.3
+
+test_model.py:22: AssertionError
+=========================== short test summary info ===========================
+FAILED test_model.py::test_loss_target_is_met - assert 0.42 < 0.3
+========================= 1 failed, 3 passed in 4.87s =========================
