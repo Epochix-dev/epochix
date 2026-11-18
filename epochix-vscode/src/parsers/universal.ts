@@ -13,6 +13,7 @@
 import { claim, type Parser, type ParserContext, type RawMetric } from "./base";
 import { isRecognised } from "../story/canonical";
 import { isSetting } from "./neverMetrics";
+import { pytestSection } from "./pytestReport";
 import {
   CONFIG_DUMP_MIN_PAIRS,
   CONFIG_DUMP_NON_NUMERIC_SHARE,
@@ -104,6 +105,11 @@ export class UniversalParser implements Parser {
   }
 
   parseLine(line: string, ctx: ParserContext): RawMetric[] {
+    // pytest's report of a failing test: source and compared values, claimed
+    // whole (see pytestReport.ts).
+    const section = pytestSection(line);
+    if (section !== null) ctx.pytestReport = section;
+    if (ctx.pytestReport) return claim(ctx);
     if (line.includes("%|") && PROGRESS_BAR.test(line)) return [];
     if (isConfigDump(line)) return [];
     if ((line.includes("#") || line.includes("Overriding")) && SOURCE_LINE.test(line)) {

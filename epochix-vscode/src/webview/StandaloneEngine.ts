@@ -223,6 +223,7 @@ function fallbackMetrics(
       meterEpoch: null,
       meterTrainAccuracy: null,
       stepBarValues: null,
+      pytestReport: false,
       lineClaimed: false,
     };
     const metrics = fallback.parseLine(line, scratch).filter((m) => isRecognised(m.key));

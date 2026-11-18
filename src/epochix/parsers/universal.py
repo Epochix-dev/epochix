@@ -93,6 +93,22 @@ _ITERATION_LEADER = re.compile(r"^\s*(?:iter|iteration|round)\s+(\d{1,9})\b", re
 # word nanoGPT's configurator opens every such line with.
 _SOURCE_LINE = re.compile(r"^\s*(?:Overriding\b|[A-Za-z_]\w{0,63}\s+=\s+[^\s#]{1,64}\s+#)")
 
+# pytest's report of a failing test is source code and the values its assertion
+# compared, not results. A recorded `pytest -v` (tests/fixtures/terminal/
+# pytest.log) failing on
+#
+#       def test_loss_target_is_met():
+#           val_loss = 0.42
+#   >       assert val_loss < 0.3
+#   E       assert 0.42 < 0.3
+#
+# was told as a run with one reading, `val_loss` 0.42, from the test's own
+# source. pytest opens the report with a rule naming its section
+# ("===== FAILURES =====", or ERRORS) and the next rule ("===== short test
+# summary info =====") ends it; every line between is claimed.
+PYTEST_SECTION = re.compile(r"^={3,200} (.{1,200}?) ={3,200}$")
+PYTEST_REPORTS = frozenset({"FAILURES", "ERRORS"})
+
 # Pattern 5: a qualifier in front of the metric — "Train accuracy: 0.98".
 #
 # `\w{1,64}` captures only the last word, so "Train accuracy" and "Test
@@ -292,6 +308,12 @@ class UniversalParser:
     def parse_line(self, line: str, ctx: ParserContext) -> list[RawMetric]:
         # Cheap membership tests gate the regexes: each pattern below needs a
         # character the line may simply not contain.
+        if line.startswith("==="):
+            section = PYTEST_SECTION.match(line.rstrip())
+            if section is not None:
+                ctx.extra["pytest_report"] = section.group(1) in PYTEST_REPORTS
+        if ctx.extra.get("pytest_report"):
+            return claim(ctx)
         if "%|" in line and _PROGRESS_BAR.search(line):
             return []
         if is_config_dump(line):

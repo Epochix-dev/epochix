@@ -5,6 +5,8 @@
  * the score exceeds OPEN_THRESHOLD.
  */
 
+import { withoutTestReport } from "../parsers/pytestReport";
+
 const OPEN_THRESHOLD = 0.45;
 
 // Strong signals — any one of these is probably ML training
@@ -62,7 +64,9 @@ export function stripAnsi(text: string): string {
  * @returns     0.0–1.0 confidence score.
  */
 export function sniff(text: string): number {
-  const clean = stripAnsi(text);
+  // pytest names metrics in its test ids and prints a failing test's source;
+  // neither is a run (parsers/pytestReport.ts).
+  const clean = withoutTestReport(stripAnsi(text));
 
   // Any strong signal → high confidence
   for (const pat of STRONG_PATTERNS) {
