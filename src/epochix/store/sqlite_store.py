@@ -360,7 +360,8 @@ class RunStore:
             return None
         return self._row_to_run(row)
 
-    def list_runs(self, limit: int = 100) -> list[Run]:
+    def list_runs(self, limit: int | None = 100) -> list[Run]:
+        """Runs newest first; ``limit=None`` for all of them."""
         with self._engine.connect() as conn:
             rows = conn.execute(
                 runs_table.select().order_by(runs_table.c.started_at.desc()).limit(limit)
