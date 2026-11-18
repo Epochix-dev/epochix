@@ -63,6 +63,9 @@ export interface ParserContext {
   meterTrainAccuracy: [string, number] | null;
   /** Step bar: the values last read off the bar, to tell a redraw from a reading. */
   stepBarValues: string | null;
+  /** Universal: inside pytest's report of a failing test (Python's
+   *  extra["pytest_report"]). */
+  pytestReport: boolean;
   /** Set by a parser that recognises a line as its own and reads no result
    *  from it; the engine then does not offer the line to the fallback
    *  parsers. Cleared after every line. Python's LINE_CLAIMED. */
@@ -99,6 +102,7 @@ export function makeContext(): ParserContext {
     meterEpoch: null,
     meterTrainAccuracy: null,
     stepBarValues: null,
+    pytestReport: false,
     lineClaimed: false,
   };
 }
