@@ -574,6 +574,11 @@ export class StandaloneEngine {
     return this._primaryMetric;
   }
 
+  /** The parser this run is read with, or null while it is still undecided. */
+  parserName(): string | null {
+    return this._activeParsers?.[0]?.name ?? null;
+  }
+
   metrics(): { canonical_key: string; epoch: number | null; value: number }[] {
     return this._allMetrics.map((m) => ({
       canonical_key: canonicalise(m.key),
