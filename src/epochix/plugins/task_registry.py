@@ -1,5 +1,11 @@
 """Custom task-type registry.
 
+**Read by nothing.** No grading, detection or narration code consults this
+registry, and :func:`_load_task_plugins` has no caller: an installed task
+changes no grade (checked with a real install on 2026-11-18: a run printing
+`wer` was graded by the built-in ``nlp`` task). ``TaskType`` is a closed enum,
+so a new task key has nowhere to go yet. See ``epochix.plugins``.
+
 Third-party packages can register new task types — complete with grade thresholds,
 primary metric name, and lower-is-better flag — via the ``epochix.tasks``
 entry-point group.

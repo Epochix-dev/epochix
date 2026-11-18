@@ -125,11 +125,13 @@ progress_meter    = "epochix.parsers.progress_meter:ProgressMeterParser"
 step_bar          = "epochix.parsers.step_bar:StepBarParser"
 universal         = "epochix.parsers.universal:UniversalParser"
 
-# Metaphor packs: entry point value = path to a YAML file
+# Metaphor packs: entry point value = path to a YAML file.
+# NOT READ: nothing loads this group (see epochix/plugins/__init__.py).
 # [project.entry-points."epochix.metaphor_packs"]
 # my_pack = "my_package:METAPHORS_YAML"
 
-# Custom task types: entry point value = TaskDefinition instance or dict
+# Custom task types: entry point value = TaskDefinition instance or dict.
+# NOT READ: nothing loads this group (see epochix/plugins/__init__.py).
 # [project.entry-points."epochix.tasks"]
 # audio = "my_package.task:TASK_DEFINITION"
 

@@ -1,5 +1,11 @@
 """Metaphor-pack YAML loader.
 
+**Read by nothing.** The engine does not call :func:`get_metaphor_cards`, and
+:func:`_load_metaphor_plugins` has no caller: an installed pack changes no
+card (checked with a real install on 2026-11-18). A frame's cards are the
+engine's own, "Phase" and "Grade". See ``epochix.plugins`` for why this is
+left open rather than wired in.
+
 Third-party packages provide domain-specific :class:`~epochix.models.MetaphorCard`
 templates by pointing to a YAML file via the ``epochix.metaphor_packs`` entry-point
 group.

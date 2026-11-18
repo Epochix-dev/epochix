@@ -451,6 +451,21 @@ def _cli_export(
     # printed after it, so `run --json --export md` emitted invalid JSON.
     quiet: bool = False,
 ) -> None:
+    from epochix.plugins.exporter_registry import (
+        BUILTIN_FORMATS,
+        ExporterFailed,
+        available_formats,
+        export_with_plugin,
+        plugin_exporter,
+    )
+
+    # Before "Exporting … →" and before creating its folder: neither is true
+    # of a format nothing can write.
+    if fmt not in BUILTIN_FORMATS and plugin_exporter(fmt) is None:
+        formats = ", ".join(available_formats())
+        typer.echo(f"  Unknown export format: {fmt!r}. Use one of: {formats}.", err=True)
+        raise typer.Exit(1)
+
     outfile = outfile or Path(f"{run_id}.{fmt}")
 
     def say(message: str) -> None:
@@ -529,8 +544,14 @@ def _cli_export(
             typer.echo(f"  {exc}", err=True)
             raise typer.Exit(1) from None
     else:
-        typer.echo(f"  Unknown export format: {fmt!r}. Use html, pdf, md, or json.", err=True)
-        raise typer.Exit(1)
+        # A format an installed plugin adds (`epochix.exporters`), checked to
+        # exist above. Documented for the life of the project and never
+        # loaded: this branch said "Unknown export format" for every one.
+        try:
+            export_with_plugin(fmt, run_id, store, outfile)
+        except (ExporterFailed, ValueError) as exc:
+            typer.echo(f"  {exc}", err=True)
+            raise typer.Exit(1) from None
 
 
 # ------------------------------------------------------------------
@@ -618,7 +639,12 @@ def cmd_open(
 @app.command("export")
 def cmd_export(
     run_id: str = typer.Argument(..., help="Run ID to export."),
-    fmt: str = typer.Option("html", "--format", "-f", help="Format: html|pdf|md|json|gif."),
+    fmt: str = typer.Option(
+        "html",
+        "--format",
+        "-f",
+        help="Format: html|pdf|md|json|gif, or one an installed exporter plugin adds.",
+    ),
     metric: str | None = typer.Option(
         None,
         "--metric",

@@ -8,7 +8,14 @@ groups:
     epochix.exporters       — custom export formats
     epochix.tasks           — custom task types with grade thresholds
 
-Plugins are discovered lazily on first use via :func:`load_all_plugins`.
+Two of them are read. Parsers are loaded by ``parsers.registry`` on the first
+``detect_parser`` call; exporters by ``exporter_registry`` the first time a
+format that is not built in is asked for. ``epochix.metaphor_packs`` and
+``epochix.tasks`` are **read by nothing**: an installed pack changes no card,
+and an installed task changes no grade. Wiring them in is a product decision
+(each puts a plugin's words or thresholds beside the grade, and the VS Code
+extension's engine cannot load a Python plugin), so it is open, not done.
+:func:`load_all_plugins` has no caller.
 
 Example ``pyproject.toml`` for a plugin package::
 
@@ -63,4 +70,5 @@ def reset_plugins() -> None:
     task_registry._task_registry.clear()
     task_registry._loaded = False
     exporter_registry._exporter_registry.clear()
+    exporter_registry._exporter_sources.clear()
     exporter_registry._loaded = False
