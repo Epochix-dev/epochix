@@ -128,9 +128,12 @@ async function fetchRunMeta(runId) {
 
 // ── WS with SSE fallback ──────────────────────────────────────────────────────
 
+// The SSE feed is for a WebSocket upgrade that is refused (a proxy that blocks
+// it). Choosing it on `'WebSocket' in window` meant it never ran in any
+// browser; the WebSocket client now hands over when it cannot open at all.
 function openLiveStream(runId, lastSeq) {
   if ('WebSocket' in window) {
-    connect(runId, lastSeq);
+    connect(runId, lastSeq, { onUnavailable: (seq) => connectSSE(runId, seq) });
   } else {
     connectSSE(runId, lastSeq);
   }
