@@ -123,6 +123,43 @@ def test_the_final_letter_and_phase(name: str) -> None:
     assert (last.phase.value if last else None) == want["final_phase"]
 
 
+@pytest.mark.parametrize("name", sorted(TRUTH))
+def test_the_milestones(name: str) -> None:
+    """Every milestone the run reaches, in order — pinned for both engines.
+
+    The extension's engine raised a set of its own (a first reading, grade and
+    phase changes) and none of these, so the same log listed one set of
+    milestones in VS Code and another in the browser and the reports.
+    """
+    store = RunStore(":memory:")
+    asyncio.run(
+        run_pipeline(
+            ingester=FileBatchIngester("c", str(LOGS[name])), run_id="c", store=store, hub=Hub()
+        )
+    )
+    got = [
+        {
+            "kind": m.kind,
+            "epoch": m.epoch,
+            "value": None if m.value is None else round(m.value, 4),
+            "message": m.message,
+        }
+        for m in store.get_milestones("c")
+    ]
+    assert got == TRUTH[name]["milestones"]
+
+
+def test_the_milestone_expectations_are_not_empty() -> None:
+    """The comparison above passes vacuously if every list is empty."""
+    kinds = {m["kind"] for t in TRUTH.values() for m in t["milestones"]}
+    assert {"best_so_far", "first_above_90", "biggest_jump", "training_complete"} <= kinds
+    # One story per told run, and its end said once.
+    for name, t in TRUTH.items():
+        ends = [m for m in t["milestones"] if m["kind"] == "training_complete"]
+        assert len(ends) == (1 if t["frames"] else 0), name
+        assert len({m["kind"] for m in t["milestones"]}) == len(t["milestones"]), name
+
+
 def test_one_story_metric_per_run() -> None:
     """The first frame is not a different series from the rest."""
     for name in ("pytorch_lightning_30ep.log", "keras_short.log", "pl_high_accuracy.log"):

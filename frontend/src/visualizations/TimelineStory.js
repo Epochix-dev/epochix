@@ -21,11 +21,6 @@ const MILESTONE_EMOJIS = {
   divergence:        '💥',
   divergence_cleared: '✅',
   training_complete: '🎓',
-  // Kinds the extension's own engine emits. Without titles for them the
-  // card was headed with the raw identifier, e.g. "grade_transition".
-  first_metric:      '🎬',
-  grade_transition:  '🏷️',
-  phase_transition:  '🧭',
 };
 
 export class TimelineStory {

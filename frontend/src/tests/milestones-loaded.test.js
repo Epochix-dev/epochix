@@ -70,10 +70,10 @@ describe('a loaded run', () => {
     expect(store.get().milestones).toHaveLength(1);
   });
 
-  it('keeps milestones without a seq that share a kind (the VS Code engine\'s)', () => {
-    pushMilestone({ kind: 'grade_transition', epoch: 3, message: 'Grade improved to B' });
-    pushMilestone({ kind: 'grade_transition', epoch: 7, message: 'Grade improved to A' });
-    pushMilestone({ kind: 'grade_transition', epoch: 7, message: 'Grade improved to A' });
+  it('keeps milestones without a seq apart, by epoch and message', () => {
+    pushMilestone({ kind: 'best_so_far', epoch: 3, message: 'New best: 0.5000' });
+    pushMilestone({ kind: 'best_so_far', epoch: 7, message: 'New best: 0.7000' });
+    pushMilestone({ kind: 'best_so_far', epoch: 7, message: 'New best: 0.7000' });
     expect(store.get().milestones.map((m) => m.epoch)).toEqual([3, 7]);
   });
 });

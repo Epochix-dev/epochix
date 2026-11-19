@@ -202,9 +202,8 @@ function _withMilestones(s, incoming) {
 }
 
 /**
- * The VS Code engine's milestones carry no seq, and repeat a kind (every
- * grade change is a `grade_transition`), so without one the epoch and the
- * message tell them apart.
+ * Both engines give a milestone its seq. One without (an older export) is
+ * told apart by its epoch and message, never merged with another of its kind.
  * @param {object} m
  */
 function _milestoneKey(m) {
