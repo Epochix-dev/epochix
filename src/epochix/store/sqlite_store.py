@@ -19,11 +19,12 @@ from sqlalchemy import (
     Text,
     create_engine,
     event,
+    literal_column,
 )
-from sqlalchemy.engine import Engine
+from sqlalchemy.engine import Connection, Engine
 
 from epochix.enums import Grade, TaskType
-from epochix.models import MetricEvent, Run, StoryFrame
+from epochix.models import MetricEvent, Milestone, Run, StoryFrame
 
 logger = logging.getLogger(__name__)
 
@@ -114,6 +115,23 @@ raw_lines_table = Table(
 
 Index("idx_metric_run_epoch", metric_events_table.c.run_id, metric_events_table.c.epoch)
 Index("idx_metric_run_key", metric_events_table.c.run_id, metric_events_table.c.canonical_key)
+
+
+def _insert_milestones(conn: Connection, milestones: list[Milestone]) -> None:
+    from sqlalchemy.dialects.sqlite import insert as sqlite_insert
+
+    for ms in milestones:
+        conn.execute(
+            sqlite_insert(milestones_table).on_conflict_do_nothing(),
+            {
+                "run_id": ms.run_id,
+                "seq": ms.seq,
+                "kind": ms.kind,
+                "epoch": ms.epoch,
+                "value": ms.value,
+                "message": ms.message,
+            },
+        )
 
 
 def _configure_sqlite(conn: Any, _record: Any) -> None:  # noqa: ANN401
@@ -456,18 +474,39 @@ class RunStore:
                     "warnings_json": json.dumps([w.model_dump() for w in frame.warnings]),
                 },
             )
-            for ms in frame.milestones:
-                conn.execute(
-                    sqlite_insert(milestones_table).on_conflict_do_nothing(),
-                    {
-                        "run_id": ms.run_id,
-                        "seq": ms.seq,
-                        "kind": ms.kind,
-                        "epoch": ms.epoch,
-                        "value": ms.value,
-                        "message": ms.message,
-                    },
-                )
+            _insert_milestones(conn, frame.milestones)
+
+    def append_milestones(self, milestones: list[Milestone]) -> None:
+        """Store milestones that belong to no frame: the ones a run ends with.
+
+        ``biggest_jump`` and ``training_complete`` are only known when the
+        stream ends, and were published to an open page and never stored, so
+        no report and no page opened later had them.
+        """
+        if not milestones:
+            return
+        with self._engine.begin() as conn:
+            _insert_milestones(conn, milestones)
+
+    def get_milestones(self, run_id: str) -> list[Milestone]:
+        """Every milestone of a run, in the order the run reached them."""
+        with self._engine.connect() as conn:
+            rows = conn.execute(
+                milestones_table.select()
+                .where(milestones_table.c.run_id == run_id)
+                .order_by(milestones_table.c.seq, literal_column("rowid"))
+            ).fetchall()
+        return [
+            Milestone(
+                run_id=r.run_id,
+                seq=r.seq,
+                kind=r.kind,
+                epoch=r.epoch,
+                value=r.value,
+                message=r.message or "",
+            )
+            for r in rows
+        ]
 
     def get_story_frames(self, run_id: str) -> list[StoryFrame]:
         with self._engine.connect() as conn:
@@ -476,6 +515,12 @@ class RunStore:
                 .where(story_frames_table.c.run_id == run_id)
                 .order_by(story_frames_table.c.seq)
             ).fetchall()
+        # A frame's milestones are stored beside it, keyed by its seq. They were
+        # written and never read: every frame came back with none, so a page
+        # opened on a run, and every report, showed no milestones at all.
+        by_seq: dict[int, list[Milestone]] = {}
+        for ms in self.get_milestones(run_id):
+            by_seq.setdefault(ms.seq, []).append(ms)
         from epochix.enums import Grade, Phase
         from epochix.models import MetaphorCard, Warning
 
@@ -504,7 +549,7 @@ class RunStore:
                     metaphor_cards=[MetaphorCard(**m) for m in json.loads(r.metaphor_json or "[]")],
                     skill_dimensions=json.loads(r.skill_json or "{}"),
                     warnings=[Warning(**w) for w in json.loads(r.warnings_json or "[]")],
-                    milestones=[],
+                    milestones=by_seq.get(r.seq, []),
                     # Frames stored before the column existed take the run's task.
                     task_type=TaskType(r.task_type) if r.task_type else run_task,
                 )

@@ -66,6 +66,10 @@ export class TimelineStory {
   _onState(s) {
     // Render milestones
     for (const m of s.milestones) {
+      // The card below says the run finished, from the run's own record. The
+      // engine's training_complete milestone said it again, so a finished run
+      // ended on two "Training complete" cards.
+      if (m.kind === 'training_complete') continue;
       const key = `m:${m.kind}:${m.epoch}`;
       if (!this._seen.has(key)) {
         this._seen.add(key);
