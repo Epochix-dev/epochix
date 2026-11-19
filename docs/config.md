@@ -26,7 +26,7 @@ epochix config show         # the values currently in effect
 
 | Variable | Default | What it does |
 |---|---|---|
-| `EPOCHIX_AUTH_TOKEN` | empty | Required token for writes. |
+| `EPOCHIX_AUTH_TOKEN` | empty | Token required on every `/api/*` route but `/api/health` and `/api/version` (`Authorization: Bearer <token>`) and on the live feeds (`?token=<token>`). In a browser, open a dashboard page once with `?token=<token>`; see [Deployment](deployment.md#team-server-lan). |
 | `EPOCHIX_CORS_ORIGINS` | empty | Comma-separated allowed origins. |
 | `EPOCHIX_EXPOSE_DOCS` | `false` | Serve the OpenAPI docs endpoints. |
 
