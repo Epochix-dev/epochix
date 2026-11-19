@@ -13,7 +13,7 @@
  */
 import {
   emaSmooth,
-  LOWER_IS_BETTER,
+  isLowerBetter,
   isPercentMetric,
   formatPrimaryMetric,
   latestPrimaryKey,
@@ -356,7 +356,7 @@ export class GradeArcChart {
       const vals = accPts.map((p) => p.v);
       const lo = Math.min(...vals), hi = Math.max(...vals);
       const span = Math.max(hi - lo, 1e-9);
-      const lowerBetter = LOWER_IS_BETTER.has(this._primaryKey);
+      const lowerBetter = isLowerBetter(this._primaryKey);
       accPts.forEach((p) => {
         const n = (p.v - lo) / span;          // 0 at the lowest value … 1 at the highest
         p.v = lowerBetter ? 1 - n : n;        // lower-is-better → smallest value rises to the top
