@@ -411,20 +411,72 @@ async def _run_batch_or_live(
         )
 
 
+def _bind_as_the_server_will(host: str, port: int) -> None:
+    """Bind *host*:*port* the way uvicorn's server will, then let go.
+
+    uvicorn listens through `asyncio.create_server`, so this follows its rules:
+    every address *host* resolves to, `SO_REUSEADDR` on POSIX (not on Windows,
+    where it would let two servers share the port), IPv6 sockets IPv6-only.
+    Raises the OSError the server would meet.
+
+    The probe used to bind one IPv4 socket without `SO_REUSEADDR` everywhere.
+    On Linux and macOS that is refused for a minute after a server on the port
+    stops, while its old connections sit in TIME_WAIT — and the server itself
+    would have started. Restarting `epochix serve` was told the port was in
+    use. `--host ::1`, an address IPv4 cannot hold, was told the same.
+    """
+    import os
+    import socket
+
+    reuse = os.name == "posix" and sys.platform != "cygwin"
+    infos = socket.getaddrinfo(
+        host or None, port, socket.AF_UNSPEC, socket.SOCK_STREAM, 0, socket.AI_PASSIVE
+    )
+    with contextlib.ExitStack() as held:
+        for family, kind, proto, _canonical, address in dict.fromkeys(infos):
+            probe = held.enter_context(socket.socket(family, kind, proto))
+            if reuse:
+                probe.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            if family == socket.AF_INET6 and hasattr(socket, "IPPROTO_IPV6"):
+                probe.setsockopt(socket.IPPROTO_IPV6, socket.IPV6_V6ONLY, 1)
+            probe.bind(address)
+
+
+def _port_taken(exc: OSError) -> bool:
+    """Whether a bind failed because something else holds the port."""
+    import errno
+
+    # Windows reports its own codes: WSAEADDRINUSE, and WSAEACCES for a port
+    # another process holds exclusively.
+    taken = {errno.EADDRINUSE, getattr(errno, "WSAEADDRINUSE", errno.EADDRINUSE)}
+    if sys.platform == "win32":
+        taken.add(getattr(errno, "WSAEACCES", errno.EACCES))
+    return exc.errno in taken or getattr(exc, "winerror", None) in taken
+
+
+# `serve` takes --host; the commands that start a server of their own read
+# the setting.
+_HOST_HINT = "  Use an address this machine has, such as 127.0.0.1 (--host, or EPOCHIX_HOST)."
+
+
 def _require_free_port(host: str, port: int) -> None:
     """Fail with a usable message instead of a raw OSError traceback.
 
     The server is started as a background asyncio task, so a bind failure
     surfaced as an unhandled OSError stack trace with no hint about what to do.
+    Only a port something holds is called "in use": every bind failure was,
+    including an address this machine does not have.
     """
     import socket
 
-    # No SO_REUSEADDR: we want the bind to fail exactly when something else is
-    # already listening, on Windows as well as POSIX.
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as probe:
-        try:
-            probe.bind((host, port))
-        except OSError:
+    try:
+        _bind_as_the_server_will(host, port)
+    except socket.gaierror as exc:
+        typer.secho(f"Cannot listen on {host}: {exc.strerror}.", fg=typer.colors.RED, err=True)
+        typer.echo(_HOST_HINT, err=True)
+        raise typer.Exit(1) from None
+    except OSError as exc:
+        if _port_taken(exc):
             typer.secho(
                 f"Port {port} on {host} is already in use.",
                 fg=typer.colors.RED,
@@ -435,7 +487,14 @@ def _require_free_port(host: str, port: int) -> None:
                 f"Try a different port:  --port {port + 1}",
                 err=True,
             )
-            raise typer.Exit(1) from None
+        else:
+            typer.secho(
+                f"Cannot listen on {host} port {port}: {exc.strerror or exc}.",
+                fg=typer.colors.RED,
+                err=True,
+            )
+            typer.echo(_HOST_HINT, err=True)
+        raise typer.Exit(1) from None
 
 
 def _cli_export(
