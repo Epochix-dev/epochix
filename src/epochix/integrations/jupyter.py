@@ -190,7 +190,7 @@ async def _frame_count(store: RunStore, run_id: str) -> int:
 @dataclass(frozen=True)
 class _Command:
     argv: list[str] | str
-    shell: bool
+    via_shell: bool
     script: Path | None = None
 
 
@@ -212,7 +212,7 @@ def _cell_commands(cell: str) -> list[_Command]:
             cmd = ln.lstrip()[1:].strip()
             if shell is not None:
                 cmd = shell.var_expand(cmd)
-            out.append(_Command(argv=cmd, shell=True))
+            out.append(_Command(argv=cmd, via_shell=True))
         return out
     if any(bang):
         raise ValueError(
@@ -226,7 +226,7 @@ def _cell_commands(cell: str) -> list[_Command]:
     ) as f:
         f.write(cell)
     script = Path(f.name)
-    return [_Command(argv=[sys.executable, str(script)], shell=False, script=script)]
+    return [_Command(argv=[sys.executable, str(script)], via_shell=False, script=script)]
 
 
 def _run_commands(commands: list[_Command], relay: Any) -> int:  # noqa: ANN401
@@ -239,7 +239,8 @@ def _run_commands(commands: list[_Command], relay: Any) -> int:  # noqa: ANN401
         for cmd in commands:
             proc = subprocess.Popen(  # noqa: S603 — the user's own cell
                 cmd.argv,
-                shell=cmd.shell,  # noqa: S602 — `!` lines are shell commands by definition
+                # `!` lines are shell commands by definition: the shell is the feature.
+                shell=cmd.via_shell,  # noqa: S602  # nosec B602
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
                 text=True,
