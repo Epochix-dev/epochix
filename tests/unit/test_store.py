@@ -177,3 +177,42 @@ def test_legacy_db_metric_events_pk_is_migrated(tmp_path) -> None:
             )
         )
     assert len({e.canonical_key for e in store.get_metric_events("r1") if e.seq == 2}) == 2
+
+
+def test_stores_opening_a_new_database_at_once_both_open(tmp_path) -> None:
+    """Two stores opening a new file at the same moment both found no tables,
+    and the second CREATE TABLE failed: "table runs already exists". The
+    notebook's live cell met it on CI, a reader opening runs.db while the
+    magic's own store created it. Switching the new file to WAL failed the
+    same way ("database is locked"). Each store here has its own engine, so
+    its own SQLite connection, as two processes would.
+    """
+    import threading
+
+    def open_store(
+        db: str, gate: threading.Barrier, opened: list[RunStore], errors: list[BaseException]
+    ) -> None:
+        gate.wait()
+        try:
+            opened.append(RunStore(db_path=db))
+        except BaseException as exc:  # noqa: BLE001 — reported by the test
+            errors.append(exc)
+
+    stores = 6
+    for attempt in range(15):
+        db = str(tmp_path / f"runs{attempt}.db")
+        gate = threading.Barrier(stores)
+        opened: list[RunStore] = []
+        errors: list[BaseException] = []
+        threads = [
+            threading.Thread(target=open_store, args=(db, gate, opened, errors))
+            for _ in range(stores)
+        ]
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join(30)
+        assert not errors, f"attempt {attempt}: {errors[0]!r}"
+        assert len(opened) == stores
+        opened[0].create_run(_make_run(f"run-{attempt}"))
+        assert [r.id for r in opened[-1].list_runs()] == [f"run-{attempt}"]

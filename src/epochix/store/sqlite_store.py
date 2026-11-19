@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import json
 import logging
+import sqlite3
+import time
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -116,11 +118,36 @@ Index("idx_metric_run_epoch", metric_events_table.c.run_id, metric_events_table.
 Index("idx_metric_run_key", metric_events_table.c.run_id, metric_events_table.c.canonical_key)
 
 
+# How long a new connection keeps trying to switch a new database to WAL
+# while another connection is switching it. Matches sqlite3's own 5 s timeout.
+_WAL_SWITCH_TRIES = 250
+_WAL_SWITCH_PAUSE_S = 0.02
+
+
 def _configure_sqlite(conn: Any, _record: Any) -> None:  # noqa: ANN401
-    conn.execute("PRAGMA journal_mode=WAL")
+    _use_wal(conn)
     conn.execute("PRAGMA synchronous=NORMAL")
     conn.execute("PRAGMA journal_size_limit=67108864")  # 64 MB
     conn.execute("PRAGMA foreign_keys=ON")
+
+
+def _use_wal(conn: Any) -> None:  # noqa: ANN401
+    """Switch the database to WAL, waiting out another connection doing the same.
+
+    The switch needs an exclusive lock. Two connections that both hold the read
+    lock and want it cannot both wait, so SQLite answers "database is locked" at
+    once rather than calling the busy handler: several stores opening one new
+    file together failed this way. The mode is stored in the file, so only the
+    first switch contends; once it is WAL the pragma takes no lock.
+    """
+    for attempt in range(_WAL_SWITCH_TRIES):
+        try:
+            conn.execute("PRAGMA journal_mode=WAL")
+            return
+        except sqlite3.OperationalError as exc:
+            if "locked" not in str(exc) or attempt == _WAL_SWITCH_TRIES - 1:
+                raise
+            time.sleep(_WAL_SWITCH_PAUSE_S)
 
 
 # Copy statement for the metric_events primary-key migration below. Written
@@ -153,9 +180,23 @@ class RunStore:
             Path(db_path).parent.mkdir(parents=True, exist_ok=True)
             self._engine = create_engine(f"sqlite:///{db_path}", echo=False)
         event.listen(self._engine, "connect", _configure_sqlite)
-        metadata.create_all(self._engine)
+        self._create_tables()
         self._heal_metric_events_pk()
         self._add_missing_columns()
+
+    def _create_tables(self) -> None:
+        """Create the tables a database lacks, holding SQLite's write lock.
+
+        ``create_all`` checks for each table and then creates it, so two stores
+        opening a new file at once both found no tables, and the second failed
+        with "table runs already exists" (the notebook's server and a reader of
+        the same runs.db did, on CI). BEGIN IMMEDIATE takes the write lock
+        before the check: the second store waits, then finds the tables.
+        """
+        with self._engine.connect() as conn:
+            conn.exec_driver_sql("BEGIN IMMEDIATE")
+            metadata.create_all(conn)
+            conn.commit()
 
     def _add_missing_columns(self) -> None:
         """Additively backfill columns added after a database was created.
