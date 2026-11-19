@@ -18,12 +18,13 @@ from __future__ import annotations
 import os
 import subprocess
 import sys
+from collections.abc import Iterator
 from pathlib import Path
 
 import pytest
 from fastapi.testclient import TestClient
 
-from epochix import parse
+from epochix import export, parse
 from epochix.config import Settings
 from epochix.plugins import exporter_registry
 from epochix.server.app import create_app
@@ -232,3 +233,61 @@ def test_the_server_refuses_what_no_plugin_writes(
     built_in = client.get(f"/api/export/{run_id}/md")
     assert built_in.status_code == 200
     assert "PLUGIN MARKDOWN" not in built_in.text
+
+
+# ── the Python SDK ────────────────────────────────────────────────────────────
+
+
+@pytest.fixture
+def installed(site: Path, monkeypatch: pytest.MonkeyPatch) -> Iterator[None]:
+    monkeypatch.syspath_prepend(str(site))
+    exporter_registry._reset()
+    yield
+    exporter_registry._reset()
+
+
+def test_the_sdk_writes_the_plugins_format(installed: None, tmp_path: Path) -> None:
+    """`epochix.export` refused it: "choose one of html, pdf, md, json"."""
+    run = parse(LOG)  # in memory: export() finds it without db=
+    out = tmp_path / "report.tex"
+
+    written = export(run, "latex", output=out)
+
+    assert written == out.resolve()
+    assert run.final_grade is not None
+    assert out.read_text(encoding="utf-8") == (
+        f"% {run.id} grade={run.final_grade.value} frames=14 events=70\n"
+    )
+
+
+def test_the_sdk_refuses_what_nothing_writes_and_writes_nothing(
+    installed: None, tmp_path: Path
+) -> None:
+    run = parse(LOG)
+    with pytest.raises(ValueError, match=r"html, pdf, md, json, gif, broken, latex, silent\."):
+        export(run, "nope", output=tmp_path / "x.nope")
+    assert not (tmp_path / "x.nope").exists()
+
+    with pytest.raises(exporter_registry.ExporterFailed, match="the plugin's own bug"):
+        export(run, "broken", output=tmp_path / "x.broken")
+    with pytest.raises(exporter_registry.ExporterFailed, match="returned without writing"):
+        export(run, "silent", output=tmp_path / "x.silent")
+    assert not (tmp_path / "x.silent").exists()
+
+    # A built-in format is still the built-in one.
+    md = export(run, "md", output=tmp_path / "run.md").read_text(encoding="utf-8")
+    assert "PLUGIN MARKDOWN" not in md
+
+
+def test_the_sdk_writes_every_format_it_lists(tmp_path: Path) -> None:
+    """Every built-in the error message offers is one export() writes.
+
+    `gif` was listed by the CLI and refused by the SDK.
+    """
+    run = parse(LOG)
+    for fmt in exporter_registry.BUILTIN_FORMATS:
+        if fmt == "pdf":
+            pytest.importorskip("fpdf")
+        out = export(run, fmt, output=tmp_path / f"run.{fmt}")
+        assert out.stat().st_size > 0, fmt
+    assert (tmp_path / "run.gif").read_bytes()[:6] in (b"GIF87a", b"GIF89a")
