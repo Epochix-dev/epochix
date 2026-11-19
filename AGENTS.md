@@ -158,6 +158,14 @@ npm --prefix epochix-vscode test    # launches a real VS Code host
   Typer 0.27 were both found by accident. `newest-deps.yml` runs the tests
   weekly on an upgraded lock, off the PR path, and keeps one issue open while
   they fail. Fix what it finds; never commit its lock.
+- **macOS is tested after a change lands, not before.** Its runners queued
+  15-18 minutes and were cancelled on four PRs in one afternoon, and no user
+  runs on a Mac yet. `macos.yml` runs ci.yml's tests (oldest and newest
+  Python) and the WebKit render (`browser.yml`, shared with ci.yml) on every
+  push to `main`, weekly, on demand, and on a PR labelled `macos`; a red run
+  opens one issue. Label a PR `macos` when it touches paths, sockets,
+  terminals or the browser. `test_macos_workflow.py` keeps the two test jobs
+  running the same command.
 - **Throughput from separate CI runs cannot be compared.** GitHub's runners come
   in at least two speeds: the same code reads ~30k or ~45k lines/sec on the
   universal parser depending on which it got. `scripts/compare_benchmarks.py`
