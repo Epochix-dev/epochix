@@ -1,7 +1,7 @@
 import * as vscode from "vscode";
 import { DashboardPanel } from "../webview/DashboardPanel";
 
-const FORMAT_LABELS: Record<string, string> = {
+const FORMAT_LABELS: Record<"html" | "pdf" | "md", string> = {
   html: "Standalone HTML",
   pdf: "PDF report",
   md: "Markdown summary",
@@ -18,18 +18,17 @@ export function registerExportRun(
       return;
     }
 
+    const formats = Object.keys(FORMAT_LABELS) as (keyof typeof FORMAT_LABELS)[];
     const pick = await vscode.window.showQuickPick(
-      Object.entries(FORMAT_LABELS).map(([id, label]) => ({
-        label,
-        description: `.${id}`,
-        id,
-      })),
+      formats.map((id) => ({ label: FORMAT_LABELS[id], description: `.${id}`, id })),
       { placeHolder: "Export format" },
     );
     if (!pick) return;
 
-    // Post message to webview which posts back to trigger the export
-    void (DashboardPanel.current as unknown as { _post: (m: object) => void })
-      ._post?.({ type: "requestExport", format: pick.id });
+    // The panel's own export: the Python engine's file, or the reason there
+    // is none. This posted a `requestExport` message to the webview, which
+    // nothing in the webview, the server or the panel ever handled, so the
+    // command did nothing after the format was picked, every time.
+    DashboardPanel.current.exportRun(pick.id);
   });
 }
