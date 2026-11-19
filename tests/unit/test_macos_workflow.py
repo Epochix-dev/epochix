@@ -82,8 +82,28 @@ def test_both_workflows_render_with_the_one_browser_job() -> None:
     )
 
 
+def _step(job: dict[str, Any], name: str) -> dict[str, Any]:
+    (found,) = [s for s in job["steps"] if s.get("name") == name]
+    return found
+
+
+def test_it_runs_the_extension_host_tests_as_ci_does() -> None:
+    ci_job, mac_job = CI["jobs"]["test-vscode"], MAC["jobs"]["vscode"]
+    assert mac_job["runs-on"] == "macos-latest"
+    # Same checkout, Node and install as ci.yml.
+    assert mac_job["steps"][:3] == ci_job["steps"][:3]
+    # The webview the release ships, built the same way.
+    build = "Build the webview bundle exactly as the release does"
+    assert _step(mac_job, build) == _step(ci_job, build)
+    # The same suite; only Linux needs a virtual display for it.
+    run = "Run extension host integration tests"
+    ci_run, mac_run = _step(ci_job, run), _step(mac_job, run)
+    assert ci_run["run"] == "xvfb-run -a npm test"
+    assert mac_run == {**ci_run, "run": "npm test"}
+
+
 def test_every_mac_job_waits_for_the_decision() -> None:
-    for name in ("test", "browser"):
+    for name in ("test", "browser", "vscode"):
         job = MAC["jobs"][name]
         assert job["needs"] == "decide", name
         assert job["if"] == "needs.decide.outputs.run == 'true'", name

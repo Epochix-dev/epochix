@@ -4,7 +4,8 @@ name: macOS
 # jobs waited 15-18 minutes for one and were cancelled without running a step,
 # while every Ubuntu and Windows job had passed. No user of the project runs on
 # a Mac yet, so a PR should not wait on one; but one will, so it is still
-# tested, on what lands rather than on every proposal:
+# tested on what lands rather than on every proposal. It runs the Python tests,
+# the dashboard in WebKit, and the VS Code extension's host tests:
 #
 #   - every push to main, so a change that breaks macOS is known the day it lands;
 #   - once a week, for what changes underneath (runner images, Python builds);
@@ -86,8 +87,36 @@ jobs:
     with:
       os: macos-latest
 
+  vscode:
+    # ci.yml's extension host tests on macOS. VS Code on a Mac is where a
+    # future Mac user is most likely to meet epochix, and the extension is the
+    # part that starts servers, reads terminals and builds paths. A Mac runner
+    # has a display, so the suite runs without ci.yml's xvfb-run.
+    needs: decide
+    if: needs.decide.outputs.run == 'true'
+    name: vscode (macos-latest)
+    runs-on: macos-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: epochix-vscode/package-lock.json
+      - run: cd epochix-vscode && npm ci
+      - name: Build the webview bundle exactly as the release does
+        run: |
+          cd frontend && npm ci && npm run build:webview && cd ..
+          test -f epochix-vscode/webview-dist/index.html
+          test -f epochix-vscode/webview-dist/main.js
+          grep -q 'src="./main.js"' epochix-vscode/webview-dist/index.html
+      - name: Run extension host integration tests
+        run: npm test
+        working-directory: epochix-vscode
+
   report:
-    needs: [decide, test, browser]
+    needs: [decide, test, browser, vscode]
     if: failure() && github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     permissions:
