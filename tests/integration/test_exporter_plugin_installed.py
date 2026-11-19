@@ -288,6 +288,19 @@ def test_the_sdk_writes_every_format_it_lists(tmp_path: Path) -> None:
     for fmt in exporter_registry.BUILTIN_FORMATS:
         if fmt == "pdf":
             pytest.importorskip("fpdf")
-        out = export(run, fmt, output=tmp_path / f"run.{fmt}")
+        target = tmp_path / f"run.{fmt}"
+        if fmt == "html":
+            # HTML inlines the dashboard bundle, which a source checkout (and
+            # CI's test jobs) do not build. Then it says so and writes nothing;
+            # it is still a format export() takes, not an unknown one.
+            try:
+                written = export(run, fmt, output=target)
+            except FileNotFoundError as exc:
+                assert "bundle" in str(exc).lower(), exc
+                assert not target.exists()
+            else:
+                assert run.id in written.read_text(encoding="utf-8")
+            continue
+        out = export(run, fmt, output=target)
         assert out.stat().st_size > 0, fmt
     assert (tmp_path / "run.gif").read_bytes()[:6] in (b"GIF87a", b"GIF89a")
