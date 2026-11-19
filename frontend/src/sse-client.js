@@ -9,6 +9,7 @@
 
 import { store } from './store.js';
 import { applyLiveMessage } from './live-message.js';
+import { withToken } from './auth.js';
 
 let _es = null;
 let _lastSeq = -1;
@@ -38,7 +39,7 @@ export function disconnectSSE() {
 // ── internal ────────────────────────────────────────────────────────────────
 
 function _sseUrl() {
-  return `/sse/live/${_runId}?last_seq=${_lastSeq}`;
+  return withToken(`/sse/live/${_runId}?last_seq=${_lastSeq}`);
 }
 
 function _openSSE() {

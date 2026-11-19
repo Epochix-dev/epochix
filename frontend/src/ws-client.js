@@ -13,6 +13,7 @@
 
 import { store } from './store.js';
 import { applyLiveMessage } from './live-message.js';
+import { withToken } from './auth.js';
 
 const BACKOFF_INITIAL = 1000;
 const BACKOFF_MAX = 30_000;
@@ -66,7 +67,7 @@ export function disconnect() {
 
 function _wsUrl() {
   const proto = location.protocol === 'https:' ? 'wss' : 'ws';
-  return `${proto}://${location.host}/ws/live/${_runId}?last_seq=${_lastSeq}`;
+  return withToken(`${proto}://${location.host}/ws/live/${_runId}?last_seq=${_lastSeq}`);
 }
 
 function _openSocket() {
