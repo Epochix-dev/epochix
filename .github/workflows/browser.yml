@@ -1,0 +1,121 @@
+name: Browser render
+
+# The dashboard, rendered in Chromium, Firefox and WebKit against a live
+# server. One definition, called by ci.yml on Ubuntu for every PR and by
+# macos.yml on macOS off the PR path, so the two runs cannot drift apart.
+on:
+  workflow_call:
+    inputs:
+      os:
+        description: The runner to render on.
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  render:
+    # Renders the real dashboard in Chromium, Firefox and WebKit (Safari's
+    # engine) against a live server. Catches engine-specific paint/layout bugs
+    # that neither the Python suite nor vitest can see. Playwright's Firefox
+    # cannot spawn on Windows dev boxes, so CI is the only place all three
+    # engines actually run — hence EPOCHIX_REQUIRE_ALL_BROWSERS, which turns a
+    # failed launch into a failure instead of a skip.
+    name: browser (${{ inputs.os }})
+    runs-on: ${{ inputs.os }}
+    # Normally 2 minutes. Without a limit a stalled step runs for GitHub's
+    # 6-hour default and every PR waits on it.
+    timeout-minutes: 30
+    env:
+      UV_PYTHON: "3.12"
+      EPOCHIX_REQUIRE_ALL_BROWSERS: "1"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: cd frontend && npm ci && npm run build
+      - name: Vendor the bundle where the server serves it from
+        run: |
+          mkdir -p src/epochix/_frontend/dist
+          cp -r frontend/dist/. src/epochix/_frontend/dist/
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+      - name: Set up Python and the dev dependencies
+        run: uv run --extra dev playwright --version
+      - name: Install the browsers' system packages
+        if: runner.os == 'Linux'
+        # The browsers need ~120-140 MB of system packages, which the runner's
+        # own mirror (azure.archive.ubuntu.com) usually serves in 10-60
+        # seconds. Some days it serves them at 25-100 KB/s, on Ubuntu 24.04
+        # and 26 alike: on 2026-10-26 installs ran 19 and 10 minutes before
+        # being cancelled, and three 6-minute attempts in a row never
+        # finished. Retrying that mirror does not help, so a first attempt
+        # still running after 3 minutes is stopped and apt is pointed at
+        # Canonical's archive.ubuntu.com for the next two.
+        #
+        # Stopping one is not enough: timeout ends uv and Playwright, but the
+        # apt-get Playwright starts under sudo runs as root and outlives them,
+        # holding dpkg's lock, so every later attempt failed at once (0.7.34's
+        # release PR). Before retrying, that apt-get is killed, any dpkg it
+        # started is left to finish, and dpkg completes what was cut short.
+        timeout-minutes: 20
+        env:
+          # Seconds allowed for each attempt, in order.
+          APT_ATTEMPT_SECONDS: "180 360 360"
+        run: |
+          echo "apt mirror list:"; cat /etc/apt/apt-mirrors.txt || true
+          grep -rhE "^(URIs|deb) " /etc/apt/sources.list /etc/apt/sources.list.d 2>/dev/null || true
+          attempt=0
+          for limit in $APT_ATTEMPT_SECONDS; do
+            attempt=$((attempt + 1))
+            if timeout "$limit" uv run --extra dev playwright install-deps chromium firefox webkit; then
+              exit 0
+            fi
+            echo "::warning::system packages: attempt $attempt failed or took over $limit seconds"
+            sudo pkill -KILL -x apt-get || true
+            for _ in $(seq 1 60); do
+              pgrep -x dpkg >/dev/null || break
+              sleep 2
+            done
+            sudo dpkg --configure -a || true
+            if [ "$attempt" = 1 ]; then
+              echo "::notice::system packages: switching apt to archive.ubuntu.com"
+              echo "http://archive.ubuntu.com/ubuntu/" | sudo tee /etc/apt/apt-mirrors.txt
+            fi
+          done
+          exit 1
+      - name: Install the browsers
+        timeout-minutes: 10
+        run: uv run --extra dev playwright install chromium firefox webkit
+      - name: Render on every engine
+        run: |
+          uv run --extra dev pytest tests/browser --junitxml=render.xml
+          # pytest exits 0 when every test SKIPS, so the exit code alone can't
+          # prove the engines ran. Count them. (Don't grep the summary line —
+          # addopts already sets -q, so a second -q suppresses it entirely.)
+          uv run python - <<'PY'
+          import sys, xml.etree.ElementTree as ET
+
+          root = ET.parse("render.xml").getroot()
+          suite = root.find("testsuite") if root.tag == "testsuites" else root
+          total = int(suite.get("tests", 0))
+          skipped = int(suite.get("skipped", 0))
+          bad = int(suite.get("failures", 0)) + int(suite.get("errors", 0))
+          passed = total - skipped - bad
+          print(f"browser tests: {passed} passed (skipped={skipped}, failed={bad})")
+          # Every test must pass on every engine: a count of exactly 3 broke the
+          # day a second browser test was added. Check the engines by name.
+          ran = {
+              engine
+              for case in suite.iter("testcase")
+              if case.find("skipped") is None and case.find("failure") is None
+              and case.find("error") is None
+              for engine in ("chromium", "firefox", "webkit")
+              if f"[{engine}]" in case.get("name", "")
+          }
+          if bad or skipped or passed == 0 or ran != {"chromium", "firefox", "webkit"}:
+              sys.exit(f"::error::every browser test must pass on chromium, firefox and webkit (ran: {sorted(ran)})")
+          PY
