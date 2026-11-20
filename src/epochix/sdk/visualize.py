@@ -2,12 +2,26 @@
 
 from __future__ import annotations
 
+import warnings
 from typing import TYPE_CHECKING
 
 from epochix.browser import open_in_browser
 
 if TYPE_CHECKING:
+    from epochix.config import Settings
     from epochix.models import Run
+
+
+def _warn_if_exposed(settings: Settings, host: str, port: int) -> None:
+    """Both functions here take the address as an argument and bound it in
+    silence; ``host="0.0.0.0"`` with no token put the write routes on the
+    network. The CLI said so and the SDK did not."""
+    from epochix.server.auth import PublicBindWarning, public_bind_warning
+
+    message = public_bind_warning(settings, host, port)
+    if message:
+        # stacklevel 3: the caller of serve()/visualize(), not this helper.
+        warnings.warn(message, PublicBindWarning, stacklevel=3)
 
 
 def visualize(
@@ -28,7 +42,8 @@ def visualize(
     port:
         Port for the embedded server.
     host:
-        Bind address.
+        Bind address. Anything but loopback without ``EPOCHIX_AUTH_TOKEN``
+        raises :class:`~epochix.server.auth.PublicBindWarning`.
     db:
         SQLite DB path that contains the run.  Not needed for a run returned
         by :func:`~epochix.sdk.parse.parse`, which is served from where it was
@@ -56,11 +71,13 @@ def visualize(
     from epochix.server.app import create_app
     from epochix.server.hub import Hub
 
+    settings = get_settings()
+    _warn_if_exposed(settings, host, port)
     # Before anything is opened: a page for a run the server does not have is
     # an empty dashboard with no explanation.
     store = store_holding(run, db)
 
-    _app = create_app(settings=get_settings())
+    _app = create_app(settings=settings)
     _app.state.store = store
     _app.state.hub = Hub()
     _app.state.engine_map = {}
@@ -94,7 +111,9 @@ def serve(
 
     *db* is the SQLite DB to serve; the configured DB when ``None``.
 
-    Returns the base URL.  Blocks until the server is stopped.
+    Returns the base URL.  Blocks until the server is stopped. A *host* other
+    than loopback without ``EPOCHIX_AUTH_TOKEN`` raises
+    :class:`~epochix.server.auth.PublicBindWarning`.
     """
     import uvicorn
 
@@ -102,6 +121,7 @@ def serve(
     from epochix.server.app import create_app
 
     settings = get_settings()
+    _warn_if_exposed(settings, host, port)
     if db is not None:
         # `db` was accepted and read by nothing: the configured DB was served
         # whatever was passed.
