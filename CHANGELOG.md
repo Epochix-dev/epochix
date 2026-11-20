@@ -7,6 +7,123 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.7.41] — Unreleased
+
+### Added
+
+- **Runs that count steps are told: nanoGPT, the PyTorch ImageNet example and
+  a diffusers LoRA bar.** Three real runs were recorded, and each was misread
+  or not read at all. nanoGPT's `step 250: train loss 2.4293, val loss
+  2.4447` stored the validation loss as the training loss, its `iter` lines
+  gave nothing, and the config it echoes first gave the run nine metrics. The
+  ImageNet example's `Acc@1` rows and ` *` summary had nothing a parser read.
+  The SDXL LoRA script's single tqdm bar, redrawn in place, was read in its
+  final state only, and the story was told on `Process index: 0`. The
+  universal parser now reads `val loss`-style pairs on a counted row and puts
+  a run that prints only `step N` on a step axis. A new `progress_meter`
+  parser reads the ImageNet layout, storing `Acc@k` as a fraction. A new
+  `step_bar` parser reads each redraw of a `Steps` bar as it arrives. Echoed
+  source lines are claimed. Every other log in the corpus tells exactly what
+  it told before. Both engines. MLX-LM and kohya-ss were not recorded, and
+  `docs/parsers.md` says so.
+- **The dashboard works on a server that wants a token.** With
+  `EPOCHIX_AUTH_TOKEN` set, the dashboard sent neither the `Authorization`
+  header nor `?token=`, so it loaded no run and never went live. Open any page
+  once with `?token=<token>`: the page removes the token from the address bar,
+  keeps it for that tab and sends it on every request — the Bearer header to
+  the API, and `?token=` on the WebSocket and SSE feeds only. No link carries
+  it, and no exported report contains it. Opened without the token, or with a
+  wrong one, the page says so in all three languages. `docs/deployment.md`
+  described `epochix serve --auth user:password` and
+  `EPOCHIX_AUTH_USER`/`EPOCHIX_AUTH_PASS`, none of which exist; it now
+  describes the token.
+
+### Fixed
+
+- **A loss printed per batch is no longer judged as a loss measured per
+  epoch.** The recorded LoRA run's only metric is the loss of the last batch,
+  which moved by a factor of 2.6 between neighbouring readings on the median
+  with nothing wrong. Its grade went F, F, A, F and ended on the luck of the
+  last batch. It was told "past its best" from its second step and warned of
+  divergence four times. A metric is now unsteady when, over its last 50
+  readings, it changes direction at half of them or more *and* its median
+  step between neighbouring readings is a quarter or more of the larger of
+  the two. An unsteady story metric
+  is graded I, with a grade note saying why, and its sentence gives the
+  reading and both measurements. An unsteady training loss is warned of only
+  for a jump more than 10 times its highest reading. Readings are stored and
+  charted as logged, with nothing smoothed. Of the 60 logs in the corpus,
+  only the LoRA run's story changes. Its first five frames are still told as
+  any metric's would be, since five readings cannot tell a batch's luck from
+  a real rise. Both engines, three languages.
+- **A live run that pauses in its preamble is read in its own format.** 0.7.40
+  chose the parser on a pause once any parser read a number, and setup lines
+  have numbers. A pause after Lightning's `using: 0 IPU cores` or
+  Ultralytics' `ping: 0.1 ms` chose the universal parser for good. Each run
+  then gained three frames without an epoch, named `using` or `ping`. A
+  pause on YOLO's first epoch did the same. A pause now chooses a parser only
+  if that parser would tell something. Over every prefix of the 56 corpus
+  logs, a pause chose a different parser than the full window at 46 prefixes
+  under the 0.7.40 rule, and at 1 now, in a hand-written sample. Both engines.
+- **A pytest run is not told as a training run.** pytest prints a failing
+  test's source, so `val_loss = 0.42` in a test became one reading of
+  `val_loss`. In VS Code, a pytest run of an ML project opened the dashboard
+  on it. The lines of a `FAILURES` or `ERRORS` report are now claimed, and the
+  extension's terminal detector scores neither them nor test ids. Every other
+  log in the corpus is unchanged. Both engines.
+- **The dashboard goes live behind a proxy that refuses WebSockets.** It chose
+  SSE only when the browser had no WebSocket support, which no browser lacks,
+  so behind such a proxy it waited on a socket that never opened. It now
+  switches to SSE after two attempts that never open, resuming from the last
+  frame it had. Both live clients also dropped a frame's milestones, which
+  carry the frame's sequence number, so a live page lost nearly every
+  milestone. The SSE client lacked activations and the final folds. And a
+  reconnecting SSE feed replayed from where the first connection started
+  rather than resuming. One message handler now serves both transports, and
+  the feed resumes from `Last-Event-ID`.
+- **`epochix serve` reads `EPOCHIX_HOST` and `EPOCHIX_PORT`.** `serve` ignored
+  both, and no command read `EPOCHIX_PORT`. `serve`, `epochix <log>` and
+  `epochix --live` now take the flag first, then the setting, then
+  `127.0.0.1:7860`.
+- **`epochix.serve(db=…)` and `epochix.visualize(run, db=…)` serve that
+  database.** Both served `EPOCHIX_DB` instead: `serve` never read its `db`
+  argument, and the app's startup replaced the store `visualize` set. So the
+  dashboard `visualize` opened could not find its own run.
+- **The VS Code extension's server ignores a token exported in your shell.**
+  See the extension's changelog.
+
+### Security
+
+- **Binding beyond this machine without a token warns, from every command and
+  the SDK.** Only `epochix serve --host` warned. With `EPOCHIX_HOST=0.0.0.0`,
+  `epochix <log>` and `epochix --live` listened on every interface with no
+  token, so anyone on the network could create and delete runs, and nothing
+  said so. They now warn on stderr (`--json` keeps stdout to its one
+  document). `epochix.serve` and `epochix.visualize` raise `PublicBindWarning`,
+  a `UserWarning`, at the caller's line.
+- **The reverse-proxy examples forward the client's address.** epochix accepts
+  writes from loopback callers when no token is set, and trusts
+  `X-Forwarded-For` from a proxy on the same machine. The nginx example set
+  no such header, so every visitor reached epochix as a loopback caller and
+  could create and delete runs. The nginx example now sets it (Caddy does by
+  default). It also proxied under `/epochix/`, a sub-path the dashboard
+  cannot work behind; it is now a server block for a host of its own.
+
+### Tests
+
+- **`/sse/live` is tested against a real live run.** No test had requested
+  it. The route, resuming by query and by header, the token and heartbeats are
+  now driven against `epochix --live`, and a browser test watches a run
+  through a proxy that answers every upgrade with 403.
+- **macOS is tested after a change lands, not on every PR.** Its runners
+  waited 15–18 minutes and were cancelled without running a step on four PRs
+  in one afternoon. `macos.yml` runs the tests at the oldest and newest
+  Python, the WebKit render and, for the first time on a Mac, the VS Code
+  extension's host tests, on every push to `main`, weekly, on demand, and on
+  a PR labelled `macos`. A red run opens one issue.
+
+---
+
 ## [0.7.40] — 2026-11-03
 
 ### Fixed
