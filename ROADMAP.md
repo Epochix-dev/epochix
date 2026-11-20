@@ -170,20 +170,6 @@ ends in a test that runs it the way a person would, not in a number.
   (`parsers/registry.py`) and do work. Either wire the three in, each proved
   by a test that installs a real plugin package and sees it used, or take
   them out of the docs and the package.
-- **`export(parse("train.log"))` fails.** `sdk/export.py` 19.2%,
-  `sdk/compare.py` 19.8%, `sdk/visualize.py` 13.9%: `export`, `compare`,
-  `visualize` and `serve` are documented in `docs/api.md` and no test calls
-  any of them. Run by hand on 2026-11-10: `parse()` stores into `:memory:`
-  unless given `db=`, and the others read the configured database, so
-  `export(run)` raises `ValueError: Run not found` in all four formats, and
-  `compare(a, b)` returns its verdict with an empty `narrative` because the
-  failed lookup is swallowed. With the same `db=` passed to both, json, md
-  and pdf export and the narrative is written. `visualize(run)` reads the
-  same database, so by the code it opens a page for a run its server does
-  not have; that was not run. The Jupyter magic had this bug and it was
-  fixed there (`test_jupyter_magic.py`). Decide what `parse()` does by
-  default, then test the journey as documented. `parse_string` has no test
-  either.
 - **The Jupyter magics are not run by their own test.**
   `integrations/jupyter.py` 19.6%. `test_jupyter_magic.py` loads the
   extension in a real IPython shell and then tests the helpers the magics
