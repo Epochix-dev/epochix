@@ -103,8 +103,8 @@ sets `X-Forwarded-For` by default.
 | Variable | Default | Description |
 |--|--|--|
 | `EPOCHIX_DB` | `~/.epochix/runs.db` | SQLite database path |
-| `EPOCHIX_HOST` | `127.0.0.1` | Bind host |
-| `EPOCHIX_PORT` | `7860` | Bind port |
+| `EPOCHIX_HOST` | `127.0.0.1` | Interface bound by the server that `epochix <log>` and `epochix --live` start. `epochix serve` does not read it: pass `--host`. |
+| `EPOCHIX_PORT` | — | Has no effect: every command takes `--port` (default `7860`) and none reads this. |
 | `EPOCHIX_AUTH_USER` | _(none)_ | Basic auth username |
 | `EPOCHIX_AUTH_PASS` | _(none)_ | Basic auth password |
 | `EPOCHIX_AUTH_TOKEN` | _(none)_ | Bearer token for API access |
