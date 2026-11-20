@@ -343,6 +343,10 @@ places still see it: the server's (and your proxy's) access log for the first pa
 and for each live-feed request, since it is in those URLs — serve over HTTPS and keep
 those logs private.
 
+The VS Code extension's own server is started with `EPOCHIX_AUTH_TOKEN` and
+`EPOCHIX_CORS_ORIGINS` emptied and listens on `127.0.0.1` only, so a token exported in
+your shell for a remote server does not lock the extension out of it.
+
 > **Note:** wildcard CORS (`*`) and credentialed requests are never combined — credentials
 > are enabled only when you set explicit origins.
 
