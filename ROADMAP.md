@@ -189,11 +189,6 @@ ends in a test that runs it the way a person would, not in a number.
   extension in a real IPython shell and then tests the helpers the magics
   call; `_line_magic`, `_cell_magic` and `_ensure_server` never execute. Run
   `%epochix train.log` and `%%epochix --live` through the shell.
-- **`/sse/live/{run_id}` is never requested.** `server/sse.py` 38.3%: the
-  whole route. The dashboard falls back to it when a WebSocket cannot be
-  opened (`frontend/src/sse-client.js`), and the README documents its token.
-  Test the replay from `last_seq`, that `complete` ends the stream, and that
-  a wrong token is refused.
 - **Five commands no test runs:** `epochix open`, `export`, `race`, `prune`
   and `config` (85 statements of `cli.py`, which is 62% overall). `open` and
   `export` are tested only for refusing a missing argument.
