@@ -180,7 +180,7 @@ describe('pushMilestone', () => {
   });
 
   it('accumulates multiple milestones', () => {
-    pushMilestone({ kind: 'first_metric' });
+    pushMilestone({ kind: 'best_so_far' });
     pushMilestone({ kind: 'best_val_accuracy' });
     expect(store.get().milestones).toHaveLength(2);
   });

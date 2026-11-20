@@ -21,11 +21,6 @@ const MILESTONE_EMOJIS = {
   divergence:        '💥',
   divergence_cleared: '✅',
   training_complete: '🎓',
-  // Kinds the extension's own engine emits. Without titles for them the
-  // card was headed with the raw identifier, e.g. "grade_transition".
-  first_metric:      '🎬',
-  grade_transition:  '🏷️',
-  phase_transition:  '🧭',
 };
 
 export class TimelineStory {
@@ -66,6 +61,10 @@ export class TimelineStory {
   _onState(s) {
     // Render milestones
     for (const m of s.milestones) {
+      // The card below says the run finished, from the run's own record. The
+      // engine's training_complete milestone said it again, so a finished run
+      // ended on two "Training complete" cards.
+      if (m.kind === 'training_complete') continue;
       const key = `m:${m.kind}:${m.epoch}`;
       if (!this._seen.has(key)) {
         this._seen.add(key);

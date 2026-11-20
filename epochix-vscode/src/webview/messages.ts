@@ -46,11 +46,9 @@ export interface GradeBandsMsg {
 export type GradeNote = "few_readings" | "still_improving" | "unsteady";
 export type { GradeBasis };
 
-export interface MilestoneMsg {
-  kind: string;
-  epoch: number | null;
-  message: string;
-}
+/** A milestone, shaped as the Python engine's (story/milestones.ts). */
+import type { Milestone as MilestoneMsg } from "../story/milestones";
+export type { MilestoneMsg };
 
 export interface WarningMsg {
   kind: string;

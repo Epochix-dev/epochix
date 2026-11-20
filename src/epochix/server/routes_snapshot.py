@@ -3,9 +3,9 @@ from __future__ import annotations
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
-from epochix.models import MetricEvent, Run, StoryFrame
+from epochix.models import MetricEvent, Milestone, Run, StoryFrame
 from epochix.server.auth import require_auth
 from epochix.store.sqlite_store import RunStore
 
@@ -29,6 +29,9 @@ class SnapshotResponse(BaseModel):
     run: Run | None = None  # full Run object including config (architecture etc.)
     frames: list[StoryFrame]
     total_frames: int
+    # Every milestone of the run, in order. A frame carries its own; the ones
+    # a run ends with (biggest jump, training complete) belong to no frame.
+    milestones: list[Milestone] = Field(default_factory=list)
 
 
 class MetricsResponse(BaseModel):
@@ -66,7 +69,13 @@ async def get_snapshot(
     if run is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Run not found")
     frames = store.get_story_frames(run_id)
-    return SnapshotResponse(run_id=run_id, run=run, frames=frames, total_frames=len(frames))
+    return SnapshotResponse(
+        run_id=run_id,
+        run=run,
+        frames=frames,
+        total_frames=len(frames),
+        milestones=store.get_milestones(run_id),
+    )
 
 
 @router.get(
