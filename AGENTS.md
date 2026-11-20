@@ -153,6 +153,16 @@ npm --prefix epochix-vscode test    # launches a real VS Code host
   both engines, and pinned per log in `corpus_truth.json`. The card under the
   grade reads it. A new way of grading needs a new value and a sentence for it
   in all three languages — not a sentence that is true of most runs.
+- **Coverage sees a child process only if it is told.** `[tool.coverage.run]`
+  sat in pyproject and was run by nothing until 2026-11-10. CI's `coverage`
+  job now measures the unit and integration suites and adds what the
+  `integrations` jobs execute; its summary names the files and functions
+  nothing ran. Read it: a file at 0% is an item for ROADMAP.md, not a test
+  written for the number. The CLI tests start `python -m epochix`, which
+  `patch = ["subprocess"]` measures through the `COVERAGE_*` environment
+  variables, and a test that built its child's environment from nothing hid
+  two commands: pass them on. `--cov` on part of the suite needs
+  `--cov-fail-under=0`; the floor is for the whole.
 - **CI installs the lock; users get the newest.** `pyproject.toml` holds floors,
   so a fresh `pip install` can differ from everything CI runs: pytest 9.2 and
   Typer 0.27 were both found by accident. `newest-deps.yml` runs the tests
