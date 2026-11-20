@@ -12,6 +12,23 @@ if TYPE_CHECKING:
     from epochix.models import Run
 
 
+def _settings_for(db: str | None) -> Settings:
+    """The configured settings, with *db* as the database when one is given.
+
+    The app's startup opens its store on ``settings.db`` — whatever was set on
+    the app before. ``visualize`` set a store on *db* and startup replaced it,
+    and ``serve`` never read *db*; both served EPOCHIX_DB instead, so
+    ``visualize(run, db=...)`` opened a dashboard on a run its own server could
+    not find. ``serve`` hands the database over in the settings; ``visualize``
+    hands over the run's own store and turns startup off, because a run
+    ``parse()`` kept in memory has no path to name.
+    """
+    from epochix.config import get_settings
+
+    settings = get_settings()
+    return settings.model_copy(update={"db": db}) if db else settings
+
+
 def _warn_if_exposed(settings: Settings, host: str, port: int) -> None:
     """Both functions here take the address as an argument and bound it in
     silence; ``host="0.0.0.0"`` with no token put the write routes on the
@@ -66,15 +83,15 @@ def visualize(
     """
     import uvicorn
 
-    from epochix.config import get_settings
     from epochix.sdk._stores import store_holding
     from epochix.server.app import create_app
     from epochix.server.hub import Hub
 
-    settings = get_settings()
+    settings = _settings_for(db)
     _warn_if_exposed(settings, host, port)
     # Before anything is opened: a page for a run the server does not have is
-    # an empty dashboard with no explanation.
+    # an empty dashboard with no explanation. The store, not only settings.db:
+    # a run parse() kept in memory has no path to put in the settings.
     store = store_holding(run, db)
 
     _app = create_app(settings=settings)
@@ -109,23 +126,17 @@ def serve(
 ) -> str:
     """Start the epochix server without a specific run.
 
-    *db* is the SQLite DB to serve; the configured DB when ``None``.
-
-    Returns the base URL.  Blocks until the server is stopped. A *host* other
+    Serves the runs in *db* (defaults to the configured DB). Returns the base
+    URL.  Blocks until the server is stopped. A *host* other
     than loopback without ``EPOCHIX_AUTH_TOKEN`` raises
     :class:`~epochix.server.auth.PublicBindWarning`.
     """
     import uvicorn
 
-    from epochix.config import get_settings
     from epochix.server.app import create_app
 
-    settings = get_settings()
+    settings = _settings_for(db)
     _warn_if_exposed(settings, host, port)
-    if db is not None:
-        # `db` was accepted and read by nothing: the configured DB was served
-        # whatever was passed.
-        settings = settings.model_copy(update={"db": db})
     _app = create_app(settings=settings)
 
     url = f"http://{host}:{port}"
