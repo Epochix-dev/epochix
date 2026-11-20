@@ -37,7 +37,10 @@ epochix config show         # the values currently in effect
     --host` or with `EPOCHIX_HOST` — **set `EPOCHIX_AUTH_TOKEN` as well**;
     otherwise anyone who can reach the machine can create and delete runs.
     Every command that starts a server prints a warning, on stderr, when it
-    binds publicly without a token. See [Deployment](deployment.md).
+    binds publicly without a token, and the Python SDK's `epochix.serve` and
+    `epochix.visualize` raise `PublicBindWarning` (a `UserWarning`, from
+    `epochix.server.auth`) for a public `host=`. See
+    [Deployment](deployment.md).
 
 ### Hosted backends — not built
 

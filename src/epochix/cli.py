@@ -419,9 +419,6 @@ async def _run_batch_or_live(
         )
 
 
-_LOOPBACK_HOSTS = frozenset({"127.0.0.1", "::1", "localhost"})
-
-
 def _bind_address(settings: Settings, host: str | None, port: int | None) -> tuple[str, int]:
     """Where a server listens: the flag, else EPOCHIX_HOST / EPOCHIX_PORT, else
     127.0.0.1:7860. `serve` ignored both settings and nothing read
@@ -437,15 +434,11 @@ def _warn_if_exposed(settings: Settings, host: str, port: int) -> None:
     `serve` used to say so: `epochix <log>` and `--live` bound EPOCHIX_HOST in
     silence. On stderr, so `--json` keeps stdout to its one document.
     """
-    if host in _LOOPBACK_HOSTS or settings.auth_token:
-        return
-    typer.secho(
-        f"⚠  Binding {host}:{port} without EPOCHIX_AUTH_TOKEN — the "
-        "server is exposed on the network with no authentication. "
-        "Set EPOCHIX_AUTH_TOKEN before publishing this endpoint.",
-        fg=typer.colors.YELLOW,
-        err=True,
-    )
+    from epochix.server.auth import public_bind_warning
+
+    message = public_bind_warning(settings, host, port)
+    if message:
+        typer.secho(f"⚠  {message}", fg=typer.colors.YELLOW, err=True)
 
 
 def _require_free_port(host: str, port: int) -> None:

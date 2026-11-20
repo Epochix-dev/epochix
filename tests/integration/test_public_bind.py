@@ -65,10 +65,15 @@ def _run(
 
 def _serve(tmp_path: Path, args: list[str], env: dict[str, str], port: int) -> str:
     """Start `epochix serve`, wait until it answers on *port*, stop it, return its output."""
+    return _answer_then_stop(tmp_path, ["-m", "epochix.cli", "serve", *args], env, port)
+
+
+def _answer_then_stop(tmp_path: Path, argv: list[str], env: dict[str, str], port: int) -> str:
+    """Run `python <argv>`, wait until it answers on *port*, stop it, return its output."""
     import urllib.request
 
-    proc = subprocess.Popen(  # noqa: S603 — this package's own CLI
-        [sys.executable, "-m", "epochix.cli", "serve", *args],
+    proc = subprocess.Popen(  # noqa: S603 — this package's own code
+        [sys.executable, *argv],
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
         text=True,
@@ -88,7 +93,7 @@ def _serve(tmp_path: Path, args: list[str], env: dict[str, str], port: int) -> s
                     break
             except OSError:
                 if proc.poll() is not None or time.monotonic() > deadline:
-                    raise AssertionError(f"epochix serve did not answer on {port}") from None
+                    raise AssertionError(f"{argv} did not answer on {port}") from None
                 time.sleep(0.1)
     finally:
         proc.terminate()
@@ -167,3 +172,47 @@ def test_serve_flags_win_over_the_settings(tmp_path: Path) -> None:
     )
     assert f"http://127.0.0.1:{port}" in out, out
     assert WARNING not in out, out
+
+
+# ── the Python SDK: epochix.serve and epochix.visualize ────────────────────────
+#
+# Both take the address as an argument and bound it in silence. They warn with
+# PublicBindWarning, a UserWarning, so a notebook shows it and a caller who
+# means it can filter it.
+
+_SDK_SERVE = """
+import sys, epochix
+epochix.serve(host=sys.argv[1], port=int(sys.argv[2]), open_browser=False)
+"""
+
+_SDK_VISUALIZE = """
+import sys, epochix
+run = epochix.parse(sys.argv[3], db=sys.argv[4])
+epochix.visualize(run, host=sys.argv[1], port=int(sys.argv[2]), db=sys.argv[4])
+"""
+
+
+def _sdk(tmp_path: Path, script: str, host: str, **extra: str) -> str:
+    port = free_port()
+    argv = ["-c", script, host, str(port), str(LOG), str(tmp_path / "sdk.db")]
+    env = _env(tmp_path, EPOCHIX_OPEN_BROWSER="false", **extra)
+    return _answer_then_stop(tmp_path, argv, env, port)
+
+
+def test_the_sdk_serve_bound_publicly_without_a_token_warns(tmp_path: Path) -> None:
+    out = _sdk(tmp_path, _SDK_SERVE, "0.0.0.0")  # noqa: S104 — the point
+    assert "PublicBindWarning" in out, out
+    assert WARNING in out, out
+
+
+def test_the_sdk_visualize_bound_publicly_without_a_token_warns(tmp_path: Path) -> None:
+    out = _sdk(tmp_path, _SDK_VISUALIZE, "0.0.0.0")  # noqa: S104 — the point
+    assert "PublicBindWarning" in out, out
+    assert WARNING in out, out
+
+
+def test_the_sdk_with_a_token_or_on_loopback_does_not_warn(tmp_path: Path) -> None:
+    for script in (_SDK_SERVE, _SDK_VISUALIZE):
+        for host, extra in (("0.0.0.0", {"EPOCHIX_AUTH_TOKEN": "t0k"}), ("127.0.0.1", {})):  # noqa: S104
+            out = _sdk(tmp_path, script, host, **extra)
+            assert WARNING not in out, (host, extra, out)
