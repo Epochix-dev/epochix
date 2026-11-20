@@ -25,8 +25,10 @@ taught live in [AGENTS.md](AGENTS.md).
 ## Open
 
 From an audit on 2026-11-10 (0.7.40 plus the idle-sniff fix that followed it).
-The engine is sound on what it reads; the gap is what it does not read, and
-that it says nothing when it reads nothing.
+The engine is sound on what it reads; the gap is what it does not read. Two of
+the audit's items have landed since and are not listed: runs that count steps
+(nanoGPT, the PyTorch ImageNet example, a diffusers LoRA bar; 2026-11-11), and
+a notice when a watched terminal's command is seen and not told (2026-11-18).
 
 Two kinds of evidence appear below, and they are not the same:
 
@@ -79,22 +81,19 @@ one log and a metric in another). Whether each gets its own parser or a rule
 in the universal one is for the recording to decide. Detectron2 is hard to
 install on Windows; record it on Linux or leave it out and say so.
 
-### 3. Step-counted loops and fine-tuning scripts
+### 3. What is left of the step-counted runs
 
-**Probe.** Nothing at all was read from: MLX-LM (`Iter 10: Train loss …,
-Learning Rate …` / `Iter 10: Val loss …, Val took …s`), a kohya or diffusers
-LoRA run (one tqdm bar for the whole run, `steps: 10%|…| 100/1000 [… ,
-avr_loss=…]`), and the PyTorch ImageNet example (`Epoch: [0][5000/5005]
-Time … Loss … (…)  Acc@1 … (…)`, then ` * Acc@1 … Acc@5 …`). From a nanoGPT-style loop (`step 250: train loss …, val loss …`) the training loss was read and the validation loss on the same
-line was not. scikit-learn's `MLPClassifier(verbose=True)` was read correctly
-and needs nothing.
+nanoGPT, the PyTorch ImageNet example and a diffusers LoRA bar are read, from
+recordings. Not done, as `docs/parsers.md` ("Not read yet") says:
 
-These runs count steps, not epochs, and most never print an accuracy: the
-story is a loss told by step. Record nanoGPT (its character-level Shakespeare
-config can be trained on CPU), then MLX-LM (needs Apple silicon — record on
-a Mac or leave it out), then a LoRA trainer. "name value" pairs with a space
-(`train loss …`) are the common thread; a rule for them has to stay
-bounded and must not start reading prose.
+- **MLX-LM** (`Iter 10: Train loss …, Learning Rate …` / `Iter 10: Val loss
+  …, Val took …s`) has not been recorded: it needs Apple silicon. Record it on
+  a Mac or leave it out.
+- **kohya-ss `sd-scripts`** has not been recorded, and `avr_loss`, the loss on
+  its bar, is not a name Epochix recognises.
+- A bar piped to `epochix -` on Linux or macOS, or tailed over SSH, is read
+  only when its line ends: for one bar redrawn over the whole run, when the
+  training ends.
 
 ### 4. Reinforcement learning
 
@@ -109,26 +108,7 @@ do not apply. Needs a `TaskType`, its direction pinned, templates in three
 languages that claim only what the numbers support, and a recording (PPO on
 CartPole runs on CPU). Do it last: it touches every layer.
 
-### 5. Say so when a terminal's output is not recognised
-
-**Measured, in part.** Both issues ever opened by people outside the project
-(#35, #101) were sent from the dashboard's report button with no run loaded:
-0 epochs, no metric. What they ran is not known. What is known is the code
-path: `TerminalFeed` withholds a terminal's output until it recognises
-training, and the panel opens only then. A command whose output is never
-recognised — every layout in items 1 to 4 — produces nothing: no panel, no
-message. The empty panel explains what Epochix reads (0.7.32), but nothing
-tells the person that their run was seen and not understood.
-
-When a command in a watched terminal ends, or goes quiet, having printed
-numbers that were not recognised, say it once: what was seen (lines, the
-`name=value` pairs if any), why no story could be told, and what would fix it
-— the diagnosis `epochix check` already prints, which the extension has no
-equivalent of. It must not fire on `ls` or `pip install`: decide what "looked
-like training" means from recordings of commands that are not training, and
-test that those stay silent. Nothing of the output leaves the machine.
-
-### 6. A page that tells a pasted log's story
+### 5. A page that tells a pasted log's story
 
 The extension's engine (`StandaloneEngine.ts`, `parsers/`, `story/`) imports
 nothing from `vscode`; it is plain TypeScript that turns text into frames. A
@@ -146,7 +126,7 @@ leave the browser, and make that true (no network calls; assert it). Start
 with grade, phase, story sentence and the learning curve; the full dashboard
 is a separate question.
 
-### 7. One engine, or a cheaper second one — a spike
+### 6. One engine, or a cheaper second one — a spike
 
 Every engine change is written twice. The last two fixes (#150, #152) were
 each a Python change and a hand port to `StandaloneEngine.ts` (1,087 lines);
@@ -164,7 +144,7 @@ extension. (b) would have caught both bugs above in the port without a
 hand-written mirror test. Measure before deciding; the extension working with
 no Python installed is a feature and stays.
 
-### 8. Code no test executes
+### 7. Code no test executes
 
 **Measured.** Coverage ran for the first time on 2026-11-10 (CI job
 `coverage`: `tests/unit` and `tests/integration` on ubuntu and Python 3.12,
@@ -242,7 +222,7 @@ does not run, limited to two files) and the extension (Mocha inside the VS
 Code host). What each takes is written in the pull request that added the
 `coverage` job.
 
-### 9. The parser docs leave out four libraries
+### 8. The parser docs leave out four libraries
 
 **Measured.** `docs/parsers.md` ("Supported Frameworks") has no section for
 XGBoost, LightGBM, CatBoost or scikit-learn's `GridSearchCV`; none of the four
