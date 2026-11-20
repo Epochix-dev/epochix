@@ -104,8 +104,11 @@ export function gradeByTrajectory(baseline: number, current: number, lowerBetter
 export function gradeNote(
   grade: Grade,
   readings: number,
-  o: { hasEpoch: boolean; newBest: boolean },
-): "few_readings" | "still_improving" | null {
+  o: { hasEpoch: boolean; newBest: boolean; unsteady?: boolean },
+): "few_readings" | "still_improving" | "unsteady" | null {
+  // Not graded because one reading cannot be set against another
+  // (steadiness.ts): an "I" otherwise means there was nothing to measure.
+  if (o.unsteady) return "unsteady";
   if (grade === "I") return null;
   if (!o.hasEpoch && readings <= 1) return null;
   if (readings < FEW_READINGS) return "few_readings";

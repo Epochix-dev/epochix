@@ -107,3 +107,50 @@ class TestMakeIngester:
             assert len(line.text) >= _MAX_PARTIAL  # got the buffered blob, no OOM
         finally:
             await gen.aclose()
+
+    async def test_file_tail_hands_on_a_step_bar_before_its_line_ends(
+        self, tmp_path: object
+    ) -> None:
+        """A LoRA trainer draws one bar for the whole run and ends no line until
+        the training does: its finished redraws must not wait for a newline."""
+        import asyncio
+
+        from epochix.ingester.file_tail import FileTailIngester
+        from epochix.pipeline import _line_states
+
+        cr = chr(13)
+        bar = "Steps:   {n}%|#         | {n}/100 [00:26<00:43,  1.85it/s, loss=0.{n}, lr=0.0001]"
+        drawn = [bar.format(n=n) for n in (1, 2, 3)]
+        path = tmp_path / "lora.log"  # type: ignore[operator]
+        path.write_bytes((cr + cr.join(drawn)).encode())  # no newline, as it is on disk
+        ing = FileTailIngester("r1", str(path), poll_interval=0.01)
+        gen = ing.lines()
+        try:
+            line = await asyncio.wait_for(gen.__anext__(), timeout=3.0)
+            # The two finished redraws; the third may still be half written.
+            assert _line_states(line.text) == drawn[:2]
+            # Its end arrives with the next redraw.
+            with path.open("ab") as fh:
+                fh.write((cr + bar.format(n=4)).encode())
+            line = await asyncio.wait_for(gen.__anext__(), timeout=3.0)
+            assert _line_states(line.text) == [drawn[2]]
+        finally:
+            await gen.aclose()
+
+    async def test_file_tail_keeps_an_epoch_bar_until_its_line_ends(self, tmp_path: object) -> None:
+        """Every other bar is read in its final state, so it waits for its newline."""
+        import asyncio
+
+        from epochix.ingester.file_tail import FileTailIngester
+
+        cr = chr(13)
+        path = tmp_path / "epochs.log"  # type: ignore[operator]
+        bar = "Epoch 1/12: {n}%|#   | {n}/100 [00:00<00:00, loss=2.3]"
+        path.write_bytes((cr + cr.join(bar.format(n=n) for n in (1, 2, 3))).encode())
+        ing = FileTailIngester("r1", str(path), poll_interval=0.01)
+        gen = ing.lines()
+        try:
+            with pytest.raises(asyncio.TimeoutError):
+                await asyncio.wait_for(gen.__anext__(), timeout=0.3)
+        finally:
+            await gen.aclose()

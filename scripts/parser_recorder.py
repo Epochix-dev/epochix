@@ -35,7 +35,9 @@ from epochix.parsers.boosting import BoostingParser
 from epochix.parsers.fastai import FastAIParser
 from epochix.parsers.huggingface import HFParser
 from epochix.parsers.keras_tensorflow import KerasParser
+from epochix.parsers.progress_meter import ProgressMeterParser
 from epochix.parsers.pytorch_lightning import PLParser
+from epochix.parsers.step_bar import StepBarParser
 from epochix.parsers.ultralytics_yolo import YOLOParser
 from epochix.parsers.universal import UniversalParser
 
@@ -47,6 +49,8 @@ PORTED = (
     HFParser,
     KerasParser,
     PLParser,
+    ProgressMeterParser,
+    StepBarParser,
     UniversalParser,
     YOLOParser,
 )

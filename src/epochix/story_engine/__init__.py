@@ -35,12 +35,14 @@ from epochix.story_engine.narrator import (
     narrate_past_peak,
     narrate_single_reading,
     narrate_stalled,
+    narrate_unsteady,
 )
 from epochix.story_engine.phases import (
     compute_phase,
     estimate_progress,
     relative_improvement,
 )
+from epochix.story_engine.steadiness import unsteady
 from epochix.story_engine.task_classifier import classify_task, refine_gaze
 from epochix.story_engine.warnings import WarningDetector
 
@@ -690,6 +692,16 @@ class StoryEngine:
         ):
             phase_baseline = 0.0
 
+        # Everything below sets this reading against another: the first (the
+        # phase, the grade of a metric with no scale), the best (past its
+        # peak), the one before. A metric whose readings rise and fall from
+        # one to the next by more than any trend in them supports none of
+        # that — see steadiness.py. Then no improvement is claimed, no letter
+        # is given, and the story says what the readings are.
+        swing = unsteady(self._metric_history.get(primary_key, ()))
+        if swing is not None:
+            phase_baseline = primary_value
+
         phase = compute_phase(
             progress=progress,
             primary_value=primary_value,
@@ -701,10 +713,10 @@ class StoryEngine:
         # the fraction of achievable metric improvement realised so far. Used
         # for both the progress bar and the maturity signal (NOT a statistical
         # prediction confidence).
-        rel = relative_improvement(
-            primary_value,
-            self._baseline,
-            lower_better=lower_better,
+        rel = (
+            relative_improvement(primary_value, self._baseline, lower_better=lower_better)
+            if swing is None
+            else None
         )
         advancement = progress if progress is not None else (rel if rel is not None else 0.0)
         # A non-finite primary (diverged run) can make relative-improvement NaN;
@@ -740,7 +752,12 @@ class StoryEngine:
         # upside down.
         own_bands = self.grade_config.bands_for(task, primary_key) if self.grade_config else None
         grade_basis: GradeBasis | None = None
-        if own_bands:
+        if swing is not None:
+            # On any scale: a letter for one reading is not a letter for the
+            # run when the next reading is as likely to be half or double.
+            grade = Grade.INCOMPLETE
+            self.grade_bands_used = None
+        elif own_bands:
             stated = bands_lower_better(own_bands)
             grade = compute_grade(
                 task=task,
@@ -812,7 +829,8 @@ class StoryEngine:
                 if lower_better
                 else (self._best_primary - primary_value)
             ) / abs(self._best_primary)
-            past_peak = drop > _PAST_PEAK_REL_DROP
+            # Not for an unsteady metric: its best is its luckiest batch.
+            past_peak = drop > _PAST_PEAK_REL_DROP and swing is None
 
         epochs_seen = len(self._metric_history.get(event.canonical_key, ()))
         # `rel` is the fraction of achievable improvement realised, so a run
@@ -841,6 +859,17 @@ class StoryEngine:
         if event.epoch is None and epochs_seen <= 1:
             narrative = narrate_single_reading(
                 primary_value=primary_value,
+                run_id=self.run_id,
+                locale=self.locale,
+                metric=primary_key,
+            )
+        elif swing is not None:
+            narrative = narrate_unsteady(
+                epoch=event.epoch,
+                primary_value=primary_value,
+                turns=swing.turns,
+                readings=swing.readings,
+                step=swing.step_text,
                 run_id=self.run_id,
                 locale=self.locale,
                 metric=primary_key,
@@ -896,6 +925,7 @@ class StoryEngine:
             primary_value=primary_value,
             lr=last("lr"),
             direction_known=not direction_unknown,
+            train_swing=unsteady(self._metric_history.get("train_loss", ())),
         )
 
         # Build skill dimensions (radar data)
@@ -931,6 +961,7 @@ class StoryEngine:
                 len(self._metric_history.get(primary_key, ())),
                 has_epoch=event.epoch is not None,
                 new_best=new_best,
+                unsteady=swing is not None,
             ),
             grade_basis=grade_basis,
             narrative=narrative,

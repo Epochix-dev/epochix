@@ -330,7 +330,8 @@ def grade_note(
     *,
     has_epoch: bool,
     new_best: bool,
-) -> Literal["few_readings", "still_improving"] | None:
+    unsteady: bool = False,
+) -> Literal["few_readings", "still_improving", "unsteady"] | None:
     """Why this letter deserves less weight than it looks, or None.
 
     An 11-epoch run and a 200-epoch run received equally confident letters.
@@ -339,7 +340,14 @@ def grade_note(
     the letter says where the run got to rather than where it was heading.
     A single fit-and-score result (no epoch, one reading) is a finished
     result, not an early epoch, and an ``I`` grade has nothing to qualify.
+
+    A metric whose readings cannot be compared one with another
+    (story_engine/steadiness.py) is not graded at all, and that is why: an
+    ``I`` otherwise means there was nothing to measure against, which is not
+    true of a run with a hundred readings.
     """
+    if unsteady:
+        return "unsteady"
     if grade is Grade.INCOMPLETE:
         return None
     if not has_epoch and readings <= 1:

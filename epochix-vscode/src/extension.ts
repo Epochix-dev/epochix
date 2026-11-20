@@ -8,6 +8,7 @@ import * as vscode from "vscode";
 
 import { ServerManager } from "./sidecar/ServerManager";
 import { TerminalWatcher } from "./terminal/TerminalWatcher";
+import { NOTICE_COMMAND } from "./terminal/notice";
 import { StatusBar } from "./statusBar";
 import { registerOpenDashboard } from "./commands/openDashboard";
 import { registerOpenInBrowser } from "./commands/openInBrowser";
@@ -42,6 +43,10 @@ export async function activate(ctx: vscode.ExtensionContext): Promise<void> {
     watcher.attachToActiveAutomatically();
   }
   ctx.subscriptions.push(watcher);
+  // The status-bar item saying a watched command was seen and not told.
+  ctx.subscriptions.push(
+    vscode.commands.registerCommand(NOTICE_COMMAND, () => watcher.notice.details()),
+  );
 
   // Register commands
   ctx.subscriptions.push(

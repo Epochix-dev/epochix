@@ -21,6 +21,8 @@ MODEL_SUMMARY_KEYS = frozenset(
         "non_trainable_params",
         "flops",
         "macs",
+        # nanoGPT: "num decayed parameter tensors: 18, with 802,944 parameters".
+        "tensors",
     }
 )
 
