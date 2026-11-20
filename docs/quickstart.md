@@ -212,8 +212,10 @@ the WebSocket with absolute-from-root paths (`/assets`, `/api`, `/ws/live`).
   automatically upgrades the live feed to `wss://` — no config needed.
 - **WebSocket**: the proxy must forward the WebSocket upgrade for `/ws/live/*`
   (e.g. nginx `proxy_set_header Upgrade $http_upgrade; proxy_set_header
-  Connection "upgrade";`). If WebSockets are blocked, the dashboard falls back
-  to SSE at `/sse/*`.
+  Connection "upgrade";`). If the proxy refuses the upgrade, the dashboard
+  falls back to Server-Sent Events at `/sse/live/*` after two refused
+  attempts (about a second), and stays live over plain HTTP. The proxy must
+  not buffer that response: epochix sends `X-Accel-Buffering: no` for nginx.
 - **Auth**: set `EPOCHIX_AUTH_TOKEN` to require `?token=<token>` on the WS/SSE
   feed and to reveal the API docs at `/api/docs`; leave it unset for
   localhost-only use.

@@ -20,6 +20,32 @@ router = APIRouter(tags=["sse"])
 
 _HEARTBEAT_INTERVAL = 15.0  # seconds
 _CONTENT_TYPE = "text/event-stream; charset=utf-8"
+# Messages that are part of the run's sequence, and so carry an event id.
+_SEQUENCED = frozenset({"story_frame", "milestone", "warning"})
+
+
+def _resume_after(last_seq: int, last_event_id: str | None) -> int:
+    """Where a connection resumes: after ``last_seq``, or after the browser's
+    ``Last-Event-ID`` when it reconnects by itself.
+
+    EventSource reconnects to the URL it was opened with, so its ``last_seq``
+    is where the first connection started; the id of the last event it got
+    arrives in the header. Without it a reconnect replayed the run from there.
+    """
+    if last_event_id is None:
+        return last_seq
+    try:
+        seen = int(last_event_id.strip())
+    except ValueError:
+        return last_seq
+    return max(last_seq, seen)
+
+
+def _event(msg: WSMessage) -> str:
+    data = f"data: {ws_json(msg)}\n\n"
+    if msg.type in _SEQUENCED and msg.seq >= 0:
+        return f"id: {msg.seq}\n{data}"
+    return data
 
 
 @router.get("/sse/live/{run_id}")
@@ -39,7 +65,9 @@ async def sse_live(
         data: {"v":1,"type":"story_frame","run_id":"01J...","seq":42,...}
 
     Heartbeat comments (``:``) are sent every 15 s to keep the connection
-    alive through intermediaries.
+    alive through intermediaries. Frames, milestones and warnings carry their
+    seq as the event ``id``, so a browser that reconnects by itself resumes
+    after the last one it received (``Last-Event-ID``).
 
     When ``EPOCHIX_AUTH_TOKEN`` is set, clients must pass a matching
     ``?token=`` query parameter (EventSource cannot set Authorization headers).
@@ -49,24 +77,26 @@ async def sse_live(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid or missing token"
         )
     hub: Hub = request.app.state.hub
-    queue = await hub.subscribe(run_id, last_seq=last_seq)
+    resume = _resume_after(last_seq, request.headers.get("last-event-id"))
+    queue = await hub.subscribe(run_id, last_seq=resume)
+    loop = asyncio.get_running_loop()
 
     async def _event_stream() -> AsyncIterator[str]:
-        deadline = asyncio.get_event_loop().time() + _HEARTBEAT_INTERVAL
+        deadline = loop.time() + _HEARTBEAT_INTERVAL
         try:
             while True:
                 if await request.is_disconnected():
                     break
 
-                timeout = max(0.0, deadline - asyncio.get_event_loop().time())
+                timeout = max(0.0, deadline - loop.time())
                 try:
                     msg: WSMessage | None = await asyncio.wait_for(queue.get(), timeout=timeout)
                 except asyncio.TimeoutError:
                     yield ": heartbeat\n\n"
-                    deadline = asyncio.get_event_loop().time() + _HEARTBEAT_INTERVAL
+                    deadline = loop.time() + _HEARTBEAT_INTERVAL
                     continue
 
-                deadline = asyncio.get_event_loop().time() + _HEARTBEAT_INTERVAL
+                deadline = loop.time() + _HEARTBEAT_INTERVAL
 
                 if msg is None:
                     complete_payload = json.dumps(
@@ -75,7 +105,7 @@ async def sse_live(
                     yield f"data: {complete_payload}\n\n"
                     break
 
-                yield f"data: {ws_json(msg)}\n\n"
+                yield _event(msg)
 
                 if msg.type == "complete":
                     break
