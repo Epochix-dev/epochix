@@ -157,19 +157,6 @@ per-module figures below are from that run.
 What the list showed, worst first. Each is something that ships, and each
 ends in a test that runs it the way a person would, not in a number.
 
-- **Three of the four plugin groups are loaded by nothing.**
-  `docs/plugins.md` documents the entry points `epochix.metaphor_packs`,
-  `epochix.exporters` and `epochix.tasks`, and says a registered exporter is
-  used with `epochix export <run-id> --format latex`. `load_all_plugins()`
-  has no caller: it and the three `_load_*_plugins` functions executed zero
-  statements. Nothing outside `src/epochix/plugins/` imports the three
-  registries, and the CLI's export knows html, pdf, md, json and gif.
-  `test_plugins.py` registers by hand and reads back, which is the
-  `.epochix.yaml` loader over again ([AGENTS.md](AGENTS.md), "Grading reads
-  the project's `.epochix.yaml`"). Parser plugins are a separate path
-  (`parsers/registry.py`) and do work. Either wire the three in, each proved
-  by a test that installs a real plugin package and sees it used, or take
-  them out of the docs and the package.
 - **The Jupyter magics are not run by their own test.**
   `integrations/jupyter.py` 19.6%. `test_jupyter_magic.py` loads the
   extension in a real IPython shell and then tests the helpers the magics
