@@ -12,6 +12,21 @@ if TYPE_CHECKING:
     from epochix.models import Run
 
 
+def _settings_for(db: str | None) -> Settings:
+    """The configured settings, with *db* as the database when one is given.
+
+    The app's startup opens its store on ``settings.db`` — whatever was set on
+    the app before. ``visualize`` set a store on *db* and startup replaced it,
+    and ``serve`` never read *db*; both served EPOCHIX_DB instead, so
+    ``visualize(run, db=...)`` opened a dashboard on a run its own server could
+    not find. The database has to travel in the settings.
+    """
+    from epochix.config import get_settings
+
+    settings = get_settings()
+    return settings.model_copy(update={"db": db}) if db else settings
+
+
 def _warn_if_exposed(settings: Settings, host: str, port: int) -> None:
     """Both functions here take the address as an argument and bound it in
     silence; ``host="0.0.0.0"`` with no token put the write routes on the
@@ -58,21 +73,11 @@ def visualize(
     """
     import uvicorn
 
-    from epochix.config import get_settings
     from epochix.server.app import create_app
-    from epochix.server.hub import Hub
-    from epochix.store.sqlite_store import RunStore
 
-    settings = get_settings()
+    settings = _settings_for(db)
     _warn_if_exposed(settings, host, port)
-    effective_db = db or settings.db
-    store = RunStore(db_path=effective_db)
-    hub = Hub()
-
     _app = create_app(settings=settings)
-    _app.state.store = store
-    _app.state.hub = hub
-    _app.state.engine_map = {}
 
     url = f"http://{host}:{port}/v/{run.id}"
     open_in_browser(url)
@@ -101,16 +106,16 @@ def serve(
 ) -> str:
     """Start the epochix server without a specific run.
 
-    Returns the base URL.  Blocks until the server is stopped. A *host* other
+    Serves the runs in *db* (defaults to the configured DB). Returns the base
+    URL.  Blocks until the server is stopped. A *host* other
     than loopback without ``EPOCHIX_AUTH_TOKEN`` raises
     :class:`~epochix.server.auth.PublicBindWarning`.
     """
     import uvicorn
 
-    from epochix.config import get_settings
     from epochix.server.app import create_app
 
-    settings = get_settings()
+    settings = _settings_for(db)
     _warn_if_exposed(settings, host, port)
     _app = create_app(settings=settings)
 
