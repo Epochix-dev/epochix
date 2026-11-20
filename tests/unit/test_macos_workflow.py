@@ -90,8 +90,16 @@ def _step(job: dict[str, Any], name: str) -> dict[str, Any]:
 def test_it_runs_the_extension_host_tests_as_ci_does() -> None:
     ci_job, mac_job = CI["jobs"]["test-vscode"], MAC["jobs"]["vscode"]
     assert mac_job["runs-on"] == "macos-latest"
-    # Same checkout, Node and install as ci.yml.
-    assert mac_job["steps"][:3] == ci_job["steps"][:3]
+    # Same checkout, Python environment, Node and install as ci.yml. The
+    # sidecar tests start the repository's own epochix from .venv and fail
+    # without it, so the uv steps and their Python are part of what matches.
+    install = ["actions/checkout", "astral-sh/setup-uv", "uv sync --frozen", "actions/setup-node"]
+    head = ci_job["steps"][: len(install) + 1]
+    for step, expected in zip(head, install, strict=False):
+        assert expected in step.get("uses", step.get("run", "")), (step, expected)
+    assert head[-1].get("run") == "cd epochix-vscode && npm ci"
+    assert mac_job["steps"][: len(head)] == head
+    assert mac_job["env"] == ci_job["env"] == {"UV_PYTHON": "3.12"}
     # The webview the release ships, built the same way.
     build = "Build the webview bundle exactly as the release does"
     assert _step(mac_job, build) == _step(ci_job, build)
