@@ -16,7 +16,7 @@ import './themes/dark.css';
 import './themes/light.css';
 import './themes/base.css';
 
-import { store, pushFrame }                from './store.js';
+import { store, pushFrame, pushMilestone } from './store.js';
 import { connect, disconnect }              from './ws-client.js';
 import { connectSSE, disconnectSSE }        from './sse-client.js';
 import { apiFetch, authToken, saveResponse, takeTokenFromUrl } from './auth.js';
@@ -132,10 +132,10 @@ async function fetchSnapshot(runId) {
   if (snapRes.status === 401) throw new TokenError();
   if (!snapRes.ok) throw new Error(`Snapshot ${snapRes.status}`);
 
-  const { frames = [], run = null } = await snapRes.json();
+  const { frames = [], run = null, milestones = [] } = await snapRes.json();
   const metrics = metricsRes.ok ? (await metricsRes.json()).events ?? [] : [];
 
-  return { frames, run, metrics };
+  return { frames, run, metrics, milestones };
 }
 
 async function fetchRunMeta(runId) {
@@ -484,12 +484,13 @@ async function main() {
   // Case 1: Export mode — run data is inlined in the HTML
   const inline = readInlineRunData();
   if (inline) {
-    const { run, frames = [], events = [] } = inline;
+    const { run, frames = [], events = [], milestones = [] } = inline;
     store.set({
       run, metrics: events, live: false,
       crossValidation: run?.config?.cross_validation ?? null,
     });
     for (const f of frames) pushFrame(f);
+    for (const m of milestones) pushMilestone(m);
     return; // no WS needed
   }
 
@@ -508,7 +509,7 @@ async function main() {
   }
 
   try {
-    const { frames, run, metrics } = await fetchSnapshot(runId);
+    const { frames, run, metrics, milestones } = await fetchSnapshot(runId);
     const lastSeq = frames.length > 0 ? (frames.at(-1).seq ?? frames.length - 1) : -1;
 
     // Architecture and the latest activation snapshot are stored in run.config
@@ -519,6 +520,8 @@ async function main() {
     const crossValidation = run?.config?.cross_validation ?? null;
     store.set({ run, metrics, architecture, activations, crossValidation });
     for (const f of frames) pushFrame(f);
+    // The milestones a run ends with belong to no frame.
+    for (const m of milestones) pushMilestone(m);
 
     // If run is not finished, open live stream
     const isLive = !run?.finished_at;
