@@ -13,8 +13,8 @@ epochix config show         # the values currently in effect
 | Variable | Default | What it does |
 |---|---|---|
 | `EPOCHIX_DB` | a local SQLite file | Where runs are stored. `:memory:` keeps nothing. |
-| `EPOCHIX_HOST` | `127.0.0.1` | Interface to bind. See the security note below before changing. |
-| `EPOCHIX_PORT` | `7860` | Server port. |
+| `EPOCHIX_HOST` | `127.0.0.1` | Interface bound by the server that `epochix <log>` and `epochix --live` start. `epochix serve` does not read it: pass `--host`. See the security note below before changing it. |
+| `EPOCHIX_PORT` | — | Has no effect: every command takes `--port` (default `7860`) and none reads this. |
 | `EPOCHIX_LOG_LEVEL` | `INFO` | Logging verbosity. |
 | `EPOCHIX_OPEN_BROWSER` | `true` | Open a browser when a run starts. `false` suppresses it everywhere — every command and the Python SDK — and prints the URL instead. |
 | `EPOCHIX_KEEP_RAW_LINES` | `false` | Keep the raw log lines alongside parsed metrics. |
@@ -32,11 +32,14 @@ epochix config show         # the values currently in effect
 
 !!! warning "Binding a public interface"
 
-    The server treats loopback clients as trusted for writes. If you set
-    `EPOCHIX_HOST` to anything other than `127.0.0.1`/`::1`/`localhost`,
-    **set `EPOCHIX_AUTH_TOKEN` as well** — otherwise anyone who can reach the
-    machine can create and delete runs. epochix prints a warning when you bind
-    publicly without a token. See [Deployment](deployment.md).
+    The server treats loopback clients as trusted for writes. If you bind
+    anything other than `127.0.0.1`/`::1`/`localhost` — `epochix serve --host`,
+    or `EPOCHIX_HOST` for the server `epochix <log>` and `epochix --live`
+    start — **set `EPOCHIX_AUTH_TOKEN` as well**; otherwise anyone who can
+    reach the machine can create and delete runs. `epochix serve --host`
+    prints a warning when it binds publicly without a token; the server that
+    `epochix <log>` and `epochix --live` start does not. See
+    [Deployment](deployment.md).
 
 ### Hosted backends — not built
 
@@ -139,8 +142,8 @@ lists every entry with the built-in values, commented out.
 ## Writing to `.env`
 
 ```bash
-epochix config set port 8080
+epochix config set db ./runs.db
 ```
 
-This writes `EPOCHIX_PORT=8080` to `.env` in the current directory.
+This writes `EPOCHIX_DB=./runs.db` to `.env` in the current directory.
 The key is accepted with or without the `EPOCHIX_` prefix, in any case.
