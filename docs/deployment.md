@@ -40,28 +40,61 @@ EPOCHIX_AUTH_USER=admin EPOCHIX_AUTH_PASS=secret epochix serve
 
 ## Reverse proxy (Nginx / Caddy)
 
+Proxy epochix at the **root of its own host** (a dedicated domain or
+subdomain, such as `epochix.example.com`). Serving it under a sub-path such
+as `https://example.com/epochix/` does not work: the dashboard requests its
+assets, the API and the live feeds from the root of the origin (`/assets`,
+`/api`, `/ws/live`, `/sse/live`), outside the proxied path, so the page
+arrives without its scripts or any run.
+
+Forward the client's address in `X-Forwarded-For`. epochix trusts that
+header from a proxy on the same machine, and when no `EPOCHIX_AUTH_TOKEN` is
+set it accepts writes only from loopback clients. A proxy that leaves the
+header out makes every visitor look like a same-machine caller, so anyone who
+can reach the proxy can create and delete runs. Set `EPOCHIX_AUTH_TOKEN` as
+well for anything reachable from outside.
+
 ### Nginx
 
 ```nginx
-location /epochix/ {
-    proxy_pass         http://127.0.0.1:7860/;
-    proxy_http_version 1.1;
-    proxy_set_header   Upgrade $http_upgrade;
-    proxy_set_header   Connection "upgrade";  # required for WebSocket
-    proxy_set_header   Host $host;
-    proxy_read_timeout 86400;
+# `Connection: upgrade` for WebSocket requests only.
+map $http_upgrade $connection_upgrade {
+    default upgrade;
+    ''      close;
+}
+
+server {
+    listen 443 ssl;
+    server_name epochix.example.com;
+    # ssl_certificate / ssl_certificate_key ...
+
+    location / {
+        proxy_pass         http://127.0.0.1:7860;
+        proxy_http_version 1.1;
+        proxy_set_header   Upgrade $http_upgrade;          # /ws/live
+        proxy_set_header   Connection $connection_upgrade;
+        proxy_set_header   Host $host;
+        proxy_set_header   X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header   X-Forwarded-Proto $scheme;
+    }
 }
 ```
+
+`/sse/live` responses carry `X-Accel-Buffering: no`, so nginx passes them on
+as they are sent without `proxy_buffering off`. Both live feeds send a
+heartbeat every 15 seconds, well inside nginx's default 60-second
+`proxy_read_timeout`.
 
 ### Caddy
 
 ```caddy
 epochix.example.com {
-    reverse_proxy 127.0.0.1:7860 {
-        header_up Host {host}
-    }
+    reverse_proxy 127.0.0.1:7860
 }
 ```
+
+Caddy gets a certificate for the host, forwards the WebSocket upgrade and
+sets `X-Forwarded-For` by default.
 
 ---
 
@@ -70,8 +103,8 @@ epochix.example.com {
 | Variable | Default | Description |
 |--|--|--|
 | `EPOCHIX_DB` | `~/.epochix/runs.db` | SQLite database path |
-| `EPOCHIX_HOST` | `127.0.0.1` | Bind host |
-| `EPOCHIX_PORT` | `7860` | Bind port |
+| `EPOCHIX_HOST` | `127.0.0.1` | Interface the server binds, for `epochix serve` and for the server `epochix <log>` and `epochix --live` start. `serve --host` overrides it. |
+| `EPOCHIX_PORT` | `7860` | Server port, for every command that starts one. `--port` overrides it. |
 | `EPOCHIX_AUTH_USER` | _(none)_ | Basic auth username |
 | `EPOCHIX_AUTH_PASS` | _(none)_ | Basic auth password |
 | `EPOCHIX_AUTH_TOKEN` | _(none)_ | Bearer token for API access |

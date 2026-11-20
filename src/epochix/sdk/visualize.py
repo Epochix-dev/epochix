@@ -2,12 +2,26 @@
 
 from __future__ import annotations
 
+import warnings
 from typing import TYPE_CHECKING
 
 from epochix.browser import open_in_browser
 
 if TYPE_CHECKING:
+    from epochix.config import Settings
     from epochix.models import Run
+
+
+def _warn_if_exposed(settings: Settings, host: str, port: int) -> None:
+    """Both functions here take the address as an argument and bound it in
+    silence; ``host="0.0.0.0"`` with no token put the write routes on the
+    network. The CLI said so and the SDK did not."""
+    from epochix.server.auth import PublicBindWarning, public_bind_warning
+
+    message = public_bind_warning(settings, host, port)
+    if message:
+        # stacklevel 3: the caller of serve()/visualize(), not this helper.
+        warnings.warn(message, PublicBindWarning, stacklevel=3)
 
 
 def visualize(
@@ -28,7 +42,8 @@ def visualize(
     port:
         Port for the embedded server.
     host:
-        Bind address.
+        Bind address. Anything but loopback without ``EPOCHIX_AUTH_TOKEN``
+        raises :class:`~epochix.server.auth.PublicBindWarning`.
     db:
         SQLite DB path that contains the run (defaults to the configured DB).
     blocking:
@@ -49,6 +64,7 @@ def visualize(
     from epochix.store.sqlite_store import RunStore
 
     settings = get_settings()
+    _warn_if_exposed(settings, host, port)
     effective_db = db or settings.db
     store = RunStore(db_path=effective_db)
     hub = Hub()
@@ -85,7 +101,9 @@ def serve(
 ) -> str:
     """Start the epochix server without a specific run.
 
-    Returns the base URL.  Blocks until the server is stopped.
+    Returns the base URL.  Blocks until the server is stopped. A *host* other
+    than loopback without ``EPOCHIX_AUTH_TOKEN`` raises
+    :class:`~epochix.server.auth.PublicBindWarning`.
     """
     import uvicorn
 
@@ -93,6 +111,7 @@ def serve(
     from epochix.server.app import create_app
 
     settings = get_settings()
+    _warn_if_exposed(settings, host, port)
     _app = create_app(settings=settings)
 
     url = f"http://{host}:{port}"

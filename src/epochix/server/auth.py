@@ -16,6 +16,37 @@ _bearer = HTTPBearer(auto_error=False)
 _LOOPBACK_HOSTS: frozenset[str] = frozenset({"127.0.0.1", "::1", "localhost", "testclient"})
 
 
+# Addresses that keep a server on this machine. A server bound anywhere else
+# with no token admits anyone who can reach it to the write routes, since
+# without a token require_destructive trusts whoever arrives from loopback.
+PRIVATE_BIND_HOSTS: frozenset[str] = frozenset({"127.0.0.1", "::1", "localhost"})
+
+
+class PublicBindWarning(UserWarning):
+    """A server was bound beyond this machine with no ``EPOCHIX_AUTH_TOKEN``.
+
+    Raised by ``epochix.serve`` and ``epochix.visualize``; the CLI prints the
+    same message on stderr. A caller who means it can filter it:
+    ``warnings.filterwarnings("ignore", category=PublicBindWarning)``.
+    """
+
+
+def public_bind_warning(settings: Settings, host: str, port: int) -> str | None:
+    """What to tell someone binding *host*:*port*, or None if nothing.
+
+    One sentence for every way of starting a server — the CLI's ``serve``, the
+    server ``epochix <log>`` and ``--live`` start, and the SDK — so none of
+    them can bind publicly in silence again.
+    """
+    if host in PRIVATE_BIND_HOSTS or settings.auth_token:
+        return None
+    return (
+        f"Binding {host}:{port} without EPOCHIX_AUTH_TOKEN — the server is "
+        "exposed on the network with no authentication. Set EPOCHIX_AUTH_TOKEN "
+        "before publishing this endpoint."
+    )
+
+
 def token_ok(settings: Settings, token: str | None) -> bool:
     """Return True if *token* satisfies the configured auth policy.
 
