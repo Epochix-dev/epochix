@@ -148,7 +148,13 @@ def cmd_run(  # noqa: C901
         help="Extra ssh -o option(s); repeatable, e.g. --ssh-opt ProxyJump=bastion.",
         show_default=False,
     ),
-    port: int = typer.Option(7860, "--port", "-p", help="Server port."),
+    port: int | None = typer.Option(
+        None,
+        "--port",
+        "-p",
+        help="Server port. [default: EPOCHIX_PORT, or 7860]",
+        show_default=False,
+    ),
     task: str | None = typer.Option(
         None, "--task", "-t", help="Force task type (e.g. biometric).", show_default=False
     ),
@@ -244,6 +250,7 @@ def cmd_run(  # noqa: C901
         raise typer.Exit(1)
 
     run_id = _new_run_id()
+    _, port = _bind_address(settings, None, port)
 
     # Start server + pipeline
     asyncio.run(
@@ -319,6 +326,7 @@ async def _run_batch_or_live(
     )
 
     # Start the uvicorn server in a background task
+    _warn_if_exposed(settings, settings.host, port)
     _require_free_port(settings.host, port)
     config = uvicorn.Config(
         _app,
@@ -409,6 +417,35 @@ async def _run_batch_or_live(
             outfile=export_output,
             quiet=json_out,
         )
+
+
+_LOOPBACK_HOSTS = frozenset({"127.0.0.1", "::1", "localhost"})
+
+
+def _bind_address(settings: Settings, host: str | None, port: int | None) -> tuple[str, int]:
+    """Where a server listens: the flag, else EPOCHIX_HOST / EPOCHIX_PORT, else
+    127.0.0.1:7860. `serve` ignored both settings and nothing read
+    EPOCHIX_PORT at all, while the docs gave them as the server's address."""
+    return (host or settings.host, settings.port if port is None else port)
+
+
+def _warn_if_exposed(settings: Settings, host: str, port: int) -> None:
+    """Say so when a server is bound beyond this machine with no token.
+
+    The server treats loopback clients as trusted for writes; bound publicly
+    without a token, anyone who can reach it can create or delete runs. Only
+    `serve` used to say so: `epochix <log>` and `--live` bound EPOCHIX_HOST in
+    silence. On stderr, so `--json` keeps stdout to its one document.
+    """
+    if host in _LOOPBACK_HOSTS or settings.auth_token:
+        return
+    typer.secho(
+        f"⚠  Binding {host}:{port} without EPOCHIX_AUTH_TOKEN — the "
+        "server is exposed on the network with no authentication. "
+        "Set EPOCHIX_AUTH_TOKEN before publishing this endpoint.",
+        fg=typer.colors.YELLOW,
+        err=True,
+    )
 
 
 def _require_free_port(host: str, port: int) -> None:
@@ -540,8 +577,19 @@ def _cli_export(
 
 @app.command("serve")
 def cmd_serve(
-    port: int = typer.Option(7860, "--port", "-p", help="Port to listen on."),
-    host: str = typer.Option("127.0.0.1", "--host", help="Host to bind to."),
+    port: int | None = typer.Option(
+        None,
+        "--port",
+        "-p",
+        help="Port to listen on. [default: EPOCHIX_PORT, or 7860]",
+        show_default=False,
+    ),
+    host: str | None = typer.Option(
+        None,
+        "--host",
+        help="Host to bind to. [default: EPOCHIX_HOST, or 127.0.0.1]",
+        show_default=False,
+    ),
     log_level: str = typer.Option("INFO", "--log-level"),
 ) -> None:
     """Start the epochix server without processing a run."""
@@ -550,19 +598,8 @@ def cmd_serve(
 
     settings = get_settings()
     _app = create_app(settings=settings)
-
-    # Loud warning when binding non-loopback with no auth token. The server
-    # treats loopback clients as trusted for writes; binding publicly without
-    # a token would otherwise let anyone reach the same machine create or
-    # delete runs.
-    if host not in {"127.0.0.1", "::1", "localhost"} and not settings.auth_token:
-        typer.secho(
-            f"⚠  Binding {host}:{port} without EPOCHIX_AUTH_TOKEN — the "
-            "server is exposed on the network with no authentication. "
-            "Set EPOCHIX_AUTH_TOKEN before publishing this endpoint.",
-            fg=typer.colors.YELLOW,
-            err=True,
-        )
+    host, port = _bind_address(settings, host, port)
+    _warn_if_exposed(settings, host, port)
 
     _require_free_port(host, port)
     typer.echo(f"Starting epochix server on http://{host}:{port}")

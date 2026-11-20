@@ -13,8 +13,8 @@ epochix config show         # the values currently in effect
 | Variable | Default | What it does |
 |---|---|---|
 | `EPOCHIX_DB` | a local SQLite file | Where runs are stored. `:memory:` keeps nothing. |
-| `EPOCHIX_HOST` | `127.0.0.1` | Interface bound by the server that `epochix <log>` and `epochix --live` start. `epochix serve` does not read it: pass `--host`. See the security note below before changing it. |
-| `EPOCHIX_PORT` | — | Has no effect: every command takes `--port` (default `7860`) and none reads this. |
+| `EPOCHIX_HOST` | `127.0.0.1` | Interface the server binds, for `epochix serve` and for the server `epochix <log>` and `epochix --live` start. `serve --host` overrides it. See the security note below before changing it. |
+| `EPOCHIX_PORT` | `7860` | Server port, for every command that starts one. `--port` overrides it. |
 | `EPOCHIX_LOG_LEVEL` | `INFO` | Logging verbosity. |
 | `EPOCHIX_OPEN_BROWSER` | `true` | Open a browser when a run starts. `false` suppresses it everywhere — every command and the Python SDK — and prints the URL instead. |
 | `EPOCHIX_KEEP_RAW_LINES` | `false` | Keep the raw log lines alongside parsed metrics. |
@@ -33,13 +33,11 @@ epochix config show         # the values currently in effect
 !!! warning "Binding a public interface"
 
     The server treats loopback clients as trusted for writes. If you bind
-    anything other than `127.0.0.1`/`::1`/`localhost` — `epochix serve --host`,
-    or `EPOCHIX_HOST` for the server `epochix <log>` and `epochix --live`
-    start — **set `EPOCHIX_AUTH_TOKEN` as well**; otherwise anyone who can
-    reach the machine can create and delete runs. `epochix serve --host`
-    prints a warning when it binds publicly without a token; the server that
-    `epochix <log>` and `epochix --live` start does not. See
-    [Deployment](deployment.md).
+    anything other than `127.0.0.1`/`::1`/`localhost` — with `epochix serve
+    --host` or with `EPOCHIX_HOST` — **set `EPOCHIX_AUTH_TOKEN` as well**;
+    otherwise anyone who can reach the machine can create and delete runs.
+    Every command that starts a server prints a warning, on stderr, when it
+    binds publicly without a token. See [Deployment](deployment.md).
 
 ### Hosted backends — not built
 

@@ -93,7 +93,8 @@ export class ServerManager implements vscode.Disposable {
       // the spawn fail.)
       const proc = spawn(
         cmd,
-        [...prefix, "serve", "--port", String(port)],
+        // Loopback only, whatever EPOCHIX_HOST in the user's shell says.
+        [...prefix, "serve", "--host", "127.0.0.1", "--port", String(port)],
         {
           detached: false,
           stdio: ["ignore", "pipe", "pipe"],
