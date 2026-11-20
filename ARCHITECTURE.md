@@ -544,7 +544,7 @@ CREATE TABLE story_frames (
   primary_key     TEXT,             -- the metric primary_value was read from
   task_type       TEXT,             -- the task the frame was told under
   confidence      REAL,
-  grade_note      TEXT,             -- "few_readings" | "still_improving" | NULL
+  grade_note      TEXT,             -- "few_readings" | "still_improving" | "unsteady" | NULL
   narrative       TEXT,
   metaphor_json   TEXT,
   skill_json      TEXT,

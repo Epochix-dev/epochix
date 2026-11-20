@@ -1,0 +1,10 @@
+total 14
+drwxr-xr-x 1 197609 197609   0 Nov 18 09:20 .
+drwxr-xr-x 1 197609 197609   0 Nov 18 09:20 ..
+-rw-r--r-- 1 197609 197609  33 Nov 18 09:20 README.md
+-rw-r--r-- 1 197609 197609 421 Nov 18 09:20 app.py
+drwxr-xr-x 1 197609 197609   0 Nov 18 09:20 data
+-rw-r--r-- 1 197609 197609  74 Nov 18 09:20 package.json
+-rw-r--r-- 1 197609 197609  22 Nov 18 09:20 requirements.txt
+-rw-r--r-- 1 197609 197609 523 Nov 18 09:20 test_model.py
+-rw-r--r-- 1 197609 197609 476 Nov 18 09:20 train.py

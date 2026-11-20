@@ -31,6 +31,8 @@
     "disconnected": "Offline",
     "waiting": "Waiting for training data…",
     "reconnecting": "Reconnecting…",
+    "token_required": "This server asks for an access token. Open the page once with ?token=<your token> at the end of its address; this tab keeps it until it is closed.",
+    "token_rejected": "The server did not accept this tab's access token. Open the page again with ?token=<your token> at the end of its address.",
     "frame": "Frame",
     "empty_title": "Nothing is loaded yet.",
     "empty_what": "Epochix reads what a training run prints — the loss and accuracy at each epoch — not your source code.",
@@ -84,7 +86,8 @@
     },
     "gradeNotes": {
       "few_readings": "Provisional: this grade rests on fewer than five readings of the metric.",
-      "still_improving": "Still improving at the last reading — the grade shows where the run got to, not where it was heading."
+      "still_improving": "Still improving at the last reading — the grade shows where the run got to, not where it was heading.",
+      "unsteady": "Not graded: this metric's readings rise and fall too much from one to the next for a single reading to place the run."
     }
   },
   "compare": {

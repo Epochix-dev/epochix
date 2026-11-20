@@ -11,6 +11,7 @@ import { metricDisplayLabel, isPercentMetric } from '../viz-util.js';
 import { escapeHtml as _esc } from '../escape.js';
 import { frameReportButton, reportFrame } from '../report.js';
 import { t } from '../i18n/apply.js';
+import { apiFetch } from '../auth.js';
 import { emptyState, EMPTY_STATE_COMMANDS } from './emptyState.js';
 
 const PHASE_ICON = {
@@ -99,7 +100,7 @@ export class JourneyPanel {
             // failed fetch must not stop the user filing.
             let version = '(unknown)';
             try {
-              const r = await fetch('/api/version');
+              const r = await apiFetch('/api/version');
               if (r.ok) version = (await r.json()).version ?? version;
             } catch { /* offline export, or no server */ }
             reportFrame(frame, run, version);
@@ -162,7 +163,9 @@ export class JourneyPanel {
 
     // ── How this letter was reached ─────────────────────────────────────────
     const caveatEl = document.getElementById('grade-caveat');
-    if (caveatEl) caveatEl.textContent = gradeCaveatText(frame?.grade_basis, frame?.grade);
+    if (caveatEl) {
+      caveatEl.textContent = gradeCaveatText(frame?.grade_basis, frame?.grade, frame?.grade_note);
+    }
 
     // ── Metaphor cards  ─────────────────────────────────────────────────────
     // Model uses { title, body, icon } — render all three.
@@ -385,7 +388,10 @@ function _renderEmpty(el, s) {
  * @param {string|null|undefined} basis
  * @param {string|null|undefined} [grade]
  */
-export function gradeCaveatText(basis, grade) {
+export function gradeCaveatText(basis, grade, note) {
+  // The note beside the letter says why there is none; "nothing to measure it
+  // against" is not true of a run with a hundred readings.
+  if (note === 'unsteady') return '';
   if (grade === 'I') {
     return t('ui.gradeCaveats.ungraded',
       'Not graded: this metric has no fixed scale, and the log gives nothing to measure it against — a single reading, or nothing that says whether a higher or a lower value is better.');
@@ -413,6 +419,10 @@ export function gradeNoteText(note) {
   if (note === 'few_readings') {
     return t('ui.gradeNotes.few_readings',
       'Provisional: this grade rests on fewer than five readings of the metric.');
+  }
+  if (note === 'unsteady') {
+    return t('ui.gradeNotes.unsteady',
+      "Not graded: this metric's readings rise and fall too much from one to the next for a single reading to place the run.");
   }
   if (note === 'still_improving') {
     return t('ui.gradeNotes.still_improving',
