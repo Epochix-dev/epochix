@@ -121,6 +121,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Python, the WebKit render and, for the first time on a Mac, the VS Code
   extension's host tests, on every push to `main`, weekly, on demand, and on
   a PR labelled `macos`. A red run opens one issue.
+- **Coverage is measured, and what nothing executes is listed.** Coverage was
+  configured and measured by nothing. One CI job now runs the unit and
+  integration tests, and both framework-integration rows, under coverage,
+  child processes included. It lists every file at 0%, every module under
+  50% and every function never entered. The floor is 85.5%, just under the
+  first measurement of 85.93%, so it catches only a drop. What it found is
+  ROADMAP item 7.
+- **Reading a log from standard input is tested.** The README's first
+  command had never run in a test. A recorded log piped into the CLI must now
+  be told as `corpus_truth.json` records it.
 
 ---
 
