@@ -162,9 +162,6 @@ ends in a test that runs it the way a person would, not in a number.
   extension in a real IPython shell and then tests the helpers the magics
   call; `_line_magic`, `_cell_magic` and `_ensure_server` never execute. Run
   `%epochix train.log` and `%%epochix --live` through the shell.
-- **Five commands no test runs:** `epochix open`, `export`, `race`, `prune`
-  and `config` (85 statements of `cli.py`, which is 62% overall). `open` and
-  `export` are tested only for refusing a missing argument.
 - **`GET /api/raw/{run_id}` has no caller** in the dashboard, the extension
   or the docs, and no test. Document and test it, or remove it.
 
