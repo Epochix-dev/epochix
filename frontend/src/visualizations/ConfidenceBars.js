@@ -5,7 +5,7 @@
  * delta vs the previous epoch coloured by whether it improved, and a gradient
  * sparkline of the whole trend.
  */
-import { emaSmooth, LOWER_IS_BETTER, metricLabel, seriesFromMetrics } from '../viz-util.js';
+import { emaSmooth, metricLabel, metricLowerBetter, seriesFromMetrics } from '../viz-util.js';
 import { escapeHtml as _esc } from '../escape.js';
 
 export class ConfidenceBars {
@@ -50,8 +50,11 @@ export class ConfidenceBars {
 }
 
 function _card(c) {
-  const lower = LOWER_IS_BETTER.has(c.key);
-  const improved = c.delta === 0 ? null : (lower ? c.delta < 0 : c.delta > 0);
+  // Green or red says the change was better or worse: only where the name
+  // says which way is better (a duration, eta, says neither).
+  const dir = metricLowerBetter(c.key);
+  const lower = dir === true;
+  const improved = c.delta === 0 || dir === undefined ? null : (lower ? c.delta < 0 : c.delta > 0);
   const arrow = c.delta > 1e-9 ? '▲' : (c.delta < -1e-9 ? '▼' : '·');
   const cls = improved == null ? 'flat' : (improved ? 'good' : 'bad');
   const col = lower ? '#fb923c' : '#7c6dff';

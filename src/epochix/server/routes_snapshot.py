@@ -3,9 +3,9 @@ from __future__ import annotations
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
-from epochix.models import MetricEvent, Run, StoryFrame
+from epochix.models import MetricEvent, Milestone, Run, StoryFrame
 from epochix.server.auth import require_auth
 from epochix.store.sqlite_store import RunStore
 
@@ -29,6 +29,9 @@ class SnapshotResponse(BaseModel):
     run: Run | None = None  # full Run object including config (architecture etc.)
     frames: list[StoryFrame]
     total_frames: int
+    # Every milestone of the run, in order. A frame carries its own; the ones
+    # a run ends with (biggest jump, training complete) belong to no frame.
+    milestones: list[Milestone] = Field(default_factory=list)
 
 
 class MetricsResponse(BaseModel):
@@ -66,7 +69,13 @@ async def get_snapshot(
     if run is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Run not found")
     frames = store.get_story_frames(run_id)
-    return SnapshotResponse(run_id=run_id, run=run, frames=frames, total_frames=len(frames))
+    return SnapshotResponse(
+        run_id=run_id,
+        run=run,
+        frames=frames,
+        total_frames=len(frames),
+        milestones=store.get_milestones(run_id),
+    )
 
 
 @router.get(
@@ -95,9 +104,22 @@ async def get_raw_lines(
     run_id: str,
     store: StoreDep,
 ) -> RawResponse:
-    """Return raw log lines for a run (only available when keep_raw_lines=True)."""
+    """The log lines a run was read from, as stored: secrets redacted first.
+
+    Lines are kept only when ``EPOCHIX_KEEP_RAW_LINES`` was on while the run
+    was read. A run read without it answered 200 with no lines, which says the
+    log was empty; it is told why there are none instead.
+    """
     run = store.get_run(run_id)
     if run is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Run not found")
     lines = store.get_raw_lines(run_id)
+    if not lines:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=(
+                "No log lines were kept for this run. Set EPOCHIX_KEEP_RAW_LINES=true "
+                "before a run is read to keep them."
+            ),
+        )
     return RawResponse(run_id=run_id, lines=lines, total_lines=len(lines))

@@ -54,6 +54,13 @@ def test_grading_tables_are_current() -> None:
     )
 
 
+def test_frontend_direction_is_current() -> None:
+    gen = _generator()
+    assert _committed(gen.FRONTEND_DIRECTION) == gen.render_frontend_direction(), (
+        "frontend/src/direction.generated.js is stale: run `make gen-ts-tables`"
+    )
+
+
 def test_grading_golden_is_current() -> None:
     gen = _generator()
     assert _committed(gen.GRADING_GOLDEN) == gen.render_grading_golden(), (

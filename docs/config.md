@@ -13,11 +13,11 @@ epochix config show         # the values currently in effect
 | Variable | Default | What it does |
 |---|---|---|
 | `EPOCHIX_DB` | a local SQLite file | Where runs are stored. `:memory:` keeps nothing. |
-| `EPOCHIX_HOST` | `127.0.0.1` | Interface to bind. See the security note below before changing. |
-| `EPOCHIX_PORT` | `7860` | Server port. |
+| `EPOCHIX_HOST` | `127.0.0.1` | Interface the server binds, for `epochix serve` and for the server `epochix <log>` and `epochix --live` start. `serve --host` overrides it. See the security note below before changing it. |
+| `EPOCHIX_PORT` | `7860` | Server port, for every command that starts one. `--port` overrides it. |
 | `EPOCHIX_LOG_LEVEL` | `INFO` | Logging verbosity. |
 | `EPOCHIX_OPEN_BROWSER` | `true` | Open a browser when a run starts. `false` suppresses it everywhere — every command and the Python SDK — and prints the URL instead. |
-| `EPOCHIX_KEEP_RAW_LINES` | `false` | Keep the raw log lines alongside parsed metrics. |
+| `EPOCHIX_KEEP_RAW_LINES` | `false` | Keep the raw log lines alongside parsed metrics. Read them back, in order, from `GET /api/raw/<run_id>` on the server (with the bearer token, if `EPOCHIX_AUTH_TOKEN` is set). A run read without it answers 404 there, saying no lines were kept. |
 | `EPOCHIX_SCRUB_SECRETS` | `true` | Redact secret-looking strings (API keys, tokens, passwords, credentials in URLs) from the raw lines that are stored, and from lines sent to an LLM provider. Metrics are always read from the line as printed. |
 | `EPOCHIX_TELEMETRY` | `false` | Has no effect: epochix has no telemetry and sends nothing anywhere. Accepted so existing configs keep loading. |
 | `EPOCHIX_GRADE_CONFIG` | empty | A grade thresholds file, a folder to look for one from (and up), or `off` for the built-in thresholds. Empty looks for the nearest `.epochix.yaml` from the current folder — see [Grade thresholds](#grade-thresholds). |
@@ -26,17 +26,21 @@ epochix config show         # the values currently in effect
 
 | Variable | Default | What it does |
 |---|---|---|
-| `EPOCHIX_AUTH_TOKEN` | empty | Required token for writes. |
+| `EPOCHIX_AUTH_TOKEN` | empty | Token required on every `/api/*` route but `/api/health` and `/api/version` (`Authorization: Bearer <token>`) and on the live feeds (`?token=<token>`). In a browser, open a dashboard page once with `?token=<token>`; see [Deployment](deployment.md#team-server-lan). |
 | `EPOCHIX_CORS_ORIGINS` | empty | Comma-separated allowed origins. |
 | `EPOCHIX_EXPOSE_DOCS` | `false` | Serve the OpenAPI docs endpoints. |
 
 !!! warning "Binding a public interface"
 
-    The server treats loopback clients as trusted for writes. If you set
-    `EPOCHIX_HOST` to anything other than `127.0.0.1`/`::1`/`localhost`,
-    **set `EPOCHIX_AUTH_TOKEN` as well** — otherwise anyone who can reach the
-    machine can create and delete runs. epochix prints a warning when you bind
-    publicly without a token. See [Deployment](deployment.md).
+    The server treats loopback clients as trusted for writes. If you bind
+    anything other than `127.0.0.1`/`::1`/`localhost` — with `epochix serve
+    --host` or with `EPOCHIX_HOST` — **set `EPOCHIX_AUTH_TOKEN` as well**;
+    otherwise anyone who can reach the machine can create and delete runs.
+    Every command that starts a server prints a warning, on stderr, when it
+    binds publicly without a token, and the Python SDK's `epochix.serve` and
+    `epochix.visualize` raise `PublicBindWarning` (a `UserWarning`, from
+    `epochix.server.auth`) for a public `host=`. See
+    [Deployment](deployment.md).
 
 ### Hosted backends — not built
 
@@ -139,8 +143,21 @@ lists every entry with the built-in values, commented out.
 ## Writing to `.env`
 
 ```bash
-epochix config set port 8080
+epochix config set db ./runs.db
 ```
 
-This writes `EPOCHIX_PORT=8080` to `.env` in the current directory.
+This writes `EPOCHIX_DB=./runs.db` to `.env` in the current directory.
 The key is accepted with or without the `EPOCHIX_` prefix, in any case.
+An existing line for the setting is replaced, however it is written.
+
+A key that is not one of the settings above, or a value the setting cannot
+take (`config set port abc`), is refused and nothing is written.
+
+The rest of the `.env` is left alone. It is usually your project's own, and
+keys epochix does not use (`OPENAI_API_KEY`, `DATABASE_URL`) are ignored. An
+`EPOCHIX_*` name epochix does not use is ignored too, in the file as in the
+environment. A setting with a value it cannot take stops every command with
+one line naming it.
+
+`config show` prints `auth_token` and `llm_key` as `(set, hidden)`, so its
+output can go into a bug report.
