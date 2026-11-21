@@ -1,8 +1,8 @@
 """`open`, `race`, `prune` and `config`, run as a user runs them.
 
-The first coverage measurement (ROADMAP item 8) found these four commands
-never executed by any test. Driven here through the console entry point in a
-subprocess, against a real store, they turned up:
+The first coverage measurement (ROADMAP's "Code no test executes") found
+these four commands never executed by any test. Driven here through the
+console entry point in a subprocess, against a real store, they turned up:
 
 - a `.env` in the folder epochix runs from — usually the user's project, with
   their own keys in it (``OPENAI_API_KEY``) — made every command die with a
