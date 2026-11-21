@@ -7,7 +7,7 @@
  *  2. Metric spread — a box-summary (min · IQR · median · last · max) per metric
  *     over the run, the honest analogue of TensorBoard's distributions.
  */
-import { LOWER_IS_BETTER, metricLabel } from '../viz-util.js';
+import { isLowerBetter, metricLabel, metricLowerBetter } from '../viz-util.js';
 import { escapeHtml as _esc } from '../escape.js';
 
 const TYPE_COLOR = {
@@ -117,7 +117,9 @@ function _spreadSection(metrics) {
     const last = vals[vals.length - 1];
     const span = max - min || 1;
     const pos = (x) => ((x - min) / span) * 100;
-    const better = LOWER_IS_BETTER.has(key) ? '↓' : '↑';
+    // Which way is better, when the name says; nothing when it does not.
+    const dir = metricLowerBetter(key);
+    const better = dir === undefined ? '' : (dir ? '↓' : '↑');
     return `
       <div class="dist-row">
         <span class="dist-row-label" title="${_esc(key)}">${_esc(metricLabel(key))}</span>
@@ -152,7 +154,7 @@ function _histogramSection(metrics) {
   if (byKey.size === 0) return '';
 
   const rows = [...byKey.entries()].map(([key, vals]) => {
-    const col = LOWER_IS_BETTER.has(key) ? '#fb923c' : '#7c6dff';
+    const col = isLowerBetter(key) ? '#fb923c' : '#7c6dff';
     return `
       <div class="dist-hrow">
         <span class="dist-row-label" title="${_esc(key)}">${_esc(metricLabel(key))}</span>
