@@ -283,6 +283,7 @@
     "conv"
    ]
   ],
+  "tests/fixtures/logs/diffusers_lora_real.log": [],
   "tests/fixtures/logs/diverging_loss.log": [],
   "tests/fixtures/logs/empty.log": [],
   "tests/fixtures/logs/fastai_real.log": [],
@@ -336,9 +337,11 @@
   "tests/fixtures/logs/lightgbm_real_early_stopping.log": [],
   "tests/fixtures/logs/mixed_frameworks.log": [],
   "tests/fixtures/logs/multiline_json.log": [],
+  "tests/fixtures/logs/nanogpt_real.log": [],
   "tests/fixtures/logs/no_val_metrics.log": [],
   "tests/fixtures/logs/pl_high_accuracy.log": [],
   "tests/fixtures/logs/plateau.log": [],
+  "tests/fixtures/logs/pytorch_imagenet_real.log": [],
   "tests/fixtures/logs/pytorch_lightning_30ep.log": [],
   "tests/fixtures/logs/pytorch_lightning_long.log": [],
   "tests/fixtures/logs/pytorch_lightning_short.log": [],

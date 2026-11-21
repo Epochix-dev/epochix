@@ -27,6 +27,7 @@ import {
 } from "../../story/grader";
 import { lossText } from "../../story/narrator";
 import { computePhase, relativeImprovement } from "../../story/phases";
+import { stepText, swing, unsteady } from "../../story/steadiness";
 
 interface Golden {
   compute_grade: [TaskType, number, string | null, Grade][];
@@ -35,6 +36,8 @@ interface Golden {
   relative_improvement: [number, number, boolean, number | null][];
   compute_phase: [number | null, number, number, boolean, string][];
   grade_note: [Grade, number, boolean, boolean, string | null][];
+  grade_note_unsteady: [Grade, number, boolean, boolean, string | null][];
+  swing: [number[], [number, number, number, string] | null, boolean][];
   loss_text: [number, string][];
 }
 
@@ -102,6 +105,25 @@ suite("Grading matches the Python engine", () => {
     check(g.grade_note, "grade_note", ([grade, readings, hasEpoch, newBest, want]) => {
       const got = gradeNote(grade, readings, { hasEpoch, newBest });
       return got === want ? null : `${grade} ${readings} ${hasEpoch} ${newBest}: ${got} != ${want}`;
+    });
+    check(
+      g.grade_note_unsteady,
+      "grade_note (unsteady)",
+      ([grade, readings, hasEpoch, newBest, want]) => {
+        const got = gradeNote(grade, readings, { hasEpoch, newBest, unsteady: true });
+        return got === want ? null : `${grade} ${readings} ${hasEpoch} ${newBest}: ${got} != ${want}`;
+      },
+    );
+  });
+
+  test("swing and unsteady", () => {
+    assert.ok(g.swing.some(([, , yes]) => yes) && g.swing.some(([, , yes]) => !yes));
+    check(g.swing, "swing", ([values, want, wantUnsteady]) => {
+      const found = swing(values);
+      const got = found === null ? null : [found.readings, found.turns, found.step, stepText(found)];
+      const said = JSON.stringify([got, unsteady(values) !== null]);
+      const expected = JSON.stringify([want, wantUnsteady]);
+      return said === expected ? null : `${JSON.stringify(values.slice(0, 8))}…: ${said} != ${expected}`;
     });
   });
 });

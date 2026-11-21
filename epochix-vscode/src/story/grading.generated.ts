@@ -57,6 +57,12 @@ export const PLATEAU_WINDOW = 5;
 export const PLATEAU_DELTA = 0.01;
 export const DIVERGE_GROWTH = 10.0;
 
+/** When one reading cannot be set against another (story_engine/steadiness.py). */
+export const UNSTEADY_MIN_READINGS = 6;
+export const UNSTEADY_WINDOW = 50;
+export const UNSTEADY_TURN_SHARE = 0.5;
+export const UNSTEADY_STEP = 0.25;
+
 /** How a letter was reached (models.GradeBasis). */
 export type GradeBasis = "thresholds" | "improvement";
 

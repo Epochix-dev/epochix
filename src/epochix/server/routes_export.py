@@ -230,6 +230,54 @@ async def export_json(
     )
 
 
+# Declared after every other two-segment route on purpose: FastAPI matches
+# in declaration order, so the built-in formats above are never handed here.
+@router.get("/{run_id}/{fmt}", dependencies=[Depends(require_auth)])
+async def export_with_plugin_route(run_id: str, fmt: str, store: StoreDep) -> Response:
+    """A format an installed exporter plugin adds (``epochix.exporters``)."""
+    import mimetypes
+    import tempfile
+    from pathlib import Path
+
+    from starlette.concurrency import run_in_threadpool
+
+    from epochix.plugins.exporter_registry import (
+        ExporterFailed,
+        available_formats,
+        export_with_plugin,
+        plugin_format,
+    )
+
+    _require_run(run_id, store)
+    # From here on the format is the name the installed package declared, not
+    # the text of the request: the file below is named after it. CodeQL
+    # flagged the first version (py/path-injection), which named the file
+    # from `fmt` itself. Only a registered name got that far, and the
+    # extension cannot hold a separator, but a path built from a request is
+    # wrong in shape even where it cannot be exploited.
+    name = plugin_format(fmt)
+    if name is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"No exporter for {fmt!r}. Formats: {', '.join(available_formats())}.",
+        )
+    # Kept as the extension: an exporter may hand the path to a library that
+    # picks its format from the suffix (matplotlib's savefig does).
+    ext = _UNSAFE_IN_FILENAME.sub("_", name)[:32].strip(".") or "export"
+    with tempfile.TemporaryDirectory(prefix="epochix-export-") as tmp:
+        out = Path(tmp) / f"export.{ext}"
+        try:
+            # A plugin's code, of unknown speed: off the event loop.
+            await run_in_threadpool(export_with_plugin, name, run_id, store, out)
+        except ExporterFailed as exc:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(exc)
+            ) from exc
+        data = out.read_bytes()
+    media_type = mimetypes.guess_type(out.name)[0] or "application/octet-stream"
+    return Response(content=data, media_type=media_type, headers=_attachment(run_id, ext))
+
+
 def _require_run(run_id: str, store: RunStore) -> None:
     """Raise 404 if the run doesn't exist."""
     if store.get_run(run_id) is None:

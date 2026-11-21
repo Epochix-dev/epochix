@@ -139,6 +139,23 @@
   "final_grade_basis": "thresholds",
   "final_phase": "understanding"
  },
+ "diffusers_lora_real.log": {
+  "path": "tests/fixtures/logs/diffusers_lora_real.log",
+  "task": "custom",
+  "metric": "train_loss",
+  "frames": 120,
+  "last_value": 0.0036,
+  "keys": [
+   "lr",
+   "train_loss"
+  ],
+  "metric_from_epoch": 1.0,
+  "grade_note": "unsteady",
+  "cross_validation": null,
+  "final_grade": "I",
+  "final_grade_basis": null,
+  "final_phase": "learning"
+ },
  "diverging_loss.log": {
   "path": "tests/fixtures/logs/diverging_loss.log",
   "task": "classification",
@@ -951,6 +968,23 @@
   "final_grade_basis": "thresholds",
   "final_phase": "understanding"
  },
+ "nanogpt_real.log": {
+  "path": "tests/fixtures/logs/nanogpt_real.log",
+  "task": "custom",
+  "metric": "val_loss",
+  "frames": 9,
+  "last_value": 1.8857,
+  "keys": [
+   "train_loss",
+   "val_loss"
+  ],
+  "metric_from_epoch": 0.0,
+  "grade_note": "still_improving",
+  "cross_validation": null,
+  "final_grade": "A-",
+  "final_grade_basis": "improvement",
+  "final_phase": "understanding"
+ },
  "no_val_metrics.log": {
   "path": "tests/fixtures/logs/no_val_metrics.log",
   "task": "classification",
@@ -1003,6 +1037,25 @@
   "final_grade": "B+",
   "final_grade_basis": "thresholds",
   "final_phase": "learning"
+ },
+ "pytorch_imagenet_real.log": {
+  "path": "tests/fixtures/logs/pytorch_imagenet_real.log",
+  "task": "classification",
+  "metric": "val_accuracy",
+  "frames": 15,
+  "last_value": 0.89,
+  "keys": [
+   "accuracy",
+   "top5_accuracy",
+   "train_loss",
+   "val_accuracy"
+  ],
+  "metric_from_epoch": 1.0,
+  "grade_note": "still_improving",
+  "cross_validation": null,
+  "final_grade": "A-",
+  "final_grade_basis": "thresholds",
+  "final_phase": "mastering"
  },
  "pytorch_lightning.log": {
   "path": "demo/pytorch_lightning.log",

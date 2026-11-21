@@ -8,6 +8,7 @@ half-written file, two flags used together.
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -40,6 +41,10 @@ def _cli(*args: str, cwd: Path) -> subprocess.CompletedProcess[str]:
         "EPOCHIX_DB": str(cwd / "t.db"),
         "PATH": "",
         "SYSTEMROOT": "C:\\Windows",
+        # The environment is otherwise empty on purpose. Coverage reaches a
+        # child process only through these, and without them every command
+        # this file runs was invisible to the coverage job.
+        **{k: v for k, v in os.environ.items() if k.startswith("COVERAGE_")},
     }
     return subprocess.run(
         [sys.executable, "-m", "epochix.cli", *args],

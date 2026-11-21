@@ -37,7 +37,13 @@ def parse(
     run_name:
         Human-readable name for the run.
     db:
-        SQLite database path.  Defaults to ``:memory:`` (not persisted).
+        SQLite database path.  Defaults to ``:memory:``: nothing is written
+        to disk.  Either way the returned run can be handed straight to
+        :func:`~epochix.sdk.export.export`,
+        :func:`~epochix.sdk.compare.compare` and
+        :func:`~epochix.sdk.visualize.visualize`, which read it from where it
+        was stored for as long as the returned object is kept.  Pass a path
+        to keep the run for later (``epochix list``, another process).
     locale:
         Language code for narrative templates.
 
@@ -55,6 +61,10 @@ def parse(
         run = parse("train.log", task="biometric")
         print(run.final_grade)   # Grade.A_PLUS
         print(run.story_summary)
+
+        from epochix import export
+
+        export(run, "md", output="report.md")
     """
     log_path = Path(path)
     if not log_path.exists():
@@ -96,6 +106,7 @@ async def _parse_async(
 ) -> Run:
     from epochix.ingester import make_ingester
     from epochix.pipeline import run_pipeline
+    from epochix.sdk._stores import remember
     from epochix.server.hub import Hub
     from epochix.store.sqlite_store import RunStore
 
@@ -103,7 +114,7 @@ async def _parse_async(
     hub = Hub()
     ingester = make_ingester(source="file", run_id=run_id, path=str(log_path))
 
-    return await run_pipeline(
+    run = await run_pipeline(
         ingester=ingester,
         run_id=run_id,
         store=store,
@@ -113,6 +124,10 @@ async def _parse_async(
         primary_metric=primary_metric,
         locale=locale,
     )
+    # So export(), compare() and visualize() can read it back: with the
+    # default db it exists nowhere but in this store.
+    remember(run, store)
+    return run
 
 
 def parse_string(

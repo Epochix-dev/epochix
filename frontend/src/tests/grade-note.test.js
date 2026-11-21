@@ -15,7 +15,7 @@ import fr from '../i18n/fr.json';
 import { JourneyPanel, gradeNoteText } from '../panels/JourneyPanel.js';
 import { mapFrame } from '../vscode-bridge.js';
 
-const NOTES = ['few_readings', 'still_improving'];
+const NOTES = ['few_readings', 'still_improving', 'unsteady'];
 
 describe('gradeNoteText', () => {
   afterEach(() => setActiveI18n(null));

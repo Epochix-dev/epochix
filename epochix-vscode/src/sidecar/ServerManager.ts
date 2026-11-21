@@ -93,7 +93,8 @@ export class ServerManager implements vscode.Disposable {
       // the spawn fail.)
       const proc = spawn(
         cmd,
-        [...prefix, "serve", "--port", String(port)],
+        // Loopback only, whatever EPOCHIX_HOST in the user's shell says.
+        [...prefix, "serve", "--host", "127.0.0.1", "--port", String(port)],
         {
           detached: false,
           stdio: ["ignore", "pipe", "pipe"],
@@ -105,14 +106,7 @@ export class ServerManager implements vscode.Disposable {
           // is being used by another process". An editor extension must not be
           // able to block the editor's own update.
           cwd: os.tmpdir(),
-          // Started from a temporary folder, the server would not find the
-          // workspace's .epochix.yaml by looking upwards; tell it where to
-          // look instead, so a run stored through it is graded as the command
-          // line grades it. The folder, not the file: a file created after
-          // the server started is then found by the next run.
-          env: projectFolder
-            ? { ...process.env, EPOCHIX_GRADE_CONFIG: projectFolder }
-            : process.env,
+          env: sidecarEnv(process.env, projectFolder),
         },
       );
 
@@ -235,6 +229,40 @@ export class ServerManager implements vscode.Disposable {
       }
     }
   }
+}
+
+/**
+ * The environment the sidecar is started with.
+ *
+ * Everything the extension host has, with two changes:
+ *
+ *  * `EPOCHIX_GRADE_CONFIG` names the workspace folder. Started from a
+ *    temporary folder, the server would not find the workspace's
+ *    .epochix.yaml by looking upwards; told where to look, a run stored
+ *    through it is graded as the command line grades it. The folder, not the
+ *    file: a file created after the server started is then found by the next
+ *    run.
+ *  * The settings for serving beyond this machine are emptied. An
+ *    `EPOCHIX_AUTH_TOKEN` exported for a remote `epochix serve` reached the
+ *    sidecar too, and nothing in the extension sends a token — so saving a run
+ *    got 401, and the panel's page, an iframe on the sidecar, could read none.
+ *    The sidecar binds loopback only and is reached only by the extension and
+ *    its own pages, which need no cross-origin access either, so
+ *    `EPOCHIX_CORS_ORIGINS` goes too: with the token gone, an origin listed
+ *    there would have read it with no token at all. Empty rather than deleted,
+ *    because a set variable also outranks a `.env` file in the server's
+ *    folder.
+ */
+export function sidecarEnv(
+  base: NodeJS.ProcessEnv,
+  projectFolder?: string | null,
+): NodeJS.ProcessEnv {
+  return {
+    ...base,
+    ...(projectFolder ? { EPOCHIX_GRADE_CONFIG: projectFolder } : {}),
+    EPOCHIX_AUTH_TOKEN: "",
+    EPOCHIX_CORS_ORIGINS: "",
+  };
 }
 
 /** Matches the server's `EventPushRequest`. */
