@@ -97,8 +97,9 @@ List saved runs, newest first.
 ## `epochix open`
 
 Open a saved run in the browser by run ID. It starts a server for the
-dashboard on `--port` (7860) and stops if that port is already taken, before
-opening anything. With `EPOCHIX_OPEN_BROWSER=false` it prints the address
+dashboard on `EPOCHIX_HOST` and `--port` (default: `EPOCHIX_PORT`, or
+`127.0.0.1:7860`), and stops if that port is already taken, before opening
+anything. With `EPOCHIX_OPEN_BROWSER=false` it prints the address
 instead.
 
 ## `epochix export`

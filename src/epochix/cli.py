@@ -647,7 +647,13 @@ def cmd_list(
 @app.command("open")
 def cmd_open(
     run_id: str = typer.Argument(..., help="Run ID to open."),
-    port: int = typer.Option(7860, "--port", "-p"),
+    port: int | None = typer.Option(
+        None,
+        "--port",
+        "-p",
+        help="Server port. [default: EPOCHIX_PORT, or 7860]",
+        show_default=False,
+    ),
     log_level: str = typer.Option("WARNING", "--log-level"),
 ) -> None:
     """Open a saved run in the browser."""
@@ -660,14 +666,20 @@ def cmd_open(
         raise typer.Exit(1)
     from epochix.server.app import create_app
 
+    # The settings, as every other command that starts a server reads them.
+    # `open` alone bound 127.0.0.1:7860 whatever EPOCHIX_HOST and EPOCHIX_PORT
+    # said, so with EPOCHIX_PORT=9000 it served — and opened the browser on —
+    # a port the user had moved epochix off.
+    host, port = _bind_address(settings, None, port)
+    _warn_if_exposed(settings, host, port)
     # Before the browser: with the port taken, the page opened was whatever
     # already listened there — another epochix on another database answering
     # "run not found", or not epochix at all — while this server failed to bind.
-    _require_free_port("127.0.0.1", port)
+    _require_free_port(host, port)
     _app = create_app(settings=settings)
     typer.echo(console_safe(f"Opening run {run_id} …"))
     _open_browser(port, run_id)
-    uvicorn.run(_app, host="127.0.0.1", port=port, log_level="warning")
+    uvicorn.run(_app, host=host, port=port, log_level="warning")
 
 
 @app.command("export")
