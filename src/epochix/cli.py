@@ -28,7 +28,7 @@ import logging
 import sys
 from pathlib import Path
 from statistics import fmean, stdev
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, Any, cast
 
 import typer
 import uvicorn
@@ -660,9 +660,13 @@ def cmd_open(
         raise typer.Exit(1)
     from epochix.server.app import create_app
 
+    # Before the browser: with the port taken, the page opened was whatever
+    # already listened there — another epochix on another database answering
+    # "run not found", or not epochix at all — while this server failed to bind.
+    _require_free_port("127.0.0.1", port)
     _app = create_app(settings=settings)
     typer.echo(console_safe(f"Opening run {run_id} …"))
-    open_in_browser(f"http://127.0.0.1:{port}/v/{run_id}")
+    _open_browser(port, run_id)
     uvicorn.run(_app, host="127.0.0.1", port=port, log_level="warning")
 
 
@@ -734,7 +738,14 @@ def cmd_race(
         typer.echo(f"  Cannot race these runs: {exc}", err=True)
         raise typer.Exit(1) from None
 
-    output.write_bytes(data)
+    # `-o slides/race.gif` should work without a prior mkdir, as export's does.
+    try:
+        if output.parent != Path():
+            output.parent.mkdir(parents=True, exist_ok=True)
+        output.write_bytes(data)
+    except OSError as exc:
+        typer.echo(f"  Cannot write {output}: {exc.strerror}", err=True)
+        raise typer.Exit(1) from None
     typer.echo(f"  Race GIF -> {output}")
 
 
@@ -808,7 +819,9 @@ def cmd_prune(
 
     settings = get_settings()
     store = _open_store(settings)
-    runs = store.list_runs(limit=10000)
+    # Every run: list_runs is newest first, so a cap left out exactly the
+    # oldest — the ones this command exists to delete.
+    runs = store.list_runs(limit=None)
     to_delete = [r for r in runs if r.started_at.replace(tzinfo=timezone.utc) < cutoff]
 
     if not to_delete:
@@ -1294,35 +1307,89 @@ def cmd_config(
     Config is read from environment variables (EPOCHIX_*) or a .env file.
     Use ``set`` to write to .env in the current directory.
     """
-    settings = get_settings()
     if action == "show":
-        for field, val in settings.model_dump().items():
-            typer.echo(f"  {field} = {val!r}")
+        for field, val in get_settings().model_dump().items():
+            # `config show` is what gets pasted into a bug report.
+            shown = "(set, hidden)" if field in _SECRET_SETTINGS and val else repr(val)
+            typer.echo(f"  {field} = {shown}")
     elif action == "set":
         if key is None or value is None:
             typer.echo("Usage: epochix config set <key> <value>", err=True)
             raise typer.Exit(1)
-        # Accept both "port" and "EPOCHIX_PORT" — blindly prefixing turned the
-        # latter into EPOCHIX_EPOCHIX_PORT, a key nothing ever reads.
-        bare = key.upper().removeprefix("EPOCHIX_")
-        env_key = f"EPOCHIX_{bare}"
-        env_path = Path(".env")
-        lines = env_path.read_text(encoding="utf-8").splitlines() if env_path.exists() else []
-        prefix = f"{env_key}="
-        new_line = f"{env_key}={value}"
-        updated = False
-        for i, line in enumerate(lines):
-            if line.startswith(prefix):
-                lines[i] = new_line
-                updated = True
-                break
-        if not updated:
-            lines.append(new_line)
-        env_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
-        typer.echo(f"  Set {env_key}={value}  (in {env_path})")
+        _config_set(key, value)
     else:
         typer.echo(f"Unknown action: {action!r}. Use 'show' or 'set'.", err=True)
         raise typer.Exit(1)
+
+
+_SECRET_SETTINGS = frozenset({"auth_token", "llm_key"})
+
+
+def _config_set(key: str, value: str) -> None:
+    """Write one setting to ./.env, or refuse and write nothing.
+
+    Every value written here is read back by every later command run from this
+    folder, so it is checked first: an unknown key was written and read by
+    nothing, and a value that does not validate (``port abc``) made every
+    command there fail on start.
+    """
+    from pydantic import ValidationError
+
+    # Accept both "port" and "EPOCHIX_PORT" — blindly prefixing turned the
+    # latter into EPOCHIX_EPOCHIX_PORT, a key nothing ever reads.
+    field = key.lower().removeprefix("epochix_")
+    if field not in Settings.model_fields:
+        typer.echo(
+            f"  Unknown setting {key!r}. Settings: {', '.join(Settings.model_fields)}.",
+            err=True,
+        )
+        raise typer.Exit(1)
+    if "\n" in value or "\r" in value:
+        typer.echo("  A setting's value must be one line.", err=True)
+        raise typer.Exit(1)
+    try:
+        # Without the .env being replaced, so a bad line there can be fixed.
+        candidate: dict[str, Any] = {"_env_file": None, field: value}
+        Settings(**candidate)
+    except ValidationError as exc:
+        typer.echo(f"  Not set: {_settings_problem(exc)}", err=True)
+        raise typer.Exit(1) from None
+
+    env_key = f"EPOCHIX_{field.upper()}"
+    env_path = Path(".env")
+    lines = env_path.read_text(encoding="utf-8").splitlines() if env_path.exists() else []
+    new_line = f"{env_key}={value}"
+
+    def names(line: str) -> bool:
+        # The reader matches names in any case, with `export ` and spaces
+        # around `=`; a line written any of those ways is this setting's.
+        name = line.split("=", 1)[0].strip()
+        return "=" in line and name.removeprefix("export ").strip().upper() == env_key
+
+    at = next((i for i, line in enumerate(lines) if names(line)), None)
+    if at is None:
+        lines.append(new_line)
+    else:
+        lines[at] = new_line
+        # A second line for the same name would decide the value instead.
+        lines = [ln for i, ln in enumerate(lines) if i <= at or not names(ln)]
+    env_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    shown = "(hidden)" if field in _SECRET_SETTINGS else value
+    typer.echo(f"  Set {env_key}={shown}  (in {env_path})")
+
+
+def _settings_problem(exc: Exception) -> str:
+    """One line per invalid setting, naming it as the user would write it."""
+    from pydantic import ValidationError
+
+    if not isinstance(exc, ValidationError):
+        return str(exc)
+    out = []
+    for err in exc.errors():
+        loc = ".".join(str(p) for p in err["loc"])
+        msg = str(err["msg"]).removeprefix("Value error, ")
+        out.append(f"EPOCHIX_{loc.upper()}: {msg}" if loc else msg)
+    return "; ".join(out)
 
 
 # ------------------------------------------------------------------
@@ -1513,7 +1580,22 @@ def main_entry() -> None:
     if first_positional not in _SUBCOMMANDS:
         sys.argv = [sys.argv[0], "run", *argv]
 
-    app()
+    from pydantic import ValidationError
+
+    try:
+        app()
+    except ValidationError as exc:
+        # A setting that does not validate — in the environment or in this
+        # folder's .env — stopped every command with a page of traceback.
+        if exc.title != Settings.__name__:
+            raise
+        typer.secho(f"epochix: {_settings_problem(exc)}", fg=typer.colors.RED, err=True)
+        typer.echo(
+            "  Settings come from EPOCHIX_* environment variables and ./.env; "
+            "see `epochix config set --help`.",
+            err=True,
+        )
+        raise SystemExit(1) from None
 
 
 if __name__ == "__main__":
