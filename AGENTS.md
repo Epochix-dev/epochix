@@ -100,6 +100,16 @@ npm --prefix epochix-vscode test    # launches a real VS Code host
   was wrong whenever they did. And a metric whose direction is not pinned
   inherits its task's default silently, so its grade simply comes out
   inverted. Tests assert the direction of every preferred key; keep it so.
+- **A run's metric is the one its story ended on, not the one most frames
+  carry.** A story can start on one metric and move to another: training
+  accuracy until the first validation pass, a box loss until the first mAP
+  (12 of the 55 corpus logs that tell a story). The comparison and the default
+  GIF took the majority, so a run graded A- on validation accuracy was
+  tabulated as training accuracy beside that grade, and two detection runs
+  were ranked on their box loss. Read it with `told_on(frames)`
+  (`story_engine/comparison.py`), as the dashboard does with
+  `latestPrimaryKey`; `test_compared_on_the_graded_metric.py` holds every
+  corpus log to it.
 - **A story sentence may say only what the numbers support.** The phase
   templates once claimed "near-expert performance", "ready to ship" and "the
   model handles glasses, makeup, and partial occlusion", and told the
@@ -158,11 +168,29 @@ npm --prefix epochix-vscode test    # launches a real VS Code host
   both engines, and pinned per log in `corpus_truth.json`. The card under the
   grade reads it. A new way of grading needs a new value and a sentence for it
   in all three languages — not a sentence that is true of most runs.
+- **Coverage sees a child process only if it is told.** `[tool.coverage.run]`
+  sat in pyproject and was run by nothing until 2026-11-10. CI's `coverage`
+  job now measures the unit and integration suites and adds what the
+  `integrations` jobs execute; its summary names the files and functions
+  nothing ran. Read it: a file at 0% is an item for ROADMAP.md, not a test
+  written for the number. The CLI tests start `python -m epochix`, which
+  `patch = ["subprocess"]` measures through the `COVERAGE_*` environment
+  variables, and a test that built its child's environment from nothing hid
+  two commands: pass them on. `--cov` on part of the suite needs
+  `--cov-fail-under=0`; the floor is for the whole.
 - **CI installs the lock; users get the newest.** `pyproject.toml` holds floors,
   so a fresh `pip install` can differ from everything CI runs: pytest 9.2 and
   Typer 0.27 were both found by accident. `newest-deps.yml` runs the tests
   weekly on an upgraded lock, off the PR path, and keeps one issue open while
   they fail. Fix what it finds; never commit its lock.
+- **macOS is tested after a change lands, not before.** Its runners queued
+  15-18 minutes and were cancelled on four PRs in one afternoon, and no user
+  runs on a Mac yet. `macos.yml` runs ci.yml's tests (oldest and newest
+  Python), the WebKit render (`browser.yml`, shared with ci.yml) and the VS
+  Code extension's host tests on every push to `main`, weekly, on demand, and
+  on a PR labelled `macos`; a red run opens one issue. Label a PR `macos` when
+  it touches paths, sockets, terminals or the browser.
+  `test_macos_workflow.py` keeps each macOS job running ci.yml's command.
 - **Throughput from separate CI runs cannot be compared.** GitHub's runners come
   in at least two speeds: the same code reads ~30k or ~45k lines/sec on the
   universal parser depending on which it got. `scripts/compare_benchmarks.py`

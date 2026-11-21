@@ -27,7 +27,7 @@ Useful options:
 | `--headless` | Do not open a browser. Use in CI. |
 | `--export html\|pdf\|md\|json` | Write a report (requires `--headless`). |
 | `--output`, `-o` | Where to write that report. Parent directories are created. Defaults to `<run_id>.<format>` in the current directory. |
-| `--port`, `-p` | Server port (default `7860`). |
+| `--port`, `-p` | Server port (default: `EPOCHIX_PORT`, or `7860`). |
 | `--task`, `-t` | Force the task type instead of detecting it. |
 | `--name`, `-n` | Give the run a readable name. |
 | `--no-llm` | Disable the optional LLM fallback parser. |
@@ -85,8 +85,10 @@ epochix serve --port 7860
 ```
 
 If the port is taken, epochix says so and suggests another rather than raising
-a traceback. Binding a non-loopback `--host` without `EPOCHIX_AUTH_TOKEN`
-prints a warning — see [Configuration](config.md).
+a traceback. `--host` and `--port` default to `EPOCHIX_HOST` and
+`EPOCHIX_PORT`, or `127.0.0.1:7860`. Binding a non-loopback host without
+`EPOCHIX_AUTH_TOKEN` prints a warning, from `serve` and from the server
+`epochix <log>` starts alike — see [Configuration](config.md).
 
 ## `epochix list`
 
@@ -94,7 +96,10 @@ List saved runs, newest first.
 
 ## `epochix open`
 
-Open a saved run in the browser by run ID.
+Open a saved run in the browser by run ID. It starts a server for the
+dashboard on `--port` (7860) and stops if that port is already taken, before
+opening anything. With `EPOCHIX_OPEN_BROWSER=false` it prints the address
+instead.
 
 ## `epochix export`
 
@@ -134,7 +139,8 @@ epochix race <run_a> <run_b> --metric val_accuracy --output race.gif
 
 ## `epochix prune`
 
-Delete runs older than a given age. Check first with `--dry-run`:
+Delete runs that started more than N days ago (`--older-than 30d`; only
+days are understood). Check first with `--dry-run`:
 
 ```bash
 epochix prune --older-than 30d --dry-run

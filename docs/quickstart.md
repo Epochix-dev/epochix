@@ -219,11 +219,23 @@ the WebSocket with absolute-from-root paths (`/assets`, `/api`, `/ws/live`).
   automatically upgrades the live feed to `wss://` — no config needed.
 - **WebSocket**: the proxy must forward the WebSocket upgrade for `/ws/live/*`
   (e.g. nginx `proxy_set_header Upgrade $http_upgrade; proxy_set_header
-  Connection "upgrade";`). If WebSockets are blocked, the dashboard falls back
-  to SSE at `/sse/*`.
-- **Auth**: set `EPOCHIX_AUTH_TOKEN` to require `?token=<token>` on the WS/SSE
-  feed and to reveal the API docs at `/api/docs`; leave it unset for
-  localhost-only use.
+  Connection "upgrade";`). If the proxy refuses the upgrade, the dashboard
+  falls back to Server-Sent Events at `/sse/live/*` after two refused
+  attempts (about a second), and stays live over plain HTTP. The proxy must
+  not buffer that response: epochix sends `X-Accel-Buffering: no` for nginx.
+- **Auth**: set `EPOCHIX_AUTH_TOKEN` to require a token on the API (as
+  `Authorization: Bearer <token>`) and on the WS/SSE feed (as `?token=<token>`),
+  and to reveal the API docs at `/api/docs`; leave it unset for localhost-only
+  use. In a browser, open any dashboard page once with the token added to its
+  address, e.g. `https://story.example.com/?token=<token>`. The page takes it
+  out of the address bar at once, keeps it for that tab until the tab is
+  closed (a tab opened afresh needs `?token=` again), and sends it on every
+  request — as the Bearer header to the API and as `?token=` on the live feed
+  only. No link on the page carries it and no export contains it. It does
+  appear in the access log of the server and the proxy for that first page
+  load and for each live-feed request, so serve over HTTPS and keep those logs
+  private. Opened without the token, the page says that it needs one. See
+  [Deployment](deployment.md#team-server-lan).
 - **CORS**: `EPOCHIX_CORS_ORIGINS` (comma-separated) opts into cross-origin API
   access; the default is same-origin only.
 

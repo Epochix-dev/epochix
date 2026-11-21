@@ -204,6 +204,22 @@ def narrate_comparison(runs: list[RunTrajectory], locale: str = "en") -> str:
     return " ".join(parts)
 
 
+def told_on(frames: Sequence[object]) -> str | None:
+    """The metric a run's story is told on, as its latest frame names it.
+
+    A story can start on one metric and move to another: training accuracy
+    until the first validation pass, a box loss until the first mAP. The grade
+    belongs to the metric the run ended on, so that is the one a run is
+    compared, tabulated and animated on. The dashboard reads it the same way
+    (``latestPrimaryKey``). None when no frame names a metric.
+    """
+    for frame in reversed(frames):
+        key = getattr(frame, "primary_metric", None)
+        if key:
+            return str(key)
+    return None
+
+
 def trajectory_from_frames(
     name: str,
     frames: list[object],
@@ -212,30 +228,30 @@ def trajectory_from_frames(
 ) -> RunTrajectory | None:
     """Build a trajectory from stored :class:`StoryFrame` records.
 
-    Frames whose ``primary_metric`` differs from the run's dominant one are
-    dropped: an early frame can predate task detection and measure something
-    else, and mixing them would compare two different quantities.
+    Only the frames on the metric the story ended on (:func:`told_on`): an
+    earlier frame can measure something else, and mixing them would compare
+    two different quantities.
+
+    That metric was once the one most frames carried. A run that validates
+    late has more frames on what it started with, so a Lightning run graded A-
+    on a validation accuracy of 0.876 at epoch 30 was tabulated as training
+    accuracy 0.719 at epoch 9 and called not comparable with a run on
+    validation accuracy, and two detection runs graded on mAP50 were ranked on
+    their box loss. Of the 55 corpus logs that tell a story, 12 change metric
+    once; the majority was the wrong one in 3, the latest in none.
     """
-    counts: dict[str, int] = {}
-    for frame in frames:
-        key = getattr(frame, "primary_metric", None)
-        if key:
-            counts[key] = counts.get(key, 0) + 1
-    if counts:
-        dominant: str | None = max(counts, key=lambda k: counts[k])
-    elif fallback_metric:
-        # Frames can carry a value without naming the metric — every run
-        # written before that name was stored on the frame does. Refusing here
-        # made the comparison narrative come back *empty* rather than wrong,
-        # which is worse: the feature looked absent instead of broken. The run
-        # record still knows which metric these values are.
-        dominant = None
-    else:
+    told = told_on(frames)
+    # No frame names a metric: frames can carry a value without one — every
+    # run written before that name was stored on the frame does. Refusing here
+    # made the comparison narrative come back *empty* rather than wrong, which
+    # is worse: the feature looked absent instead of broken. The run record
+    # still knows which metric these values are, when the caller passes it.
+    if told is None and not fallback_metric:
         return None
 
     values: list[tuple[float, float]] = []
     for frame in frames:
-        if dominant is not None and getattr(frame, "primary_metric", None) != dominant:
+        if told is not None and getattr(frame, "primary_metric", None) != told:
             continue
         epoch = getattr(frame, "epoch", None)
         value = getattr(frame, "primary_metric_value", None)
@@ -248,7 +264,7 @@ def trajectory_from_frames(
     values.sort(key=lambda ev: ev[0])
     return RunTrajectory(
         name=name,
-        primary_metric=dominant or fallback_metric or "",
+        primary_metric=told or fallback_metric or "",
         values=values,
         grade=grade,
     )
