@@ -223,7 +223,7 @@ trainer = pl.Trainer(callbacks=[StoryCallback()])
 | **i18n** | English · Farsi (RTL) · French — UI *and* story narratives |
 | **VS Code** | Activity-bar panel · one-click demo · terminal auto-detect · run compare · `Ctrl+Alt+M` |
 | **Integrations** | PyTorch Lightning · HuggingFace · Keras · Jupyter magics · TensorBoard · W&B |
-| **Plugin system** | Custom parsers, metaphor packs, task types, exporters via `entry_points` |
+| **Plugin system** | Custom parsers and exporters via `entry_points` |
 
 ---
 
@@ -342,6 +342,10 @@ Opened without the token, or with a wrong one, the page says so instead of loadi
 places still see it: the server's (and your proxy's) access log for the first page load
 and for each live-feed request, since it is in those URLs — serve over HTTPS and keep
 those logs private.
+
+The VS Code extension's own server is started with `EPOCHIX_AUTH_TOKEN` and
+`EPOCHIX_CORS_ORIGINS` emptied and listens on `127.0.0.1` only, so a token exported in
+your shell for a remote server does not lock the extension out of it.
 
 > **Note:** wildcard CORS (`*`) and credentialed requests are never combined — credentials
 > are enabled only when you set explicit origins.

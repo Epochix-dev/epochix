@@ -148,3 +148,16 @@ epochix config set db ./runs.db
 
 This writes `EPOCHIX_DB=./runs.db` to `.env` in the current directory.
 The key is accepted with or without the `EPOCHIX_` prefix, in any case.
+An existing line for the setting is replaced, however it is written.
+
+A key that is not one of the settings above, or a value the setting cannot
+take (`config set port abc`), is refused and nothing is written.
+
+The rest of the `.env` is left alone. It is usually your project's own, and
+keys epochix does not use (`OPENAI_API_KEY`, `DATABASE_URL`) are ignored. An
+`EPOCHIX_*` name epochix does not use is ignored too, in the file as in the
+environment. A setting with a value it cannot take stops every command with
+one line naming it.
+
+`config show` prints `auth_token` and `llm_key` as `(set, hidden)`, so its
+output can go into a bug report.

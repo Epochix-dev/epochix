@@ -19,7 +19,9 @@ def _settings_for(db: str | None) -> Settings:
     the app before. ``visualize`` set a store on *db* and startup replaced it,
     and ``serve`` never read *db*; both served EPOCHIX_DB instead, so
     ``visualize(run, db=...)`` opened a dashboard on a run its own server could
-    not find. The database has to travel in the settings.
+    not find. ``serve`` hands the database over in the settings; ``visualize``
+    hands over the run's own store and turns startup off, because a run
+    ``parse()`` kept in memory has no path to name.
     """
     from epochix.config import get_settings
 
@@ -60,7 +62,9 @@ def visualize(
         Bind address. Anything but loopback without ``EPOCHIX_AUTH_TOKEN``
         raises :class:`~epochix.server.auth.PublicBindWarning`.
     db:
-        SQLite DB path that contains the run (defaults to the configured DB).
+        SQLite DB path that contains the run.  Not needed for a run returned
+        by :func:`~epochix.sdk.parse.parse`, which is served from where it was
+        parsed into; for any other run it defaults to the configured DB.
     blocking:
         If ``True`` (default), block until the user closes the server
         (Ctrl-C).  Set to ``False`` to start the server in a background
@@ -70,30 +74,46 @@ def visualize(
     -------
     str
         The URL where the run is being served.
+
+    Raises
+    ------
+    ValueError
+        If the run is not in the database it was looked for in.  No server is
+        started and no page is opened.
     """
     import uvicorn
 
+    from epochix.sdk._stores import store_holding
     from epochix.server.app import create_app
+    from epochix.server.hub import Hub
 
     settings = _settings_for(db)
     _warn_if_exposed(settings, host, port)
+    # Before anything is opened: a page for a run the server does not have is
+    # an empty dashboard with no explanation. The store, not only settings.db:
+    # a run parse() kept in memory has no path to put in the settings.
+    store = store_holding(run, db)
+
     _app = create_app(settings=settings)
+    _app.state.store = store
+    _app.state.hub = Hub()
+    _app.state.engine_map = {}
 
     url = f"http://{host}:{port}/v/{run.id}"
     open_in_browser(url)
 
+    # lifespan="off": the app's own startup opens the configured database and
+    # puts it where the store above was just put. Left on, `db=` was ignored
+    # and a run parsed into memory was never the one served.
+    server = uvicorn.Server(
+        uvicorn.Config(_app, host=host, port=port, log_level="warning", lifespan="off")
+    )
     if blocking:
-        uvicorn.run(_app, host=host, port=port, log_level="warning")
+        server.run()
     else:
         import threading
 
-        thread = threading.Thread(
-            target=uvicorn.run,
-            args=(_app,),
-            kwargs={"host": host, "port": port, "log_level": "warning"},
-            daemon=True,
-        )
-        thread.start()
+        threading.Thread(target=server.run, daemon=True, name="epochix-visualize").start()
 
     return url
 
@@ -123,5 +143,5 @@ def serve(
     if open_browser:
         open_in_browser(url)
 
-    uvicorn.run(_app, host=host, port=port, log_level="warning")
+    uvicorn.Server(uvicorn.Config(_app, host=host, port=port, log_level="warning")).run()
     return url

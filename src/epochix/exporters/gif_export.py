@@ -213,16 +213,17 @@ def _series_for(
                 + (f"Available: {', '.join(offer)}." if offer else "This run recorded none.")
             )
     else:
+        from epochix.story_engine.comparison import told_on
+
         frames = store.get_story_frames(run_id)
-        # One metric only: an early frame can predate task detection and
-        # measure something else, and joining a loss to an accuracy would be a
-        # false curve.
-        counts: dict[str, int] = {}
-        for f in frames:
-            if f.primary_metric and f.primary_metric_value is not None:
-                counts[f.primary_metric] = counts.get(f.primary_metric, 0) + 1
-        if counts:
-            metric = max(counts, key=lambda k: counts[k])
+        # One metric only: an earlier frame can measure something else, and
+        # joining a loss to an accuracy would be a false curve. It is the
+        # metric the story ended on, which is the one the grade drawn beside
+        # the curve was earned on. It was the metric most frames carried, so a
+        # 30-epoch run that first validated at epoch 10 was animated as nine
+        # epochs of training accuracy.
+        metric = told_on(frames)
+        if metric is not None:
             points = [
                 (float(f.epoch), float(f.primary_metric_value))
                 for f in frames
@@ -283,7 +284,9 @@ def build_gif(
 
     metric, points = _series_for(run_id, store, metric)
     if len(points) < 2:
-        raise ValueError("This run has too few epochs to animate.")
+        # Of that series, not "too few epochs": a run can have ten epochs and
+        # one reading of the metric it is graded on.
+        raise ValueError(f"This run has too few readings of {metric} to animate.")
 
     xs = [p[0] for p in points]
     ys = [p[1] for p in points]

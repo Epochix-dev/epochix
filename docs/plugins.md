@@ -1,8 +1,7 @@
 # Plugins
 
-epochix supports external plugins via Python entry points (PEP 517/660).
-You can add custom parsers, metaphor packs, exporters, and task types without
-modifying the core package.
+epochix reads plugins through Python entry points: install a package that
+declares one and epochix finds it, with no change to epochix itself.
 
 ---
 
@@ -11,9 +10,19 @@ modifying the core package.
 | Group | Purpose |
 |--|--|
 | `epochix.parsers` | Register a custom log parser |
-| `epochix.metaphor_packs` | Add domain-specific metaphor cards |
 | `epochix.exporters` | Add a custom export format |
-| `epochix.tasks` | Register a custom task type with grade thresholds |
+
+Earlier versions also documented `epochix.metaphor_packs` and
+`epochix.tasks`. Nothing ever read them, and they are gone: a package that
+declares them is ignored, as it always was. To change a task's grade
+thresholds, use the project's `.epochix.yaml` (template:
+`.epochix.example.yaml`); the dashboard and the VS Code extension both read
+it.
+
+Plugins are read by the Python package: the CLI, the server and the dashboard
+it serves. The VS Code extension tells a run with its own engine, written in
+TypeScript, which cannot load a Python package. Its export command offers the
+built-in formats only.
 
 ---
 
@@ -66,35 +75,10 @@ epochix discovers the parser automatically on next run.
 
 ---
 
-## Writing a metaphor pack
-
-A metaphor pack is a Python package that provides a YAML file with
-alternative narrative cards for a domain.
-
-```yaml
-# my_pack/metaphors.yaml
-task: biometric
-cards:
-  awakening:
-    - title: "Identity awakens"
-      body: "The system sees everyone as the same. EER: {value}."
-      icon: "👁️"
-  learning:
-    - title: "Faces take shape"
-      body: "Broad identity clusters are forming. EER: {value}."
-      icon: "🔍"
-```
-
-Register as:
-
-```toml
-[project.entry-points."epochix.metaphor_packs"]
-my_biometric_pack = "my_pack:METAPHORS_YAML_PATH"
-```
-
----
-
 ## Writing a custom exporter
+
+An exporter is a callable that is given the stored run, its story frames and
+its metric events, and writes one file to the path it is given.
 
 ```python
 # my_package/my_exporter.py
@@ -123,7 +107,23 @@ Then use via CLI:
 
 ```bash
 epochix export <run-id> --format latex --output report.tex
+epochix train.log --headless --export latex
 ```
+
+or from the server, which returns the file as a download:
+
+```text
+GET /api/export/<run-id>/latex
+```
+
+- The names of the built-in formats (`html`, `pdf`, `md`, `json`, `gif`) are
+  taken. A plugin that declares one of them is not loaded, and a warning is
+  logged.
+- An exporter that raises, or returns without writing its file, is reported
+  as a failure, naming the package it came from. Nothing is reported as
+  written that was not.
+- `epochix export --format <anything>` for a format nobody writes lists every
+  format that can be written, the installed plugins' included.
 
 ---
 
