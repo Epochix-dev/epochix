@@ -61,6 +61,11 @@ Then in VS Code:
 The extension spawns the local server, points the webview at it, and streams
 metrics + architecture into the dashboard live.
 
+That server listens on `127.0.0.1` only and is started with `EPOCHIX_AUTH_TOKEN`
+and `EPOCHIX_CORS_ORIGINS` emptied, so a token you exported for a remote
+`epochix serve` does not lock the extension out of its own server. Every other
+`EPOCHIX_*` setting in your environment (the database, say) still applies.
+
 ### Standalone mode (no Python required)
 
 If `pip install epochix` isn't available, the extension still parses logs
