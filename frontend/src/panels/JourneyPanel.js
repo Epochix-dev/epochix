@@ -11,6 +11,7 @@ import { metricDisplayLabel, isPercentMetric } from '../viz-util.js';
 import { escapeHtml as _esc } from '../escape.js';
 import { frameReportButton, reportFrame } from '../report.js';
 import { t } from '../i18n/apply.js';
+import { apiFetch } from '../auth.js';
 import { emptyState, EMPTY_STATE_COMMANDS } from './emptyState.js';
 
 const PHASE_ICON = {
@@ -99,7 +100,7 @@ export class JourneyPanel {
             // failed fetch must not stop the user filing.
             let version = '(unknown)';
             try {
-              const r = await fetch('/api/version');
+              const r = await apiFetch('/api/version');
               if (r.ok) version = (await r.json()).version ?? version;
             } catch { /* offline export, or no server */ }
             reportFrame(frame, run, version);

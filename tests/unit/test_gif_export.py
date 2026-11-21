@@ -108,7 +108,7 @@ def test_a_bounded_metric_axis_never_exceeds_one() -> None:
 
 def test_a_run_with_too_few_epochs_is_refused_clearly(tmp_path: Path) -> None:
     run_id, store = _run(tmp_path, 1)
-    with pytest.raises(ValueError, match="too few epochs|no metric series"):
+    with pytest.raises(ValueError, match="too few readings|no metric series"):
         build_gif(run_id=run_id, store=store)
 
 

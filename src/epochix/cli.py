@@ -148,7 +148,13 @@ def cmd_run(  # noqa: C901
         help="Extra ssh -o option(s); repeatable, e.g. --ssh-opt ProxyJump=bastion.",
         show_default=False,
     ),
-    port: int = typer.Option(7860, "--port", "-p", help="Server port."),
+    port: int | None = typer.Option(
+        None,
+        "--port",
+        "-p",
+        help="Server port. [default: EPOCHIX_PORT, or 7860]",
+        show_default=False,
+    ),
     task: str | None = typer.Option(
         None, "--task", "-t", help="Force task type (e.g. biometric).", show_default=False
     ),
@@ -244,6 +250,7 @@ def cmd_run(  # noqa: C901
         raise typer.Exit(1)
 
     run_id = _new_run_id()
+    _, port = _bind_address(settings, None, port)
 
     # Start server + pipeline
     asyncio.run(
@@ -319,6 +326,7 @@ async def _run_batch_or_live(
     )
 
     # Start the uvicorn server in a background task
+    _warn_if_exposed(settings, settings.host, port)
     _require_free_port(settings.host, port)
     config = uvicorn.Config(
         _app,
@@ -411,6 +419,28 @@ async def _run_batch_or_live(
         )
 
 
+def _bind_address(settings: Settings, host: str | None, port: int | None) -> tuple[str, int]:
+    """Where a server listens: the flag, else EPOCHIX_HOST / EPOCHIX_PORT, else
+    127.0.0.1:7860. `serve` ignored both settings and nothing read
+    EPOCHIX_PORT at all, while the docs gave them as the server's address."""
+    return (host or settings.host, settings.port if port is None else port)
+
+
+def _warn_if_exposed(settings: Settings, host: str, port: int) -> None:
+    """Say so when a server is bound beyond this machine with no token.
+
+    The server treats loopback clients as trusted for writes; bound publicly
+    without a token, anyone who can reach it can create or delete runs. Only
+    `serve` used to say so: `epochix <log>` and `--live` bound EPOCHIX_HOST in
+    silence. On stderr, so `--json` keeps stdout to its one document.
+    """
+    from epochix.server.auth import public_bind_warning
+
+    message = public_bind_warning(settings, host, port)
+    if message:
+        typer.secho(f"⚠  {message}", fg=typer.colors.YELLOW, err=True)
+
+
 def _require_free_port(host: str, port: int) -> None:
     """Fail with a usable message instead of a raw OSError traceback.
 
@@ -451,6 +481,21 @@ def _cli_export(
     # printed after it, so `run --json --export md` emitted invalid JSON.
     quiet: bool = False,
 ) -> None:
+    from epochix.plugins.exporter_registry import (
+        BUILTIN_FORMATS,
+        ExporterFailed,
+        available_formats,
+        export_with_plugin,
+        plugin_exporter,
+    )
+
+    # Before "Exporting … →" and before creating its folder: neither is true
+    # of a format nothing can write.
+    if fmt not in BUILTIN_FORMATS and plugin_exporter(fmt) is None:
+        formats = ", ".join(available_formats())
+        typer.echo(f"  Unknown export format: {fmt!r}. Use one of: {formats}.", err=True)
+        raise typer.Exit(1)
+
     outfile = outfile or Path(f"{run_id}.{fmt}")
 
     def say(message: str) -> None:
@@ -529,8 +574,14 @@ def _cli_export(
             typer.echo(f"  {exc}", err=True)
             raise typer.Exit(1) from None
     else:
-        typer.echo(f"  Unknown export format: {fmt!r}. Use html, pdf, md, or json.", err=True)
-        raise typer.Exit(1)
+        # A format an installed plugin adds (`epochix.exporters`), checked to
+        # exist above. Documented for the life of the project and never
+        # loaded: this branch said "Unknown export format" for every one.
+        try:
+            export_with_plugin(fmt, run_id, store, outfile)
+        except (ExporterFailed, ValueError) as exc:
+            typer.echo(f"  {exc}", err=True)
+            raise typer.Exit(1) from None
 
 
 # ------------------------------------------------------------------
@@ -540,8 +591,19 @@ def _cli_export(
 
 @app.command("serve")
 def cmd_serve(
-    port: int = typer.Option(7860, "--port", "-p", help="Port to listen on."),
-    host: str = typer.Option("127.0.0.1", "--host", help="Host to bind to."),
+    port: int | None = typer.Option(
+        None,
+        "--port",
+        "-p",
+        help="Port to listen on. [default: EPOCHIX_PORT, or 7860]",
+        show_default=False,
+    ),
+    host: str | None = typer.Option(
+        None,
+        "--host",
+        help="Host to bind to. [default: EPOCHIX_HOST, or 127.0.0.1]",
+        show_default=False,
+    ),
     log_level: str = typer.Option("INFO", "--log-level"),
 ) -> None:
     """Start the epochix server without processing a run."""
@@ -550,19 +612,8 @@ def cmd_serve(
 
     settings = get_settings()
     _app = create_app(settings=settings)
-
-    # Loud warning when binding non-loopback with no auth token. The server
-    # treats loopback clients as trusted for writes; binding publicly without
-    # a token would otherwise let anyone reach the same machine create or
-    # delete runs.
-    if host not in {"127.0.0.1", "::1", "localhost"} and not settings.auth_token:
-        typer.secho(
-            f"⚠  Binding {host}:{port} without EPOCHIX_AUTH_TOKEN — the "
-            "server is exposed on the network with no authentication. "
-            "Set EPOCHIX_AUTH_TOKEN before publishing this endpoint.",
-            fg=typer.colors.YELLOW,
-            err=True,
-        )
+    host, port = _bind_address(settings, host, port)
+    _warn_if_exposed(settings, host, port)
 
     _require_free_port(host, port)
     typer.echo(f"Starting epochix server on http://{host}:{port}")
@@ -618,7 +669,12 @@ def cmd_open(
 @app.command("export")
 def cmd_export(
     run_id: str = typer.Argument(..., help="Run ID to export."),
-    fmt: str = typer.Option("html", "--format", "-f", help="Format: html|pdf|md|json|gif."),
+    fmt: str = typer.Option(
+        "html",
+        "--format",
+        "-f",
+        help="Format: html|pdf|md|json|gif, or one an installed exporter plugin adds.",
+    ),
     metric: str | None = typer.Option(
         None,
         "--metric",
