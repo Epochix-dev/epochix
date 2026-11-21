@@ -66,10 +66,14 @@ def test_the_html_export_embeds_it(tmp_path: Path) -> None:
 
 def test_it_does_not_disturb_the_rest_of_the_payload(tmp_path: Path) -> None:
     """The payload round-trips; the stamp is an addition, not a reshape."""
-    from epochix.models import Run
+    from epochix.models import Milestone, Run
 
     run_id, db = _run(tmp_path)
     payload = build_json_payload(run_id, RunStore(db_path=db))
-    assert set(payload) == {"epochix_version", "run", "frames", "events"}
+    # `milestones`: the run's own list, including the two it ends with, which
+    # belong to no frame (the HTML export reads them from here).
+    assert set(payload) == {"epochix_version", "run", "frames", "events", "milestones"}
     Run.model_validate(payload["run"])
+    for m in payload["milestones"]:
+        Milestone.model_validate(m)
     assert len(payload["frames"]) == 3

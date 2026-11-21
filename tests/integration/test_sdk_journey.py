@@ -169,9 +169,10 @@ def test_parse_string_tells_the_same_story_and_exports() -> None:
 
 def test_an_unknown_format_is_refused_and_nothing_is_written(tmp_path: Path) -> None:
     run = parse(_path(LOG))
-    out = tmp_path / "run.gif"
-    with pytest.raises(ValueError, match="Unknown export format 'gif'"):
-        export(run, "gif", output=out)  # type: ignore[arg-type]
+    # Not `gif`, which this once used: export() writes it now, as the CLI does.
+    out = tmp_path / "run.docx"
+    with pytest.raises(ValueError, match="Unknown export format 'docx'"):
+        export(run, "docx", output=out)
     assert not out.exists()
 
 

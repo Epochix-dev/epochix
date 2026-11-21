@@ -6,7 +6,7 @@
  * GET /api/compare?run_ids=a,b,c.
  */
 import {
-  allMetricKeys, emaSmooth, LOWER_IS_BETTER, metricLabel, seriesColor, seriesFromMetrics,
+  allMetricKeys, emaSmooth, metricLabel, metricLowerBetter, seriesColor, seriesFromMetrics,
 } from '../viz-util.js';
 import { escapeHtml as _esc } from '../escape.js';
 import { t } from '../i18n/apply.js';
@@ -288,14 +288,14 @@ export class CompareView {
       ctx.fill();
     }
 
-    // "lower is better" hint
-    ctx.fillStyle = _css('--text-muted');
-    ctx.font = '9px DM Sans, sans-serif';
-    ctx.textAlign = 'left';
-    ctx.fillText(
-      LOWER_IS_BETTER.has(this._metric) ? '↓ lower is better' : '↑ higher is better',
-      ML + 2, MT + 10,
-    );
+    // "lower is better" hint — only when the metric's name says which.
+    const dir = metricLowerBetter(this._metric);
+    if (dir !== undefined) {
+      ctx.fillStyle = _css('--text-muted');
+      ctx.font = '9px DM Sans, sans-serif';
+      ctx.textAlign = 'left';
+      ctx.fillText(dir ? '↓ lower is better' : '↑ higher is better', ML + 2, MT + 10);
+    }
   }
 }
 

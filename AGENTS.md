@@ -36,11 +36,16 @@ silently skips the rest and can leave a stale, misleading result:
 ```bash
 uv run --extra dev ruff check src tests
 uv run --extra dev ruff format --check src tests
+uv run --extra dev bandit -r src/epochix -q -ll
 uv run --extra dev mypy --strict src/epochix
 uv run --extra dev pytest tests/unit tests/integration
 ```
 
 Both ruff commands matter. `format` alone once let an undefined name ship.
+Bandit is CI's lint job too, and fails on medium and high findings only. It
+was missing from this list, and a PR went up red. A `# nosec` names its test
+(`# nosec B602`) and has its reason on the line above: bandit reads every
+word after `nosec` as a test id.
 
 Frontend and extension have their own suites:
 

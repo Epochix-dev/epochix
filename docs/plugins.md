@@ -110,10 +110,18 @@ epochix export <run-id> --format latex --output report.tex
 epochix train.log --headless --export latex
 ```
 
-or from the server, which returns the file as a download:
+from the server, which returns the file as a download:
 
 ```text
 GET /api/export/<run-id>/latex
+```
+
+or from Python:
+
+```python
+from epochix import export, parse
+
+export(parse("train.log"), "latex", output="report.tex")
 ```
 
 - The names of the built-in formats (`html`, `pdf`, `md`, `json`, `gif`) are

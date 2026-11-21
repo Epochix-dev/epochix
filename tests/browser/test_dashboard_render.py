@@ -322,6 +322,54 @@ def test_the_report_button_with_nothing_loaded_explains_first(
             browser.close()  # type: ignore[attr-defined]
 
 
+def _timeline_text(page: object) -> str:
+    return page.evaluate(  # type: ignore[attr-defined, no-any-return]
+        "() => [...document.querySelectorAll('.timeline-card')].map(c => c.innerText).join(' | ')"
+    )
+
+
+@pytest.mark.parametrize("browser_name", BROWSERS)
+def test_a_finished_run_and_its_report_show_their_milestones(
+    dashboard: tuple[str, str],
+    tmp_path: Path,
+    browser_name: str,
+) -> None:
+    """The timeline of a run opened after it finished, and of its exported
+    report, shows the run's milestones. Both showed none: milestones were
+    stored and never read back, and reached a page only while it watched."""
+    base_url, run_id = dashboard
+    import json
+    import urllib.request
+
+    with urllib.request.urlopen(f"{base_url}/api/snapshot/{run_id}") as resp:  # noqa: S310
+        stored = json.loads(resp.read().decode("utf-8"))["milestones"]
+    expected = [m["message"] for m in stored if m["kind"] != "training_complete"]
+    assert len(expected) >= 3, stored
+
+    with urllib.request.urlopen(f"{base_url}/api/export/{run_id}/html") as resp:  # noqa: S310
+        report = tmp_path / "report.html"
+        report.write_text(resp.read().decode("utf-8"), encoding="utf-8")
+
+    with sync_playwright() as pw:
+        browser = _launch(pw, browser_name)
+        try:
+            for where in (f"{base_url}/v/{run_id}", report.as_uri()):
+                page = browser.new_page()  # type: ignore[attr-defined]
+                page.goto(where)
+                page.wait_for_function(
+                    "(n) => document.querySelectorAll('.timeline-card').length >= n",
+                    arg=len(expected),
+                    timeout=15_000,
+                )
+                shown = _timeline_text(page)
+                missing = [m for m in expected if m not in shown]
+                assert not missing, f"{browser_name} {where}: not on the timeline: {missing}"
+                assert shown.lower().count("training complete") == 1, shown
+                page.close()
+        finally:
+            browser.close()  # type: ignore[attr-defined]
+
+
 class _RefusingProxy:
     """A reverse proxy that refuses WebSocket upgrades and relays the rest.
 
