@@ -157,11 +157,6 @@ per-module figures below are from that run.
 What the list showed, worst first. Each is something that ships, and each
 ends in a test that runs it the way a person would, not in a number.
 
-- **The Jupyter magics are not run by their own test.**
-  `integrations/jupyter.py` 19.6%. `test_jupyter_magic.py` loads the
-  extension in a real IPython shell and then tests the helpers the magics
-  call; `_line_magic`, `_cell_magic` and `_ensure_server` never execute. Run
-  `%epochix train.log` and `%%epochix --live` through the shell.
 - **`GET /api/raw/{run_id}` has no caller** in the dashboard, the extension
   or the docs, and no test. Document and test it, or remove it.
 
