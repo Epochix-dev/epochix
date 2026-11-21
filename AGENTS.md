@@ -36,11 +36,16 @@ silently skips the rest and can leave a stale, misleading result:
 ```bash
 uv run --extra dev ruff check src tests
 uv run --extra dev ruff format --check src tests
+uv run --extra dev bandit -r src/epochix -q -ll
 uv run --extra dev mypy --strict src/epochix
 uv run --extra dev pytest tests/unit tests/integration
 ```
 
 Both ruff commands matter. `format` alone once let an undefined name ship.
+Bandit is CI's lint job too, and fails on medium and high findings only. It
+was missing from this list, and a PR went up red. A `# nosec` names its test
+(`# nosec B602`) and has its reason on the line above: bandit reads every
+word after `nosec` as a test id.
 
 Frontend and extension have their own suites:
 
@@ -95,6 +100,16 @@ npm --prefix epochix-vscode test    # launches a real VS Code host
   was wrong whenever they did. And a metric whose direction is not pinned
   inherits its task's default silently, so its grade simply comes out
   inverted. Tests assert the direction of every preferred key; keep it so.
+- **A run's metric is the one its story ended on, not the one most frames
+  carry.** A story can start on one metric and move to another: training
+  accuracy until the first validation pass, a box loss until the first mAP
+  (12 of the 55 corpus logs that tell a story). The comparison and the default
+  GIF took the majority, so a run graded A- on validation accuracy was
+  tabulated as training accuracy beside that grade, and two detection runs
+  were ranked on their box loss. Read it with `told_on(frames)`
+  (`story_engine/comparison.py`), as the dashboard does with
+  `latestPrimaryKey`; `test_compared_on_the_graded_metric.py` holds every
+  corpus log to it.
 - **A story sentence may say only what the numbers support.** The phase
   templates once claimed "near-expert performance", "ready to ship" and "the
   model handles glasses, makeup, and partial occlusion", and told the

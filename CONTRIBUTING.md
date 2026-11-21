@@ -42,6 +42,7 @@ npm test   # launches a real VS Code host
 |---------------|----------------------------------------------------------|
 | Python lint   | `uv run --extra dev ruff check src tests`                |
 | Python format | `uv run --extra dev ruff format --check src tests`       |
+| Python safety | `uv run --extra dev bandit -r src/epochix -q -ll`        |
 | Python type   | `uv run --extra dev mypy --strict src/epochix`           |
 | Python tests  | `uv run --extra dev pytest tests/unit tests/integration` |
 | Frontend      | `npm test` in `frontend/`                                |

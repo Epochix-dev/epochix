@@ -35,6 +35,9 @@ def build_json_payload(run_id: str, store: RunStore) -> dict[str, Any]:
         "epochix_version": __version__,
         "run": run.model_dump(mode="json"),
         "frames": [f.model_dump(mode="json") for f in store.get_story_frames(run_id)],
+        # Every milestone, including the two a run ends with, which belong to
+        # no frame. The HTML export embeds this payload.
+        "milestones": [m.model_dump(mode="json") for m in store.get_milestones(run_id)],
         "events": [e.model_dump(mode="json") for e in store.get_metric_events(run_id)],
     }
 

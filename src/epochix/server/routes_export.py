@@ -196,7 +196,7 @@ async def export_gif(
             ),
         ) from exc
     except ValueError as exc:
-        # "too few epochs" / "no metric series" — the run is real, it just has
+        # "too few readings" / "no metric series" — the run is real, it just has
         # nothing to animate. That is the caller's problem, not a server fault.
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
     return Response(content=data, media_type="image/gif", headers=_attachment(run_id, "gif"))
