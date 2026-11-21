@@ -165,15 +165,6 @@ ends in a test that runs it the way a person would, not in a number.
 - **Five commands no test runs:** `epochix open`, `export`, `race`, `prune`
   and `config` (85 statements of `cli.py`, which is 62% overall). `open` and
   `export` are tested only for refusing a missing argument.
-- **Two tests skip in every CI job.** Not a coverage figure, but found by
-  reading one: `exporters/html_export.py` is 50.0% because both tests that
-  take `build_html` past its bundle check skip with "frontend bundle not
-  built". Only the `browser` job builds the bundle and it runs only
-  `tests/browser`, so the HTML export's inlining, and the test that run data
-  cannot break out of its `<script>` block, run nowhere.
-  `test_the_watermark_carries_the_brand_mark` skips in a source checkout,
-  which is every job. Run them where the bundle and the wheel exist, and
-  fail on a skip there.
 - **`GET /api/raw/{run_id}` has no caller** in the dashboard, the extension
   or the docs, and no test. Document and test it, or remove it.
 
