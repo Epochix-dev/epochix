@@ -10,6 +10,7 @@ import {
 } from '../viz-util.js';
 import { escapeHtml as _esc } from '../escape.js';
 import { t } from '../i18n/apply.js';
+import { apiFetch, authToken, saveResponse } from '../auth.js';
 
 const _PREFERRED = ['val_accuracy', 'accuracy', 'val_loss', 'train_loss', 'mAP50'];
 
@@ -33,7 +34,7 @@ export class CompareView {
     this._el.innerHTML = `<div class="cmp-loading">${_esc(t('compare.loading', 'Loading runs…'))}</div>`;
     let data;
     try {
-      const r = await fetch(`/api/compare?run_ids=${encodeURIComponent(runIds.join(','))}`);
+      const r = await apiFetch(`/api/compare?run_ids=${encodeURIComponent(runIds.join(','))}`);
       if (!r.ok) throw new Error(`${r.status}`);
       data = await r.json();
     } catch (err) {
@@ -114,12 +115,12 @@ export class CompareView {
     this._el.querySelector('#cmp-md')?.addEventListener('click', () => {
       const ids = this._runs.map((r) => r.run.id);
       if (ids.length < 2) return;
-      window.location.href = compareMarkdownUrl(ids);
+      _saveExport(compareMarkdownUrl(ids), 'comparison.md');
     });
     this._el.querySelector('#cmp-pdf')?.addEventListener('click', () => {
       const ids = this._runs.map((r) => r.run.id);
       if (ids.length < 2) return;
-      window.location.href = compareMarkdownUrl(ids, 'pdf');
+      _saveExport(compareMarkdownUrl(ids, 'pdf'), 'comparison.pdf');
     });
 
     // The race GIF is the thing people put in a slide, and until now the only
@@ -134,7 +135,7 @@ export class CompareView {
       try {
         const url = `/api/export/compare/gif?runs=${ids.join(',')}` +
                     `&metric=${encodeURIComponent(this._metric)}`;
-        const res = await fetch(url);
+        const res = await apiFetch(url);
         if (!res.ok) {
           let detail = `HTTP ${res.status}`;
           try { detail = (await res.json()).detail || detail; } catch { /* not JSON */ }
@@ -306,6 +307,33 @@ function _fmt(v) {
   if (Math.abs(v) >= 100) return v.toFixed(0);
   if (Math.abs(v) >= 1) return v.toFixed(2);
   return v.toFixed(3);
+}
+
+/**
+ * Download one of the comparison's exports. Opening the URL is enough on a
+ * server with no token; with one, the request needs the Bearer header, which a
+ * navigation cannot carry — and the token must not go into a URL a reader can
+ * see — so it is fetched and saved from a blob.
+ */
+async function _saveExport(url, fallbackName) {
+  if (!authToken()) {
+    window.location.href = url;
+    return;
+  }
+  let res;
+  try {
+    res = await apiFetch(url);
+  } catch (err) {
+    alert(err.message);
+    return;
+  }
+  if (!res.ok) {
+    let detail = `HTTP ${res.status}`;
+    try { detail = (await res.json()).detail || detail; } catch { /* not JSON */ }
+    alert(detail);
+    return;
+  }
+  await saveResponse(res, fallbackName);
 }
 
 /** Where the written comparison of these runs downloads from. */

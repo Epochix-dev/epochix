@@ -16,9 +16,10 @@ import './themes/dark.css';
 import './themes/light.css';
 import './themes/base.css';
 
-import { store, pushFrame }                from './store.js';
+import { store, pushFrame, pushMilestone } from './store.js';
 import { connect, disconnect }              from './ws-client.js';
 import { connectSSE, disconnectSSE }        from './sse-client.js';
+import { apiFetch, authToken, saveResponse, takeTokenFromUrl } from './auth.js';
 import { HeroPanel }                        from './panels/HeroPanel.js';
 import { JourneyPanel }                     from './panels/JourneyPanel.js';
 import { SkillsPanel }                      from './panels/SkillsPanel.js';
@@ -58,12 +59,28 @@ function getParam(name) {
   return new URLSearchParams(location.search).get(name);
 }
 
-function toast(msg, type = '') {
+/** The server answered 401: it wants a token this tab does not hold, or a different one. */
+class TokenError extends Error {
+  constructor() {
+    super('401');
+    this.name = 'TokenError';
+  }
+}
+
+/** What to tell a reader whose request was refused for want of a token. */
+function tokenMessage() {
+  return authToken()
+    ? t('labels.token_rejected', "The server did not accept this tab's access token. Open the page again with ?token=<your token> at the end of its address.")
+    : t('labels.token_required', 'This server asks for an access token. Open the page once with ?token=<your token> at the end of its address; this tab keeps it until it is closed.');
+}
+
+/** @param {number} [ms]  How long it stays; 0 keeps it, for a page that cannot go on without it. */
+function toast(msg, type = '', ms = 4000) {
   const el = document.createElement('div');
   el.className = `toast${type ? ` ${type}` : ''}`;
   el.textContent = msg;
   document.getElementById('toasts')?.appendChild(el);
-  setTimeout(() => el.remove(), 4000);
+  if (ms > 0) setTimeout(() => el.remove(), ms);
 }
 
 // ── theme ─────────────────────────────────────────────────────────────────────
@@ -108,29 +125,33 @@ function readInlineRunData() {
 
 async function fetchSnapshot(runId) {
   const [snapRes, metricsRes] = await Promise.all([
-    fetch(`/api/snapshot/${runId}`),
-    fetch(`/api/metrics/${runId}`),
+    apiFetch(`/api/snapshot/${runId}`),
+    apiFetch(`/api/metrics/${runId}`),
   ]);
 
+  if (snapRes.status === 401) throw new TokenError();
   if (!snapRes.ok) throw new Error(`Snapshot ${snapRes.status}`);
 
-  const { frames = [], run = null } = await snapRes.json();
+  const { frames = [], run = null, milestones = [] } = await snapRes.json();
   const metrics = metricsRes.ok ? (await metricsRes.json()).events ?? [] : [];
 
-  return { frames, run, metrics };
+  return { frames, run, metrics, milestones };
 }
 
 async function fetchRunMeta(runId) {
-  const r = await fetch(`/api/runs/${runId}`);
+  const r = await apiFetch(`/api/runs/${runId}`);
   if (!r.ok) return null;
   return (await r.json()).run ?? null;
 }
 
 // ── WS with SSE fallback ──────────────────────────────────────────────────────
 
+// The SSE feed is for a WebSocket upgrade that is refused (a proxy that blocks
+// it). Choosing it on `'WebSocket' in window` meant it never ran in any
+// browser; the WebSocket client now hands over when it cannot open at all.
 function openLiveStream(runId, lastSeq) {
   if ('WebSocket' in window) {
-    connect(runId, lastSeq);
+    connect(runId, lastSeq, { onUnavailable: (seq) => connectSSE(runId, seq) });
   } else {
     connectSSE(runId, lastSeq);
   }
@@ -139,6 +160,9 @@ function openLiveStream(runId, lastSeq) {
 // ── main ──────────────────────────────────────────────────────────────────────
 
 async function main() {
+  // Before anything reads the URL or fetches: take ?token= out of the address
+  // bar and keep it for this tab (see auth.js).
+  takeTokenFromUrl();
   initTheme();
 
   // A standalone HTML export has no query string and no localStorage, so this
@@ -206,17 +230,11 @@ async function main() {
   // through the extension host when we are inside the VS Code webview, where
   // the CSP is `default-src 'none'` and a relative window.open silently does
   // nothing at all.
-  /** Filename the server chose, from Content-Disposition. */
-  function _filenameFrom(header, runId, fmt) {
-    const m = /filename="([^"]+)"/.exec(header || '');
-    return m ? m[1] : `${runId}.${fmt}`;
-  }
-
   async function _download(runId, fmt, params = {}) {
     const qs = new URLSearchParams(params).toString();
     let res;
     try {
-      res = await fetch(`/api/export/${runId}/${fmt}${qs ? `?${qs}` : ''}`);
+      res = await apiFetch(`/api/export/${runId}/${fmt}${qs ? `?${qs}` : ''}`);
     } catch (err) {
       _toast(`Export failed: ${err.message}`);
       return;
@@ -230,15 +248,7 @@ async function main() {
       _toast(detail);
       return;
     }
-    const blob = await res.blob();
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = _filenameFrom(res.headers.get('content-disposition'), runId, fmt);
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    URL.revokeObjectURL(url);
+    await saveResponse(res, `${runId}.${fmt}`);
   }
 
   function _toast(message) {
@@ -253,7 +263,7 @@ async function main() {
   /** Series this run can animate. Empty on any failure — never block the export. */
   async function _gifMetrics(runId) {
     try {
-      const res = await fetch(`/api/export/${runId}/gif/metrics`);
+      const res = await apiFetch(`/api/export/${runId}/gif/metrics`);
       if (!res.ok) return [];
       return (await res.json()).metrics ?? [];
     } catch {
@@ -368,7 +378,7 @@ async function main() {
     // one of those — a real report that named no version at all.
     let diag = '(unavailable)';
     try {
-      const r = await fetch('/api/version');
+      const r = await apiFetch('/api/version');
       if (r.ok) diag = (await r.json()).version ?? diag;
     } catch { /* offline export, or no server — fall through to the others */ }
     if (diag === '(unavailable)') {
@@ -474,12 +484,13 @@ async function main() {
   // Case 1: Export mode — run data is inlined in the HTML
   const inline = readInlineRunData();
   if (inline) {
-    const { run, frames = [], events = [] } = inline;
+    const { run, frames = [], events = [], milestones = [] } = inline;
     store.set({
       run, metrics: events, live: false,
       crossValidation: run?.config?.cross_validation ?? null,
     });
     for (const f of frames) pushFrame(f);
+    for (const m of milestones) pushMilestone(m);
     return; // no WS needed
   }
 
@@ -498,7 +509,7 @@ async function main() {
   }
 
   try {
-    const { frames, run, metrics } = await fetchSnapshot(runId);
+    const { frames, run, metrics, milestones } = await fetchSnapshot(runId);
     const lastSeq = frames.length > 0 ? (frames.at(-1).seq ?? frames.length - 1) : -1;
 
     // Architecture and the latest activation snapshot are stored in run.config
@@ -509,6 +520,8 @@ async function main() {
     const crossValidation = run?.config?.cross_validation ?? null;
     store.set({ run, metrics, architecture, activations, crossValidation });
     for (const f of frames) pushFrame(f);
+    // The milestones a run ends with belong to no frame.
+    for (const m of milestones) pushMilestone(m);
 
     // If run is not finished, open live stream
     const isLive = !run?.finished_at;
@@ -518,7 +531,8 @@ async function main() {
     }
   } catch (err) {
     console.error('[main] failed to load run:', err);
-    toast(`Failed to load run: ${err.message}`, 'error');
+    if (err instanceof TokenError) toast(tokenMessage(), 'error', 0);
+    else toast(`Failed to load run: ${err.message}`, 'error');
   }
 
   // Handle page unload
@@ -643,7 +657,8 @@ async function showRunList() {
   `;
 
   try {
-    const r = await fetch('/api/runs?limit=50');
+    const r = await apiFetch('/api/runs?limit=50');
+    if (r.status === 401) throw new TokenError();
     if (!r.ok) throw new Error(`${r.status}`);
     const { runs = [] } = await r.json();
 
@@ -697,8 +712,9 @@ async function showRunList() {
     _wireCompareSelection(listEl);
 
   } catch (err) {
-    document.getElementById('run-list').innerHTML =
-      `<div class="run-list-empty">Could not load runs: ${_esc(err.message)}</div>`;
+    document.getElementById('run-list').innerHTML = err instanceof TokenError
+      ? `<div class="run-list-empty">${_esc(tokenMessage())}</div>`
+      : `<div class="run-list-empty">Could not load runs: ${_esc(err.message)}</div>`;
   }
 }
 

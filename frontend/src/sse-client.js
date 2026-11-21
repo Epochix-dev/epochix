@@ -1,11 +1,15 @@
 /**
- * sse-client.js — SSE fallback when WebSocket is unavailable.
+ * sse-client.js — the live feed over Server-Sent Events, for when the
+ * WebSocket upgrade is refused (ws-client hands over through onUnavailable).
  *
- * The browser's EventSource API has built-in reconnect. We layer
- * last_seq tracking on top so missed frames are replayed.
+ * EventSource reconnects by itself, sending the id of the last event it
+ * received as Last-Event-ID; the server resumes after it. The URL's last_seq
+ * is only where the first connection starts.
  */
 
-import { store, markRunFinished, pushFrame, pushMilestone, pushWarning } from './store.js';
+import { store } from './store.js';
+import { applyLiveMessage } from './live-message.js';
+import { withToken } from './auth.js';
 
 let _es = null;
 let _lastSeq = -1;
@@ -35,7 +39,7 @@ export function disconnectSSE() {
 // ── internal ────────────────────────────────────────────────────────────────
 
 function _sseUrl() {
-  return `/sse/live/${_runId}?last_seq=${_lastSeq}`;
+  return withToken(`/sse/live/${_runId}?last_seq=${_lastSeq}`);
 }
 
 function _openSSE() {
@@ -48,50 +52,19 @@ function _openSSE() {
   };
 
   _es.onmessage = (evt) => {
+    let msg;
     try {
-      const msg = JSON.parse(evt.data);
-      _handleMessage(msg);
+      msg = JSON.parse(evt.data);
     } catch {
-      // ignore
+      return; // ignore malformed
     }
+    const { seq, complete } = applyLiveMessage(msg);
+    if (seq !== null) _lastSeq = Math.max(_lastSeq, seq);
+    if (complete) disconnectSSE();
   };
 
   _es.onerror = () => {
     store.set({ connected: false });
-    // EventSource reconnects automatically; no manual action needed
+    // EventSource reconnects automatically, with Last-Event-ID.
   };
-}
-
-/** @param {object} msg */
-function _handleMessage(msg) {
-  if (!msg || !msg.type) return;
-
-  switch (msg.type) {
-    case 'ping':
-      break;
-    case 'story_frame':
-      if (msg.seq > _lastSeq) {
-        _lastSeq = msg.seq;
-        pushFrame(msg.payload ?? msg);
-      }
-      break;
-    case 'milestone':
-      if (msg.seq > _lastSeq) {
-        _lastSeq = msg.seq;
-        if (msg.payload) pushMilestone(msg.payload);
-      }
-      break;
-    case 'warning':
-      if (msg.seq > _lastSeq) {
-        _lastSeq = msg.seq;
-        if (msg.payload) pushWarning(msg.payload);
-      }
-      break;
-    case 'complete':
-      markRunFinished(msg.payload);
-      disconnectSSE();
-      break;
-    default:
-      break;
-  }
 }

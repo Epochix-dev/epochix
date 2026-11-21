@@ -96,6 +96,10 @@ export function pushFrame(frame) {
     frames,
     currentFrame,
     ..._withWarnings(s, carried),
+    // Milestones ride on the frame too, for the same reason: they were only
+    // read from the live `milestone` message, so a page opened on a run, and
+    // an export, showed none.
+    ..._withMilestones(s, frame?.milestones ?? []),
     ...(carried.length
       ? { warningLog: [...(s.warningLog ?? []), ...carried.map((warning) => ({ warning, frame: at }))] }
       : {}),
@@ -145,10 +149,6 @@ function _withWarnings(s, incoming) {
 }
 
 /**
- * Push a milestone into the milestones list.
- * @param {object} milestone
- */
-/**
  * The stream said the run has ended: record it on the run itself. Whether a
  * run is finished is read from `run.finished_at` — the record's own word —
  * not from the `live` flag, which is false for a moment on every page load:
@@ -172,9 +172,44 @@ export function markRunFinished(payload) {
   });
 }
 
+/**
+ * Push a milestone into the milestones list, once.
+ * @param {object} milestone
+ */
 export function pushMilestone(milestone) {
-  const s = store.get();
-  store.set({ milestones: [...s.milestones, milestone] });
+  store.set(_withMilestones(store.get(), [milestone]));
+}
+
+/**
+ * Milestones not yet held, appended. A milestone is known by its seq and its
+ * kind (the store's own key): the same one arrives on its frame, in the
+ * snapshot's list and as a live message.
+ * @param {AppState} s
+ * @param {object[]} incoming
+ * @returns {{milestones?: object[]}}
+ */
+function _withMilestones(s, incoming) {
+  const held = new Set((s.milestones ?? []).map(_milestoneKey));
+  const added = [];
+  for (const m of incoming) {
+    if (!m) continue;
+    const key = _milestoneKey(m);
+    if (held.has(key)) continue;
+    held.add(key);
+    added.push(m);
+  }
+  return added.length ? { milestones: [...(s.milestones ?? []), ...added] } : {};
+}
+
+/**
+ * The VS Code engine's milestones carry no seq, and repeat a kind (every
+ * grade change is a `grade_transition`), so without one the epoch and the
+ * message tell them apart.
+ * @param {object} m
+ */
+function _milestoneKey(m) {
+  if (Number.isInteger(m.seq)) return `${m.seq}|${m.kind ?? ''}`;
+  return `~|${m.kind ?? ''}|${m.epoch ?? ''}|${m.message ?? ''}`;
 }
 
 /**

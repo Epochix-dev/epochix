@@ -98,6 +98,9 @@ def test_the_biggest_jump_is_an_improvement_not_just_the_biggest_move() -> None:
     jumps = [m for m in final if m.kind == "biggest_jump"]
     assert len(jumps) == 1
     assert jumps[0].value == pytest.approx(0.40)
+    # At the epoch it happened, not the run's last: once stored, the timeline
+    # and the reports place it by this epoch.
+    assert jumps[0].epoch == 2.0
 
 
 def test_a_run_that_never_improved_claims_no_biggest_improvement() -> None:

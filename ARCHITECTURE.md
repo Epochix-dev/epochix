@@ -1076,9 +1076,11 @@ diff.show()
 | Group                       | Purpose                            |
 |-----------------------------|-------------------------------------|
 | `epochix.parsers`       | Custom parser classes               |
-| `epochix.metaphor_packs`| Domain-specific narrative templates |
 | `epochix.exporters`     | Additional export formats           |
-| `epochix.tasks`         | Custom task types (define grading)  |
+
+`epochix.metaphor_packs` and `epochix.tasks` were listed here and removed on
+2026-11-18: nothing had ever loaded either. Task thresholds live in the
+project's `.epochix.yaml`.
 
 ### 16.2 Example Plugin Package
 
@@ -1097,20 +1099,6 @@ class FairseqParser(BaseParser):
     priority = 50
     def sniff(self, lines): ...
     def parse_line(self, line, ctx): ...
-```
-
-### 16.3 Metaphor Pack Example
-
-```yaml
-# medical_imaging.yaml
-name: medical_imaging
-task_aliases: [medical, radiology, segmentation]
-phases:
-  awakening:
-    template: |
-      The model is just being shown its first scans. Like a first-year
-      radiology resident, it's overwhelmed by what it sees.
-  mastering: ...
 ```
 
 ---

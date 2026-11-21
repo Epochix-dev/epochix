@@ -14,6 +14,52 @@ which covers the extension too; entries here resume with 0.7.16.
 
 ---
 
+## [0.7.41] — Unreleased
+
+### Added
+
+- **A watched terminal says when a command looked like training and was not
+  told.** A command whose output was never recognised gave no panel and no
+  message. When such a command ends, goes quiet, or runs on unrecognised, a
+  status-bar item beside the Epochix pill now says one of two things. It is
+  never a notification. "Run not opened" means the dashboard would tell the
+  run but the terminal feed never recognised it, as with two recorded CatBoost
+  runs and four GridSearchCV runs; it offers to open the run. "Run not read"
+  means the output looked like a training run and tells no story; it says how
+  many lines were printed, what was read, and how to check the format with
+  `epochix check`. It quotes no line of output and no path. Ordinary commands
+  stay silent: recorded `dir`, `ls`, `git log`, `pip install`, `npm install`,
+  `pytest` and a web server. Each command now has its own feed. Before, the
+  first training run latched the watcher, and every later command was fed to
+  its dashboard.
+- **Runs that count steps are told**: nanoGPT, the PyTorch ImageNet example,
+  and a diffusers LoRA bar, read redraw by redraw as it trains.
+
+### Fixed
+
+- **A token exported in your shell no longer breaks the extension's own
+  server.** The extension started its server with your whole environment, so
+  an `EPOCHIX_AUTH_TOKEN` meant for a remote `epochix serve` reached it.
+  Nothing in the extension sends a token, so saving a run failed with
+  `HTTP 401: Bearer token required` and the panel could read no run back. The
+  server is now started with `EPOCHIX_AUTH_TOKEN` and `EPOCHIX_CORS_ORIGINS`
+  emptied. It is always started on `127.0.0.1`, whatever `EPOCHIX_HOST` says.
+- **A loss printed per batch is not graded as one measured per epoch.** A
+  LoRA run's loss of the last batch is graded I as unsteady, not given a
+  letter by the luck of its last batch.
+- **A watched terminal that pauses in a framework's preamble is read in its
+  own format.** Lightning's and Ultralytics' setup lines no longer choose the
+  universal parser.
+- **A pytest run of an ML project no longer opens the dashboard.** A failing
+  test's source is not read as a metric, and test ids no longer count as
+  training output.
+
+### Tests
+
+- The extension's host tests now run on macOS after a change lands.
+
+---
+
 ## [0.7.40] — 2026-11-03
 
 ### Fixed
