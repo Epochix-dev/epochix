@@ -77,10 +77,17 @@ trainer.train()
 # Parse a finished log:
 %epochix train.log
 
-# Live mode — runs the next cell through epochix:
+# Live mode — runs this cell and tells its output as it prints:
 %%epochix --live
 !python train.py
 ```
+
+The dashboard appears under the cell and stays up for as long as the kernel
+runs; both magics share it, on port 7860 unless `--port` says otherwise. A
+`%%epochix` cell runs as its own process: either Python, every line, or `!`
+shell commands, every line, with `{variables}` from the notebook expanded in
+them. It runs until the process ends, and interrupting the kernel stops it.
+The story is told from whatever was printed up to then.
 
 ### Python SDK
 
@@ -216,9 +223,19 @@ the WebSocket with absolute-from-root paths (`/assets`, `/api`, `/ws/live`).
   falls back to Server-Sent Events at `/sse/live/*` after two refused
   attempts (about a second), and stays live over plain HTTP. The proxy must
   not buffer that response: epochix sends `X-Accel-Buffering: no` for nginx.
-- **Auth**: set `EPOCHIX_AUTH_TOKEN` to require `?token=<token>` on the WS/SSE
-  feed and to reveal the API docs at `/api/docs`; leave it unset for
-  localhost-only use.
+- **Auth**: set `EPOCHIX_AUTH_TOKEN` to require a token on the API (as
+  `Authorization: Bearer <token>`) and on the WS/SSE feed (as `?token=<token>`),
+  and to reveal the API docs at `/api/docs`; leave it unset for localhost-only
+  use. In a browser, open any dashboard page once with the token added to its
+  address, e.g. `https://story.example.com/?token=<token>`. The page takes it
+  out of the address bar at once, keeps it for that tab until the tab is
+  closed (a tab opened afresh needs `?token=` again), and sends it on every
+  request — as the Bearer header to the API and as `?token=` on the live feed
+  only. No link on the page carries it and no export contains it. It does
+  appear in the access log of the server and the proxy for that first page
+  load and for each live-feed request, so serve over HTTPS and keep those logs
+  private. Opened without the token, the page says that it needs one. See
+  [Deployment](deployment.md#team-server-lan).
 - **CORS**: `EPOCHIX_CORS_ORIGINS` (comma-separated) opts into cross-origin API
   access; the default is same-origin only.
 

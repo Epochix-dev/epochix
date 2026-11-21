@@ -39,7 +39,7 @@ Existing tools (TensorBoard, W&B, MLflow) are designed for ML engineers. epochix
 - [Quickstart](quickstart.md) — up and running in under 60 seconds
 - [Supported frameworks](parsers.md) — PyTorch Lightning, Keras, HuggingFace, YOLO, FastAI, Accelerate, and more
 - [Python SDK](api.md) — `LiveReporter`, `parse()`, `compare()`
-- [Plugins](plugins.md) — write a custom parser or metaphor pack
+- [Plugins](plugins.md) — write a custom parser or exporter
 - [Deployment](deployment.md) — local server, team server, reverse proxy
 
 ---

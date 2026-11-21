@@ -108,7 +108,7 @@ def test_a_bounded_metric_axis_never_exceeds_one() -> None:
 
 def test_a_run_with_too_few_epochs_is_refused_clearly(tmp_path: Path) -> None:
     run_id, store = _run(tmp_path, 1)
-    with pytest.raises(ValueError, match="too few epochs|no metric series"):
+    with pytest.raises(ValueError, match="too few readings|no metric series"):
         build_gif(run_id=run_id, store=store)
 
 
@@ -118,6 +118,7 @@ def test_an_unknown_run_is_refused(tmp_path: Path) -> None:
         build_gif(run_id="does-not-exist", store=store)
 
 
+@pytest.mark.packaged_assets
 def test_the_watermark_carries_the_brand_mark() -> None:
     """The GIF is the artefact that travels, so the mark rides with it.
 
@@ -131,10 +132,11 @@ def test_the_watermark_carries_the_brand_mark() -> None:
     un-skipped every GIF test in CI for the first time.
     """
     from epochix.exporters.gif_export import _MARK_H, _brand_mark
+    from tests._packaged import unavailable
 
     mark = _brand_mark(_MARK_H)
     if mark is None:
-        pytest.skip("brand mark is vendored into the wheel; absent in a source checkout")
+        unavailable("the brand mark")
     assert mark.height == _MARK_H
     assert mark.mode == "RGBA", "needs alpha so the rounded edges composite cleanly"
 

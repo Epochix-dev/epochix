@@ -26,7 +26,7 @@ epochix config show         # the values currently in effect
 
 | Variable | Default | What it does |
 |---|---|---|
-| `EPOCHIX_AUTH_TOKEN` | empty | Required token for writes. |
+| `EPOCHIX_AUTH_TOKEN` | empty | Token required on every `/api/*` route but `/api/health` and `/api/version` (`Authorization: Bearer <token>`) and on the live feeds (`?token=<token>`). In a browser, open a dashboard page once with `?token=<token>`; see [Deployment](deployment.md#team-server-lan). |
 | `EPOCHIX_CORS_ORIGINS` | empty | Comma-separated allowed origins. |
 | `EPOCHIX_EXPOSE_DOCS` | `false` | Serve the OpenAPI docs endpoints. |
 
@@ -148,3 +148,16 @@ epochix config set db ./runs.db
 
 This writes `EPOCHIX_DB=./runs.db` to `.env` in the current directory.
 The key is accepted with or without the `EPOCHIX_` prefix, in any case.
+An existing line for the setting is replaced, however it is written.
+
+A key that is not one of the settings above, or a value the setting cannot
+take (`config set port abc`), is refused and nothing is written.
+
+The rest of the `.env` is left alone. It is usually your project's own, and
+keys epochix does not use (`OPENAI_API_KEY`, `DATABASE_URL`) are ignored. An
+`EPOCHIX_*` name epochix does not use is ignored too, in the file as in the
+environment. A setting with a value it cannot take stops every command with
+one line naming it.
+
+`config show` prints `auth_token` and `llm_key` as `(set, hidden)`, so its
+output can go into a bug report.

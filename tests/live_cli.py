@@ -35,8 +35,17 @@ def epoch_line(epoch: int, of: int) -> str:
 class LiveCli:
     """``python -m epochix.cli --live --headless`` on a free port."""
 
-    def __init__(self, workdir: Path, *, env: dict[str, str] | None = None) -> None:
+    def __init__(
+        self,
+        workdir: Path,
+        *,
+        env: dict[str, str] | None = None,
+        token: str | None = None,
+    ) -> None:
+        """*token* starts the CLI with ``EPOCHIX_AUTH_TOKEN`` set to it, and is
+        sent as a Bearer header on this helper's own requests."""
         self.port = free_port()
+        self.token = token
         self.db = workdir / "runs.db"
         self.output: list[str] = []
         self.proc = subprocess.Popen(  # noqa: S603 — this package's own CLI
@@ -61,6 +70,7 @@ class LiveCli:
                 **os.environ,
                 "EPOCHIX_DB": str(self.db),
                 "PYTHONIOENCODING": "utf-8",
+                **({"EPOCHIX_AUTH_TOKEN": token} if token else {}),
                 **(env or {}),
             },
         )
@@ -88,8 +98,10 @@ class LiveCli:
 
     def get(self, path: str, headers: dict[str, str] | None = None) -> tuple[int, str]:
         conn = http.client.HTTPConnection("127.0.0.1", self.port, timeout=5)
+        if headers is None:
+            headers = {"Authorization": f"Bearer {self.token}"} if self.token else {}
         try:
-            conn.request("GET", path, headers=headers or {})
+            conn.request("GET", path, headers=headers)
             resp = conn.getresponse()
             return resp.status, resp.read().decode("utf-8")
         except OSError:

@@ -9,6 +9,7 @@ if TYPE_CHECKING:
     from epochix.models import Run
 
 ExportFormat = Literal["html", "pdf", "md", "json"]
+_FORMATS: tuple[str, ...] = ("html", "pdf", "md", "json")
 
 
 def export(
@@ -29,18 +30,29 @@ def export(
     output:
         Output path.  Defaults to ``<run_id>.<fmt>`` in the current directory.
     db:
-        SQLite DB containing the run (defaults to the configured DB).
+        SQLite DB containing the run.  Not needed for a run returned by
+        :func:`~epochix.sdk.parse.parse`, which is read from where it was
+        parsed into; for any other run it defaults to the configured DB.
 
     Returns
     -------
     Path
         Absolute path to the written file.
-    """
-    from epochix.config import get_settings
-    from epochix.store.sqlite_store import RunStore
 
-    settings = get_settings()
-    store = RunStore(db_path=db or settings.db)
+    Raises
+    ------
+    ValueError
+        If *fmt* is not one of the four formats, or the run is not in the
+        database it was looked for in.  Nothing is written in either case.
+    """
+    from epochix.sdk._stores import store_holding
+
+    # An unknown format used to fall through every branch below and return
+    # the path of a file that had not been written.
+    if fmt not in _FORMATS:
+        raise ValueError(f"Unknown export format {fmt!r}: choose one of {', '.join(_FORMATS)}.")
+
+    store = store_holding(run, db)
 
     out = Path(output) if output else Path(f"{run.id}.{fmt}")
 
