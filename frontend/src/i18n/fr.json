@@ -31,6 +31,8 @@
     "disconnected": "Hors ligne",
     "waiting": "En attente des données d'entraînement…",
     "reconnecting": "Reconnexion…",
+    "token_required": "Ce serveur demande un jeton d'accès. Ouvrez la page une fois avec ?token=<votre jeton> à la fin de son adresse ; cet onglet le garde jusqu'à sa fermeture.",
+    "token_rejected": "Le serveur n'a pas accepté le jeton d'accès de cet onglet. Rouvrez la page avec ?token=<votre jeton> à la fin de son adresse.",
     "frame": "Trame",
     "empty_title": "Rien n'est encore chargé.",
     "empty_what": "Epochix lit ce qu'affiche un entraînement — la perte et la précision à chaque époque — et non votre code source.",
