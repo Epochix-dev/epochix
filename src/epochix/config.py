@@ -13,6 +13,15 @@ class Settings(BaseSettings):
         env_file=".env",
         env_file_encoding="utf-8",
         case_sensitive=False,
+        # The .env read is the one in the folder epochix runs from — usually
+        # the user's own project, whose .env holds their keys (OPENAI_API_KEY,
+        # DATABASE_URL). pydantic-settings forbids unknown .env entries by
+        # default, so one such line made every epochix command in that folder
+        # die with a ValidationError. Keys that are not ours are not ours to
+        # judge; an unknown EPOCHIX_* key is ignored, exactly as the same name
+        # in the environment always was, and `epochix config set` refuses to
+        # write one.
+        extra="ignore",
     )
 
     db: str = Field(

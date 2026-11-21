@@ -42,6 +42,7 @@ npm test   # launches a real VS Code host
 |---------------|----------------------------------------------------------|
 | Python lint   | `uv run --extra dev ruff check src tests`                |
 | Python format | `uv run --extra dev ruff format --check src tests`       |
+| Python safety | `uv run --extra dev bandit -r src/epochix -q -ll`        |
 | Python type   | `uv run --extra dev mypy --strict src/epochix`           |
 | Python tests  | `uv run --extra dev pytest tests/unit tests/integration` |
 | Frontend      | `npm test` in `frontend/`                                |
@@ -50,8 +51,12 @@ npm test   # launches a real VS Code host
 Run them separately. Chained with `&&`, an early failure silently skips the
 rest — and Windows PowerShell 5.1 does not accept `&&` at all.
 
-CI runs all of the above on Linux / macOS / Windows × Python 3.10–3.13.
-A patch is mergeable when every check passes locally and in CI.
+CI runs all of the above on Linux and Windows × Python 3.10–3.13 for every
+PR. macOS runs off the PR path (`.github/workflows/macos.yml`: the Python
+tests, the dashboard in WebKit and the VS Code extension): after a change
+lands on `main`, weekly, on demand, and on a PR labelled `macos`. Add the label
+when a change may behave differently on a Mac (paths, sockets, terminals,
+browsers). A patch is mergeable when every check passes locally and in CI.
 
 ## Pull-request checklist
 

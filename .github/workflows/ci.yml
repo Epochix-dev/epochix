@@ -42,7 +42,10 @@ jobs:
   test:
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        # macOS runs off the PR path (macos.yml): its runners queued for
+        # 15-18 minutes and were cancelled on four PRs in one afternoon,
+        # while no user of the project runs on a Mac yet.
+        os: [ubuntu-latest, windows-latest]
         python: ["3.10", "3.11", "3.12", "3.13"]
     runs-on: ${{ matrix.os }}
     env:
@@ -78,8 +81,15 @@ jobs:
     # Launches a real VS Code host (@vscode/test-electron) and runs the
     # extension integration suite headless under a virtual X display.
     runs-on: ubuntu-latest
+    env:
+      UV_PYTHON: "3.12"
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      # The repository's own `epochix` in .venv, for the tests that start the
+      # sidecar as the extension does (sidecarEnvironment.test.ts). They fail,
+      # rather than skip, without it.
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+      - run: uv sync --frozen
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
         with:
           node-version: "22"
@@ -126,117 +136,11 @@ jobs:
         working-directory: epochix-vscode
 
   browser:
-    # Renders the real dashboard in Chromium, Firefox and WebKit (Safari's
-    # engine) against a live server. Catches engine-specific paint/layout bugs
-    # that neither the Python suite nor vitest can see. Playwright's Firefox
-    # cannot spawn on Windows dev boxes, so CI is the only place all three
-    # engines actually run — hence EPOCHIX_REQUIRE_ALL_BROWSERS, which turns a
-    # failed launch into a failure instead of a skip.
-    #
-    # macOS row: WebKit on macos-latest is the closest thing to real Safari on
-    # a real Mac that CI can provide — it closes the "does the dashboard render
-    # on macOS" gap that no machine in this project could reach.
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest, macos-latest]
-    name: browser (${{ matrix.os }})
-    runs-on: ${{ matrix.os }}
-    # Normally 2 minutes. Without a limit a stalled step runs for GitHub's
-    # 6-hour default and every PR waits on it.
-    timeout-minutes: 30
-    env:
-      UV_PYTHON: "3.12"
-      EPOCHIX_REQUIRE_ALL_BROWSERS: "1"
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
-        with:
-          node-version: "22"
-          cache: npm
-          cache-dependency-path: frontend/package-lock.json
-      - run: cd frontend && npm ci && npm run build
-      - name: Vendor the bundle where the server serves it from
-        run: |
-          mkdir -p src/epochix/_frontend/dist
-          cp -r frontend/dist/. src/epochix/_frontend/dist/
-      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
-      - name: Set up Python and the dev dependencies
-        run: uv run --extra dev playwright --version
-      - name: Install the browsers' system packages
-        if: runner.os == 'Linux'
-        # The browsers need ~120-140 MB of system packages, which the runner's
-        # own mirror (azure.archive.ubuntu.com) usually serves in 10-60
-        # seconds. Some days it serves them at 25-100 KB/s, on Ubuntu 24.04
-        # and 26 alike: on 2026-10-26 installs ran 19 and 10 minutes before
-        # being cancelled, and three 6-minute attempts in a row never
-        # finished. Retrying that mirror does not help, so a first attempt
-        # still running after 3 minutes is stopped and apt is pointed at
-        # Canonical's archive.ubuntu.com for the next two.
-        #
-        # Stopping one is not enough: timeout ends uv and Playwright, but the
-        # apt-get Playwright starts under sudo runs as root and outlives them,
-        # holding dpkg's lock, so every later attempt failed at once (0.7.34's
-        # release PR). Before retrying, that apt-get is killed, any dpkg it
-        # started is left to finish, and dpkg completes what was cut short.
-        timeout-minutes: 20
-        env:
-          # Seconds allowed for each attempt, in order.
-          APT_ATTEMPT_SECONDS: "180 360 360"
-        run: |
-          echo "apt mirror list:"; cat /etc/apt/apt-mirrors.txt || true
-          grep -rhE "^(URIs|deb) " /etc/apt/sources.list /etc/apt/sources.list.d 2>/dev/null || true
-          attempt=0
-          for limit in $APT_ATTEMPT_SECONDS; do
-            attempt=$((attempt + 1))
-            if timeout "$limit" uv run --extra dev playwright install-deps chromium firefox webkit; then
-              exit 0
-            fi
-            echo "::warning::system packages: attempt $attempt failed or took over $limit seconds"
-            sudo pkill -KILL -x apt-get || true
-            for _ in $(seq 1 60); do
-              pgrep -x dpkg >/dev/null || break
-              sleep 2
-            done
-            sudo dpkg --configure -a || true
-            if [ "$attempt" = 1 ]; then
-              echo "::notice::system packages: switching apt to archive.ubuntu.com"
-              echo "http://archive.ubuntu.com/ubuntu/" | sudo tee /etc/apt/apt-mirrors.txt
-            fi
-          done
-          exit 1
-      - name: Install the browsers
-        timeout-minutes: 10
-        run: uv run --extra dev playwright install chromium firefox webkit
-      - name: Render on every engine
-        run: |
-          uv run --extra dev pytest tests/browser --junitxml=render.xml
-          # pytest exits 0 when every test SKIPS, so the exit code alone can't
-          # prove the engines ran. Count them. (Don't grep the summary line —
-          # addopts already sets -q, so a second -q suppresses it entirely.)
-          uv run python - <<'PY'
-          import sys, xml.etree.ElementTree as ET
-
-          root = ET.parse("render.xml").getroot()
-          suite = root.find("testsuite") if root.tag == "testsuites" else root
-          total = int(suite.get("tests", 0))
-          skipped = int(suite.get("skipped", 0))
-          bad = int(suite.get("failures", 0)) + int(suite.get("errors", 0))
-          passed = total - skipped - bad
-          print(f"browser tests: {passed} passed (skipped={skipped}, failed={bad})")
-          # Every test must pass on every engine: a count of exactly 3 broke the
-          # day a second browser test was added. Check the engines by name.
-          ran = {
-              engine
-              for case in suite.iter("testcase")
-              if case.find("skipped") is None and case.find("failure") is None
-              and case.find("error") is None
-              for engine in ("chromium", "firefox", "webkit")
-              if f"[{engine}]" in case.get("name", "")
-          }
-          if bad or skipped or passed == 0 or ran != {"chromium", "firefox", "webkit"}:
-              sys.exit(f"::error::every browser test must pass on chromium, firefox and webkit (ran: {sorted(ran)})")
-          PY
+    # The dashboard in Chromium, Firefox and WebKit: see browser.yml. macOS
+    # renders it too, off the PR path (macos.yml).
+    uses: ./.github/workflows/browser.yml
+    with:
+      os: ubuntu-latest
 
   integrations:
     # Drives the Lightning and HuggingFace StoryCallbacks with the REAL
@@ -278,12 +182,20 @@ jobs:
           # importer without a single red job.
           uv pip install tensorboard pandas wandb pypdfium2
       - name: Real Lightning / HuggingFace training + real TensorBoard import
+        env:
+          COVERAGE_FILE: coverage-integrations-${{ matrix.deps }}
         run: |
           # --no-sync: a plain `uv run` would re-sync the env and drop the
           # frameworks we just installed, leaving the tests to skip.
           # Every file here skips without an optional dependency and so ran
           # nowhere else in CI.
+          #
+          # --cov: these files are the only place the Lightning and Hugging
+          # Face callbacks, the importers and the torch hooks run, so what
+          # they execute is handed to the `coverage` job below. No floor here
+          # (--cov-fail-under=0): the floor is for the whole, not this part.
           uv run --no-sync pytest -v --junitxml=integrations.xml \
+            --cov --cov-report= --cov-fail-under=0 \
             tests/integration/test_framework_callbacks.py \
             tests/integration/test_importers.py \
             tests/integration/test_wandb_offline_import.py \
@@ -307,6 +219,141 @@ jobs:
           print(f"integration tests exercised: {passed} (skipped={skipped}, failed={bad})")
           if skipped or bad:
               sys.exit("::error::framework/importer tests must all run, none may skip")
+          PY
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: coverage-integrations-${{ matrix.deps }}
+          path: coverage-integrations-${{ matrix.deps }}
+          if-no-files-found: error
+          retention-days: 3
+
+  coverage:
+    # Which statements of src/epochix the tests execute. This project's
+    # recurring bug is code that shipped without ever having run (AGENTS.md,
+    # "Tests must execute the path"): `[tool.coverage.run]` sat in pyproject
+    # and nothing ran it.
+    #
+    # One cell, not the matrix: measuring slows the run, and the answer barely
+    # differs between cells. It is the unit and integration suites on the
+    # locked dependencies, plus what the two `integrations` rows executed with
+    # the real frameworks: without those, the Lightning and Hugging Face
+    # callbacks read 0% while being run for real one job over.
+    #
+    # Not measured, so not under the floor: tests/e2e and tests/browser (their
+    # own jobs), the macOS- and Windows-only branches, and anything that needs
+    # a service CI does not have (the LLM fallback's real Ollama call).
+    #
+    # The summary is the point: the files nothing executed, by name. Read it
+    # when it changes. The floor (`fail_under` in pyproject.toml) only catches
+    # a drop.
+    needs: integrations
+    runs-on: ubuntu-latest
+    env:
+      UV_PYTHON: "3.12"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+      - name: Run the unit and integration tests under coverage
+        # --cov-fail-under=0: the floor is held in the last step, once the
+        # integrations jobs' data has been added.
+        run: uv run --extra dev pytest tests/unit tests/integration --cov --cov-report= --cov-fail-under=0
+        env:
+          EPOCHIX_DB: ":memory:"
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
+        with:
+          pattern: coverage-integrations-*
+          path: coverage-integrations
+          merge-multiple: true
+      - name: Add what the integrations jobs executed
+        run: |
+          ls -l coverage-integrations
+          # Both rows, by name: a row that stopped uploading would otherwise
+          # only show up as a lower number.
+          test -s coverage-integrations/coverage-integrations-latest
+          test -s coverage-integrations/coverage-integrations-floor
+          uv run --extra dev coverage combine --append coverage-integrations/*
+      - name: Publish the number and what nothing executed
+        run: |
+          # --fail-under=0: `coverage json` applies the floor too, and would
+          # stop here, before the summary that says what dropped.
+          uv run --extra dev coverage json -o coverage.json --fail-under=0
+          # To a file first, not through a pipe: a step's shell has no
+          # pipefail, so `script | tee` passes when the script fails.
+          uv run --extra dev python scripts/coverage_summary.py coverage.json \
+            --measured "tests/unit and tests/integration on ubuntu, Python 3.12, plus both integrations rows" \
+            > coverage-summary.md
+          cat coverage-summary.md
+          cat coverage-summary.md >> "$GITHUB_STEP_SUMMARY"
+      - name: Hold the floor
+        run: uv run --extra dev coverage report --skip-covered
+
+  packaged-assets:
+    # The tests that need what the wheel vendors: the dashboard bundle (HTML
+    # export, including the check that run data cannot break out of its
+    # <script> block) and the brand mark (the GIF watermark). A source
+    # checkout has neither, so they skipped in every other job, and two HTML
+    # route tests accepted a 501 and passed on it. See tests/_packaged.py.
+    #
+    # The wheel is built exactly as release.yml builds it, and its assets are
+    # put where the installed package has them, so these test what ships
+    # (AGENTS.md, "Test what the release builds"), not a copy made here.
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      UV_PYTHON: "3.12"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: cd frontend && npm ci && npm run build
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+      - name: Build the wheel as the release does
+        run: uv build --wheel
+      - name: Put the wheel's assets where the installed package has them
+        run: |
+          uv run --extra dev python - <<'PY'
+          import glob, sys, zipfile
+
+          wheels = glob.glob("dist/*.whl")
+          if len(wheels) != 1:
+              sys.exit(f"::error::expected one wheel, found {wheels}")
+          wanted = ("epochix/_frontend/dist/index.html", "epochix/_brand/mark.png")
+          with zipfile.ZipFile(wheels[0]) as whl:
+              names = whl.namelist()
+              missing = [w for w in wanted if w not in names]
+              if missing:
+                  sys.exit(f"::error::{wheels[0]} does not contain {missing}")
+              assets = [n for n in names if n.startswith(("epochix/_frontend/", "epochix/_brand/"))]
+              whl.extractall("src", members=assets)
+          print(f"{len(assets)} asset files from {wheels[0]} put under src/")
+          PY
+      - name: Run the tests that need them, where a skip is a failure
+        env:
+          EPOCHIX_DB: ":memory:"
+          EPOCHIX_REQUIRE_PACKAGED_ASSETS: "1"
+        run: |
+          uv run --extra dev pytest -m packaged_assets tests/unit tests/integration --junitxml=packaged.xml
+          # pytest exits 0 when everything skips, and -m reports the modules
+          # skipped at collection for a missing optional dependency (torch and
+          # so on) as skips too. So judge the marked tests themselves: every
+          # one collected must have passed, and there must be all of them.
+          uv run --extra dev python - <<'PY'
+          import sys, xml.etree.ElementTree as ET
+
+          root = ET.parse("packaged.xml").getroot()
+          suite = root.find("testsuite") if root.tag == "testsuites" else root
+          ran, bad = [], []
+          for case in suite.iter("testcase"):
+              if not case.get("classname"):
+                  continue  # a module skipped at collection: not a marked test
+              outcome = next((c.tag for c in case if c.tag in ("skipped", "failure", "error")), "passed")
+              (ran if outcome == "passed" else bad).append(f"{case.get('name')} ({outcome})")
+          print(f"packaged-asset tests passed: {len(ran)}")
+          if bad or len(ran) < 5:
+              sys.exit(f"::error::every packaged-asset test must pass here: {bad or 'fewer than 5 ran'}")
           PY
 
   e2e:

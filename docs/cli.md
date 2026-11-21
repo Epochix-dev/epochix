@@ -96,7 +96,10 @@ List saved runs, newest first.
 
 ## `epochix open`
 
-Open a saved run in the browser by run ID.
+Open a saved run in the browser by run ID. It starts a server for the
+dashboard on `--port` (7860) and stops if that port is already taken, before
+opening anything. With `EPOCHIX_OPEN_BROWSER=false` it prints the address
+instead.
 
 ## `epochix export`
 
@@ -136,7 +139,8 @@ epochix race <run_a> <run_b> --metric val_accuracy --output race.gif
 
 ## `epochix prune`
 
-Delete runs older than a given age. Check first with `--dry-run`:
+Delete runs that started more than N days ago (`--older-than 30d`; only
+days are understood). Check first with `--dry-run`:
 
 ```bash
 epochix prune --older-than 30d --dry-run

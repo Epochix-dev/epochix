@@ -57,6 +57,7 @@ def test_binary_exports_work_without_any_extra(fmt: str, magic: bytes) -> None:
     assert len(resp.content) > 500
 
 
+@pytest.mark.packaged_assets
 def test_text_exports_work_too() -> None:
     """Guard the guard: if these broke, the test above could pass vacuously.
 
@@ -72,6 +73,13 @@ def test_text_exports_work_too() -> None:
             assert len(resp.content) > 0
 
         resp = client.get(f"/api/export/{run_id}/html")
-        assert resp.status_code in (200, 501), resp.status_code
+        from tests._packaged import REQUIRED
+
+        if REQUIRED:
+            # Where the bundle is vendored, the 501 this allows is a failure.
+            assert resp.status_code == 200, resp.text
+            assert 'id="run-data"' in resp.text
+        else:
+            assert resp.status_code in (200, 501), resp.status_code
         if resp.status_code == 501:
             assert "frontend" in resp.json().get("detail", "").lower()

@@ -24,17 +24,33 @@ Run epochix on a machine that's accessible to your team:
 epochix serve --host 0.0.0.0 --port 7860
 ```
 
-Enable basic auth to prevent unauthorised access:
+Set an access token to keep anyone else on the network out:
 
 ```bash
-epochix serve --auth user:password
+export EPOCHIX_AUTH_TOKEN="$(openssl rand -hex 24)"
+epochix serve --host 0.0.0.0 --port 7860
 ```
 
-Or set via environment:
+Then every `/api/*` route except `/api/health` and `/api/version` wants
+`Authorization: Bearer <token>`, and the live feeds (`/ws/live/...`,
+`/sse/live/...`) want `?token=<token>`. Writes want the token too, even from
+the same machine.
 
-```bash
-EPOCHIX_AUTH_USER=admin EPOCHIX_AUTH_PASS=secret epochix serve
-```
+To open the dashboard, add the token to any page's address once:
+`http://<host>:7860/?token=<token>`, or `http://<host>:7860/v/<run>?token=<token>`.
+The page takes `?token=` out of the address bar straight away, keeps it for
+that tab until the tab is closed, and sends it on every request it makes — the
+Bearer header to the API, `?token=` on the live feed. Following links in the
+tab needs nothing more; a tab opened afresh needs `?token=` again. No link on
+the page carries the token and no exported report contains it. It is in the
+URL of that first page load and of each live-feed request, so it shows up in
+the server's access log (and a proxy's) — on anything but a trusted LAN, serve
+over HTTPS and keep those logs private. Opened without the token, the page says
+it needs one.
+
+There is no username/password login: earlier versions of this page described
+`epochix serve --auth user:password` and `EPOCHIX_AUTH_USER`/`EPOCHIX_AUTH_PASS`,
+which nothing reads.
 
 ---
 
@@ -105,9 +121,7 @@ sets `X-Forwarded-For` by default.
 | `EPOCHIX_DB` | `~/.epochix/runs.db` | SQLite database path |
 | `EPOCHIX_HOST` | `127.0.0.1` | Interface the server binds, for `epochix serve` and for the server `epochix <log>` and `epochix --live` start. `serve --host` overrides it. |
 | `EPOCHIX_PORT` | `7860` | Server port, for every command that starts one. `--port` overrides it. |
-| `EPOCHIX_AUTH_USER` | _(none)_ | Basic auth username |
-| `EPOCHIX_AUTH_PASS` | _(none)_ | Basic auth password |
-| `EPOCHIX_AUTH_TOKEN` | _(none)_ | Bearer token for API access |
+| `EPOCHIX_AUTH_TOKEN` | _(none)_ | Access token for the API and the live feeds — see [Team server](#team-server-lan) |
 | `EPOCHIX_LLM_URL` | _(none)_ | Ollama endpoint for LLM fallback |
 | `EPOCHIX_LLM_KEY` | _(none)_ | OpenAI API key for LLM fallback |
 
