@@ -36,8 +36,9 @@ Example::
     # latex = "my_package.my_exporter:EXPORTER"
 
 An installed exporter is used by ``epochix export <run-id> --format latex``,
-by ``epochix run --export latex``, and by the server at
-``GET /api/export/<run-id>/latex``, all through :func:`export_with_plugin`.
+by ``epochix run --export latex``, by the server at
+``GET /api/export/<run-id>/latex`` and by ``epochix.export(run, "latex")``,
+all through :func:`export_with_plugin`.
 The names of the built-in formats are taken: a plugin cannot replace them.
 
 The group was documented, and loaded by nothing, until 2026-11-18: the CLI
