@@ -34,6 +34,7 @@ from epochix.story_engine.narrator import (
     narrate,
     narrate_diverged,
     narrate_past_peak,
+    narrate_running_mean,
     narrate_single_reading,
     narrate_stalled,
     narrate_unsteady,
@@ -43,7 +44,7 @@ from epochix.story_engine.phases import (
     estimate_progress,
     relative_improvement,
 )
-from epochix.story_engine.steadiness import unsteady
+from epochix.story_engine.steadiness import running_mean, unsteady
 from epochix.story_engine.task_classifier import classify_task, refine_gaze
 from epochix.story_engine.warnings import WarningDetector
 
@@ -723,7 +724,12 @@ class StoryEngine:
         # that — see steadiness.py. Then no improvement is claimed, no letter
         # is given, and the story says what the readings are.
         swing = unsteady(self._metric_history.get(primary_key, ()))
-        if swing is not None:
+        # A running average over overlapping batches (steadiness.RUNNING_MEANS)
+        # supports none of it either, whatever its readings look like: that is
+        # how the metric is computed, not something read off the series.
+        averaged = running_mean(event.raw_key)
+        incomparable = swing is not None or averaged
+        if incomparable:
             phase_baseline = primary_value
 
         phase = compute_phase(
@@ -739,7 +745,7 @@ class StoryEngine:
         # prediction confidence).
         rel = (
             relative_improvement(primary_value, self._baseline, lower_better=lower_better)
-            if swing is None
+            if not incomparable
             else None
         )
         advancement = progress if progress is not None else (rel if rel is not None else 0.0)
@@ -776,9 +782,10 @@ class StoryEngine:
         # upside down.
         own_bands = self.grade_config.bands_for(task, primary_key) if self.grade_config else None
         grade_basis: GradeBasis | None = None
-        if swing is not None:
+        if incomparable:
             # On any scale: a letter for one reading is not a letter for the
-            # run when the next reading is as likely to be half or double.
+            # run when the next reading is as likely to be half or double, or
+            # when it is the same average with one batch changed.
             grade = Grade.INCOMPLETE
             self.grade_bands_used = None
         elif own_bands:
@@ -853,8 +860,9 @@ class StoryEngine:
                 if lower_better
                 else (self._best_primary - primary_value)
             ) / abs(self._best_primary)
-            # Not for an unsteady metric: its best is its luckiest batch.
-            past_peak = drop > _PAST_PEAK_REL_DROP and swing is None
+            # Not for an unsteady metric: its best is its luckiest batch. Nor
+            # for a running average: its best is its luckiest window.
+            past_peak = drop > _PAST_PEAK_REL_DROP and not incomparable
 
         epochs_seen = len(self._metric_history.get(event.canonical_key, ()))
         # `rel` is the fraction of achievable improvement realised, so a run
@@ -886,6 +894,15 @@ class StoryEngine:
                 run_id=self.run_id,
                 locale=self.locale,
                 metric=primary_key,
+            )
+        elif averaged:
+            narrative = narrate_running_mean(
+                epoch=event.epoch,
+                primary_value=primary_value,
+                run_id=self.run_id,
+                locale=self.locale,
+                metric=primary_key,
+                counter=counter,
             )
         elif swing is not None:
             narrative = narrate_unsteady(
@@ -992,6 +1009,7 @@ class StoryEngine:
                 has_epoch=event.epoch is not None,
                 new_best=new_best,
                 unsteady=swing is not None,
+                running_mean=averaged,
             ),
             grade_basis=grade_basis,
             narrative=narrative,

@@ -236,6 +236,8 @@ MESSAGES: dict[str, dict[str, str]] = {
         "restart from a checkpoint saved at or before {counter} {last_epoch}.",
         "next_unsteady": "Next step: log a validation metric, or this one averaged over "
         "many batches, for readings that can be compared.",
+        "next_running_mean": "Next step: log a validation metric, or a loss averaged "
+        "over batches no other reading shares, for readings that can be compared.",
         "warn_lr_drop": "Learning rate decreased from {old} to {new}.",
         "ms_best": "New best: {value}",
         "ms_crossed": "Crossed {pct}%: {value}",
@@ -308,6 +310,9 @@ MESSAGES: dict[str, dict[str, str]] = {
         "و از نقطهٔ ذخیره‌ای در {counter} {last_epoch} یا پیش از آن دوباره شروع کنید.",
         "next_unsteady": "گام بعدی: یک سنجهٔ اعتبارسنجی ثبت کنید، یا میانگین همین سنجه "
         "روی دسته‌های بسیار را، تا خوانش‌ها با هم قابل مقایسه باشند.",
+        "next_running_mean": "گام بعدی: یک سنجهٔ اعتبارسنجی ثبت کنید، یا خطایی که روی "
+        "دسته‌هایی میانگین گرفته شده که خوانش دیگری در آن‌ها شریک نیست، تا خوانش‌ها "
+        "با هم قابل مقایسه باشند.",
         "warn_above": "خطای آموزش به {new} رسید، بیش از ۱۰ برابر بالاترین اندازه‌گیری "
         "پیش از آن ({high}). نرخ یادگیری پایین‌تر یا برش گرادیان ممکن است کمک کند.",
         "warn_divergence_unsteady": "خطای آموزش در {readings} خوانش اخیر {turns} بار تغییر "
@@ -389,6 +394,9 @@ MESSAGES: dict[str, dict[str, str]] = {
         "ou antérieur.",
         "next_unsteady": "Étape suivante : enregistrez une métrique de validation, ou "
         "celle-ci moyennée sur de nombreux lots, pour des mesures comparables entre elles.",
+        "next_running_mean": "Étape suivante : enregistrez une métrique de validation, "
+        "ou une perte moyennée sur des lots qu'aucune autre mesure ne partage, pour des "
+        "mesures comparables entre elles.",
         "warn_above": "La perte d'entraînement a atteint {new}, soit plus de 10 fois sa "
         "plus haute mesure précédente ({high}). Un taux d'apprentissage plus bas ou un "
         "écrêtage des gradients peut aider.",

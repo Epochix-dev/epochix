@@ -140,6 +140,35 @@ def narrate_unsteady(
     return f"{story[:1].upper()}{story[1:]} {message('next_unsteady', locale)}"
 
 
+def narrate_running_mean(
+    epoch: float | None,
+    primary_value: float,
+    *,
+    run_id: str,
+    locale: str = "en",
+    metric: str | None = None,
+    counter: Counter | None = None,
+) -> str:
+    """Say what the reading is, and why it is not set against another.
+
+    For a metric logged as a running average over the last epoch's batches
+    (story_engine/steadiness.py, RUNNING_MEANS). The sentence states how the
+    metric is computed and nothing about the run: the reading, where it was
+    taken, and that its neighbours share all but one batch with it.
+    """
+    templates = _load_special(
+        "_running_mean", locale, "{Counter} {epoch}: {metric} {value}, a running average."
+    )
+    seed = int(hashlib.md5(run_id.encode(), usedforsecurity=False).hexdigest()[:8], 16)
+    template = counter_words(random.Random(seed).choice(templates), counter, locale)
+    story = (
+        template.replace("{epoch}", str(int(epoch)) if epoch is not None else "?")
+        .replace("{value}", f"{primary_value:.4f}")
+        .replace("{metric}", _display_metric(metric, locale))
+    )
+    return f"{story[:1].upper()}{story[1:]} {message('next_running_mean', locale)}"
+
+
 def _load_stalled(locale: str = "en") -> list[str]:
     """Templates for a run whose metric has not meaningfully moved."""
     key = f"_stalled/{locale}"

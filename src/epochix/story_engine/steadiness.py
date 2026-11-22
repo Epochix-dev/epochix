@@ -86,6 +86,28 @@ def swing(values: Sequence[float]) -> Swing | None:
     return Swing(readings=len(recent), turns=turns, step=median(steps))
 
 
+# Names whose every reading is a running average over a window of batches that
+# slides by one batch a reading. kohya-ss sd-scripts' `avr_loss` (its
+# LossRecorder): through the first epoch the mean of the batches so far, then
+# the mean of the last epoch's batches. A recorded run
+# (tests/fixtures/logs/kohya_lora_real.log) was graded A on it, from a first
+# reading that is one batch's loss (0.0304, where the next eleven batches lay
+# between 0.003 and 0.011) being averaged away; its ten end-of-epoch values,
+# the only ones that share no batch, show no trend. Its story was "past its
+# best … use early stopping" on most frames.
+#
+# Such readings move smoothly — each shares all but one batch with the one
+# before — so the measure above does not see them, and none of them is a
+# baseline: the first average fewer batches than the rest. They are charted
+# as logged; nothing is concluded from setting one against another.
+RUNNING_MEANS: frozenset[str] = frozenset({"avr_loss"})
+
+
+def running_mean(raw_key: str | None) -> bool:
+    """Whether a metric logged under *raw_key* is a running average (RUNNING_MEANS)."""
+    return raw_key is not None and raw_key.lower() in RUNNING_MEANS
+
+
 def unsteady(values: Sequence[float]) -> Swing | None:
     """The swing of *values* when one reading says little about the run, else None."""
     if len(values) < UNSTEADY_MIN_READINGS:

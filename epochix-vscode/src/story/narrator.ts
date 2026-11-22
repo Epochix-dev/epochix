@@ -195,6 +195,23 @@ export function narrateUnsteady(o: {
 }
 
 /**
+ * What the reading is, and why it is not set against another — mirrors
+ * narrate_running_mean. For a metric logged as a running average over the
+ * last epoch's batches (steadiness.ts runningMean).
+ */
+export function narrateRunningMean(o: {
+  epoch: number | null; value: number; metric: string; runId: string; locale?: string;
+  counter?: Counter | null;
+}): string {
+  const loc = resolveLocale(o.locale);
+  const story = counterWords(pick(SPECIAL_TEMPLATES[loc].runningMean, o.runId), o.counter, loc)
+    .replace(/\{epoch\}/g, fmtEpoch(o.epoch))
+    .replace(/\{value\}/g, o.value.toFixed(4))
+    .replace(/\{metric\}/g, displayMetric(o.metric, loc));
+  return `${story.slice(0, 1).toUpperCase()}${story.slice(1)} ${message("next_running_mean", loc)}`;
+}
+
+/**
  * A result, not a stage of training — mirrors narrate_single_reading. A script
  * that fits once and prints a score has no arc; narrating it with the phase
  * templates described "the model awakens" for a model that had already

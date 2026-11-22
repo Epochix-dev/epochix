@@ -87,7 +87,8 @@
     "gradeNotes": {
       "few_readings": "Provisoire : cette note repose sur moins de cinq mesures de la métrique.",
       "still_improving": "Encore en progrès à la dernière mesure — la note montre où l'exécution est arrivée, pas où elle allait.",
-      "unsteady": "Non noté : les mesures de cette métrique montent et descendent trop de l'une à la suivante pour qu'une seule situe l'entraînement."
+      "unsteady": "Non noté : les mesures de cette métrique montent et descendent trop de l'une à la suivante pour qu'une seule situe l'entraînement.",
+      "running_mean": "Non noté : cette métrique est une moyenne glissante sur les lots les plus récents. Chaque mesure partage tous ses lots sauf un avec la précédente, et les premières moyennent moins de lots que les autres : aucune ne sert de référence pour noter."
     }
   },
   "compare": {

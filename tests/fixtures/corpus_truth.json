@@ -1880,11 +1880,11 @@
   ],
   "metric_from_epoch": 1.0,
   "counter": "step",
-  "grade_note": null,
+  "grade_note": "running_mean",
   "cross_validation": null,
-  "final_grade": "A",
-  "final_grade_basis": "improvement",
-  "final_phase": "understanding",
+  "final_grade": "I",
+  "final_grade_basis": null,
+  "final_phase": "learning",
   "milestones": [
    {
     "kind": "best_so_far",

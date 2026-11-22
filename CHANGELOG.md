@@ -17,7 +17,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   over the last epoch's batches. The step-bar parser read it as it was, but
   `avr_loss` was a custom metric whose direction nothing pinned. It is now
   read as the training loss, and the run is told by step from 113 readings
-  over 120 steps. Averaged like that, it moves smoothly enough to be graded.
+  over 120 steps. It is not given a letter. Read as any other loss it was
+  graded A, while its story said "performance has slipped … use early
+  stopping" on 99 of its 113 frames, and neither was true. Through the first
+  epoch `avr_loss` averages the batches so far, and the first reading was one
+  batch's loss (0.0304, where the next eleven lay between 0.003 and 0.011):
+  the A was that batch being averaged away. "Slipped" measured each reading
+  against the luckiest window. The ten end-of-epoch values, which share no
+  batch, show no trend. A metric known to be a running average over
+  overlapping batches now gets no letter and no claim set against another
+  reading, with grade note `running_mean` and a sentence saying why, in all
+  three languages and both engines. Every reading is still charted.
   In a VS Code terminal the run never opened the dashboard: nothing kohya
   prints was a training signal (its `epoch 1/10` is lower-case and holds no
   loss), so it scored 0.15 against 0.45. A step bar carrying a value is now

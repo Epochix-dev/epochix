@@ -396,7 +396,7 @@ function _renderEmpty(el, s) {
 export function gradeCaveatText(basis, grade, note) {
   // The note beside the letter says why there is none; "nothing to measure it
   // against" is not true of a run with a hundred readings.
-  if (note === 'unsteady') return '';
+  if (note === 'unsteady' || note === 'running_mean') return '';
   if (grade === 'I') {
     return t('ui.gradeCaveats.ungraded',
       'Not graded: this metric has no fixed scale, and the log gives nothing to measure it against — a single reading, or nothing that says whether a higher or a lower value is better.');
@@ -424,6 +424,10 @@ export function gradeNoteText(note) {
   if (note === 'few_readings') {
     return t('ui.gradeNotes.few_readings',
       'Provisional: this grade rests on fewer than five readings of the metric.');
+  }
+  if (note === 'running_mean') {
+    return t('ui.gradeNotes.running_mean',
+      "Not graded: this metric is a running average over the most recent batches. Each reading shares all but one batch with the one before, and the first readings average fewer batches than the rest, so no reading is a baseline to grade against.");
   }
   if (note === 'unsteady') {
     return t('ui.gradeNotes.unsteady',

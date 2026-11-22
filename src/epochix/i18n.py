@@ -87,6 +87,9 @@ _EN: dict[str, str] = {
     "shows where the run got to, not where it was heading.",
     "grade_note.unsteady": "Not graded: this metric's readings rise and fall too much "
     "from one to the next for a single reading to place the run.",
+    "grade_note.running_mean": "Not graded: this metric is a running average over the most "
+    "recent batches. Each reading shares all but one batch with the one before, and the first "
+    "readings average fewer batches than the rest, so no reading is a baseline to grade against.",
     "md.final_phase": "Final phase",
     "md.primary_metric": "Primary metric",
     "md.epochs": "Epochs",
@@ -164,6 +167,9 @@ _FA: dict[str, str] = {
     "می‌دهد اجرا به کجا رسید، نه به کجا می‌رفت.",
     "grade_note.unsteady": "نمره داده نشد: خوانش‌های این سنجه از یکی به بعدی بیش از آن بالا و "
     "پایین می‌روند که یک خوانش جای اجرا را نشان دهد.",
+    "grade_note.running_mean": "نمره داده نشد: این سنجه میانگینی متحرک روی تازه‌ترین دسته‌هاست. "
+    "هر خوانش جز در یک دسته با خوانش قبلی یکی است، و خوانش‌های نخست میانگین دسته‌های کمتری از "
+    "بقیه‌اند؛ پس هیچ خوانشی مبنایی برای نمره‌دادن نیست.",
     "md.final_phase": "مرحله نهایی",
     "md.primary_metric": "معیار اصلی",
     "md.epochs": "دوره‌ها",
@@ -241,6 +247,9 @@ _FR: dict[str, str] = {
     "montre où l'exécution est arrivée, pas où elle allait.",
     "grade_note.unsteady": "Non noté : les mesures de cette métrique montent et descendent "
     "trop de l'une à la suivante pour qu'une seule situe l'entraînement.",
+    "grade_note.running_mean": "Non noté : cette métrique est une moyenne glissante sur les lots "
+    "les plus récents. Chaque mesure partage tous ses lots sauf un avec la précédente, et les "
+    "premières moyennent moins de lots que les autres : aucune ne sert de référence pour noter.",
     "md.final_phase": "Phase finale",
     "md.primary_metric": "Métrique principale",
     "md.epochs": "Époques",

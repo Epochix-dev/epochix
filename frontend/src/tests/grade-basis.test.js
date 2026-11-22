@@ -55,6 +55,7 @@ describe('gradeCaveatText', () => {
     // Not graded because its readings cannot be compared: the note beside the
     // letter says so, and "nothing to measure it against" would be untrue.
     expect(gradeCaveatText(null, 'I', 'unsteady')).toBe('');
+    expect(gradeCaveatText(null, 'I', 'running_mean')).toBe('');
   });
 
   it('says an "I" was not graded, in every locale, instead of naming both ways', () => {

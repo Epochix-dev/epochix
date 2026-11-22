@@ -106,6 +106,18 @@ loss per iteration, falling from 4.2 to 1.7 — is not unsteady, and is graded
 as before. Nor can the first five readings be: with so few, a batch's luck and
 a real rise look the same.
 
+A running average is the opposite case: it moves smoothly by construction, so
+the measure above passes it, and it still supports none of those
+conclusions. kohya-ss's `avr_loss` averages the batches so far through the
+first epoch, then the last epoch's batches. Each reading shares all but one
+batch with the one before it, and the first readings average fewer batches
+than the rest. On a recorded run the first reading was one batch's loss,
+0.0304, while the next eleven batches lay between 0.003 and 0.011. As that
+batch was averaged away, the run was graded A for an improvement it never
+made, and its ten end-of-epoch values, which share no batch, show no trend.
+A metric known to be computed this way gets no letter, no "past its best" and
+no "stalled": its readings are charted as logged, and the card says why.
+
 ## What not to print
 
 Some things look like metrics and are not, so epochix deliberately ignores

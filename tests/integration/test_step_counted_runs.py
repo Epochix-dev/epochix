@@ -30,6 +30,8 @@ from pathlib import Path
 
 import pytest
 
+from epochix.exporters.markdown_export import build_markdown
+from epochix.i18n import t
 from epochix.ingester.file_batch import FileBatchIngester
 from epochix.models import MetricEvent, Run, StoryFrame
 from epochix.parsers.base import LINE_CLAIMED, ParserContext
@@ -39,12 +41,15 @@ from epochix.parsers.universal import UniversalParser
 from epochix.pipeline import _line_states, run_pipeline
 from epochix.server.hub import Hub
 from epochix.store.sqlite_store import RunStore
+from epochix.story_engine.narrator import narrate_running_mean
+from epochix.story_engine.steadiness import running_mean
 
 LOGS = Path(__file__).resolve().parents[2] / "tests" / "fixtures" / "logs"
 NANOGPT = LOGS / "nanogpt_real.log"
 IMAGENET = LOGS / "pytorch_imagenet_real.log"
 LORA = LOGS / "diffusers_lora_real.log"
 KOHYA = LOGS / "kohya_lora_real.log"
+TEMPLATES = Path(__file__).resolve().parents[2] / "src" / "epochix" / "story_engine" / "templates"
 
 
 def _told(log: Path) -> tuple[Run, list[StoryFrame], list[MetricEvent]]:
@@ -306,7 +311,8 @@ def test_a_lora_run_is_told_step_by_step() -> None:
 def test_a_kohya_run_is_told_by_its_averaged_loss_step_by_step() -> None:
     """kohya draws its bar lower-case and puts one value on it, `avr_loss`:
     the training loss averaged over the last epoch's batches. Unrecognised,
-    it was a custom metric whose direction nothing pinned."""
+    it was a custom metric whose direction nothing pinned. Every reading is
+    stored and charted, at its step."""
     raw = KOHYA.read_bytes().decode("utf-8")
     # `epoch 2/10`, printed between epochs, ends the bar's line ten times.
     assert sum(1 for line in raw.split("\n") if "steps:" in line) == 15
@@ -327,10 +333,132 @@ def test_a_kohya_run_is_told_by_its_averaged_loss_step_by_step() -> None:
     assert [f.primary_metric_value for f in frames][:3] == [0.0304, 0.0173, 0.0146]
     assert frames[-1].primary_metric_value == 0.0123
     assert frames[-1].progress == 1.0
-    # An average over many batches moves smoothly enough to be graded, where
-    # diffusers' loss of one batch is not.
-    assert frames[-1].grade_note is None
-    assert frames[-1].grade_basis == "improvement"
+
+
+def _kohya_average() -> list[float]:
+    """kohya's avr_loss at every step: the value its bar was left showing."""
+    raw = KOHYA.read_bytes().decode("utf-8")
+    shown: dict[int, float] = {}
+    for step, value in re.findall(
+        r"steps:\s+\d+%\|[^|]*\|\s*(\d+)/120 \[[^\]]*?avr_loss=([0-9.e-]+)\]", raw
+    ):
+        shown[int(step)] = float(value)
+    assert sorted(shown) == list(range(1, 121))
+    return [shown[n] for n in range(1, 121)]
+
+
+def test_what_kohyas_average_is_measured_from_the_log() -> None:
+    """The premise of not grading it, from the log alone.
+
+    kohya's LossRecorder averages the batches so far through the first epoch
+    and the last epoch's batches after it: twelve here. So the first epoch's
+    batches can be read back out of the average, and the end of each epoch is
+    the one reading that shares no batch with the one an epoch before.
+    """
+    average = _kohya_average()
+    batches = [average[0]] + [
+        round((n + 1) * average[n] - n * average[n - 1], 4) for n in range(1, 12)
+    ]
+    # The first reading is one batch's loss, higher than any other in the
+    # first epoch: the "improvement" an A was given for is that batch being
+    # averaged away.
+    assert batches[0] == 0.0304
+    assert max(batches[1:]) < 0.012 and min(batches[1:]) > 0.003
+    # Ten readings that share no batch, and nothing that falls through them.
+    ends = average[11::12]
+    assert len(ends) == 10
+    assert ends[-1] > ends[0]
+    assert min(ends) == ends[2] and max(ends) == ends[3]
+
+
+def test_a_kohya_run_is_not_given_a_letter_or_told_it_slipped() -> None:
+    """It was graded A on its first reading being averaged away, and told
+    "performance has slipped … use early stopping" on 99 of 113 frames,
+    from its luckiest window."""
+    _run, frames, _events = _told(KOHYA)
+    assert {(f.grade.value, f.grade_basis, f.grade_note) for f in frames} == {
+        ("I", None, "running_mean")
+    }
+    for frame in frames:
+        assert "slipped" not in frame.narrative, frame.narrative
+        assert "early stopping" not in frame.narrative, frame.narrative
+        assert "since the previous reading" not in frame.narrative, frame.narrative
+        assert "running average" in frame.narrative or "an average over" in frame.narrative
+        assert f"{frame.primary_metric_value:.4f}" in frame.narrative, frame.narrative
+    # Not walked through the phases on one batch being averaged away.
+    assert frames[-1].phase.value == "learning"
+    # The readings themselves are untouched: charted as logged.
+    assert [f.primary_metric_value for f in frames][:3] == [0.0304, 0.0173, 0.0146]
+
+
+@pytest.mark.parametrize(
+    ("locale", "phrases"),
+    [
+        # Phrases both variants carry, whichever the run draws.
+        ("en", ("the most recent batches", "all but one batch", "fewer batches", "Next step:")),
+        ("fr", ("les lots les plus récents", "moins de lots", "Étape suivante")),
+        ("fa", ("تازه‌ترین دسته‌ها", "جز در یک دسته", "گام بعدی")),
+    ],
+)
+def test_the_kohya_story_says_why_in_every_language(locale: str, phrases: tuple[str, ...]) -> None:
+    store = RunStore(":memory:")
+    asyncio.run(
+        run_pipeline(
+            ingester=FileBatchIngester("k", str(KOHYA)),
+            run_id="k",
+            store=store,
+            hub=Hub(),
+            locale=locale,
+        )
+    )
+    last = store.get_story_frames("k")[-1].narrative
+    for phrase in phrases:
+        assert phrase in last, last
+    assert "0.0123" in last and "120" in last
+
+
+@pytest.mark.parametrize("locale", ["en", "fr", "fa"])
+def test_every_variant_of_the_running_mean_sentence_is_filled(locale: str) -> None:
+    lines = [
+        ln
+        for ln in (TEMPLATES / f"_running_mean{'' if locale == 'en' else '.' + locale}.txt")
+        .read_text(encoding="utf-8")
+        .splitlines()
+        if ln.strip()
+    ]
+    told = {
+        narrate_running_mean(
+            120.0, 0.0123, run_id=f"r{n}", locale=locale, metric="train_loss", counter="step"
+        )
+        for n in range(200)
+    }
+    assert len(told) == len(lines) >= 2
+    for text in told:
+        assert "{" not in text and "}" not in text, text
+        assert "0.0123" in text and "120" in text, text
+
+
+def test_the_kohya_report_says_why_there_is_no_letter() -> None:
+    store = RunStore(":memory:")
+    run = asyncio.run(
+        run_pipeline(
+            ingester=FileBatchIngester("k", str(KOHYA)), run_id="k", store=store, hub=Hub()
+        )
+    )
+    report = build_markdown(run.id, store)
+    assert t("grade_note.running_mean", "en") in report
+    assert t("md.grade_basis", "en") not in report
+    for locale in ("en", "fr", "fa"):
+        assert "grade_note.running_mean" not in t("grade_note.running_mean", locale)
+
+
+def test_only_kohyas_average_is_a_running_mean() -> None:
+    assert running_mean("avr_loss") and running_mean("AVR_LOSS")
+    for name in ("loss", "train_loss", "avg_loss", "val_loss", "", None):
+        assert not running_mean(name), name
+    # diffusers' loss of one batch is unsteady, not averaged: still told so.
+    _run, frames, _events = _told(LORA)
+    assert frames[-1].grade_note == "unsteady"
 
 
 def test_the_step_bar_parser_reads_kohyas_bar() -> None:

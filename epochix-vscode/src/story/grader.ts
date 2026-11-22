@@ -104,8 +104,11 @@ export function gradeByTrajectory(baseline: number, current: number, lowerBetter
 export function gradeNote(
   grade: Grade,
   readings: number,
-  o: { hasEpoch: boolean; newBest: boolean; unsteady?: boolean },
-): "few_readings" | "still_improving" | "unsteady" | null {
+  o: { hasEpoch: boolean; newBest: boolean; unsteady?: boolean; runningMean?: boolean },
+): "few_readings" | "still_improving" | "unsteady" | "running_mean" | null {
+  // How the metric is computed comes first: a running average over
+  // overlapping batches (steadiness.ts runningMean).
+  if (o.runningMean) return "running_mean";
   // Not graded because one reading cannot be set against another
   // (steadiness.ts): an "I" otherwise means there was nothing to measure.
   if (o.unsteady) return "unsteady";

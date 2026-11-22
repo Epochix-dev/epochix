@@ -260,6 +260,17 @@ suite("Runs that count steps", () => {
     assert.deepStrictEqual([steps[0], steps[steps.length - 1]], [1, 120]);
     assert.deepStrictEqual(frames.slice(0, 3).map((f) => f.primaryMetricValue), [0.0304, 0.0173, 0.0146]);
     assert.strictEqual(frames[frames.length - 1].primaryMetricValue, 0.0123);
+    // A running average over overlapping batches: graded A on its first
+    // reading being averaged away, and told it had slipped from its luckiest
+    // window, before. Python: test_a_kohya_run_is_not_given_a_letter_or_told_it_slipped.
+    assert.deepStrictEqual(
+      [...new Set(frames.map((f) => `${f.grade} ${f.gradeBasis} ${f.gradeNote}`))],
+      ["I null running_mean"],
+    );
+    for (const f of frames) {
+      assert.ok(!f.narrative.includes("slipped") && !f.narrative.includes("early stopping"), f.narrative);
+      assert.ok(f.narrative.includes(f.primaryMetricValue.toFixed(4)), f.narrative);
+    }
   });
 
   test("a step bar is a training signal only while it carries a value", () => {

@@ -27,7 +27,7 @@ import {
 } from "../../story/grader";
 import { lossText } from "../../story/narrator";
 import { computePhase, relativeImprovement } from "../../story/phases";
-import { stepText, swing, unsteady } from "../../story/steadiness";
+import { runningMean, stepText, swing, unsteady } from "../../story/steadiness";
 
 interface Golden {
   compute_grade: [TaskType, number, string | null, Grade][];
@@ -37,6 +37,8 @@ interface Golden {
   compute_phase: [number | null, number, number, boolean, string][];
   grade_note: [Grade, number, boolean, boolean, string | null][];
   grade_note_unsteady: [Grade, number, boolean, boolean, string | null][];
+  grade_note_running_mean: [Grade, number, boolean, string | null][];
+  running_mean: [string | null, boolean][];
   swing: [number[], [number, number, number, string] | null, boolean][];
   loss_text: [number, string][];
 }
@@ -114,6 +116,25 @@ suite("Grading matches the Python engine", () => {
         return got === want ? null : `${grade} ${readings} ${hasEpoch} ${newBest}: ${got} != ${want}`;
       },
     );
+    assert.ok(g.grade_note_running_mean.length > 0);
+    check(
+      g.grade_note_running_mean,
+      "grade_note (running mean)",
+      ([grade, readings, isUnsteady, want]) => {
+        const got = gradeNote(grade, readings, {
+          hasEpoch: true, newBest: true, unsteady: isUnsteady, runningMean: true,
+        });
+        return got === want ? null : `${grade} ${readings} ${isUnsteady}: ${got} != ${want}`;
+      },
+    );
+  });
+
+  test("which names are running averages", () => {
+    assert.ok(g.running_mean.some(([, yes]) => yes) && g.running_mean.some(([, yes]) => !yes));
+    check(g.running_mean, "running_mean", ([name, want]) => {
+      const got = runningMean(name);
+      return got === want ? null : `${JSON.stringify(name)}: ${got} != ${want}`;
+    });
   });
 
   test("swing and unsteady", () => {

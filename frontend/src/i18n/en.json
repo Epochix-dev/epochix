@@ -87,7 +87,8 @@
     "gradeNotes": {
       "few_readings": "Provisional: this grade rests on fewer than five readings of the metric.",
       "still_improving": "Still improving at the last reading — the grade shows where the run got to, not where it was heading.",
-      "unsteady": "Not graded: this metric's readings rise and fall too much from one to the next for a single reading to place the run."
+      "unsteady": "Not graded: this metric's readings rise and fall too much from one to the next for a single reading to place the run.",
+      "running_mean": "Not graded: this metric is a running average over the most recent batches. Each reading shares all but one batch with the one before, and the first readings average fewer batches than the rest, so no reading is a baseline to grade against."
     }
   },
   "compare": {

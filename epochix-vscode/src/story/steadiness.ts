@@ -11,11 +11,22 @@
  * generated; grading.golden.json pins what Python answers.
  */
 import {
+  RUNNING_MEANS,
   UNSTEADY_MIN_READINGS,
   UNSTEADY_STEP,
   UNSTEADY_TURN_SHARE,
   UNSTEADY_WINDOW,
 } from "./grading.generated";
+
+/**
+ * Whether a metric logged under `rawKey` is a running average over a window
+ * of batches that slides by one a reading (steadiness.RUNNING_MEANS): kohya's
+ * `avr_loss`. Its readings share all but one batch with their neighbours and
+ * the first epoch's average fewer batches, so none is set against another.
+ */
+export function runningMean(rawKey: string | null | undefined): boolean {
+  return rawKey !== null && rawKey !== undefined && RUNNING_MEANS.has(rawKey.toLowerCase());
+}
 
 /** How a metric's recent readings moved. */
 export interface Swing {

@@ -55,6 +55,7 @@ import {
   narratePastPeak,
   narrateSingleReading,
   narrateStalled,
+  narrateRunningMean,
   narrateUnsteady,
   message,
   displayMetric,
@@ -75,7 +76,7 @@ import {
   TASK_SIGNALS,
 } from "../story/engineTables.generated";
 import { canonicalise, isRecognised } from "../story/canonical";
-import { stepText, unsteady } from "../story/steadiness";
+import { runningMean, stepText, unsteady } from "../story/steadiness";
 import { FastAIParser } from "../parsers/fastai";
 import { AccelerateParser } from "../parsers/accelerate";
 import { ProgressMeterParser } from "../parsers/progressMeter";
@@ -879,14 +880,18 @@ export class StandaloneEngine {
     // (steadiness.ts): no improvement is claimed, no letter is given, and the
     // story says what the readings are. As in the Python engine.
     const swing = unsteady(this._history.get(key) ?? []);
+    // A running average over overlapping batches supports none of it either,
+    // whatever its readings look like (steadiness.ts runningMean).
+    const averaged = runningMean(primary.key);
+    const incomparable = swing !== null || averaged;
     const phaseBaseline =
-      swing !== null
+      incomparable
         ? value
         : this._primaryReadings < 2 && !lowerBetter && value >= 0 && value <= 1
           ? 0.0
           : this._baseline;
     const phase: Phase = computePhase(clock, value, phaseBaseline, lowerBetter);
-    const rel = swing !== null ? null : relativeImprovement(value, this._baseline, lowerBetter);
+    const rel = incomparable ? null : relativeImprovement(value, this._baseline, lowerBetter);
     // Honest advancement: the clock when the length is known, otherwise the
     // fraction of achievable improvement realised. Not a made-up constant,
     // which pinned runs without a length in their first phase for life.
@@ -894,7 +899,7 @@ export class StandaloneEngine {
     if (!Number.isFinite(progress)) progress = 0.0;
     progress = Math.max(0.0, Math.min(1.0, progress));
     const [grade, gradeBasis, gradeBands]: [Grade, GradeBasis | null, GradeBandsMsg | null] =
-      swing !== null ? ["I", null, null] : this._grade(value, lowerBetter, directionUnknown);
+      incomparable ? ["I", null, null] : this._grade(value, lowerBetter, directionUnknown);
 
     // As StoryEngine._emit: every reading of the story's metric, before the
     // frame is built; not the frame that closes a run on NaN.
@@ -906,8 +911,9 @@ export class StandaloneEngine {
     let pastPeak = false;
     if (Math.abs(this._best) > 1e-9) {
       const drop = (lowerBetter ? value - this._best : this._best - value) / Math.abs(this._best);
-      // Not for an unsteady metric: its best is its luckiest batch.
-      pastPeak = drop > PAST_PEAK_REL_DROP && swing === null;
+      // Not for an unsteady metric: its best is its luckiest batch. Nor for a
+      // running average: its best is its luckiest window.
+      pastPeak = drop > PAST_PEAK_REL_DROP && !incomparable;
     }
     // Stalled means FLAT. A run that got worse clears "less than 3% improvement"
     // exactly as a flat one does, and was told it was "not learning yet".
@@ -923,6 +929,10 @@ export class StandaloneEngine {
     if (epoch === null && this._primaryReadings <= 1) {
       narrative = narrateSingleReading({
         value, metric: key, runId: this._runId, locale: this._locale,
+      });
+    } else if (averaged) {
+      narrative = narrateRunningMean({
+        epoch, value, metric: key, runId: this._runId, locale: this._locale, counter,
       });
     } else if (swing !== null) {
       narrative = narrateUnsteady({
@@ -967,7 +977,7 @@ export class StandaloneEngine {
       // confidence in the line, which this carried and nothing displayed.
       confidence: progress,
       gradeNote: gradeNote(grade, this._primaryReadings, {
-        hasEpoch: epoch !== null, newBest, unsteady: swing !== null,
+        hasEpoch: epoch !== null, newBest, unsteady: swing !== null, runningMean: averaged,
       }),
       gradeBasis,
       gradeBands,

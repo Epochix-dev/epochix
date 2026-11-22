@@ -47,7 +47,7 @@ export interface GradeBandsMsg {
   bands: Array<{ grade: Grade; value: number }>;
 }
 
-export type GradeNote = "few_readings" | "still_improving" | "unsteady";
+export type GradeNote = "few_readings" | "still_improving" | "unsteady" | "running_mean";
 export type { Counter, GradeBasis };
 
 /** A milestone, shaped as the Python engine's (story/milestones.ts). */

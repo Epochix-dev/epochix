@@ -331,7 +331,8 @@ def grade_note(
     has_epoch: bool,
     new_best: bool,
     unsteady: bool = False,
-) -> Literal["few_readings", "still_improving", "unsteady"] | None:
+    running_mean: bool = False,
+) -> Literal["few_readings", "still_improving", "unsteady", "running_mean"] | None:
     """Why this letter deserves less weight than it looks, or None.
 
     An 11-epoch run and a 200-epoch run received equally confident letters.
@@ -344,8 +345,12 @@ def grade_note(
     A metric whose readings cannot be compared one with another
     (story_engine/steadiness.py) is not graded at all, and that is why: an
     ``I`` otherwise means there was nothing to measure against, which is not
-    true of a run with a hundred readings.
+    true of a run with a hundred readings. Nor is one whose readings are
+    running averages over overlapping batches (steadiness.RUNNING_MEANS):
+    that is a fact of how the metric is computed, so it is said first.
     """
+    if running_mean:
+        return "running_mean"
     if unsteady:
         return "unsteady"
     if grade is Grade.INCOMPLETE:

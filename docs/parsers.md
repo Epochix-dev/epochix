@@ -160,9 +160,12 @@ charted as logged and [not given a letter](training-loop.md#readings-that-cannot
 one reading does not say where it is.
 
 kohya's `avr_loss` is the training loss averaged over the last epoch's worth
-of batches, so it is read as the training loss (`train_loss`), and it moves
-smoothly enough to be graded. Between epochs kohya prints `epoch 2/10` on a
-line of its own; it names no metric, and the step stays the x-axis.
+of batches, so it is read as the training loss (`train_loss`) and charted at
+every step. It is [not given a letter](training-loop.md#readings-that-cannot-be-compared):
+each reading shares all but one batch with the one before, and the first
+epoch's readings average fewer batches than the rest. Between epochs kohya
+prints `epoch 2/10` on a line of its own; it names no metric, and the step
+stays the x-axis.
 
 ---
 
