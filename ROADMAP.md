@@ -26,9 +26,10 @@ taught live in [AGENTS.md](AGENTS.md).
 
 From an audit on 2026-11-10 (0.7.40 plus the idle-sniff fix that followed it).
 The engine is sound on what it reads; the gap is what it does not read. Two of
-the audit's items have landed since and are not listed: runs that count steps
-(nanoGPT, the PyTorch ImageNet example, a diffusers LoRA bar; 2026-11-11), and
-a notice when a watched terminal's command is seen and not told (2026-11-18).
+the audit's items shipped in 0.7.41 (2026-11-22) and are not listed: runs that
+count steps (nanoGPT, the PyTorch ImageNet example, a diffusers LoRA bar), and
+a notice when a watched terminal's command is seen and not told. So did
+everything the first coverage run found unexecuted (item 7).
 
 Two kinds of evidence appear below, and they are not the same:
 
@@ -128,11 +129,15 @@ is a separate question.
 
 ### 6. One engine, or a cheaper second one — a spike
 
-Every engine change is written twice. The last two fixes (#150, #152) were
-each a Python change and a hand port to `StandaloneEngine.ts` (1,087 lines);
-the parsers, tables and thresholds are generated or replayed from goldens,
-but the pipeline — sniffing, fallbacks, warm-up, frames — is ported by hand
-and checked only by the corpus and the tests someone remembers to mirror.
+Every engine change is written twice. #150 and #152 were each a Python change
+and a hand port to `StandaloneEngine.ts` (1,194 lines in 0.7.41); the
+parsers, tables and thresholds are generated or replayed from goldens, but
+the pipeline — sniffing, fallbacks, warm-up, frames, milestones — is ported
+by hand and checked only by the corpus and the tests someone remembers to
+mirror. 0.7.41 measured what that costs: the extension's milestones had
+drifted into a different set altogether, and 58 of the 60 corpus logs gave
+different milestones in VS Code than everywhere else. Nothing compared them
+until `corpus_truth.json` recorded milestones (#175).
 
 A spike, with a written answer rather than a merge: (a) can the Python engine
 run inside the extension through Pyodide — bundle size, start-up time on a
@@ -155,10 +160,11 @@ floor (`fail_under = 85.5` in `pyproject.toml`) only catches a drop. The
 per-module figures below are from that run.
 
 Everything the list showed now has a test that runs it the way a person
-would, landed on 2026-11-20 and 21: the plugin groups (#169),
-`export(parse(log))` (#160), the Jupyter magics (#172), the five commands
-(#171, and #169 for `export`), the two tests that skipped in every job
-(#170, now run against the wheel) and `GET /api/raw` (#177).
+would, shipped in 0.7.41: the plugin groups (#169), `export(parse(log))`
+(#160), the Jupyter magics (#172), the five commands (#171, and #169 for
+`export`), the two tests that skipped in every job (#170, now run against
+the wheel) and `GET /api/raw` (#177). Running them found most of 0.7.41's
+fixes.
 
 Not findings: the Lightning and Hugging Face callbacks, the TensorBoard and
 W&B importers and the torch hooks in `sdk/activations.py` read 0% to 45%
@@ -168,10 +174,19 @@ functions need a running Ollama, which CI does not have. Reading standard
 input (`python train.py | epochix`) had never run either; it is small, so it
 now has a test (`test_stdin_pipe.py`).
 
-Left to do the same way: the frontend (Vitest has a coverage script that CI
-does not run, limited to two files) and the extension (Mocha inside the VS
-Code host). What each takes is written in the pull request that added the
-`coverage` job.
+Left to do the same way: the frontend and the extension, neither measured in
+CI.
+
+- **The frontend.** Vitest has a coverage script that CI does not run, and
+  `vitest.config.js` measures only `store.js` and `ws-client.js`. Measured by
+  hand over all of `src/` while fixing the metric direction (#179): 40.9% of
+  lines before, 51.9% after.
+- **The extension** (Mocha inside the VS Code host). Every command now runs
+  in a test (#180; six of the eight never had, and Export Run did nothing),
+  but no coverage figure exists.
+
+What each takes is written in the pull request that added the `coverage`
+job.
 
 ### 8. The parser docs leave out four libraries
 
@@ -183,6 +198,16 @@ example lines copied from those recordings, not typed, and a test that fails
 when a parser in the registry has no section, so the next one cannot be left
 out the same way.
 
+### 9. The PDF report has no milestones
+
+**Measured.** Since 0.7.41 a run's milestones are stored and read back, and
+the HTML and Markdown reports list them with their epochs. The PDF lists
+none: `pdf_export.py` and `_pdf_render.py` never read them, and its
+docstrings, which promised a section, were corrected instead (#174). A
+section needs a layout of its own and the Farsi shaping the rest of the PDF
+already does, in all three languages, and a test that every stored milestone
+appears in the PDF of a corpus run.
+
 ---
 
 ## Decided — not doing
@@ -193,6 +218,21 @@ out the same way.
   building only if it is generated from the Python engine's tables and
   replays `grading.golden.json` like the extension's engine — otherwise it is
   a fourth copy to drift.
+- **Metaphor packs and task plugins.** Both plugin groups were documented and
+  loaded by nothing until 0.7.41 removed them (#169). A pack's cards are free
+  text placed beside the grade, which epochix's own sentences may not be
+  ([AGENTS.md](AGENTS.md), "A story sentence may say only what the numbers
+  support"). A task plugin would regrade runs in the Python engine only; the
+  extension grades from tables generated from Python and cannot load one. A
+  project sets a task's thresholds in `.epochix.yaml`, which both engines
+  read. Exporter plugins stay, and are wired in.
+- **Grade and phase changes as milestones.** The extension raised them, and
+  Python never did; 0.7.41 removed them (#175) rather than add them to
+  Python, its store and its reports. The learning curve, the phase ribbon and
+  the grade card show every change in both engines. The extension's version
+  also fired once per letter, so a run that fell from B to C and recovered
+  read as ending on C. If they come back, they start in Python, firing on
+  every change, and reach the extension through the corpus parity test.
 - **PDFs for scripts beyond Latin and Arabic.** A Farsi report embeds
   Vazirmatn and shapes its text with uharfbuzz (the `pdf` extra); without the
   shaper it falls back to English chrome and says `pip install
