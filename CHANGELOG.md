@@ -37,6 +37,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   described `epochix serve --auth user:password` and
   `EPOCHIX_AUTH_USER`/`EPOCHIX_AUTH_PASS`, none of which exist; it now
   describes the token.
+- **An installed exporter plugin is used.** The `epochix.exporters` group was
+  documented and loaded by nothing: with a plugin declaring `latex` installed,
+  `epochix export --format latex` answered "Unknown export format". Its format
+  is now written by `epochix export --format <name>`,
+  `epochix run --export <name>`, `GET /api/export/<run-id>/<name>` and
+  `epochix.export(run, "<name>")`. A plugin cannot take a built-in name
+  (`html`, `pdf`, `md`, `json`, `gif`); one that declares it is not loaded,
+  and a warning is logged. A plugin that raises, or returns without writing
+  its file, is a failure naming the package it came from: exit 1 from the
+  CLI, HTTP 500 from the server, `ExporterFailed` from Python. An unknown
+  format is refused before anything is written, and the message lists every
+  format that can be. The VS Code export picker offers the built-in formats
+  only.
+
+### Removed
+
+- **The `epochix.metaphor_packs` and `epochix.tasks` plugin groups.** Both were
+  documented and never loaded. An installed pack's cards appeared nowhere, and
+  a task plugin's thresholds graded nothing: a log printing `wer` was graded
+  by the built-in `nlp` task. Wiring them in would have put a pack's free text
+  beside the grade, and regraded runs in the Python engine only, since the VS
+  Code extension cannot load a plugin. Removed with them:
+  `epochix.plugins.load_all_plugins`, `epochix.plugins.metaphor_loader` and
+  `epochix.plugins.task_registry`. A package declaring either group is
+  ignored, as it always was. A task's grade thresholds are set in
+  `.epochix.yaml`, which both engines read.
 
 ### Fixed
 
@@ -96,6 +122,100 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   dashboard `visualize` opened could not find its own run.
 - **The VS Code extension's server ignores a token exported in your shell.**
   See the extension's changelog.
+- **A run from `epochix.parse()` can be exported and compared without `db=`.**
+  `parse()` keeps a run in memory, and `export()` and `compare()` looked for
+  it in the configured database. So `export(parse("train.log"))` raised
+  `ValueError: Run not found` in every format, and `compare(a, b)` returned
+  its verdict with an empty narrative and no word why. `export()`,
+  `compare()` and `visualize()` now look in `db=` if given, then in the store
+  the run was parsed into, then in the configured database. `parse()` still
+  writes nothing to disk. `export(run, "gif")` returned the path of a file it
+  never wrote; it now writes the GIF, as the CLI does.
+- **A run is compared, tabulated and animated on the metric its story ended
+  on.** All three took the metric most of its frames carried. A story can
+  start on one metric and move to another, so the Lightning demo, graded A-
+  on `val_accuracy`, was compared as training accuracy and called not
+  comparable with a Keras run told on `val_accuracy`. Two detection runs
+  graded on mAP50 were ranked on their box loss, and the Lightning demo's
+  default GIF animated nine epochs of training accuracy under "final grade
+  A-". A run stopped right after its first validation pass now has one
+  reading to compare and no default GIF; its training curve is still drawn
+  when asked for by name.
+- **The dashboard reads which way is better for a metric as the engine does.**
+  It kept its own list of eleven lower-is-better names, and read 10 of the 34
+  metric names in the corpus the wrong way up: `box_loss`, `cls_loss` and
+  `dfl_loss` on every YOLO run, `log_loss`, `error_rate`, `eval0_loss`,
+  `val_MAE` and `val_MSE` among them. On a YOLO run each falling loss had a
+  red ▼, the learning meter emptied as `box_loss` improved, and the
+  comparison said "higher is better". The dashboard now reads the engine's
+  own rule, generated from Python. A name that says nothing either way, such
+  as `eta`, is marked neither better nor worse.
+- **A run's milestones are read back.** They were written to the database and
+  never read, so a finished run's page, the snapshot and the JSON and HTML
+  exports showed none, and the Markdown export had no Milestones section. The
+  biggest jump and "training complete" were never stored at all, and the
+  biggest jump was placed at the run's last epoch rather than where it
+  happened. All are now stored, read back onto their frames and listed in
+  the reports. The timeline shows one "Training complete" card, where a live
+  run ended on two.
+- **"New best" is announced once.** On six logs, the Hugging Face demo among
+  them, a run told on its training loss until its first evaluation announced
+  a new best again on `val_accuracy`: the engine started a fresh milestone
+  tracker when it detected the task. One tracker now serves the whole run.
+- **The notebook magics work as the quickstart shows.**
+  - The quickstart's live cell, `%%epochix --live` over `!python train.py`,
+    was run as Python: a `SyntaxError`, and a run stored with no frames. A
+    cell is now all Python or all `!` shell commands, with `{variables}`
+    expanded as IPython does; a cell mixing the two is refused.
+  - The dashboard's server stopped half a second after the last line, so the
+    page in the notebook went dead under the finished story. `%epochix`
+    followed by `%%epochix --live` on the default port lost the live run to
+    `SystemExit: 3`. Both magics now share one server per port for the life
+    of the kernel, stopped by `%unload_ext epochix`.
+  - A Python cell that printed without `flush=True` reached the dashboard
+    only when it ended. The cell now runs unbuffered, until its process ends;
+    interrupting the kernel stops it, and the run is told from what was
+    printed.
+  - A missing log, an unknown option, a bad `--port` and a port another
+    program holds are each said in one line, with no page shown. The magic
+    also says when the cell exited non-zero, and when nothing it printed was
+    read as a metric.
+- **Two stores opening a new database at once both open.** Creating the tables
+  and switching a new file to WAL could collide, failing with `table runs
+  already exists` or `database is locked`: the server and `epochix list`, say,
+  or the extension and a live run. The tables are now created under one
+  write lock, and the switch to WAL is retried for up to 5 seconds.
+- **A project's own `.env` no longer stops epochix.** Settings are read from
+  `.env` in the folder epochix runs from, and one line epochix does not own,
+  such as `OPENAI_API_KEY=…`, made every command fail on start with a
+  traceback. Such lines are now ignored. A setting that does not validate
+  stops a command with one line naming it.
+- **`epochix config set` refuses what it cannot set.** `config set nonsense 1`
+  and `config set port abc` were written to `.env`, after which every command
+  run from that folder failed, `config show` included. An unknown key, a
+  value the setting cannot take and a value spanning lines are refused, and
+  `.env` is left as it was. A key already in the file is replaced however it
+  was written, and duplicates that would decide the value are removed.
+- **`epochix open` checks its port before opening the browser.** With the port
+  taken, the browser showed whatever was already listening there, such as
+  another epochix answering "run not found". With `EPOCHIX_OPEN_BROWSER` off
+  it prints the address, as `epochix <log>` does.
+- **`epochix race -o` creates the folder it writes to,** as `export` does,
+  where it raised a traceback.
+- **`epochix prune` reaches the oldest runs.** It read only the newest 10,000,
+  leaving out exactly the runs it exists to delete.
+- **A port in TIME_WAIT passes the free-port check.** On Linux and macOS,
+  stopping `epochix serve` and starting it again within about a minute was
+  refused with "already in use", though the server would have started.
+  `--host ::1` was refused the same way, and an address this machine does not
+  have was called a busy port. The check now binds as the server does, and
+  says "Cannot listen on …" for an address it cannot use.
+- **`GET /api/raw/<run-id>` says when no lines were kept.** A run read without
+  `EPOCHIX_KEEP_RAW_LINES` answered with an empty list, as if the log had
+  been empty. It now answers 404 naming the setting, and `docs/config.md`
+  says the kept lines are read back from this endpoint.
+- **In VS Code, "Epochix: Export Run" exports, and a run's milestones are the
+  same as everywhere else.** See the extension's changelog.
 
 ### Security
 
@@ -113,6 +233,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   could create and delete runs. The nginx example now sets it (Caddy does by
   default). It also proxied under `/epochix/`, a sub-path the dashboard
   cannot work behind; it is now a server block for a host of its own.
+- **`epochix config show` hides `auth_token` and `llm_key`.** It printed both in
+  plain text, and its output is what gets pasted into bug reports.
+  `config set` hides them too.
 
 ### Tests
 
@@ -136,6 +259,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Reading a log from standard input is tested.** The README's first
   command had never run in a test. A recorded log piped into the CLI must now
   be told as `corpus_truth.json` records it.
+- **Everything the coverage run found unexecuted now has a test that runs
+  it.** The SDK's `export`, `compare`, `visualize`, `serve` and `parse_string`;
+  `epochix open`, `race`, `prune` and `config`; the notebook magics, in a real
+  IPython shell; an exporter plugin installed as an installer leaves it;
+  `GET /api/raw`; and the VS Code extension's commands, six of its eight never
+  run before. Each runs against the real store, server or host, and most of
+  the fixes above are what running them found.
+- **The tests that need the wheel's assets run against the wheel.** The
+  dashboard bundle and the brand mark are put into the package only when the
+  wheel is built, so every CI job skipped the check that a run name cannot
+  break out of the HTML export's `<script>` block, along with the export's
+  version stamp and the watermark. A `packaged-assets` job now builds the
+  wheel as the release does, fails if it lacks either asset, and runs those
+  tests against what ships.
+- **The VS Code extension and the Python engine are held to the same
+  milestones,** 292 across the 60 corpus logs, in `corpus_truth.json`.
+
+### Dependencies
+
+- The lock CI installs moves to pydantic 2.14.3, FastAPI 0.162.5, SQLAlchemy
+  2.0.58, Typer 0.29.1 and AnyIO 4.16.0, and to pytest-asyncio 1.5.0,
+  pytest-benchmark 5.3.1 and Playwright 1.65.2 for the tests. The package's
+  own version floors are unchanged.
+- The dashboard is built with d3-path 3.1.1, d3-scale 4.0.3, d3-shape 3.2.1
+  and Vite 8.3.8, and tested with Vitest 5.1.1.
+- The extension's tooling: vsce 4.1.1, ovsx 1.4.0, ESLint 10.15.0,
+  typescript-eslint 8.73.0 and glob 14.0.6.
 
 ---
 

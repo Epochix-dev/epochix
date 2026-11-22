@@ -53,10 +53,32 @@ which covers the extension too; entries here resume with 0.7.16.
 - **A pytest run of an ML project no longer opens the dashboard.** A failing
   test's source is not read as a metric, and test ids no longer count as
   training output.
+- **"Epochix: Export Run" exports.** After a format was picked it did nothing,
+  every time: it sent the panel a message that nothing handled. It now runs
+  the panel's own export for the run on screen, and with the built-in engine
+  it says why there is no file.
+- **A run's milestones are the ones the browser and the reports show.** The
+  extension raised milestones of its own (the first reading, each new grade,
+  each new phase) and none of the Python engine's: a new best, crossing 25,
+  50, 75 and 90%, the biggest jump and training complete. It now raises
+  Python's, from the same thresholds, and its own three are gone. The
+  learning curve, the phase ribbon and the grade card show grade and phase
+  changes, in both engines.
+- **A watched run's milestones and warnings arrive as it trains.** The panel
+  sent them only when it opened, and a terminal run opens it early, so the
+  timeline and the warning strip stayed as they were at that moment. The
+  milestones a run ends with were never sent. Each is now sent once, as it
+  is reached, and a panel reloaded mid-run is not sent them again.
+- **The dashboard reads which way is better as the engine does.** A falling
+  YOLO loss, `val_MAE` or `log_loss` was drawn as getting worse.
 
 ### Tests
 
 - The extension's host tests now run on macOS after a change lands.
+- Every command is run by a test, as the command palette runs it. Six of the
+  eight had never been run.
+- Every corpus log gives the same milestones through the extension's engine
+  as through Python's.
 
 ---
 
