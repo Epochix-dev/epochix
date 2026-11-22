@@ -1,7 +1,7 @@
 /**
  * Runs that count steps, through the extension's own engine.
  *
- * Python: tests/integration/test_step_counted_runs.py. The three recordings
+ * Python: tests/integration/test_step_counted_runs.py. The four recordings
  * are held to corpus_truth.json by corpusParity.test.ts; this pins what that
  * cannot — which reading sits at which step, and that a bar still being drawn
  * is read as it arrives.
@@ -18,6 +18,8 @@ import * as vscode from "vscode";
 
 import { stepBarRedraws } from "../../parsers/stepBar";
 import { COUNTER_FORMS, LOCALES, type Counter } from "../../story/narratives.generated";
+import { TerminalFeed } from "../../terminal/TerminalFeed";
+import { isTraining } from "../../terminal/TrainingDetector";
 import { StandaloneEngine } from "../../webview/StandaloneEngine";
 import type { StoryFrameMsg } from "../../webview/messages";
 
@@ -230,6 +232,42 @@ suite("Runs that count steps", () => {
     const frames = engine.snapshot();
     assert.deepStrictEqual(frames.map((f) => f.epoch), range(1, 150));
     assert.strictEqual(frames[149].primaryMetricValue, 0.0133);
+  });
+
+  test("a kohya run in a terminal opens the dashboard and is told from its first step", () => {
+    // Python: test_a_kohya_run_is_told_by_its_averaged_loss_step_by_step.
+    // Nothing else kohya prints was a training signal, so the feed held the
+    // whole run back and the dashboard never opened.
+    const text = fixture("kohya_lora_real.log");
+    const feed = new TerminalFeed();
+    const engine = new StandaloneEngine();
+    const frames: StoryFrameMsg[] = [];
+    let opened: number | null = null;
+    // Terminals do not respect line endings: chunks that cut redraws in two.
+    for (let at = 0; at < text.length; at += 997) {
+      const feedable = feed.push(text.slice(at, at + 997));
+      if (feedable === null) continue;
+      opened ??= at;
+      frames.push(...engine.feed(feedable));
+    }
+    frames.push(...engine.flush());
+    assert.ok(feed.detected, "the dashboard never opened");
+    // It opens on the bar, not at the end of the run.
+    assert.ok(opened !== null && opened < text.indexOf("avr_loss=") + 997, `opened at ${opened}`);
+    assert.deepStrictEqual([...new Set(frames.map((f) => f.primaryMetric))], ["train_loss"]);
+    const steps = frames.map((f) => f.epoch);
+    assert.strictEqual(steps.length, 113);
+    assert.deepStrictEqual([steps[0], steps[steps.length - 1]], [1, 120]);
+    assert.deepStrictEqual(frames.slice(0, 3).map((f) => f.primaryMetricValue), [0.0304, 0.0173, 0.0146]);
+    assert.strictEqual(frames[frames.length - 1].primaryMetricValue, 0.0123);
+  });
+
+  test("a step bar is a training signal only while it carries a value", () => {
+    assert.ok(isTraining("\rsteps:  33%|███▎      | 40/120 [00:28<00:57,  1.39it/s, avr_loss=0.0112]"));
+    assert.ok(isTraining("\rSteps:  32%|###2      | 39/120 [00:26<00:43,  1.85it/s, loss=0.0129, lr=0.0001]"));
+    // A bar with nothing on it is any download or loop.
+    assert.ok(!isTraining("\rsteps:   0%|          | 0/120 [00:00<?, ?it/s]"));
+    assert.ok(!isTraining("Loading pipeline components...:  50%|█████     | 3/6 [00:00<00:00,  9.56it/s]"));
   });
 
   test("only a bar that counts steps is read redraw by redraw", () => {

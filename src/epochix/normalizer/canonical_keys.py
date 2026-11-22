@@ -10,6 +10,11 @@ CANONICAL_MAP: dict[str, str] = {
     "train_loss": "train_loss",
     "training_loss": "train_loss",
     "trn_loss": "train_loss",
+    # kohya-ss sd-scripts' bar: the training loss averaged over the last
+    # epoch's worth of batches (tests/fixtures/logs/kohya_lora_real.log), as
+    # Keras's `loss` is averaged over the epoch so far. Left unrecognised, it
+    # was a custom metric whose direction nothing pinned.
+    "avr_loss": "train_loss",
     "val_loss": "val_loss",
     "valid_loss": "val_loss",
     "validation_loss": "val_loss",

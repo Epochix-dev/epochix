@@ -128,16 +128,19 @@ what the story is told by; from then on it is told by validation accuracy.
 ## A run-long step bar
 
 One tqdm bar for the whole training, described `Steps`, as the diffusers
-training scripts draw (`train_dreambooth_lora_sdxl.py` and its siblings). The
-bar is everything such a run prints about how it is going.
+training scripts draw (`train_dreambooth_lora_sdxl.py` and its siblings), or
+`steps`, as kohya-ss `sd-scripts` draws (`train_network.py`,
+`sdxl_train_network.py`). The bar is everything such a run prints about how
+it is going.
 
 **Auto-detection:** two or more redraws of a bar described `Steps` (or
 `steps`) that carries `key=value` pairs.
 
-**Sample:**
+**Samples:**
 
 ```
 Steps:  32%|###2      | 39/120 [00:26<00:43,  1.85it/s, loss=0.0129, lr=0.0001]
+steps:  33%|███▎      | 40/120 [00:28<00:57,  1.39it/s, avr_loss=0.0112]
 ```
 
 **What is read:** every `key=value` on the bar, each time the values change,
@@ -150,11 +153,16 @@ read in its final state. A live run is read as the redraws arrive: in the VS
 Code terminal, from a tailed file, piped to `epochix -`, and tailed over SSH.
 Every other bar still waits for its line to end, on every one of them.
 
-What the bar carries is the loss of ONE batch. For a diffusion model that
-number depends mostly on which noise level the batch drew, so it jumps from
-step to step by an order of magnitude on a healthy run. Such a run is charted
-as logged and [not given a letter](training-loop.md#readings-that-cannot-be-compared):
+What diffusers' bar carries is the loss of ONE batch. For a diffusion model
+that number depends mostly on which noise level the batch drew, so it jumps
+from step to step by an order of magnitude on a healthy run. Such a run is
+charted as logged and [not given a letter](training-loop.md#readings-that-cannot-be-compared):
 one reading does not say where it is.
+
+kohya's `avr_loss` is the training loss averaged over the last epoch's worth
+of batches, so it is read as the training loss (`train_loss`), and it moves
+smoothly enough to be graded. Between epochs kohya prints `epoch 2/10` on a
+line of its own; it names no metric, and the step stays the x-axis.
 
 ---
 
@@ -201,9 +209,6 @@ nanoGPT's configurator opens with `Overriding`.
 - **MLX-LM** (`Iter 10: Train loss ..., Learning Rate ..., It/sec ...`) has
   not been recorded: it needs Apple silicon. Its layout is not in the tests,
   and nothing here was written for it.
-- **kohya-ss `sd-scripts`** draws a bar described `steps` with `avr_loss=...`.
-  The step-bar parser accepts the description in either case, but no kohya run
-  has been recorded, and `avr_loss` is not a name Epochix recognises.
 
 ---
 

@@ -8,6 +8,7 @@
  "auprc": "PR_AUC",
  "auroc": "AUC",
  "average_precision": "PR_AUC",
+ "avr_loss": "train_loss",
  "balanced_accuracy": "balanced_accuracy",
  "balanced_accuracy_score": "balanced_accuracy",
  "binary_logloss": "log_loss",

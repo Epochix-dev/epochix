@@ -1869,6 +1869,43 @@
    }
   ]
  },
+ "kohya_lora_real.log": {
+  "path": "tests/fixtures/logs/kohya_lora_real.log",
+  "task": "custom",
+  "metric": "train_loss",
+  "frames": 113,
+  "last_value": 0.0123,
+  "keys": [
+   "train_loss"
+  ],
+  "metric_from_epoch": 1.0,
+  "counter": "step",
+  "grade_note": null,
+  "cross_validation": null,
+  "final_grade": "A",
+  "final_grade_basis": "improvement",
+  "final_phase": "understanding",
+  "milestones": [
+   {
+    "kind": "best_so_far",
+    "epoch": 1.0,
+    "value": 0.0304,
+    "message": "New best: 0.0304"
+   },
+   {
+    "kind": "biggest_jump",
+    "epoch": 2.0,
+    "value": 0.0131,
+    "message": "Biggest single-reading improvement: 0.0131"
+   },
+   {
+    "kind": "training_complete",
+    "epoch": 120.0,
+    "value": 0.007,
+    "message": "Training completed."
+   }
+  ]
+ },
  "lightgbm_real_classifier.log": {
   "path": "tests/fixtures/logs/lightgbm_real_classifier.log",
   "task": "classification",

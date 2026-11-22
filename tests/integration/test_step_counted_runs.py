@@ -44,6 +44,7 @@ LOGS = Path(__file__).resolve().parents[2] / "tests" / "fixtures" / "logs"
 NANOGPT = LOGS / "nanogpt_real.log"
 IMAGENET = LOGS / "pytorch_imagenet_real.log"
 LORA = LOGS / "diffusers_lora_real.log"
+KOHYA = LOGS / "kohya_lora_real.log"
 
 
 def _told(log: Path) -> tuple[Run, list[StoryFrame], list[MetricEvent]]:
@@ -71,8 +72,9 @@ def _read(parser: object, line: str, ctx: ParserContext) -> tuple[list[tuple[str
         (NANOGPT, "nanogpt_real_source.py", "train.py"),
         (IMAGENET, "pytorch_imagenet_real_source.py", "main.py"),
         (LORA, "diffusers_lora_real_source.py", "train_dreambooth_lora_sdxl.py"),
+        (KOHYA, "kohya_lora_real_source.py", "sdxl_train_network.py"),
     ],
-    ids=["nanogpt", "imagenet", "lora"],
+    ids=["nanogpt", "imagenet", "lora", "kohya"],
 )
 def test_each_recording_ships_with_the_script_that_ran_it(
     log: Path, script: str, upstream: str
@@ -296,6 +298,51 @@ def test_a_lora_run_is_told_step_by_step() -> None:
 
     assert Counter(e.canonical_key for e in events) == {"train_loss": 120, "lr": 120}
     assert all(e.step == int(e.epoch or 0) for e in events)
+
+
+# ── kohya-ss sd-scripts' LoRA bar ────────────────────────────────────────────
+
+
+def test_a_kohya_run_is_told_by_its_averaged_loss_step_by_step() -> None:
+    """kohya draws its bar lower-case and puts one value on it, `avr_loss`:
+    the training loss averaged over the last epoch's batches. Unrecognised,
+    it was a custom metric whose direction nothing pinned."""
+    raw = KOHYA.read_bytes().decode("utf-8")
+    # `epoch 2/10`, printed between epochs, ends the bar's line ten times.
+    assert sum(1 for line in raw.split("\n") if "steps:" in line) == 15
+    assert raw.count("\rsteps:") > 200
+    assert "Steps:" not in raw
+
+    run, frames, events = _told(KOHYA)
+    assert run.parser_used == "step_bar"
+    assert run.primary_metric == "train_loss"
+    assert {f.primary_metric for f in frames} == {"train_loss"}
+    assert {(e.canonical_key, e.raw_key) for e in events} == {("train_loss", "avr_loss")}
+    # A reading where the average changed, at the step the bar stood at: the
+    # epoch lines between them do not move the x-axis.
+    steps = [f.epoch for f in frames]
+    assert len(steps) == 113 and steps == sorted(set(steps))
+    assert steps[0] == 1.0 and steps[-1] == 120.0
+    assert all(e.step == int(e.epoch or 0) for e in events)
+    assert [f.primary_metric_value for f in frames][:3] == [0.0304, 0.0173, 0.0146]
+    assert frames[-1].primary_metric_value == 0.0123
+    assert frames[-1].progress == 1.0
+    # An average over many batches moves smoothly enough to be graded, where
+    # diffusers' loss of one batch is not.
+    assert frames[-1].grade_note is None
+    assert frames[-1].grade_basis == "improvement"
+
+
+def test_the_step_bar_parser_reads_kohyas_bar() -> None:
+    bar = "steps:  33%|\u2588\u2588\u2588\u258e      | 40/120 [00:28<00:57,  1.39it/s{post}]"
+    ctx = ParserContext(run_id="t")
+    assert _read(StepBarParser(), bar.format(post=""), ctx) == ([], True)
+    ctx = ParserContext(run_id="t")
+    assert _read(StepBarParser(), bar.format(post=", avr_loss=0.0112"), ctx) == (
+        [("avr_loss", 0.0112)],
+        False,
+    )
+    assert (ctx.current_step, ctx.current_epoch, ctx.total_epochs) == (40, 40.0, 120)
 
 
 def test_a_redraw_is_a_reading_when_its_values_changed() -> None:

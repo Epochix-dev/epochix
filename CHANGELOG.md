@@ -9,6 +9,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **A kohya-ss LoRA run is told.** A real `sdxl_train_network.py` run
+  (sd-scripts v0.9.1, `tests/fixtures/logs/kohya_lora_real.log`) draws one bar
+  described `steps` that carries only `avr_loss`, the training loss averaged
+  over the last epoch's batches. The step-bar parser read it as it was, but
+  `avr_loss` was a custom metric whose direction nothing pinned. It is now
+  read as the training loss, and the run is told by step from 113 readings
+  over 120 steps. Averaged like that, it moves smoothly enough to be graded.
+  In a VS Code terminal the run never opened the dashboard: nothing kohya
+  prints was a training signal (its `epoch 1/10` is lower-case and holds no
+  loss), so it scored 0.15 against 0.45. A step bar carrying a value is now
+  one.
+
 ### Fixed
 
 - **A run without epochs is told in what it counts.** A boosting round, an
@@ -25,6 +39,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   the 60 logs of the corpus, only the 10 without epochs read differently, and
   only in the counter's name. Both engines. Frames stored by an earlier
   version have no counter and read as epochs, as they did.
+- **A LoRA run piped to `epochix -` or tailed over SSH is read as it trains.**
+  Both read by line, and a run-long step bar ends no line until a checkpoint
+  or the end of training, so such a run piped in on Linux or macOS, or tailed
+  over SSH from any machine, showed nothing for hours. They now hand on the bar's finished redraws
+  as the file tail does, and every other bar still waits for its line to end.
+- **Piped input on Windows read every redraw of every bar.** Text-mode stdin
+  ended a line at each carriage return, so each redraw of an epoch's progress
+  bar was a reading: a recorded tqdm loop gave 1,442 metrics where its file
+  gives 48. Stdin is now read as bytes on every platform.
+- **A long progress-bar line no longer stops a pipe or an SSH tail.**
+  `readline()` raised once 64 KiB arrived without a newline, a minute or two
+  of tqdm output.
 
 ## [0.7.41] — 2026-11-22
 

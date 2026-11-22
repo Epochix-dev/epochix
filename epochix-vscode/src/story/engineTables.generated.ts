@@ -11,6 +11,7 @@ export const CANONICAL_MAP: ReadonlyMap<string, string> = new Map([
   ["train_loss", "train_loss"],
   ["training_loss", "train_loss"],
   ["trn_loss", "train_loss"],
+  ["avr_loss", "train_loss"],
   ["val_loss", "val_loss"],
   ["valid_loss", "val_loss"],
   ["validation_loss", "val_loss"],

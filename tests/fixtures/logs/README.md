@@ -28,6 +28,7 @@ paths they use); never edit a capture by hand.
 | `keras2_real_verbose1.log` | A small MLP with Keras 2 (TensorFlow 2.15), `verbose=1`, redirected to a file. | `keras2_real_source.py` (`1`) |
 | `keras2_real_verbose2.log` | The same, `verbose=2`. | `keras2_real_source.py` (`2`) |
 | `keras_real_verbose2.log` | The demo CNN with Keras 3, `verbose=2`. | `../../../demo/keras_image_classifier_source.py` (`steady 2`) |
+| `kohya_lora_real.log` | kohya-ss sd-scripts v0.9.1's `sdxl_train_network.py`: an SDXL LoRA on the U-Net, 120 steps (ten epochs of twelve) on a GPU, a checkpoint every 40. One tqdm bar described `steps`, carrying only `avr_loss`, the loss averaged over the last epoch's batches; `epoch N/10` printed between epochs ends its line. | `kohya_lora_real_source.py` |
 | `lightgbm_real_classifier.log` | LightGBM classifier, two eval sets. | `boosting_real_source.py` (`lgb_clf`) |
 | `lightgbm_real_early_stopping.log` | LightGBM's native API with early stopping. | `boosting_real_source.py` (`lgb_native`) |
 | `nanogpt_real.log` | nanoGPT's `train.py` on its character-level Shakespeare config, the README's CPU settings, 2000 iterations: the config file echoed first, then `step N: train loss …, val loss …` and `iter N: loss …, time …ms, mfu …%`. | `nanogpt_real_source.py` |

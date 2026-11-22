@@ -333,6 +333,7 @@
    ]
   ],
   "tests/fixtures/logs/keras_short.log": [],
+  "tests/fixtures/logs/kohya_lora_real.log": [],
   "tests/fixtures/logs/lightgbm_real_classifier.log": [],
   "tests/fixtures/logs/lightgbm_real_early_stopping.log": [],
   "tests/fixtures/logs/mixed_frameworks.log": [],
