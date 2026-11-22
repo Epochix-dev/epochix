@@ -8,7 +8,7 @@
  * bogus "100%" from clamping raw MAE to [0,1]. CSS @property gradient shimmer.
  */
 
-import { isPercentMetric, LOWER_IS_BETTER, formatPrimaryMetric } from '../viz-util.js';
+import { isLowerBetter, isPercentMetric, formatPrimaryMetric } from '../viz-util.js';
 
 export class LearningMeter {
   /** @param {HTMLElement} container */
@@ -46,7 +46,7 @@ export class LearningMeter {
         .filter((v) => Number.isFinite(v));
       const lo = Math.min(...vals, value), hi = Math.max(...vals, value);
       const n  = hi > lo ? (value - lo) / (hi - lo) : 1;
-      fill = LOWER_IS_BETTER.has(key) ? 1 - n : n;
+      fill = isLowerBetter(key) ? 1 - n : n;
     }
     this._update(fill, text);
   }

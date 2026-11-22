@@ -37,6 +37,11 @@ export class DashboardPanel {
   get runId(): string | undefined {
     return this._runId;
   }
+
+  /** Export the run on screen, as the webview's own export buttons do. */
+  exportRun(format: "html" | "pdf" | "md" | "json" | "gif"): void {
+    this._handleExport(format, this._runId);
+  }
   private _architectureSent = false;
   // Whether a log file or a terminal feeds this panel. Opened bare, nothing
   // will ever arrive; the webview then explains how to load something

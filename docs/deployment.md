@@ -119,7 +119,7 @@ sets `X-Forwarded-For` by default.
 | Variable | Default | Description |
 |--|--|--|
 | `EPOCHIX_DB` | `~/.epochix/runs.db` | SQLite database path |
-| `EPOCHIX_HOST` | `127.0.0.1` | Interface the server binds, for `epochix serve` and for the server `epochix <log>` and `epochix --live` start. `serve --host` overrides it. |
+| `EPOCHIX_HOST` | `127.0.0.1` | Interface the server binds, for `epochix serve` and for the server `epochix <log>`, `epochix --live` and `epochix open` start. `serve --host` overrides it. |
 | `EPOCHIX_PORT` | `7860` | Server port, for every command that starts one. `--port` overrides it. |
 | `EPOCHIX_AUTH_TOKEN` | _(none)_ | Access token for the API and the live feeds — see [Team server](#team-server-lan) |
 | `EPOCHIX_LLM_URL` | _(none)_ | Ollama endpoint for LLM fallback |

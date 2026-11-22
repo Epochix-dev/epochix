@@ -14,7 +14,7 @@ nothing executed it, and four bugs shipped behind that gap:
   already binding, so uvicorn failed to start and killed the reporter thread.
 
 Even then the magics themselves were never run (the first coverage measurement,
-ROADMAP item 8). Run, they showed:
+ROADMAP's "Code no test executes"). Run, they showed:
 
 * the quickstart's own live example, a `!python train.py` cell, was written to
   a .py file and run by Python: a SyntaxError and a run with nothing in it;

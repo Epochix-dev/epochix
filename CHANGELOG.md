@@ -85,6 +85,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   both, and no command read `EPOCHIX_PORT`. `serve`, `epochix <log>` and
   `epochix --live` now take the flag first, then the setting, then
   `127.0.0.1:7860`.
+- **`epochix open` reads `EPOCHIX_HOST` and `EPOCHIX_PORT` too.** It was the
+  one command still bound to `127.0.0.1:7860`, so with `EPOCHIX_PORT=9000` it
+  served the run, and opened the browser, on the port epochix had been moved
+  off. It now reads them as `epochix <log>` does, `--port` first, and warns
+  when `EPOCHIX_HOST` binds beyond this machine without a token.
 - **`epochix.serve(db=…)` and `epochix.visualize(run, db=…)` serve that
   database.** Both served `EPOCHIX_DB` instead: `serve` never read its `db`
   argument, and the app's startup replaced the store `visualize` set. So the

@@ -1,8 +1,8 @@
 """`open`, `race`, `prune` and `config`, run as a user runs them.
 
-The first coverage measurement (ROADMAP item 8) found these four commands
-never executed by any test. Driven here through the console entry point in a
-subprocess, against a real store, they turned up:
+The first coverage measurement (ROADMAP's "Code no test executes") found
+these four commands never executed by any test. Driven here through the
+console entry point in a subprocess, against a real store, they turned up:
 
 - a `.env` in the folder epochix runs from — usually the user's project, with
   their own keys in it (``OPENAI_API_KEY``) — made every command die with a
@@ -97,13 +97,13 @@ def _no_traceback(result: subprocess.CompletedProcess[str]) -> None:
 # ── open ─────────────────────────────────────────────────────────────────────
 
 
-def test_open_serves_the_run_it_names(tmp_path: Path) -> None:
-    run_id = _parsed(tmp_path, "keras_image_classifier.log", "opened")
-    port = _free_port()
+def _opened(tmp_path: Path, run_id: str, port: int, *flags: str, **env: str) -> tuple[str, str]:
+    """Run `epochix open run_id *flags`, read the run back from 127.0.0.1:*port*,
+    stop it, and return the snapshot's body and everything it printed."""
     proc = subprocess.Popen(
-        [sys.executable, "-m", "epochix.cli", "open", run_id, "--port", str(port)],
+        [sys.executable, "-m", "epochix.cli", "open", run_id, *flags],
         cwd=tmp_path,
-        env=_env(tmp_path / "runs.db"),
+        env=_env(tmp_path / "runs.db", **env),
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
         text=True,
@@ -121,13 +121,53 @@ def test_open_serves_the_run_it_names(tmp_path: Path) -> None:
                 break
             except OSError:
                 time.sleep(0.25)
-        assert body is not None, f"no server on {port}; exit {proc.poll()}"
-        assert '"opened"' in body
     finally:
         proc.terminate()
         out, _ = proc.communicate(timeout=30)
+    assert body is not None, f"no server on {port}; exit {proc.returncode}\n{out}"
+    return body, out
+
+
+def test_open_serves_the_run_it_names(tmp_path: Path) -> None:
+    run_id = _parsed(tmp_path, "keras_image_classifier.log", "opened")
+    port = _free_port()
+    body, out = _opened(tmp_path, run_id, port, "--port", str(port))
+    assert '"opened"' in body
     # The browser is off, so the address is printed for the user to open.
     assert f"http://127.0.0.1:{port}/v/{run_id}" in out
+
+
+def test_open_listens_where_the_settings_say(tmp_path: Path) -> None:
+    # `open` bound 127.0.0.1:7860 whatever EPOCHIX_HOST and EPOCHIX_PORT said;
+    # every other command that starts a server reads them.
+    run_id = _parsed(tmp_path, "keras_image_classifier.log", "opened")
+    port = _free_port()
+    body, out = _opened(
+        tmp_path,
+        run_id,
+        port,
+        EPOCHIX_HOST="0.0.0.0",  # noqa: S104 — the point
+        EPOCHIX_PORT=str(port),
+    )
+    assert '"opened"' in body
+    assert f"http://127.0.0.1:{port}/v/{run_id}" in out
+    # Bound to every interface with no token, it says so, as `serve` does.
+    assert f"Binding 0.0.0.0:{port} without EPOCHIX_AUTH_TOKEN" in out, out
+
+
+def test_open_port_flag_wins_over_the_setting(tmp_path: Path) -> None:
+    run_id = _parsed(tmp_path, "keras_image_classifier.log", "opened")
+    port = _free_port()
+    # The setting names a port something holds: read instead of the flag, the
+    # command would stop on "already in use" and the run would never be served.
+    with socket.socket() as holder:
+        holder.bind(("127.0.0.1", 0))
+        holder.listen()
+        held = holder.getsockname()[1]
+        body, out = _opened(tmp_path, run_id, port, "--port", str(port), EPOCHIX_PORT=str(held))
+    assert '"opened"' in body
+    assert "already in use" not in out, out
+    assert "without EPOCHIX_AUTH_TOKEN" not in out, out
 
 
 def test_open_a_run_that_is_not_there(tmp_path: Path) -> None:

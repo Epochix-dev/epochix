@@ -154,11 +154,11 @@ file at 0%, every module under 50% and every function never entered; the
 floor (`fail_under = 85.5` in `pyproject.toml`) only catches a drop. The
 per-module figures below are from that run.
 
-What the list showed, worst first. Each is something that ships, and each
-ends in a test that runs it the way a person would, not in a number.
-
-- **`GET /api/raw/{run_id}` has no caller** in the dashboard, the extension
-  or the docs, and no test. Document and test it, or remove it.
+Everything the list showed now has a test that runs it the way a person
+would, landed on 2026-11-20 and 21: the plugin groups (#169),
+`export(parse(log))` (#160), the Jupyter magics (#172), the five commands
+(#171, and #169 for `export`), the two tests that skipped in every job
+(#170, now run against the wheel) and `GET /api/raw` (#177).
 
 Not findings: the Lightning and Hugging Face callbacks, the TensorBoard and
 W&B importers and the torch hooks in `sdk/activations.py` read 0% to 45%
