@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [Unreleased]
+
+### Fixed
+
+- **A run without epochs is told in what it counts.** A boosting round, an
+  `iter N` row, a `step N` row and a LoRA trainer's step bar fill the slot an
+  epoch fills, and every sentence called it an epoch: nanoGPT's step 2000 was
+  told as "Epoch 2000", a CatBoost run's round 59 as "Epoch 59", the LoRA
+  run's step 120 as "at epoch 120", and `epochix check` printed "epochs seen
+  201" for 201 iterations. Each parser now says what it counts, and the frame
+  carries it (`StoryFrame.counter`: `epoch`, `step`, `iteration` or `round`).
+  The story, warnings, milestones, comparison narrative, Markdown, PDF and
+  comparison reports, `epochix check` and the dashboard's axes name it, in
+  all three languages. A count of readings says readings for such a run: a
+  nanoGPT run told every 250 steps has nine readings, not nine steps. Over
+  the 60 logs of the corpus, only the 10 without epochs read differently, and
+  only in the counter's name. Both engines. Frames stored by an earlier
+  version have no counter and read as epochs, as they did.
+
 ## [0.7.41] — 2026-11-22
 
 ### Added

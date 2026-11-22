@@ -14,6 +14,14 @@ which covers the extension too; entries here resume with 0.7.16.
 
 ---
 
+## [Unreleased]
+
+### Fixed
+
+- **A run without epochs is told in what it counts**: step, iteration or
+  boosting round, in the story, the warnings, the milestones and the panel's
+  axes, not epoch.
+
 ## [0.7.41] — 2026-11-22
 
 ### Added
