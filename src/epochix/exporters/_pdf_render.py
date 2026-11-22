@@ -11,7 +11,7 @@ does. The text stays real vector text, selectable and searchable, rather than
 a rasterised page.
 
 The layout mirrors the slides the HTML version produced: a cover carrying the
-grade, one page per training phase, milestones, and a final-metrics appendix.
+grade, one page per training phase, and a final-metrics appendix.
 """
 
 from __future__ import annotations
@@ -892,7 +892,7 @@ def render_pdf(
     events: Sequence[MetricEvent],
     locale: str = "en",
 ) -> bytes:
-    """The run as a PDF: cover, one page per phase, milestones, metrics."""
+    """The run as a PDF: cover, one page per phase, metrics."""
     # Decide once how this locale is drawn: the core fonts when Latin-1 is
     # enough, the embedded Persian font when it is not and the shaper is
     # installed. Otherwise the chrome falls back to English so the document

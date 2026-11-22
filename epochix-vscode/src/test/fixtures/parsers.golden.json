@@ -3709,6 +3709,53 @@
 ["universal",1,"precision=32 recall=0.45",[["recall",0.45,null,null,1]],false,[null,null,null]]
 ]}
 ],
+"tests/integration/test_pytest_output.py::test_a_rule_that_opens_no_report_claims_nothing":[
+{"start":[null,null,null],"events":[
+["universal",0,"========== warnings summary ==========",[],false,[null,null,null]],
+["universal",0,"Epoch 3/10 val_accuracy=0.81",[["val_accuracy",0.81,3.0,null,0]],false,[3.0,null,10]],
+["universal",0,"========================================",[],false,[3.0,null,10]],
+["universal",0,"loss = 0.5",[["loss",0.5,3.0,null,0]],false,[3.0,null,10]]
+]}
+],
+"tests/integration/test_pytest_output.py::test_either_report_is_claimed[ERRORS]":[
+{"start":[null,null,null],"events":[
+["universal",0,"==================== ERRORS ====================",[],true,[null,null,null]],
+["universal",0,"    loss = 0.31",[],true,[null,null,null]],
+["universal",0,"E       assert 0.31 < 0.3",[],true,[null,null,null]]
+]}
+],
+"tests/integration/test_pytest_output.py::test_either_report_is_claimed[FAILURES]":[
+{"start":[null,null,null],"events":[
+["universal",0,"==================== FAILURES ====================",[],true,[null,null,null]],
+["universal",0,"    loss = 0.31",[],true,[null,null,null]],
+["universal",0,"E       assert 0.31 < 0.3",[],true,[null,null,null]]
+]}
+],
+"tests/integration/test_pytest_output.py::test_the_failure_report_is_claimed_and_the_next_section_is_read":[
+{"start":[null,null,null],"events":[
+["universal",0,"============================= test session starts =============================",[],false,[null,null,null]],
+["universal",0,"platform win32 -- Python 3.12.13, pytest-9.2.0, pluggy-1.7.0 -- C:\\tmp\\epochix_demos\\terminal\\venv\\Scripts\\python.exe",[],false,[null,null,null]],
+["universal",0,"rootdir: C:\\tmp\\epochix_demos\\terminal\\project",[],false,[null,null,null]],
+["universal",0,"collecting ... collected 4 items",[],false,[null,null,null]],
+["universal",0,"",[],false,[null,null,null]],
+["universal",0,"test_model.py::test_accuracy_is_above_chance PASSED                      [ 25%]",[],false,[null,null,null]],
+["universal",0,"test_model.py::test_learning_rate_schedule_decays PASSED                 [ 50%]",[],false,[null,null,null]],
+["universal",0,"test_model.py::test_precision_and_recall_agree_on_a_perfect_model PASSED [ 75%]",[],false,[null,null,null]],
+["universal",0,"test_model.py::test_loss_target_is_met FAILED                            [100%]",[],false,[null,null,null]],
+["universal",0,"",[],false,[null,null,null]],
+["universal",0,"================================== FAILURES ===================================",[],true,[null,null,null]],
+["universal",0,"___________________________ test_loss_target_is_met ___________________________",[],true,[null,null,null]],
+["universal",0,"",[],true,[null,null,null]],
+["universal",0,"    def test_loss_target_is_met():",[],true,[null,null,null]],
+["universal",0,"        val_loss = 0.42",[],true,[null,null,null]],
+["universal",0,">       assert val_loss < 0.3",[],true,[null,null,null]],
+["universal",0,"E       assert 0.42 < 0.3",[],true,[null,null,null]],
+["universal",0,"",[],true,[null,null,null]],
+["universal",0,"test_model.py:22: AssertionError",[],true,[null,null,null]],
+["universal",0,"=========================== short test summary info ===========================",[],false,[null,null,null]],
+["universal",0,"accuracy = 0.9375",[["accuracy",0.9375,null,null,0]],false,[null,null,null]]
+]}
+],
 "tests/integration/test_real_boosting_logs.py::test_every_library_s_announcement_skips_one_row[Did not meet early stopping. Best iteration is:]":[
 {"start":[null,null,null],"events":[
 ["boosting",0,"[7]\tvalid_0's l2: 3.1",[["val_l2",3.1,7.0,7,0]],false,[7.0,7,null],"round"],

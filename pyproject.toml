@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "epochix"
-version = "0.7.40"
+version = "0.7.41"
 description = "Turn ML training logs into a plain-English story with a letter grade — a live animated dashboard, no code changes."
 authors = [{ name = "Epochix Team" }]
 license = "Apache-2.0"
@@ -79,6 +79,8 @@ dev       = [
   "pytest>=8",
   "pytest-asyncio>=0.24",
   "pytest-benchmark>=4.0",
+  # Measured by one CI job (`coverage` in ci.yml), not the matrix.
+  "pytest-cov>=6.0",
   "hypothesis>=6.108",
   # Pinned exactly so `ruff format --check` is a reproducible CI gate — a new
   # ruff style release must not turn the format check red without a deliberate
@@ -124,14 +126,6 @@ boosting          = "epochix.parsers.boosting:BoostingParser"
 progress_meter    = "epochix.parsers.progress_meter:ProgressMeterParser"
 step_bar          = "epochix.parsers.step_bar:StepBarParser"
 universal         = "epochix.parsers.universal:UniversalParser"
-
-# Metaphor packs: entry point value = path to a YAML file
-# [project.entry-points."epochix.metaphor_packs"]
-# my_pack = "my_package:METAPHORS_YAML"
-
-# Custom task types: entry point value = TaskDefinition instance or dict
-# [project.entry-points."epochix.tasks"]
-# audio = "my_package.task:TASK_DEFINITION"
 
 # Custom exporters: entry point value = callable(run, frames, events, output_path)
 # [project.entry-points."epochix.exporters"]
@@ -237,6 +231,13 @@ disable_error_code = ["attr-defined"]
 asyncio_mode = "auto"
 testpaths    = ["tests"]
 addopts      = "-q --tb=short"
+markers      = [
+  # Needs what the wheel vendors (the dashboard bundle, the brand mark).
+  # Skips in a source checkout; CI's `packaged-assets` job runs these with
+  # EPOCHIX_REQUIRE_PACKAGED_ASSETS=1, where a skip is a failure. See
+  # tests/_packaged.py.
+  "packaged_assets: needs the assets the wheel vendors",
+]
 # Put the working tree ahead of anything installed. CI runs under `uv run`,
 # which builds from the tree, but a plain `python -m pytest` on a machine with
 # a released epochix in site-packages imports THAT instead — so the suite
@@ -247,3 +248,25 @@ pythonpath   = ["src"]
 [tool.coverage.run]
 source = ["src/epochix"]
 omit   = ["src/epochix/_frontend/*"]
+# The CLI is tested by starting `python -m epochix`. Without this a child
+# process is not measured: cli.py read 41.6% instead of 58.6%, and
+# `__main__.py` 0%. A test that starts one with an environment of its own must
+# pass the COVERAGE_* variables on, or it is invisible again.
+patch  = ["subprocess"]
+# Paths relative to the repository, so the data of two CI jobs can be combined.
+relative_files = true
+
+[tool.coverage.report]
+precision = 2
+# Measured at 85.93% (5,980 of 6,959 statements) on 2026-11-10 by CI's
+# `coverage` job: tests/unit and tests/integration on ubuntu and Python 3.12,
+# plus what both `integrations` rows execute. Set just under that, so it only
+# catches a drop; the half point is about 30 statements, because the
+# integrations rows install the newest frameworks, not the lock. Raise it when
+# the measured figure rises, never to get ahead of it.
+#
+# It is the floor for that whole. A run of part of the suite, or one without
+# torch, Lightning and transformers (81.12% the same day), reads lower and
+# needs `--cov-fail-under=0`, as `make coverage` passes. Not measured at all:
+# tests/e2e, tests/browser, and the macOS- and Windows-only branches.
+fail_under = 85.5

@@ -18,7 +18,7 @@ import * as path from "path";
 import * as vscode from "vscode";
 
 import { StandaloneEngine } from "../../webview/StandaloneEngine";
-import type { CrossValidation, StoryFrameMsg } from "../../webview/messages";
+import type { CrossValidation, MilestoneMsg, StoryFrameMsg } from "../../webview/messages";
 
 const EXT_ID = "epochix.epochix";
 
@@ -36,6 +36,7 @@ interface Expectation {
   final_grade: string | null;
   final_grade_basis: string | null;
   final_phase: string | null;
+  milestones: Pick<MilestoneMsg, "kind" | "epoch" | "value" | "message">[];
 }
 
 function repoRoot(): string {
@@ -54,6 +55,7 @@ function run(file: string): Omit<Expectation, "path"> {
   // As DashboardPanel.openLog: raw text straight into feed().
   const frames: StoryFrameMsg[] = [...engine.feed(fs.readFileSync(file, "utf-8"))];
   frames.push(...engine.flush());
+  engine.finish(); // as the panel does at the end of the file: the run's last milestones
   const last = frames[frames.length - 1];
   const keys = [...new Set(engine.metrics().map((m) => m.canonical_key))];
   const starts = frames
@@ -76,6 +78,12 @@ function run(file: string): Omit<Expectation, "path"> {
     final_grade: last ? last.grade : null,
     final_grade_basis: last ? last.gradeBasis : null,
     final_phase: last ? last.phase : null,
+    milestones: engine.milestones().map((m) => ({
+      kind: m.kind,
+      epoch: m.epoch,
+      value: m.value === null ? null : Math.round(m.value * 1e4) / 1e4,
+      message: m.message,
+    })),
   };
 }
 
@@ -104,6 +112,7 @@ suite("Corpus parity — the extension reads every log as Python does", () => {
       assert.strictEqual(got.final_grade, want.final_grade, "final grade");
       assert.strictEqual(got.final_grade_basis, want.final_grade_basis, "how it was graded");
       assert.strictEqual(got.final_phase, want.final_phase, "final phase");
+      assert.deepStrictEqual(got.milestones, want.milestones, "milestones");
     });
   }
 });

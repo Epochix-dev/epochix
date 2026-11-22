@@ -178,20 +178,24 @@ def build_markdown(run_id: str, store: RunStore) -> str:
     lines.extend(_cv_section(run.config or {}, locale))
 
     # ── Milestones ────────────────────────────────────────────────────────
-    milestone_frames = [f for f in frames if f.milestones]
-    if milestone_frames:
+    # Read from the store's own list: frames came back from the store with
+    # none, so this section never appeared, and the milestones a run ends
+    # with belong to no frame.
+    milestones = store.get_milestones(run_id)
+    if milestones:
         lines.append(f"## {t('md.milestones', locale)}")
         lines.append("")
-        for frame in milestone_frames:
-            for m in frame.milestones:
-                emoji = _MILESTONE_EMOJI.get(m.kind, "📌")
-                epoch_str = (
-                    f" ({t('cover.epoch_n', locale, frame.counter)} {frame.epoch:g})"
-                    if frame.epoch is not None
-                    else ""
-                )
-                msg = m.message or m.kind.replace("_", " ").title()
-                lines.append(f"- {emoji} **{msg}**{epoch_str}")
+        # Dated by what the run counts: "(epoch 0)" beside a boosting round.
+        counted = frames_counter(frames)
+        for m in milestones:
+            emoji = _MILESTONE_EMOJI.get(m.kind, "📌")
+            epoch_str = (
+                f" ({t('cover.epoch_n', locale, counted)} {m.epoch:g})"
+                if m.epoch is not None
+                else ""
+            )
+            msg = m.message or m.kind.replace("_", " ").title()
+            lines.append(f"- {emoji} **{msg}**{epoch_str}")
         lines.append("")
 
     # ── Warnings ─────────────────────────────────────────────────────────

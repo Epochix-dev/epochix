@@ -2,6 +2,7 @@
  * viz-util.js — small shared helpers for the chart visualizations
  * (multi-run comparison, learning curve, engineer panel).
  */
+import { DIRECTION_BY_KEY, HIGHER_NAME_HINTS, LOWER_NAME_HINTS } from './direction.generated.js';
 
 /** Distinct, theme-aligned series colours (cycled for many runs). */
 export const SERIES_COLORS = [
@@ -67,15 +68,39 @@ export function metricLabel(key) {
   })[key] ?? key.replace(/_/g, ' ');
 }
 
-/** Lower-is-better metrics (affects "best" markers / axis hints). */
-export const LOWER_IS_BETTER = new Set([
-  'train_loss', 'val_loss', 'loss', 'MAE', 'RMSE', 'MSE',
-  'EER', 'perplexity', 'eta', 'epoch_time', 'fid',
-]);
+/**
+ * Which way is better for a metric, read from its name exactly as the engine
+ * reads it (story_engine/grade.py metric_lower_better): true when lower is
+ * better, false when higher is, undefined when the name does not say.
+ *
+ * The dashboard kept a list of its own, eleven names long. Every YOLO loss
+ * (box_loss, cls_loss, dfl_loss), every boosting log_loss and error_rate, and
+ * — where the list was read directly — val_MAE were read the wrong way up:
+ * a falling loss carded red as worse, its meter emptying as it improved. The
+ * tables are generated from Python; a golden of the engine's answers is
+ * replayed against this function.
+ * @param {string|null|undefined} key
+ * @returns {boolean|undefined}
+ */
+export function metricLowerBetter(key) {
+  if (!key) return undefined;
+  const n = key.toLowerCase();
+  // Exact match first: substring hints get some names backwards
+  // ("val_mape" contains "map").
+  if (Object.prototype.hasOwnProperty.call(DIRECTION_BY_KEY, n)) return DIRECTION_BY_KEY[n];
+  if (LOWER_NAME_HINTS.some((h) => n.includes(h))) return true;
+  if (HIGHER_NAME_HINTS.some((h) => n.includes(h))) return false;
+  return undefined;
+}
 
-/** True when a lower value is better, for a key or its `val_` form (val_MAE). */
+/**
+ * True when a lower value is better. A name that says nothing reads as
+ * higher-is-better, the engine's own default for a metric it cannot place —
+ * where a panel would claim "better" or "worse", ask metricLowerBetter.
+ * @param {string|null|undefined} key
+ */
 export function isLowerBetter(key) {
-  return key != null && (LOWER_IS_BETTER.has(key) || LOWER_IS_BETTER.has(key.replace(/^val_/, '')));
+  return metricLowerBetter(key) === true;
 }
 
 /**

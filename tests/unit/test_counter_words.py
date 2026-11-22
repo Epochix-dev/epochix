@@ -47,10 +47,17 @@ EPOCH_WORD = {
     # Not the plural of "دور" (round), "دورها", which begins with the same letters.
     "fa": re.compile("دوره(?!ا)"),
 }
-# Told of a run with one reading and nothing in its epoch slot: there is no
-# counter to name. Its sentences say what such a run lacks ("no best epoch")
-# and what to log to get a story ("a value per epoch").
-NO_COUNTER = "_single_reading"
+# Not told of a run's counter, so free to say "epoch":
+# * the single-reading set is told of a run with one reading and nothing in
+#   its epoch slot. It says what such a run lacks ("no best epoch") and what
+#   to log to get a story ("a value per epoch");
+# * term_fix_print is shown when a terminal printed nothing readable, and
+#   says what to print: "one line per epoch", with an example line.
+NO_COUNTER = ("_single_reading", "[term_fix_print]")
+
+
+def _about_a_counter(where: str) -> bool:
+    return not any(exempt in where for exempt in NO_COUNTER)
 
 
 def _locale(path: Path) -> str:
@@ -97,7 +104,7 @@ def test_no_sentence_spells_the_counter_itself() -> None:
     offenders = [
         f"{where}: {text}"
         for where, locale, text in _sentences()
-        if NO_COUNTER not in where and EPOCH_WORD[locale].search(PLACEHOLDER.sub("", text))
+        if _about_a_counter(where) and EPOCH_WORD[locale].search(PLACEHOLDER.sub("", text))
     ]
     assert not offenders, "\n".join(offenders)
 
@@ -120,7 +127,7 @@ def test_a_run_without_epochs_is_never_told_of_one(kind: Counter) -> None:
     """Every sentence, in every language, filled for a run that counts by *kind*."""
     checked = 0
     for where, locale, text in _sentences():
-        if NO_COUNTER in where:
+        if not _about_a_counter(where):
             continue
         said = counter_words(text, kind, locale)
         assert "counter" not in said.lower(), f"{where}: a placeholder was left in: {said}"

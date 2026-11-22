@@ -223,7 +223,7 @@ trainer = pl.Trainer(callbacks=[StoryCallback()])
 | **i18n** | English · Farsi (RTL) · French — UI *and* story narratives |
 | **VS Code** | Activity-bar panel · one-click demo · terminal auto-detect · run compare · `Ctrl+Alt+M` |
 | **Integrations** | PyTorch Lightning · HuggingFace · Keras · Jupyter magics · TensorBoard · W&B |
-| **Plugin system** | Custom parsers, metaphor packs, task types, exporters via `entry_points` |
+| **Plugin system** | Custom parsers and exporters via `entry_points` |
 
 ---
 
@@ -311,21 +311,44 @@ epochix serve --host 0.0.0.0 --port 7860
 
 | Setting | Env var | Default | Effect |
 |---|---|---|---|
-| Auth token | `EPOCHIX_AUTH_TOKEN` | _(empty)_ | Require a token on all routes; write/delete also accept loopback callers when this is empty |
+| Auth token | `EPOCHIX_AUTH_TOKEN` | _(empty)_ | Require the token on every `/api/*` route except `/api/health` and `/api/version`, and on the live feeds; when empty, write/delete accept loopback callers only |
 | CORS origins | `EPOCHIX_CORS_ORIGINS` | _(empty — same-origin only)_ | Comma-separated allowlist (use the explicit `*` to opt into open CORS) |
 | Expose API docs | `EPOCHIX_EXPOSE_DOCS` | `false` | Show `/api/docs`, `/api/redoc`, `/api/openapi.json` (auto-on when an auth token is set) |
 
 How the token is checked:
 
-- **REST** (`/api/*`): send `Authorization: Bearer <token>`.
+- **REST** (`/api/*`): send `Authorization: Bearer <token>`, e.g.
+  `curl -H "Authorization: Bearer $EPOCHIX_AUTH_TOKEN" https://story.example.com/api/runs`.
 - **WebSocket / SSE** (`/ws/live/...`, `/sse/live/...`): pass `?token=<token>` in the URL
   (browsers can't set headers on those transports). Without it, live streams are refused.
+- The pages themselves (`/`, `/v/<run>`, `/compare`) and their assets are served without
+  it; they hold no run data until the API answers.
+
+**Opening the dashboard with a token.** Open any dashboard page once with the token added
+to its address — `https://story.example.com/?token=<token>` or
+`https://story.example.com/v/<run>?token=<token>`. The page then:
+
+- takes `?token=` out of the address bar straight away, so it is not left in the browser's
+  history, a bookmark or a link copied from the address bar;
+- keeps it in memory and in that tab's `sessionStorage`, for as long as the tab is open —
+  following links in the tab (the run list, a run, a comparison) needs nothing more, but a
+  tab opened afresh starts without it, so add `?token=` there too;
+- sends it as the `Authorization: Bearer` header on every API request, and as `?token=`
+  on the WebSocket and SSE URLs only. No link on the page carries it. Exports are built
+  by the server from the stored run and downloaded through the page, so the token is not
+  written into an exported report.
+
+Opened without the token, or with a wrong one, the page says so instead of loading. Two
+places still see it: the server's (and your proxy's) access log for the first page load
+and for each live-feed request, since it is in those URLs — serve over HTTPS and keep
+those logs private.
+
+The VS Code extension's own server is started with `EPOCHIX_AUTH_TOKEN` and
+`EPOCHIX_CORS_ORIGINS` emptied and listens on `127.0.0.1` only, so a token exported in
+your shell for a remote server does not lock the extension out of it.
 
 > **Note:** wildcard CORS (`*`) and credentialed requests are never combined — credentials
-> are enabled only when you set explicit origins. And when a token is configured, the
-> **bundled dashboard** has no way to supply it, so live updates won't load from the served
-> page. For authenticated hosting, put epochix behind a reverse proxy (nginx, Caddy,
-> Cloudflare Access, …) that handles auth and serves the UI.
+> are enabled only when you set explicit origins.
 
 Settings can also be written to a local `.env`:
 

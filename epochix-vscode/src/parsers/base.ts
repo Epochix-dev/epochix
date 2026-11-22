@@ -72,6 +72,9 @@ export interface ParserContext {
    *  is. Cleared after every line: it says what THIS line counted by, so the
    *  kind belongs to whoever wrote the number last. Python's COUNTED_BY. */
   countedBy: Counter | null;
+  /** Universal: inside pytest's report of a failing test (Python's
+   *  extra["pytest_report"]). */
+  pytestReport: boolean;
   /** Set by a parser that recognises a line as its own and reads no result
    *  from it; the engine then does not offer the line to the fallback
    *  parsers. Cleared after every line. Python's LINE_CLAIMED. */
@@ -109,6 +112,7 @@ export function makeContext(): ParserContext {
     meterTrainAccuracy: null,
     stepBarValues: null,
     countedBy: null,
+    pytestReport: false,
     lineClaimed: false,
   };
 }

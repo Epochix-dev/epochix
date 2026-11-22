@@ -241,16 +241,40 @@ MESSAGES: dict[str, dict[str, str]] = {
         "ms_crossed": "Crossed {pct}%: {value}",
         "ms_biggest_jump": "Biggest {single_counter} improvement: {value}",
         "ms_complete": "Training completed.",
-        # Kinds only the extension's engine emits.
-        "ms_first_metric": "First {metric} recorded: {value}",
-        "ms_grade_up": "Grade improved to {grade}",
-        "ms_grade_down": "Grade dropped to {grade}",
-        "ms_phase": "Entered the {phase} phase",
         "phase_awakening": "awakening",
         "phase_learning": "learning",
         "phase_understanding": "understanding",
         "phase_mastering": "mastering",
         "phase_polishing": "polishing",
+        # Said only by the VS Code extension, about a command in a watched
+        # terminal whose output it saw and did not tell (terminal/notice.ts).
+        # Every number is counted from that output; `<n>` and `<value>` in the
+        # example line stand for the reader's own and are never filled.
+        "term_status_unread": "Epochix: run not read",
+        "term_status_unopened": "Epochix: run not opened",
+        "term_title_unread": "Epochix saw output that looked like a training run and could "
+        "not tell its story.",
+        "term_title_opened_empty": "The dashboard opened for this output and has no story to show.",
+        "term_title_unopened": "Epochix can tell this command's run, but did not recognise "
+        "its output as training while it ran, so the dashboard did not open.",
+        "term_lines": "The command printed {lines} lines.",
+        "term_sampled": "What follows was read from its first {sampled} lines.",
+        "term_read": "Read from it: {readings}.",
+        "term_read_none": "No reader took a single value from it.",
+        "term_labelled": "Names Epochix knows as metrics stood beside numbers, in a layout "
+        "none of its readers takes: {names}.",
+        "term_values": "{name} ({count} different values)",
+        "term_why_layout": "None of its readers takes this layout, so there was nothing to "
+        "tell a story from.",
+        "term_why_no_score": "None of these is a score or a loss, so there was nothing to "
+        "tell a story by.",
+        "term_story": "Its story would be told by {metric} (readings: {count}).",
+        "term_fix_print": "To have it read, print one line per epoch with name=value pairs, "
+        "for example: Epoch <n>/<total> train_loss=<value> val_accuracy=<value>",
+        "term_fix_check": "To see what Epochix reads from a saved log, run: epochix check <file>",
+        "term_fix_open": "Open it in the dashboard to see it.",
+        "term_action_open": "Open in the dashboard",
+        "term_click": "Click for the details.",
     },
     "fa": {
         "warn_nan": "مقدار {metric} تعریف‌نشده شد (NaN یا بی‌نهایت). "
@@ -294,15 +318,38 @@ MESSAGES: dict[str, dict[str, str]] = {
         "ms_crossed": "از {pct}% گذشت: {value}",
         "ms_biggest_jump": "بزرگ‌ترین بهبود {in_one_counter}: {value}",
         "ms_complete": "آموزش به پایان رسید.",
-        "ms_first_metric": "اولین مقدار {metric}: {value}",
-        "ms_grade_up": "نمره به {grade} بهبود یافت",
-        "ms_grade_down": "نمره به {grade} افت کرد",
-        "ms_phase": "ورود به مرحله‌ی {phase}",
         "phase_awakening": "بیداری",
         "phase_learning": "یادگیری",
         "phase_understanding": "درک",
         "phase_mastering": "تسلط",
         "phase_polishing": "پالایش",
+        "term_status_unread": "Epochix: اجرا خوانده نشد",
+        "term_status_unopened": "Epochix: اجرا باز نشد",
+        "term_title_unread": "Epochix خروجی‌ای دید که شبیه یک اجرای آموزش بود، اما "
+        "نتوانست داستانش را بگوید.",
+        "term_title_opened_empty": "داشبورد برای این خروجی باز شد، اما داستانی برای نشان "
+        "دادن ندارد.",
+        "term_title_unopened": "Epochix می‌تواند داستان اجرای این فرمان را بگوید، اما "
+        "هنگام اجرا خروجی آن را آموزش تشخیص نداد؛ پس داشبورد باز نشد.",
+        "term_lines": "این فرمان {lines} خط چاپ کرد.",
+        "term_sampled": "آنچه در ادامه می‌آید از {sampled} خط نخست آن خوانده شد.",
+        "term_read": "خوانده‌شده از آن: {readings}.",
+        "term_read_none": "هیچ خواننده‌ای حتی یک مقدار از آن برنداشت.",
+        "term_labelled": "نام‌هایی که Epochix آن‌ها را سنجه می‌شناسد کنار عددهایی آمده‌اند، "
+        "در قالبی که هیچ‌یک از خواننده‌هایش نمی‌خواند: {names}.",
+        "term_values": "{name} ({count} مقدار متفاوت)",
+        "term_why_layout": "هیچ‌یک از خواننده‌هایش این قالب را نمی‌خواند؛ پس چیزی نبود که "
+        "داستانی از آن گفته شود.",
+        "term_why_no_score": "هیچ‌یک از این‌ها امتیاز یا خطا (loss) نیست؛ پس چیزی نبود که "
+        "داستان با آن گفته شود.",
+        "term_story": "داستانش با {metric} گفته می‌شود (اندازه‌گیری‌ها: {count}).",
+        "term_fix_print": "برای اینکه خوانده شود، در هر دوره یک خط با جفت‌های name=value "
+        "چاپ کنید، برای نمونه: Epoch <n>/<total> train_loss=<value> val_accuracy=<value>",
+        "term_fix_check": "برای دیدن آنچه Epochix از یک لاگ ذخیره‌شده می‌خواند، اجرا کنید: "
+        "epochix check <file>",
+        "term_fix_open": "برای دیدنش آن را در داشبورد باز کنید.",
+        "term_action_open": "باز کردن در داشبورد",
+        "term_click": "برای جزئیات کلیک کنید.",
     },
     "fr": {
         "warn_nan": "La valeur de {metric} est devenue indéfinie (NaN ou infinie). "
@@ -353,15 +400,40 @@ MESSAGES: dict[str, dict[str, str]] = {
         "ms_crossed": "Seuil de {pct} % franchi : {value}",
         "ms_biggest_jump": "Plus forte amélioration {in_one_counter} : {value}",
         "ms_complete": "Entraînement terminé.",
-        "ms_first_metric": "Première mesure de {metric} : {value}",
-        "ms_grade_up": "Note améliorée : {grade}",
-        "ms_grade_down": "Note en baisse : {grade}",
-        "ms_phase": "Nouvelle phase : {phase}",
         "phase_awakening": "éveil",
         "phase_learning": "apprentissage",
         "phase_understanding": "compréhension",
         "phase_mastering": "maîtrise",
         "phase_polishing": "perfectionnement",
+        "term_status_unread": "Epochix : exécution non lue",
+        "term_status_unopened": "Epochix : exécution non ouverte",
+        "term_title_unread": "Epochix a vu une sortie qui ressemblait à un entraînement et "
+        "n'a pas pu en raconter l'histoire.",
+        "term_title_opened_empty": "Le tableau de bord s'est ouvert pour cette sortie et n'a "
+        "aucune histoire à montrer.",
+        "term_title_unopened": "Epochix peut raconter l'exécution de cette commande, mais n'a "
+        "pas reconnu sa sortie comme un entraînement pendant qu'elle tournait : le tableau "
+        "de bord ne s'est donc pas ouvert.",
+        "term_lines": "La commande a affiché {lines} lignes.",
+        "term_sampled": "Ce qui suit a été lu dans ses {sampled} premières lignes.",
+        "term_read": "Lu dans cette sortie : {readings}.",
+        "term_read_none": "Aucun lecteur n'en a tiré une seule valeur.",
+        "term_labelled": "Des noms qu'Epochix connaît comme métriques figuraient à côté de "
+        "nombres, dans une disposition qu'aucun de ses lecteurs ne prend en charge : {names}.",
+        "term_values": "{name} ({count} valeurs différentes)",
+        "term_why_layout": "Aucun de ses lecteurs ne prend en charge cette disposition : il "
+        "n'y avait rien dont tirer une histoire.",
+        "term_why_no_score": "Aucune de ces valeurs n'est un score ni une perte : il n'y "
+        "avait rien pour porter une histoire.",
+        "term_story": "Son histoire serait racontée par {metric} (mesures : {count}).",
+        "term_fix_print": "Pour qu'elle soit lue, affichez une ligne par époque avec des "
+        "paires name=value, par exemple : Epoch <n>/<total> train_loss=<value> "
+        "val_accuracy=<value>",
+        "term_fix_check": "Pour voir ce qu'Epochix lit dans un log enregistré, lancez : "
+        "epochix check <file>",
+        "term_fix_open": "Ouvrez-la dans le tableau de bord pour la voir.",
+        "term_action_open": "Ouvrir dans le tableau de bord",
+        "term_click": "Cliquez pour les détails.",
     },
 }
 

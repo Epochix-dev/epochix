@@ -25,7 +25,6 @@ from epochix.exporters.markdown_export import build_markdown
 from epochix.exporters.pdf_export import build_pdf
 from epochix.i18n import _COUNTED, SUPPORTED_LOCALES, t
 from epochix.ingester.file_batch import FileBatchIngester
-from epochix.models import Milestone
 from epochix.pipeline import run_pipeline
 from epochix.server.hub import Hub
 from epochix.store.sqlite_store import RunStore
@@ -140,37 +139,38 @@ def test_a_markdown_report_has_no_epoch_for_a_run_without_one(
 
 
 class _With:
-    """A store whose run or frames hold what the store does not keep.
+    """A store whose run holds a length the pipeline never stores.
 
-    Two rows of the Markdown report are written from fields the pipeline never
-    stores — a frame's milestones, and the run's length — so neither is
-    reached by a run read back from a RunStore. They are still what an SDK
-    caller's own store can hold, and they named an epoch.
+    The Markdown report's length row is written from `Run.total_epochs_est`,
+    which a run read back from a RunStore leaves empty. An SDK caller's own
+    store can hold it, and the row named an epoch.
     """
 
-    def __init__(self, store: RunStore, **held: object) -> None:
-        self._store, self._held = store, held
+    def __init__(self, store: RunStore, run: object) -> None:
+        self._store, self._run = store, run
 
     def __getattr__(self, name: str) -> object:
         return getattr(self._store, name)
 
-    def get_story_frames(self, run_id: str) -> object:
-        return self._held.get("frames") or self._store.get_story_frames(run_id)
-
-    def get_run(self, run_id: str) -> object:
-        return self._held.get("run") or self._store.get_run(run_id)
+    def get_run(self, _run_id: str) -> object:
+        return self._run
 
 
-def test_a_milestone_is_dated_by_the_run_s_own_counter() -> None:
+@pytest.mark.parametrize("locale", SUPPORTED_LOCALES)
+def test_a_milestone_is_dated_by_the_run_s_own_counter(locale: str) -> None:
     """ "(epoch 0)" beside a boosting run's first best."""
-    store, (run_id,) = _store("en", CATBOOST)
-    frames = store.get_story_frames(run_id)
-    assert (frames[0].epoch, frames[0].counter) == (0.0, "round")
-    first = Milestone(run_id=run_id, seq=0, kind="best_so_far", epoch=0.0, message="New best")
-    told = [frames[0].model_copy(update={"milestones": [first]}), *frames[1:]]
-    md = build_markdown(run_id, _With(store, frames=told))  # type: ignore[arg-type]
-    assert "## Milestones" in md, md
-    assert "(round 0)" in md and "(epoch" not in md, md
+    store, (run_id,) = _store(locale, CATBOOST)
+    assert store.get_milestones(run_id), "premise: the run reached a milestone"
+    md = build_markdown(run_id, store)
+    assert f"## {t('md.milestones', locale)}" in md, md
+    assert f"({t('cover.epoch_n', locale, 'round')} 0)" in md, md
+    assert not _EPOCH[locale].search(md), md
+
+
+def test_a_milestone_of_a_run_with_epochs_is_dated_as_before() -> None:
+    store, (run_id,) = _store("en", KERAS)
+    md = build_markdown(run_id, store)
+    assert "## Milestones" in md and "(epoch 1)" in md, md
 
 
 @pytest.mark.parametrize(
@@ -183,7 +183,7 @@ def test_a_run_s_length_is_in_what_it_counts(log: Path, length: int, row: str) -
     run = store.get_run(run_id)
     assert run is not None
     held = run.model_copy(update={"total_epochs_est": length})
-    md = build_markdown(run_id, _With(store, run=held))  # type: ignore[arg-type]
+    md = build_markdown(run_id, _With(store, held))  # type: ignore[arg-type]
     assert row in md, md[:900]
 
 

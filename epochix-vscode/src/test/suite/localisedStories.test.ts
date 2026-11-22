@@ -145,8 +145,8 @@ suite("A single result is reported as a result", () => {
 });
 
 suite("Warnings and milestones are told in the configured language", () => {
-  // Val loss rising while train loss falls: an overfitting warning, plus grade
-  // and phase milestones along the way.
+  // Val loss rising while train loss falls: an overfitting warning, plus the
+  // milestones a run reaches and the ones it ends with.
   const overfit = [
     [1.0, 1.1, 0.3], [0.8, 1.2, 0.55], [0.6, 1.3, 0.7], [0.4, 1.4, 0.8], [0.3, 1.5, 0.86],
   ].map(([t, v, a], i) =>
@@ -156,6 +156,7 @@ suite("Warnings and milestones are told in the configured language", () => {
     const engine = new StandaloneEngine(undefined, locale);
     for (const line of overfit) engine.feed(line + "\n");
     engine.flush();
+    engine.finish();
     const all = [...engine.milestones(), ...engine.warnings()];
     return { kinds: all.map((m) => m.kind), texts: all.map((m) => m.message) };
   }
@@ -163,7 +164,9 @@ suite("Warnings and milestones are told in the configured language", () => {
   test("the run produces the messages under test", () => {
     const { kinds } = messages("en");
     assert.ok(kinds.includes("overfit"), JSON.stringify(kinds));
-    assert.ok(kinds.includes("first_metric"), JSON.stringify(kinds));
+    for (const kind of ["best_so_far", "first_above_50", "biggest_jump", "training_complete"]) {
+      assert.ok(kinds.includes(kind), `${kind} missing: ${JSON.stringify(kinds)}`);
+    }
   });
 
   for (const locale of ["fa", "fr"]) {

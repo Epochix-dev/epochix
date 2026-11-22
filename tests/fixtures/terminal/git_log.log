@@ -1,0 +1,1664 @@
+commit 3adf61e154c3fe3fca428ad6bc3818b27a3b8291
+Date:   2025-11-12 11:52:34 -0800
+
+    Update README to mention nanochat and deprecation
+    
+    Added a note about the deprecation of nanoGPT and the introduction of nanochat.
+
+ README.md | 7 +++++++
+ 1 file changed, 7 insertions(+)
+commit 93a43d9a5c22450bbf06e78da2cb6eeef084b717
+Date:   2024-12-09 15:53:04 -0800
+
+    Merge pull request #578 from devin-open-source/devin/1733728337-fix-warmup-lr
+    
+    fix: ensure non-zero learning rate during warmup at iteration 0
+commit dc81cb368ce3e5761f298726fb3fade1b0ca5901
+Date:   2024-12-09 07:35:08 +0000
+
+    fix: ensure non-zero learning rate during warmup at iteration 0
+    
+    The warmup learning rate calculation has been modified to use (it + 1)/(warmup_iters + 1)
+    instead of it/warmup_iters. This ensures a non-zero learning rate at iteration 0
+    while maintaining the same linear warmup behavior.
+    
+    Fixes #443
+
+
+ train.py | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+commit 9755682b981a45507f6eb9b11eadef8cb83cebd5
+Date:   2024-06-03 09:51:52 -0700
+
+    Merge pull request #463 from goswamig/test1
+    
+    Fixing eval path in README
+commit 3ab86ce85165940503696c079183ee0e56487fdd
+Date:   2024-06-03 09:50:45 -0700
+
+    Merge branch 'master' into test1
+commit 7c7e627108b895e68e598513a496af6f6f495e88
+Date:   2024-06-03 09:47:17 -0700
+
+    Merge pull request #487 from jellehak/patch-1
+    
+    Update README.md
+commit 5cb16fe66abeefa94a13f32517620a47ddade8ed
+Date:   2024-05-28 08:38:35 +0200
+
+    Update README.md
+    
+    Proper markdown code blocks
+
+ README.md | 62 +++++++++++++++++++++++++++++++-------------------------------
+ 1 file changed, 31 insertions(+), 31 deletions(-)
+commit 1ab9ec1b833937dddfc9401df6d9b6d277c8aff2
+Date:   2024-03-23 23:51:02 -0700
+
+    Fixing eval path in README
+
+
+ README.md | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
+commit 325be85d9be8c81b436728a420e85796c57dba7e
+Date:   2024-02-27 09:27:01 -0800
+
+    Merge pull request #420 from vinjn/fix-371-enc-is-not-defined
+    
+    Move enc to gloabal namespace to fix #371
+commit a022d02ee2e9624d721ca9dc8031eb7597e9d591
+Date:   2024-02-27 09:05:44 -0800
+
+    Merge pull request #429 from adambala/fixes
+    
+    Open "shakespeare" data in UTF-8 in "prepare.py"
+commit f68ac2200df82d59a1b916fb8236b4b8bc68baa7
+Date:   2024-02-27 08:41:24 -0800
+
+    Merge pull request #428 from kjslag/memmap-memory-leak
+    
+    fix np.memmap memory leak
+commit f35dc82437cfe603bbafa9fccdf5d245cefe6f59
+Date:   2024-01-26 01:34:44 +0300
+
+    fix: prepare.py - added input file opening in UTF-8 encoding
+
+
+ data/shakespeare/prepare.py | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+commit b7e194a7560a0d10189bc39fbc18aa811beae36b
+Date:   2024-01-26 01:10:10 +0300
+
+    feature: .gitignore - added venv folders
+
+
+ .gitignore | 2 ++
+ 1 file changed, 2 insertions(+)
+commit 5156fef93c15ef7e0dcdb35b4581a1dcd9c4d72e
+Date:   2024-01-25 11:41:01 -0800
+
+    fix np.memmap memory leak
+    
+    nn.memmap doesn't free memory that it accesses. Thus, the entire dataset gets stored in RAM as the dataset has been fully accessed. The simplest workaround on stackoverflow is to just recreate the memmap for each batch. The extra overhead is negligible.
+    
+    https://stackoverflow.com/questions/45132940/numpy-memmap-memory-usage-want-to-iterate-once/61472122#61472122
+
+ train.py | 9 ++++++---
+ 1 file changed, 6 insertions(+), 3 deletions(-)
+commit dccf362c2b2d81eafebc981ccde5b4a2780c25bc
+Date:   2024-01-12 12:47:42 -0800
+
+    Move enc to gloabal namespace
+
+
+ data/openwebtext/prepare.py | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+commit eba36e84649f3c6d840a93092cb779a260544d08
+Date:   2023-06-22 08:24:17 -0700
+
+    Merge pull request #309 from ho2103/master
+    
+    Fix AssertionError on macOS - need to check CUDA availability for bf16
+commit 1eaceae1931d79c248e441b7544efab8fa492523
+Date:   2023-06-19 18:05:09 -0400
+
+    Fix AssertionError on macOS - need to check CUDA availability for bf16
+
+
+ bench.py  | 2 +-
+ sample.py | 2 +-
+ train.py  | 2 +-
+ 3 files changed, 3 insertions(+), 3 deletions(-)
+commit 4eb7a96b077998f28b57938c2f1e511b0d8cab7c
+Date:   2023-06-17 20:26:35 -0700
+
+    Merge pull request #305 from okuvshynov/fix_osx_dataload
+    
+    nanogpt: fix multiprocessing in load_dataset on os x
+commit 542ac51d1f98557f3c19bbea7047ed4add9c09d9
+Date:   2023-06-17 20:35:38 -0400
+
+    nanogpt: fix multiprocessing in load_dataset on os x
+    
+    The issue seems to be that _fixup_main_from_path in multiprocessing
+    module in python is unable to find entry point, thus, adding
+    ```
+    if __name__ == '__main__'
+    ```
+
+
+ data/openwebtext/prepare.py | 107 ++++++++++++++++++++++----------------------
+ 1 file changed, 54 insertions(+), 53 deletions(-)
+commit 41d7014f7d4654af1f7dae35cb267206fcabf41f
+Date:   2023-06-16 18:30:03 -0700
+
+    Merge pull request #301 from okuvshynov/master
+    
+    [easy] allow multithreading in load_dataset
+commit bb7e96754a57ba53a99c902c3c5396f4acd7cf97
+Date:   2023-06-16 20:00:17 -0400
+
+    nanogpt: allow multithreading in load dataset
+
+
+ data/openwebtext/prepare.py | 7 ++++++-
+ 1 file changed, 6 insertions(+), 1 deletion(-)
+commit 7339b904ef0bb8f4dcc88e4d602c04271697279f
+Date:   2023-06-14 23:33:07 +0000
+
+    use WORLD_SIZE instead of device_count, supports both the case where the number of gpus we train on is smaller than gpus available, and also multinode training may be a bugfix
+
+
+ train.py | 6 ++++--
+ 1 file changed, 4 insertions(+), 2 deletions(-)
+commit f08abb45bd2285627d17da16daea14dda7e7253e
+Date:   2023-06-14 16:25:15 -0700
+
+    Merge pull request #274 from apivovarov/gelu
+    
+    Use nn.GELU - 1.27x faster training
+commit 18ee6b62b669fc3a62c540c13607b3cc0107b51d
+Date:   2023-06-14 15:38:45 -0700
+
+    Merge pull request #275 from apivovarov/rm_unsqueeze
+    
+    Remove pos unsqueeze(0)
+commit ed7887c888270d9b7724556658c1e2bf0e0b628e
+Date:   2023-06-14 15:36:26 -0700
+
+    Merge pull request #270 from LaihoE/master
+    
+    fix np.sum overflows on windows
+commit 8020bb582bcac47269700978759f7e2b739b946e
+Date:   2023-06-14 15:30:39 -0700
+
+    Merge pull request #276 from apivovarov/gitign
+    
+    Add more files to .gitignore
+commit 0f06d9b8899f10078b410cc3d1c37634a167eb6d
+Date:   2023-06-14 15:29:50 -0700
+
+    Merge pull request #277 from apivovarov/is_bf16_supported
+    
+    Use bf16 only if supported
+commit cf4835ed6f9b2ed1eae04a57c7ff6bb073bed9f0
+Date:   2023-06-14 15:21:04 -0700
+
+    Merge pull request #286 from ctjlewis/master
+    
+    docs: simplify dependencies installation
+commit eeac8732b9bcf7faecc61f28b3037abdfb9a3971
+Date:   2023-05-31 23:04:08 -0500
+
+    docs: simplify dependencies installation
+    
+    Adds a `pip install ...` command that will install all necessary dependencies, while retaining original dependency notes. Added quick description of `tqdm` as well.
+
+ README.md | 14 +++++++++-----
+ 1 file changed, 9 insertions(+), 5 deletions(-)
+commit eb33b8bf1c979c4b414a3f126db8dc974d8f456c
+Date:   2023-05-17 03:26:48 +0000
+
+    Use bf16 only if supported
+
+
+ bench.py  | 2 +-
+ sample.py | 2 +-
+ train.py  | 2 +-
+ 3 files changed, 3 insertions(+), 3 deletions(-)
+commit b120c421bfc58633c5cbd7e77882ed6cbc2d4781
+Date:   2023-05-17 02:44:21 +0000
+
+    Add more files to .gitignore
+
+
+ .gitignore | 6 ++++++
+ 1 file changed, 6 insertions(+)
+commit 39ae397a9344e202c366200f6605b310449c1b2e
+Date:   2023-05-17 02:30:18 +0000
+
+    Remove pos unsqueeze(0)
+
+
+ model.py | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+commit 594068e7ae8a6c06e13066096558d68104489649
+Date:   2023-05-17 00:53:35 +0000
+
+    Use nn.GELU
+
+
+ model.py | 11 ++---------
+ 1 file changed, 2 insertions(+), 9 deletions(-)
+commit 6649b299ebba950ea68c03b91c33f75fd830adaf
+Date:   2023-05-09 16:36:59 +0300
+
+    np.sum overflows on windows
+
+
+ data/openwebtext/prepare.py | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+commit 7fe4a099ad2a4654f96a51c0736ecf347149c34c
+Date:   2023-05-06 14:40:28 +0000
+
+    simplify configure_optimizers by a lot
+
+
+ model.py | 66 +++++++++++++++++-----------------------------------------------
+ 1 file changed, 17 insertions(+), 49 deletions(-)
+commit 196160b849eaed4465310c082db2c9dc7bc11ba9
+Date:   2023-04-17 20:16:31 -0700
+
+    Merge pull request #247 from gnobre/macbook-run-instructions
+    
+    Macbook run instructions
+commit 21f9bff7e40d0918cd1dcda7373e686b4ec239fa
+Date:   2023-04-17 20:11:25 -0700
+
+    Merge pull request #225 from otaviogood/grad_accum
+    
+    Fix for gradient_accumulation_steps training slow
+commit a6a708c7f1456965a850438abcf1d3beba0bd265
+Date:   2023-04-17 20:11:00 -0700
+
+    Merge branch 'master' into grad_accum
+commit e30c8fda234961f0d0215c42f2cd777d20e75470
+Date:   2023-04-15 09:50:58 +0100
+
+    Merge branch 'karpathy:master' into macbook-run-instructions
+
+commit 4732c43af3f324ff16039378d063c1308699ca5d
+Date:   2023-04-15 09:49:38 +0100
+
+    add macbook specific instructions to generate samples
+
+
+ README.md | 7 ++++++-
+ 1 file changed, 6 insertions(+), 1 deletion(-)
+commit d9f4735f5e09c6faf3cf1f813d61a609e52a24b3
+Date:   2023-04-13 00:39:41 -0700
+
+    Merge pull request #10 from LaihoE/master
+    
+    batch file write
+commit b288f4cfb2b50f05d795df351ac12bdb48363c42
+Date:   2023-04-12 22:48:37 -0700
+
+    Merge pull request #146 from lutzroeder/master
+    
+    Add .gitignore
+commit 079df20748cc9fc08bf5715dcb0a0d5ea338b297
+Date:   2023-04-12 22:45:01 -0700
+
+    Merge pull request #74 from venusatuluri/fix_decode
+    
+    Small fix to decode fn in shakespeare_char/prepare.py
+commit 01e48ec1ab8c87a40bbf1495b58e232629d90b88
+Date:   2023-04-12 22:43:59 -0700
+
+    Merge pull request #240 from YassineYousfi/master
+    
+    don't dropout in eval mode
+commit 7840a668597e68915aa4415a780ee676cb4d9d1b
+Date:   2023-04-12 22:25:18 -0700
+
+    Merge pull request #54 from MicroPanda123/luv
+    
+    Give tqdm some love :)
+commit 8abe215fbab57162d4b090b2ed652a4109c0ab28
+Date:   2023-04-12 22:24:41 -0700
+
+    Merge pull request #128 from abrahamsangha/fix-typo
+    
+    fix typo
+commit ad62003d7a2ae969d5b457ebd9435334e935abf1
+Date:   2023-04-12 22:24:06 -0700
+
+    Merge pull request #142 from kovkev/patch-1
+    
+    Fix the position of a comma
+commit ea24604b2949494a8864e01bcb90a0f926908be4
+Date:   2023-04-12 22:13:01 -0700
+
+    Merge pull request #220 from python273/patch-1
+    
+    Fix GPT.crop_block_size when flash attention is available
+commit 8aeea6d9707c9e547a1bcb22f33255c64cb7f065
+Date:   2023-04-12 22:12:26 -0700
+
+    Merge pull request #224 from SnehalRaj/patch-1
+    
+    fix small typo
+commit 2457471c9c2d94acc698097326c5d555be06923b
+Date:   2023-04-12 22:09:42 -0700
+
+    Merge pull request #236 from ymurenko/master
+    
+    fix "cuda out of memory" when resuming training
+commit 553f949f46e04a946e5ff2da6e4bb70a221ea1fc
+Date:   2023-04-13 04:59:11 +0000
+
+    fix minor bug where we have to scale the loss to account for gradient accumulation, which sums before backprop. note that this is not a major bug because AdamW is scale invariant. however, this did affect gradient clipping
+
+
+ train.py | 6 +++++-
+ 1 file changed, 5 insertions(+), 1 deletion(-)
+commit 7399dfe39d24579cc1fb391475864ad28f19f6f7
+Date:   2023-04-10 22:56:22 -0700
+
+    dont always dropout!
+
+
+ model.py | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+commit 4ac2e8ce3a47a38789dab355355ff822672a6d45
+Date:   2023-04-05 17:28:55 -0400
+
+    fix "cuda out of memory" when resuming training
+
+
+ train.py | 1 +
+ 1 file changed, 1 insertion(+)
+commit c58fc4605cdcdc68b26a330a8a621c02e681e7d4
+Date:   2023-03-25 20:36:46 +0100
+
+    fix small typo
+
+ README.md | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+commit 978d4fe538611a95c985cf04293121cba9b9167c
+Date:   2023-03-25 00:04:45 -0700
+
+    Fix for gradient_accumulation_steps training slow
+
+
+ config/train_gpt2.py             | 2 +-
+ config/train_shakespeare_char.py | 1 +
+ train.py                         | 5 +++--
+ 3 files changed, 5 insertions(+), 3 deletions(-)
+commit c3f254844d63ece0b6481e9d9777d740a66eb965
+Date:   2023-03-24 14:51:02 +0300
+
+    Fix GPT.crop_block_size when flash attention is available
+
+ model.py | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+commit a82b33b525ca9855d705656387698e13eb8e8d4b
+Date:   2023-03-12 13:40:20 -0700
+
+    Merge pull request #199 from ChristianOrr/patch-1
+    
+    bugfix in decode function
+commit 36c7db8c44486cb543dcdc101dcc897ffede6be9
+Date:   2023-03-08 10:16:19 +0200
+
+    bugfix in decode function
+    
+    Return was left out of the decoder, so it didn't work.
+
+ data/shakespeare_char/prepare.py | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+commit 0d8fbd11aed59617f65d2bbd14842b4050516128
+Date:   2023-03-06 21:47:20 -0800
+
+    Merge pull request #195 from drisspg/enable_sdpa_with_nonzero_dropout
+    
+    Enable sdpa for nonzero dropout
+commit 6170531b8a5f1c15dbf41121d54909e29838af0a
+Date:   2023-03-05 19:29:29 +0000
+
+    enable sdpa for nonzero dropout
+
+
+ model.py | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+commit ae3a8d5fdd3ddb8b13fab182723476523961e3ab
+Date:   2023-02-14 18:48:54 -0800
+
+    Merge pull request #145 from otaviogood/gradAccumStability
+    
+    fix for training stability on single GPU
+commit 10046a2ec0c2d16d48ed729066c3db396dc5d2c0
+Date:   2023-02-13 13:57:20 -0800
+
+    Add .gitignore
+
+
+ .gitignore | 4 ++++
+ 1 file changed, 4 insertions(+)
+commit 086ebe1822791b775e951b4b562fbb7131d83cc2
+Date:   2023-02-13 10:42:44 -0800
+
+    fix for training stability on single GPU
+
+
+ train.py | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+commit c2531159c7077f01c9e63134db2b1a7401ad3b05
+Date:   2023-02-11 17:13:24 -0800
+
+    Fix the position of a comma
+
+ model.py | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+commit 55c5069696b7555b5867fffa9f45711fe1808c15
+Date:   2023-02-10 16:34:46 +0000
+
+    fix misinformation in readme
+
+
+ README.md | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+commit e58f0cfa9466dafe226b51ce6678e2b8fac652d5
+Date:   2023-02-07 21:38:39 +0000
+
+    oops i should not be needing or multiplying by world_size to calculate mfu
+
+
+ train.py | 4 +---
+ 1 file changed, 1 insertion(+), 3 deletions(-)
+commit 27a5d6f1230e45e298645626a0f65243de2ea33a
+Date:   2023-02-07 11:02:20 -0700
+
+    fix typos
+
+
+ README.md | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+commit 8b1e43209e4da8162c05531e7bf46ac6d8d6773f
+Date:   2023-02-06 23:07:25 +0000
+
+    small tweaks, make default WD be 0.1 as is often cited, and remove spurious init of LayerNorm, which is already initialized at 1,0
+
+
+ model.py | 4 ----
+ train.py | 2 +-
+ 2 files changed, 1 insertion(+), 5 deletions(-)
+commit ab21d6c15d01c946d58e9e39ddf4e57dc345769f
+Date:   2023-02-06 19:55:35 +0000
+
+    bugfix we have to call the raw_model's estimate_mfu ty @jprobichaud for original PR
+
+
+ train.py | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+commit f83dd034e1659cbc3bd9f4a6fce5765c4e4afcc9
+Date:   2023-02-05 21:02:30 +0000
+
+    also add a sampling/inference section
+
+
+ README.md | 13 +++++++++++++
+ 1 file changed, 13 insertions(+)
+commit 23a8e701d26109d4eb758585f72ea50b3a0b279b
+Date:   2023-02-05 19:31:32 +0000
+
+    revamp the readme file to be a bit better and more accessible, i hope
+
+
+ README.md | 187 ++++++++++++++++++++++++++++++++++++--------------------------
+ 1 file changed, 108 insertions(+), 79 deletions(-)
+commit fce706cbe6f7e01cc7fbfac30eaa0ad2c30d56de
+Date:   2023-02-05 19:31:18 +0000
+
+    tune the hyperparams a bit, in configs
+
+
+ config/finetune_shakespeare.py   | 25 ++++++++++++++-----------
+ config/train_shakespeare_char.py |  2 +-
+ 2 files changed, 15 insertions(+), 12 deletions(-)
+commit ab0718a7dd1e2eb2b31961ed310f4497b7641852
+Date:   2023-02-05 00:48:58 +0000
+
+    add the estimation of model flops utilization (MFU), a very commonly looked at metric that estimates the token throughput in units of A100 bfloat16 peak flops (312 TFLOPS). this gives us a sense of the hardware utilization we're achieving
+
+
+ bench.py |  4 +++-
+ model.py | 16 ++++++++++++++++
+ train.py | 11 ++++++++++-
+ 3 files changed, 29 insertions(+), 2 deletions(-)
+commit 580902617c329dd9f0978606caa2db85839de906
+Date:   2023-02-05 00:43:15 +0000
+
+    oops optimizer now demands to know device_type
+
+
+ bench.py | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+commit 34720df284af06e7b75b3a4a2b4cfdb2be9a4fef
+Date:   2023-02-04 23:51:18 +0000
+
+    make more accurate the way in which we count parameters. previous count incorrectly included the positional encoding params, when typically only the number of weight parameters is reported for these models
+
+
+ model.py | 13 ++++++++++++-
+ 1 file changed, 12 insertions(+), 1 deletion(-)
+commit 3341b4cecc9d3a315330ad372c5473cf8de5addd
+Date:   2023-02-04 22:33:35 +0000
+
+    oops forgot to subtract embedding params, which don't enter the 6ND equation
+
+
+ transformer_sizing.ipynb | 6 ++++--
+ 1 file changed, 4 insertions(+), 2 deletions(-)
+commit 5a162bc773010e8cf9762585aac11c7f7d756b49
+Date:   2023-02-04 22:11:16 +0000
+
+    fix silly error, i don't want to confuse a future GPT training on this notebook in the future
+
+
+ transformer_sizing.ipynb | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+commit 0bb96d3fff31046eea294c30d73aedafe0b23fd3
+Date:   2023-02-04 22:07:32 +0000
+
+    add reference for 6ND to notebook too
+
+
+ transformer_sizing.ipynb | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+commit eae986c2d2addd4ada8e8d03ed8a315ca6ea1997
+Date:   2023-02-04 22:02:53 +0000
+
+    new notebook with a bunch of calculations related to flops and memory of Transformer
+
+
+ transformer_sizing.ipynb | 400 +++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 400 insertions(+)
+commit a74e8363a2bdaec30fc888a9042e95d47622d292
+Date:   2023-02-04 21:11:25 +0000
+
+    clean up TODOs a bit, they are stale
+
+
+ train.py | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+commit 25d95dbd6588f09678530f271b797e64ce72ac11
+Date:   2023-02-04 21:06:17 +0000
+
+    mildly dramatic refactor for handing all these usage cases across all possible supported and unsupported devices for all the possible switches and flags
+
+
+ model.py | 19 +++++++++++--------
+ train.py | 35 +++++++++++++++++++----------------
+ 2 files changed, 30 insertions(+), 24 deletions(-)
+commit e108ffb973f6f6fa8df02730be581bf2132c3201
+Date:   2023-02-04 19:34:24 +0000
+
+    very slight refactor, bit cleaner
+
+
+ train.py | 6 ++----
+ 1 file changed, 2 insertions(+), 4 deletions(-)
+commit dc149891b62be4ff52741a151c6df59424954aa3
+Date:   2023-02-04 11:28:08 -0800
+
+    Merge pull request #120 from nynyg/remove_cpu_pin_mem
+    
+    Pin memory only when training on GPU
+commit b8286f343e2c93eb87133a2ffeb470f08bf780da
+Date:   2023-02-04 11:16:26 -0800
+
+    Pin memory only when training on GPU
+
+
+ train.py | 7 ++++++-
+ 1 file changed, 6 insertions(+), 1 deletion(-)
+commit 77e7e04c2657846ddf30c1ca2dd9f7cbb93ddeab
+Date:   2023-02-04 16:06:18 +0000
+
+    padding 50257 -> 50304 vocab_size, the nerest multiple of 64. the biggest deal smallest optimization i've made in recent past, about 25% faster. this is because the last layer is a major latency bottleneck consuming about 40% of latency due to the very high channel count.
+
+
+ bench.py | 4 ++--
+ model.py | 2 +-
+ train.py | 4 ++--
+ 3 files changed, 5 insertions(+), 5 deletions(-)
+commit b3c17c6c6a363357623f223aaa4a8b1e89d0a465
+Date:   2023-02-04 15:57:29 +0000
+
+    slight tweak compressing LOC
+
+
+ train.py | 11 ++++-------
+ 1 file changed, 4 insertions(+), 7 deletions(-)
+commit 53d56b82f105e07798adcc0deb90f222f7e4111f
+Date:   2023-02-04 07:42:32 -0800
+
+    Merge pull request #116 from ramtingh/master
+    
+    Minor change to allow using ddp with exclusive process mode 
+commit 9da1627c7f46948d6b133f496178187e8f16860f
+Date:   2023-02-04 15:07:36 +1100
+
+    Explicitly set ddp device
+
+ train.py | 1 +
+ 1 file changed, 1 insertion(+)
+commit 3fd4c0c5efb653a9e22d88803e13c51832e37a46
+Date:   2023-02-04 02:52:48 +0000
+
+    who needs a dataloader? overlap the prefetching of the next batch with GPU compute, ehiding the data loading latency entirely. this saves about 1ms lol
+
+
+ bench.py | 10 ++++++----
+ train.py |  8 +++++---
+ 2 files changed, 11 insertions(+), 7 deletions(-)
+commit 46428d3142db333921a844d66b9508fdb2e63992
+Date:   2023-02-03 17:23:44 -0800
+
+    Merge pull request #115 from akashmjn/akashmjn/fix-notebook-stats
+    
+    add template .gitattributes that fixes language stats
+commit d9a73374ed13552cb837748194b65ced7899cc71
+Date:   2023-02-03 15:13:13 -0800
+
+    keep only what's needed
+
+ .gitattributes | 64 ----------------------------------------------------------
+ 1 file changed, 64 deletions(-)
+commit 3969860ff55b92a10297f4396b27bcd0c952df52
+Date:   2023-02-03 22:17:05 +0000
+
+    include launch command too. anyone should be able to do this now
+
+
+ config/train_gpt2.py | 2 ++
+ 1 file changed, 2 insertions(+)
+commit f9348f3f18ce4838609a02fa82b994ce1603738a
+Date:   2023-02-03 22:14:37 +0000
+
+    add gpt2 training config
+
+
+ config/train_gpt2.py | 23 +++++++++++++++++++++++
+ 1 file changed, 23 insertions(+)
+commit 0e2c12b5ae633cda29a41f66ecc6cd6ed3d6b50e
+Date:   2023-02-03 13:36:36 -0800
+
+    add template .gitattributes that fixes language stats
+
+ .gitattributes | 67 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 67 insertions(+)
+commit e170e40872cce7ce9426eda80cd8653d807cb48a
+Date:   2023-02-03 17:56:51 +0000
+
+    use the new fused AdamW from pytorch nightly, if available
+
+
+ model.py | 6 +++++-
+ 1 file changed, 5 insertions(+), 1 deletion(-)
+commit 7d44bdf6b57e63208bf2171545d75f95113d56bd
+Date:   2023-02-02 17:23:22 -0800
+
+    Merge pull request #106 from YassineYousfi/master
+    
+    use the ``enabled`` arg in GradScaler
+commit 1e87509e478e42607cbdacc6796b1a1303eadffe
+Date:   2023-02-02 23:22:56 +0000
+
+    if dropout > 0.0 disable Flash until pytorch fix. don't assert fail sigh
+
+
+ model.py | 5 ++---
+ 1 file changed, 2 insertions(+), 3 deletions(-)
+commit d8b1a94519aee5ef761d6a3e30235e58b8630f6d
+Date:   2023-02-02 18:38:49 +0000
+
+    change grad accum to default off because i think it just confuses everyone
+
+
+ train.py | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+commit d01863ef015c17ea8155e3cbd12b6b8c42103220
+Date:   2023-02-02 17:23:46 +0000
+
+    small usability tweaks to bench
+
+
+ bench.py | 16 ++++++++--------
+ 1 file changed, 8 insertions(+), 8 deletions(-)
+commit 40f4d6ff70aa59022b365906527752a0e56fb890
+Date:   2023-01-31 21:12:49 -0800
+
+    use the enabled arg in GradScaler
+
+
+ train.py | 20 +++++++-------------
+ 1 file changed, 7 insertions(+), 13 deletions(-)
+commit d995c221282ea45eb43abe7acf67ba834d5f1b60
+Date:   2023-02-01 02:05:34 +0000
+
+    fix bug with loading GPT-2 parameters, assert gets incorrectly tripped due to .bias missing since it is now optionally present depending on flash or not
+
+
+ model.py | 10 +++++++---
+ 1 file changed, 7 insertions(+), 3 deletions(-)
+commit 038ce89438021daf5090b73283b022f5b1a6c985
+Date:   2023-01-31 23:34:02 +0000
+
+    rename iter to it, because iter is a concrete Python builtin
+
+
+ train.py | 12 ++++++------
+ 1 file changed, 6 insertions(+), 6 deletions(-)
+commit d2705bd92a908fdc7ecf3ed8ae1bc57abc474fc7
+Date:   2023-01-31 21:57:07 +0000
+
+    tune cited numbers and reproductions and more explicitly point out the problems w.r.t. the OWT vs WT domain gap
+
+
+ README.md | 6 ++----
+ 1 file changed, 2 insertions(+), 4 deletions(-)
+commit 4386bce1f46606a95910577fccc6cb29c09cc123
+Date:   2023-01-31 21:43:30 +0000
+
+    adjust teaser figure with a more tuned result
+
+
+ assets/gpt2_124M_loss.png | Bin 90219 -> 110433 bytes
+ 1 file changed, 0 insertions(+), 0 deletions(-)
+commit 924a0873ebf4a3a12437633f5ab9c9fe3d421084
+Date:   2023-01-30 23:40:35 +0000
+
+    merge, make cleaner, careful with gradient clipping when using grad scaler fp16 training
+
+commit ae06d0b15a9111cbe2ce66b0f1be9ae29c1ecbbe
+Date:   2023-01-30 23:18:26 +0000
+
+    add flash attention support, resolving last few issues but for now seems to work ok
+
+
+ model.py | 27 +++++++++++++++++++--------
+ 1 file changed, 19 insertions(+), 8 deletions(-)
+commit 0e90ee9d48613b37d26264ee6b3e8fa0f6e75525
+Date:   2023-01-30 08:07:58 +0000
+
+    based on my experiments these biases are indeed not needed. code runs faster, identical results. keeping the option just because it deviates from the gpt-2 setup
+
+
+ train.py | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+commit 001c1e7be708cb505b3db76d6c7b3468bd1e471a
+Date:   2023-01-27 20:51:50 +0000
+
+    stay true to the README file and set grad accum to 5, so the default batch size is about 0.5M and is reproducing gpt2
+
+
+ train.py | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+commit 79dbe0086d11b3d19ed0b5dc7ac8f72dce74412a
+Date:   2023-01-27 20:45:28 +0000
+
+    let me set bias=True until I validate it properly, but this should be ok to merge to master for now, is equivalent to previous functionality
+
+
+ train.py | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+commit e808a671497dada1c39731af7697e33b17fcd53e
+Date:   2023-01-27 20:41:17 +0000
+
+    bunch of plumbing of bias all around. measuring bias=False to be about 6% faster
+
+
+ bench.py | 2 ++
+ model.py | 4 ++--
+ train.py | 5 ++++-
+ 3 files changed, 8 insertions(+), 3 deletions(-)
+commit cc5444e194b4576e2dfb3242fe719dbcfd4f575f
+Date:   2023-01-27 20:29:45 +0000
+
+    add the bias option to config, default it to True for now
+
+
+ model.py | 17 +++++++++--------
+ 1 file changed, 9 insertions(+), 8 deletions(-)
+commit 2bf07a3fbf2c23688e6f4ee3fee2e906db9b5783
+Date:   2023-01-27 20:17:32 +0000
+
+    rewrite model class so layernorm has an optional bias= parameter
+
+
+ model.py | 21 ++++++++++++---------
+ 1 file changed, 12 insertions(+), 9 deletions(-)
+commit 2892858ce7c69224dfe03343486fb00f93432a50
+Date:   2023-01-27 18:54:08 +0000
+
+    attempt a non-biased model, per few papers that cite this as working well
+
+
+ model.py | 25 +++++++++++++++++--------
+ 1 file changed, 17 insertions(+), 8 deletions(-)
+commit f29a9ff5bf1ddf64c30ce74e371244eff6fc22b7
+Date:   2023-01-27 17:56:18 +0000
+
+    ok i tried bringing back original init again and this time it makes a ton of difference and works much better than default. i'm not sure what was different with my earlier experiment where i saw a slight regression. may try to dissect commits later, for now merged the original mingpt init (following gpt-2 paper) as default.
+
+
+ README.md | 1 -
+ 1 file changed, 1 deletion(-)
+commit 23a0bfac20945a3801f1a57dfa583e8495be6d26
+Date:   2023-01-27 16:52:18 +0000
+
+    try bring back mingpt init
+
+
+ model.py | 18 ++++++++++++++++++
+ 1 file changed, 18 insertions(+)
+commit 3cb3fc059c5ecd6c45ba9c9e89c42be791498984
+Date:   2023-01-27 16:45:09 +0000
+
+    grad clipping seems to slightly speed up training in the beginning but i can't see a big difference later in the training. it costs non-negligeable compute to clip. adding it for now because it is standard, and i think more necessary as the model becomes larger. practitioners may consider turning it off for minor efficiency gains
+
+
+ README.md | 1 -
+ train.py  | 3 +++
+ 2 files changed, 3 insertions(+), 1 deletion(-)
+commit e0c689cf38478eea9416757cec5f834620983862
+Date:   2023-01-25 01:12:43 +0000
+
+    allow the prompt to compe from a file
+
+
+ sample.py | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+commit 21675d7755b47415d524a3860a4e8e17ffa4cc66
+Date:   2023-01-25 00:55:29 +0000
+
+    allow sample.py to init from a pretrained gpt2 checkpoints as well, in similar style to train.py
+
+
+ sample.py | 31 +++++++++++++++++++------------
+ 1 file changed, 19 insertions(+), 12 deletions(-)
+commit e0e94a109458d5c700f7d9fed8246c893b8709ab
+Date:   2023-01-24 15:53:31 -0700
+
+    use GradScaler in model only if dtype is float16
+
+
+ train.py | 20 +++++++++++++++-----
+ 1 file changed, 15 insertions(+), 5 deletions(-)
+commit 6c40a08b41358b7a13d57ed416d540dec79a9c1b
+Date:   2023-01-22 13:47:32 -0800
+
+    Merge pull request #82 from danielgross/master
+    
+    Missed two spots while relative pathing
+commit 2f7fd0ac57bb88349f22be113dd6e1b38b09104f
+Date:   2023-01-22 12:18:24 -0800
+
+    add relative import in shakespeare
+
+
+ data/shakespeare/prepare.py | 7 ++++---
+ 1 file changed, 4 insertions(+), 3 deletions(-)
+commit bf779456f38168025a6dd6889f84b3697cdf712c
+Date:   2023-01-22 11:11:25 -0800
+
+    add relative import in shakespeare_char
+
+
+ data/shakespeare_char/prepare.py | 7 ++++---
+ 1 file changed, 4 insertions(+), 3 deletions(-)
+commit f9d8020f48b3a670e507bfe6bb0bd26507e71276
+Date:   2023-01-21 06:14:16 +0000
+
+    Fix decode fn in shakespeare_char/prepare.py
+
+
+ data/shakespeare_char/prepare.py | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+commit 3611338959152b489a14f3fd39cbee3a03acfcad
+Date:   2023-01-20 14:38:10 -0800
+
+    Merge pull request #71 from cchan/patch-1
+    
+    Zero-grad more aggressively to save memory
+commit 1f77d03024005295286f04862ac6f0edbc28c663
+Date:   2023-01-20 21:28:20 +0000
+
+    make mentions of mps in docs. ty good people in issue #28
+
+
+ README.md | 2 ++
+ train.py  | 2 +-
+ 2 files changed, 3 insertions(+), 1 deletion(-)
+commit a6bffeee597e4bc8371ac16b69f8ebf36281757c
+Date:   2023-01-20 12:21:33 -0800
+
+    Merge pull request #73 from danielgross/master
+    
+    Use relative paths
+commit edb7a7eab0e06198d8288bc2f5d7fb06f76a5a57
+Date:   2023-01-20 10:39:45 -0800
+
+    use relative paths so that running the data prep scripts always create files in local folder, no matter where run from
+
+
+ data/openwebtext/prepare.py      | 3 ++-
+ data/shakespeare/prepare.py      | 4 ++--
+ data/shakespeare_char/prepare.py | 6 +++---
+ 3 files changed, 7 insertions(+), 6 deletions(-)
+commit 67166079c9df2fbdc1528ad159b7f54b4a11fc37
+Date:   2023-01-19 22:10:44 -0800
+
+    Zero-grad more aggressively to save memory
+
+ train.py | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+commit 2c7806db6edc44951d07d9306a522ef247763bcb
+Date:   2023-01-19 23:10:51 +0000
+
+    for consistency with previous commit
+
+
+ data/shakespeare/prepare.py | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+commit c1c20a03118432e67c1a47d9be94b0b172f3ca8e
+Date:   2023-01-19 15:08:35 -0800
+
+    Merge pull request #57 from ryouze/patch-1
+    
+    Improve readability of huge numbers
+commit 9e150b808e0b9baaa40a4f12845a91c402ea940f
+Date:   2023-01-18 22:29:51 -0800
+
+    Merge pull request #66 from PWhiddy/patch-1
+    
+    fix typo ( params -> tokens)
+commit ff9085d0bc6e09824d8a192376d173ed1b5fc0ae
+Date:   2023-01-18 21:17:15 -0500
+
+    fix typo ( params -> tokens)
+
+ scaling_laws.ipynb | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+commit 8dd2061e4dcd0b81faef4436ad52f88342e3d6a0
+Date:   2023-01-18 16:10:05 +0000
+
+    fix temperature comment, slightly wrong
+
+
+ sample.py | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+commit 2b083fbfde5891c9a50a97d63972373446022ef8
+Date:   2023-01-18 03:16:59 +0000
+
+    the badge is a bit ugly, move it down to troubleshooting section
+
+
+ README.md | 6 ++++--
+ 1 file changed, 4 insertions(+), 2 deletions(-)
+commit aa8e4c25460e4d2e7ba70530c558720d899a9dba
+Date:   2023-01-18 03:11:31 +0000
+
+    screwed up the link, fix
+
+
+ README.md | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+commit 6dab32c003d1b3ed9fa2ccd4c61b8037abf6c586
+Date:   2023-01-18 03:09:42 +0000
+
+    experimenting with badges, and discord link to start specifically. issues sometimes feel a little too heavy
+
+
+ README.md | 2 ++
+ 1 file changed, 2 insertions(+)
+commit be571fff2cbba6bfb6b5c8ecf4fdfb0b8392b0a7
+Date:   2023-01-16 22:05:32 +0100
+
+    Improve readability of huge numbers
+    
+    Before:
+      length of dataset in characters:  1115394
+      all the unique characters: 
+       !$&',-.3:;?ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz
+      vocab size: 65
+      train has 1003854 tokens
+      val has 111540 tokens
+    
+    After:
+      length of dataset in characters: 1,115,394
+      all the unique characters: 
+       !$&',-.3:;?ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz
+      vocab size: 65
+      train has 1,003,854 tokens
+      val has 111,540 tokens
+
+ data/shakespeare_char/prepare.py | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
+commit 7f74652843d8cbea31e2a9c986caf4a0ad452a6c
+Date:   2023-01-16 17:11:02 +0000
+
+    add docs on multinode training to main README too
+
+
+ README.md | 15 +++++++++++++--
+ 1 file changed, 13 insertions(+), 2 deletions(-)
+commit 46ce9971dfac6fb36fe941436d0d3e80074e8435
+Date:   2023-01-16 16:56:05 +0000
+
+    small tweaks to docs and variable names stylistically
+
+
+ train.py | 15 ++++++++-------
+ 1 file changed, 8 insertions(+), 7 deletions(-)
+commit 684800dd872135983297cc4c72c7e445083b372f
+Date:   2023-01-16 06:02:46 +0000
+
+    clarify that these should be run on two separate machines
+
+
+ train.py | 2 ++
+ 1 file changed, 2 insertions(+)
+commit 9352df23de68ae5da2541599cb894a195b098190
+Date:   2023-01-16 05:57:33 +0000
+
+    docs for multinode ddp
+
+
+ train.py | 10 +++++++---
+ 1 file changed, 7 insertions(+), 3 deletions(-)
+commit c3dddbff3d80a00474e934bbafdabecbc79aec1b
+Date:   2023-01-16 05:44:50 +0000
+
+    get rid of gpu_id, the world is more complicated than that when world_size > 8
+
+
+ train.py | 23 ++++++++++++++---------
+ 1 file changed, 14 insertions(+), 9 deletions(-)
+commit f5e6ac8b0215f1c2141f03ca5dec27a75b9d0812
+Date:   2023-01-16 05:13:13 +0000
+
+    local rank -> rank
+
+
+ train.py | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+commit d5ee965974b929eed1ffbc9e874f724a53234578
+Date:   2023-01-15 20:29:15 +0000
+
+    Update README.md
+
+ README.md | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+commit cf9991488629b1b072c49bf261d04b0c8a3207a3
+Date:   2023-01-15 17:49:55 +0000
+
+    add gradient accumulation support to simulate larger batch sizes. ty @VHellendoorn for original PR
+
+
+ train.py | 25 +++++++++++++++++--------
+ 1 file changed, 17 insertions(+), 8 deletions(-)
+commit 89da79eee1f2c168166a06cc5714898d07d3701e
+Date:   2023-01-14 20:38:22 +0000
+
+    add note of caution for the produced warning, investigate later
+
+
+ model.py | 4 ++++
+ 1 file changed, 4 insertions(+)
+commit 7d7ded25ce400388f7e6084ba829de9637e840f7
+Date:   2023-01-14 03:59:53 +0000
+
+    a bit better settings... for a single gpu at least. these settings would fry a simple cpu though i think
+
+
+ config/train_shakespeare_char.py | 10 +++++-----
+ 1 file changed, 5 insertions(+), 5 deletions(-)
+commit 91d02510ce8c832923d0a6408d983e2d55f0291e
+Date:   2023-01-14 03:57:00 +0000
+
+    fix bug... if topk > vocab_size, torch.topk will throw error
+
+
+ model.py | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+commit 57735f532df142cf9d1012061b93ab53e58c462b
+Date:   2023-01-14 02:26:44 +0000
+
+    correctly propagate the vocab_size from the rendered dataset into the model args
+
+
+ train.py | 16 ++++++++++++++--
+ 1 file changed, 14 insertions(+), 2 deletions(-)
+commit 43b37fd56817e0783c6904f98ae468bb0fbe7aa0
+Date:   2023-01-14 02:16:10 +0000
+
+    reverse the order, making sure that the final layer init is preserved, and becomes the token embedding instead of the other way around. otherwise the loss can be all messed up from a bad init
+
+
+ model.py | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+commit 7c8288552b3673574e0649e031963b8e7e8d4981
+Date:   2023-01-14 01:00:55 +0000
+
+    tie the weights of lm_head.weight and transformer.wte.weight, i.e. the last linear layer of decoder and the token embeddings.
+
+
+ model.py | 16 +++++++++++++---
+ 1 file changed, 13 insertions(+), 3 deletions(-)
+commit 32b4f08d9d16b87114dedfd6e02c53e4a11518be
+Date:   2023-01-13 23:43:00 +0000
+
+    it's true
+
+
+ README.md | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+commit 3e0fd425794e3e0160ae6132916beff78823888a
+Date:   2023-01-13 00:57:15 +0000
+
+    more scaling laws, clarification, and add simple interpolation of Approach 2
+
+
+ scaling_laws.ipynb | 189 ++++++++++++++++++++++++++++++++++++-----------------
+ 1 file changed, 128 insertions(+), 61 deletions(-)
+commit 8f85b8334749d1b6c3af3e11f4874bc1d0c0cad2
+Date:   2023-01-12 06:02:50 +0000
+
+    inference time mini-optimization low-hanging fruit ty @jxtps for raising: when we are running inference we can apply lm_head on only the very last token
+
+
+ model.py | 9 ++++++---
+ train.py | 2 +-
+ 2 files changed, 7 insertions(+), 4 deletions(-)
+commit e21cbf887fe98083d053579700ae7f6cd9e4be2c
+Date:   2023-01-12 05:47:34 +0000
+
+    meant to set always_save_checkpoint to False instead, so we only write when val improves
+
+
+ config/train_shakespeare_char.py | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+commit c1ac2d58f13dc64863faa9b3ee3dbc4075a4d77f
+Date:   2023-01-12 02:42:38 +0000
+
+    including transformers as a dependency of the repo as well
+
+
+ README.md | 1 +
+ 1 file changed, 1 insertion(+)
+commit 7f51d17977ddcfad7d350df074cb131e8e85d727
+Date:   2023-01-12 02:17:52 +0000
+
+    add note about windows and pytorch 2.0 and torch compile in general
+
+
+ README.md | 6 +++++-
+ 1 file changed, 5 insertions(+), 1 deletion(-)
+commit bb49751439d43e0a42b831f720f5fa1831770bfe
+Date:   2023-01-11 17:11:15 +0000
+
+    oh no nanoGPT is trending quickly explain the character-level functionality I added late last night
+
+
+ README.md | 16 +++++++++++++++-
+ 1 file changed, 15 insertions(+), 1 deletion(-)
+commit d17350a31de464457cc7213f6c99ad2aea2cb04f
+Date:   2023-01-11 05:27:19 +0000
+
+    add support for character-level language models, a new character-level shakespeare dataset, a new config file that shows how to train a character-level baby GPT on it, and adjust the sample function to figure out if it should decode with characters or GPT2 bpe tokens. The current implementation is a bit hacky and basically assumes just these two possibilities. In the future we may want to support more general encoders or decoders.
+
+
+ config/train_shakespeare_char.py | 36 +++++++++++++++++++++
+ data/shakespeare_char/prepare.py | 67 ++++++++++++++++++++++++++++++++++++++++
+ data/shakespeare_char/readme.md  |  9 ++++++
+ sample.py                        | 28 ++++++++++++++---
+ train.py                         |  1 +
+ 5 files changed, 137 insertions(+), 4 deletions(-)
+commit c2a402f7f7a61e21cb1699a11ba6a3b081b415e8
+Date:   2023-01-11 01:00:22 +0000
+
+    guess the config from globals() and log all of it with wandb
+
+
+ train.py | 14 ++++++--------
+ 1 file changed, 6 insertions(+), 8 deletions(-)
+commit 8b2e622b275f251a9942821f5fabd6c7409bdd94
+Date:   2023-01-08 19:40:46 +0000
+
+    adjust the readme to reflect changes in the autocast branch
+
+
+ README.md | 19 ++++++++++++++++++-
+ 1 file changed, 18 insertions(+), 1 deletion(-)
+commit b77c2e86d37c525f8c9aa676cf0745e4e524e685
+Date:   2023-01-08 19:32:13 +0000
+
+    copy pasting what seems to work to bench,sample as well. ty @lantiga
+
+
+ bench.py  | 18 ++++++++++++------
+ sample.py | 22 +++++++++++++---------
+ 2 files changed, 25 insertions(+), 15 deletions(-)
+commit a855d316fd4d3e8c9335c32e7cd193c5b44674c1
+Date:   2023-01-08 19:20:38 +0000
+
+    add device and dtype support to train.py args
+
+
+ train.py | 14 +++++++++++---
+ 1 file changed, 11 insertions(+), 3 deletions(-)
+commit e7cd674ce7c3b19191e9649f631b1115b655a9dd
+Date:   2023-01-08 10:19:40 -0800
+
+    Merge pull request #20 from lantiga/wandb-optional-import
+    
+    Make wandb import conditioned to wandb_log=True
+commit 09f1f458e8a5e381d2357a7391bb6eb51d7122a5
+Date:   2023-01-08 15:51:50 +0100
+
+    Move conditional import
+
+
+ train.py | 4 +---
+ 1 file changed, 1 insertion(+), 3 deletions(-)
+commit aba47f0a356cd185a704c84469489bc26ea227df
+Date:   2023-01-05 09:09:22 +0100
+
+    Make wandb import conditioned to wandb_log=True
+
+
+ README.md | 1 -
+ train.py  | 4 +++-
+ 2 files changed, 3 insertions(+), 2 deletions(-)
+commit e53b9d28ffc093b502cec014f5326ffe757bd471
+Date:   2023-01-08 01:46:54 +0000
+
+    ran readme through spellchecker heh
+
+
+ README.md | 12 ++++++------
+ 1 file changed, 6 insertions(+), 6 deletions(-)
+commit df3b8a57ab2be4deb4cc90be8571dcd8086502ce
+Date:   2023-01-08 00:41:14 +0000
+
+    tune the readme with new header image and the loss curve for 124M
+
+
+ README.md                 |  14 ++++++++++----
+ assets/gpt2_124M_loss.png | Bin 0 -> 90219 bytes
+ assets/nanogpt.jpg        | Bin 0 -> 118621 bytes
+ 3 files changed, 10 insertions(+), 4 deletions(-)
+commit d56bdf05a662be15446a15ebf40f2cd60a7412bc
+Date:   2023-01-07 02:42:30 +0000
+
+    progress! based on chinchilla author correspondence
+
+
+ scaling_laws.ipynb | 366 ++++++++++++++++++++++++++++++++++++++++++-----------
+ 1 file changed, 289 insertions(+), 77 deletions(-)
+commit 27fc6a4112661e7cbbfed7d1cdecb764b43a3ce8
+Date:   2023-01-06 02:13:04 +0000
+
+    small tweaks to notebook
+
+
+ scaling_laws.ipynb | 40 ++++++++++++++++++++--------------------
+ 1 file changed, 20 insertions(+), 20 deletions(-)
+commit 69d1a5f1afd412ab7a8d6340746503c3d3b087b5
+Date:   2023-01-06 02:01:08 +0000
+
+    update scaling laws. basically i can't reproduce any of params, flops, or scaling laws of the Chinchilla paper atm...
+
+
+ scaling_laws.ipynb | 277 +++++++++++++++++++++++++++++++++--------------------
+ 1 file changed, 174 insertions(+), 103 deletions(-)
+commit 9629093e53b7313aa064557d5c5631ecee7c1aba
+Date:   2023-01-05 01:14:02 +0000
+
+    minor args re-arranging and removing some spurious ones like wandb entity ty @tcapelle
+
+
+ sample.py |  2 +-
+ train.py  | 15 +++++++--------
+ 2 files changed, 8 insertions(+), 9 deletions(-)
+commit 529c967a65285da8d2efa54ff63bacce11d922be
+Date:   2023-01-04 16:46:32 -0800
+
+    Merge pull request #19 from nat/patch-1
+    
+    Strip unwanted prefix from state keys when loading model in sample.py
+commit d562b3e550ed8806b2b08bfddf637bbde1559965
+Date:   2023-01-05 00:44:35 +0000
+
+    shuttling the poor mans configurator aside into its own file and adding it to all of train,sample,bench. because i am leaving args in globals() so i can avoid having to prepend every single variable with an args., i have to exec the configurator and the optional configs. so we're left with something very gross by standard convention but also quite simple and functional. *ducks*
+
+
+ README.md       |  3 +--
+ bench.py        | 13 ++++++++-----
+ configurator.py | 47 +++++++++++++++++++++++++++++++++++++++++++++++
+ sample.py       |  2 +-
+ train.py        | 35 ++---------------------------------
+ 5 files changed, 59 insertions(+), 41 deletions(-)
+commit 2b9e168736c69e969f3d4cf71c0939a9fce24a56
+Date:   2023-01-04 16:34:00 -0800
+
+    Strip unwanted prefix from state keys when loading model
+
+
+ sample.py | 7 ++++++-
+ 1 file changed, 6 insertions(+), 1 deletion(-)
+commit ab04701f9f89d95cb2f32718e3a308acaffaa7fe
+Date:   2023-01-04 18:59:10 +0000
+
+    mention current 8GPU SOTA and shuffle sections a bit
+
+
+ README.md | 22 +++++++++++-----------
+ 1 file changed, 11 insertions(+), 11 deletions(-)
+commit 1eefbb25201339d0b112fe755c5f5815fbb73792
+Date:   2023-01-04 09:08:50 -0800
+
+    Merge pull request #16 from jorahn/patch-1
+    
+    Update README.md
+commit 26aa5f3eadd5df5a9e0b0fdb4736e7b565e9f9f1
+Date:   2023-01-04 10:28:13 +0100
+
+    Update README.md
+
+ README.md | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+commit c72ecf5d9355686ffdeb91d51554d3505c0491a7
+Date:   2023-01-04 00:59:34 +0000
+
+    add a notebook trying to reproduce chinchilla scaling laws. I can't get the numbers to be exactly right, have to look at more
+
+
+ README.md          |   3 +
+ scaling_laws.ipynb | 442 +++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 445 insertions(+)
+commit 5acba4b0055f9d1b3f0f0c9ef957ed137e259d3e
+Date:   2023-01-03 21:16:07 +0000
+
+    ty lambda labs
+
+
+ README.md | 4 ++++
+ 1 file changed, 4 insertions(+)
+commit 97fc42616e324c63b54918ae48f9e94de089fdce
+Date:   2023-01-03 17:54:48 +0000
+
+    adding few more dependencies
+
+
+ README.md | 2 ++
+ 1 file changed, 2 insertions(+)
+commit 9f95aca93ef905ece9c242015c47499be1d8c7c6
+Date:   2023-01-03 17:45:49 +0000
+
+    better hyperparams for gpt2 124M model on A100 40GB. still uncertain about max_iters especially, and a bit about weight decay, betas
+
+
+ train.py | 18 +++++++++---------
+ 1 file changed, 9 insertions(+), 9 deletions(-)
+commit b45eec3e4b31d738f80fc10bb13538228ca20066
+Date:   2023-01-03 07:41:28 +0000
+
+    flesh out the remaining TODOs in readme a bit more
+
+
+ README.md | 31 +++++++++++++++++++++++++------
+ 1 file changed, 25 insertions(+), 6 deletions(-)
+commit 177d5f7dc5f44d6f373cd7767c2a9259d740436e
+Date:   2023-01-02 23:05:01 +0000
+
+    disabling torch.jit.script here for massive performance boost when using torch.compile, our default. see issue #11. thanks @vgoklani for flagging
+
+
+ model.py | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+commit 0a2ea9533844be1ec7e289ac392553e9f050be36
+Date:   2023-01-02 17:49:21 +0200
+
+    batch file write
+
+
+ data/openwebtext/prepare.py | 12 ++++++++----
+ 1 file changed, 8 insertions(+), 4 deletions(-)
+commit ea4de192e01fbcb8e6ef84babd09d819e6533cc1
+Date:   2023-01-02 02:11:39 +0000
+
+    reshuffle args inside sample.py
+
+
+ sample.py | 32 ++++++++++++++++++++++----------
+ 1 file changed, 22 insertions(+), 10 deletions(-)
+commit ec9b1f81827f43bfc1502c3bf0cda5f1b521a474
+Date:   2023-01-02 01:25:02 +0000
+
+    add a patch to fix mysterious unwanted prefix in state dict? maybe remove later
+
+
+ train.py | 9 ++++++++-
+ 1 file changed, 8 insertions(+), 1 deletion(-)
+commit 41184a27f535b79cea9f7ac2ef31edd908d040a2
+Date:   2023-01-02 01:15:55 +0000
+
+    rename compile_model to compile, shroter, version 2 stragglers
+
+
+ bench.py                       | 4 ++--
+ config/finetune_shakespeare.py | 2 +-
+ 2 files changed, 3 insertions(+), 3 deletions(-)
+commit 35f51974c4cfe4481888a808479236b9697f8390
+Date:   2023-01-02 01:14:46 +0000
+
+    rename to compile it's shorter
+
+
+ train.py | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+commit 2febf4463c26d18aa5d6772fb470019c31ccacaf
+Date:   2023-01-01 01:29:48 +0000
+
+    candidate changes to apis, have to think through more
+
+
+ README.md                      | 10 ++++++++++
+ config/finetune_shakespeare.py | 22 ++++++++++++++++++++++
+ data/openwebtext/prepare.py    |  1 +
+ data/shakespeare/prepare.py    | 32 ++++++++++++++++++++++++++++++++
+ data/shakespeare/readme.md     |  9 +++++++++
+ model.py                       | 27 ++++++++++++++++++---------
+ sample.py                      | 10 +++++-----
+ train.py                       | 19 ++++++++++++++-----
+ 8 files changed, 111 insertions(+), 19 deletions(-)
+commit 7c6ea8409e44deb188b4c3213c01fd1e9174537a
+Date:   2022-12-30 22:18:20 +0000
+
+    simplify the prepare script a lot, write only using one process, seems sufficient for now. ty @LaihoE for suggestion and @proger for flagging
+
+
+ README.md                   |  1 +
+ data/openwebtext/prepare.py | 40 ++++++++++++----------------------------
+ 2 files changed, 13 insertions(+), 28 deletions(-)
+commit d8abd21258356c2b9d8dc61bdadc639ad074018d
+Date:   2022-12-30 00:07:58 +0000
+
+    typo fix in readme
+
+
+ README.md | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+commit 5a725d909837be19f8613379823a51bfd4d611a4
+Date:   2022-12-30 00:07:13 +0000
+
+    add torch.compile by default, shows almost 1.8X improvement in throughput nice
+
+
+ README.md | 7 +++++--
+ bench.py  | 7 ++++++-
+ sample.py | 1 +
+ train.py  | 7 +++++++
+ 4 files changed, 19 insertions(+), 3 deletions(-)
+commit fb52554ca854d59e90751bcd762c71276bbe0dfb
+Date:   2022-12-29 13:45:20 -0800
+
+    Merge pull request #1 from ankandrew/master
+    
+    Minor Frozen GPTConfig
+commit 7f0e6d9a71802cf848885d209f7c6f58972807fd
+Date:   2022-12-29 17:07:19 -0300
+
+    Frozen GPTConfig
+
+
+ model.py | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+commit 682a0ac8f14772d924b8aec52b3a1bcaafe3a54f
+Date:   2022-12-29 18:23:15 +0000
+
+    properly resume training, also loading iter_num and best_val_loss  from checkpoints
+
+
+ train.py | 12 +++++++++---
+ 1 file changed, 9 insertions(+), 3 deletions(-)
+commit f88aa2c2fedc61fbd57a62c27d81a709e9e225fe
+Date:   2022-12-29 17:38:33 +0000
+
+    add link to mingpt
+
+
+ README.md | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+commit f2fc4be69b67d0dea8a3304d6013ddb8dd97deaf
+Date:   2022-12-29 17:26:42 +0000
+
+    mention 4gpu loss as well in readme
+
+
+ README.md | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+commit fa57d464d749d786e05c266ae6f40e625c0d05b7
+Date:   2022-12-29 05:32:55 +0000
+
+    pull out dtype up top
+
+
+ bench.py | 5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
+commit e7bac659f510c4f73abe70016359030faea23d84
+Date:   2022-12-29 05:24:14 +0000
+
+    oops missed one # have to fix
+
+
+ README.md | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+commit 97e2ab1b8dae68e76bacd2797bfd1c87feeb63a7
+Date:   2022-12-29 05:23:36 +0000
+
+    enhance readme, add some todos
+
+
+ README.md | 14 +++++++++++++-
+ 1 file changed, 13 insertions(+), 1 deletion(-)
+commit cc11744131390eae3fa1db65ab027e95a84f76b9
+Date:   2022-12-28 21:11:26 -0800
+
+    Add MIT LICENSE file
+
+ LICENSE | 21 +++++++++++++++++++++
+ 1 file changed, 21 insertions(+)
+commit dea15072526871e2726b1b893a3018ba46f0a199
+Date:   2022-12-29 05:06:07 +0000
+
+    add support for DDP training. the scaling timings right now do not look good by default, have to dig more into
+
+
+ README.md | 26 ++++++++++++--------
+ train.py  | 81 ++++++++++++++++++++++++++++++++++++++++-----------------------
+ 2 files changed, 68 insertions(+), 39 deletions(-)
+commit ee6459f1d0fbfce67a66e51d9584e862481f50b9
+Date:   2022-12-29 02:00:25 +0000
+
+    readme tweaks
+
+
+ README.md | 14 +++++++-------
+ 1 file changed, 7 insertions(+), 7 deletions(-)
+commit 3000cf5dda0e3e7069f78748345a9a3a28a6cd72
+Date:   2022-12-29 01:49:53 +0000
+
+    add pytorch profiler support. not sure how to support both profiler and simple benchmarking, a bit gnarly atm hmm
+
+
+ bench.py | 63 ++++++++++++++++++++++++++++++++++++++++++++++-----------------
+ 1 file changed, 46 insertions(+), 17 deletions(-)
+commit b760ef1358eaf470b3b1f10bbf83bc47b8f2dcd2
+Date:   2022-12-29 00:05:32 +0000
+
+    add data loading into benchmarking as well, just for completeness
+
+
+ README.md |  2 +-
+ bench.py  | 31 +++++++++++++++++++++++++------
+ 2 files changed, 26 insertions(+), 7 deletions(-)
+commit 70b5d93aeece4e29fc2b8d3426ac63e2b2f22c1a
+Date:   2022-12-28 23:55:43 +0000
+
+    add benchmarking script v0
+
+
+ README.md |  4 ++++
+ bench.py  | 48 ++++++++++++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 52 insertions(+)
+commit 5d2b4807bf46bb8985b6f861a662d2d56a6001a2
+Date:   2022-12-28 23:31:23 +0000
+
+    adding a lightweight configurator that may be a terrible mistake lol. also adding configs to evaluate the baseline GPT2 versions released by OpenAI on OWT. we have some ways to go to match those numbers atm
+
+
+ README.md                  | 23 +++++++++++++++++++++++
+ config/eval_gpt2.py        |  8 ++++++++
+ config/eval_gpt2_large.py  |  8 ++++++++
+ config/eval_gpt2_medium.py |  8 ++++++++
+ config/eval_gpt2_xl.py     |  8 ++++++++
+ train.py                   | 43 +++++++++++++++++++++++++++++++++++++++++--
+ 6 files changed, 96 insertions(+), 2 deletions(-)
+commit c9fe00c0e9fb9e03a13f7761665b475252c2107b
+Date:   2022-12-28 01:45:55 +0000
+
+    small readme clarification and training script defaults changes
+
+
+ README.md | 4 +++-
+ train.py  | 8 ++++----
+ 2 files changed, 7 insertions(+), 5 deletions(-)
+commit fe8042867ca499aef1df0d6c2606aabae3124b26
+Date:   2022-12-28 00:58:19 +0000
+
+    first very bad commit
+
+
+ README.md                   |  34 ++++++
+ data/openwebtext/prepare.py |  84 ++++++++++++++
+ data/openwebtext/readme.md  |  15 +++
+ model.py                    | 267 ++++++++++++++++++++++++++++++++++++++++++++
+ sample.py                   |  37 ++++++
+ train.py                    | 191 +++++++++++++++++++++++++++++++
+ 6 files changed, 628 insertions(+)

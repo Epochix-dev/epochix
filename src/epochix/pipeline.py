@@ -846,6 +846,7 @@ async def run_pipeline(
         last_seq = max(last_seq, diverged.seq)
 
     final_milestones = engine.finalize(last_seq, last_epoch)
+    store.append_milestones(final_milestones)
     for ms in final_milestones:
         ms_msg = hub.make_message(
             msg_type="milestone",

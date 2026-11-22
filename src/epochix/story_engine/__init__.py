@@ -447,9 +447,14 @@ class StoryEngine:
                         detected = refine_gaze(detected, mae_hist[-1], self._seen_raw_keys)
                 self.task = detected
                 self._task_locked = True
-                self._milestones = MilestoneTracker(
-                    run_id=self.run_id, task=self.task, locale=self.locale
-                )
+                # The milestone tracker is NOT replaced here. A new one forgot
+                # what had fired, so a run told on its training loss until the
+                # task was known announced "New best" twice (Hugging Face,
+                # PyTorch ImageNet); one told on box_loss until then (YOLO)
+                # did not. The tracker is given each reading's direction, so
+                # the task it was built with never decides anything.
+                if self._milestones is not None:
+                    self._milestones.task = detected
 
     def _advance(self, event: MetricEvent) -> list[StoryFrame]:
         """Warm up, or build the frame this event triggers (see process_all)."""

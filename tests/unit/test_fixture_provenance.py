@@ -22,7 +22,12 @@ from pathlib import Path
 import pytest
 
 ROOT = Path(__file__).resolve().parents[2]
-FOLDERS = [ROOT / "demo", ROOT / "tests" / "fixtures" / "logs"]
+FOLDERS = [
+    ROOT / "demo",
+    ROOT / "tests" / "fixtures" / "logs",
+    # What a watched terminal printed, for the extension's notice tests.
+    ROOT / "tests" / "fixtures" / "terminal",
+]
 
 
 def _sections(readme: Path) -> dict[str, str]:
@@ -69,14 +74,19 @@ def test_a_log_named_real_is_a_recording() -> None:
     assert sorted(n for n in samples if "_real" in n) == []
 
 
-def test_every_recording_names_a_script_that_exists() -> None:
-    folder = ROOT / "tests" / "fixtures" / "logs"
+@pytest.mark.parametrize(
+    ("folder", "at_least"),
+    [(ROOT / "tests" / "fixtures" / "logs", 10), (ROOT / "tests" / "fixtures" / "terminal", 9)],
+    ids=lambda v: v.name if isinstance(v, Path) else str(v),
+)
+def test_every_recording_names_a_script_that_exists(folder: Path, at_least: int) -> None:
     rows = _rows(_sections(folder / "README.md")["Recorded runs"])
-    assert len(rows) >= 10
+    assert len(rows) >= at_least
     unkept = []
     for row in rows:
         log, script = row[0].strip("`"), row[-1]
         assert (folder / log).is_file(), f"{log} is listed but missing"
+        assert (folder / log).stat().st_size > 0, f"{log} is empty"
         if script == "not kept":
             unkept.append(log)
             continue
