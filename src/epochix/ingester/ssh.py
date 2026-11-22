@@ -30,7 +30,10 @@ from collections.abc import AsyncIterator, Iterable
 from datetime import datetime, timezone
 
 from epochix.ingester import BaseIngester
+from epochix.ingester.live_lines import LiveLines
 from epochix.models import RawLogLine
+
+_CHUNK = 65536
 
 
 class SSHIngester(BaseIngester):
@@ -107,10 +110,22 @@ class SSHIngester(BaseIngester):
         )
         assert self._proc.stdout is not None  # PIPE was requested
         seq = 0
+        # Read what arrives, not line by line: readline() waits for a newline
+        # that a run-long step bar does not print for hours, and raises once
+        # 64 KiB have come without one. live_lines decides what is a line.
+        held = LiveLines()
         try:
             while True:
-                raw = await self._proc.stdout.readline()
-                if not raw:
+                data = await self._proc.stdout.read(_CHUNK)
+                for text in held.feed(data) if data else held.end():
+                    yield RawLogLine(
+                        seq=seq,
+                        timestamp=datetime.now(tz=timezone.utc),
+                        source="ssh",
+                        text=text,
+                    )
+                    seq += 1
+                if not data:
                     # ssh closed stdout — either the connection ended or the
                     # remote tail exited. Surface stderr in the (unlikely)
                     # failure case so the user knows why.
@@ -119,13 +134,6 @@ class SSHIngester(BaseIngester):
                         err = (await self._proc.stderr.read()).decode("utf-8", errors="replace")
                         raise ConnectionError(f"ssh to {self._target} exited {code}: {err.strip()}")
                     return
-                yield RawLogLine(
-                    seq=seq,
-                    timestamp=datetime.now(tz=timezone.utc),
-                    source="ssh",
-                    text=raw.decode("utf-8", errors="replace").rstrip("\n"),
-                )
-                seq += 1
         finally:
             await self._cleanup()
 

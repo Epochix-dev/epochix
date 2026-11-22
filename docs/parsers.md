@@ -146,10 +146,9 @@ is the x-axis: there is no epoch to count.
 
 The bar is redrawn in place — in a file, a 1,500-step run is a handful of
 lines — so this bar's redraws are read one by one where every other line is
-read in its final state. A live run is read as the redraws arrive, in the VS
-Code terminal and from a tailed file. Piped to `epochix -` on Linux or macOS,
-or tailed over SSH, it is read when each line ends, which for this bar is at a
-checkpoint or at the end of the run.
+read in its final state. A live run is read as the redraws arrive: in the VS
+Code terminal, from a tailed file, piped to `epochix -`, and tailed over SSH.
+Every other bar still waits for its line to end, on every one of them.
 
 What the bar carries is the loss of ONE batch. For a diffusion model that
 number depends mostly on which noise level the batch drew, so it jumps from
