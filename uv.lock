@@ -852,7 +852,7 @@ wheels = [
 
 [[package]]
 name = "epochix"
-version = "0.7.40"
+version = "0.7.41"
 source = { editable = "." }
 dependencies = [
     { name = "aiofiles" },
