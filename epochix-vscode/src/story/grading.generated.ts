@@ -50,6 +50,7 @@ export const AWAKENING_BELOW = 0.1;
 export const PHASE_STEPS: readonly [Phase, number, number][] = [["learning", 0.4, 0.4], ["understanding", 0.7, 0.75], ["mastering", 0.95, 0.95]];
 
 export const PAST_PEAK_REL_DROP = 0.01;
+export const PAST_PEAK_READINGS = 3;
 export const STALL_MIN_EPOCHS = 3;
 export const STALL_REL_IMPROVEMENT = 0.03;
 export const OVERFIT_WINDOW = 3;

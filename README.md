@@ -134,9 +134,10 @@ python train_xgb.py 2>&1 | epochix --live
 [9]	validation_0-logloss:0.12455	validation_1-logloss:0.28033
 ```
 ↓
-> **Past its best: 0.2611 at round 6, now 0.2803. The later rounds are not
-> improving on it. Next step: keep the checkpoint from round 6 if one was
-> saved, and use early stopping on this metric so the next run ends there.**
+> **Past its best: 0.2611 at round 6, now 0.2803. None of the last three
+> readings has come within 1% of it. Next step: keep the checkpoint from round
+> 6 if one was saved, and use early stopping on this metric so the next run
+> ends there.**
 <!-- /readme-example:xgboost -->
 
 scikit-learn works too. A loop printing whatever you already print is enough —

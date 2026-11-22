@@ -1,0 +1,2 @@
+{counter} {epoch}: {value}، بیش از ۱٪ دور از بهترین مقدار {best} در {counter} {best_epoch}.
+{value} در {counter} {epoch}، بیش از ۱٪ دور از بهترین مقدار {best} ({counter} {best_epoch}).

@@ -79,6 +79,36 @@ def narrate_past_peak(
     return f"{story} {message('next_pastpeak', locale, counter, best_epoch=best_at)}"
 
 
+def narrate_below_best(
+    epoch: float | None,
+    primary_value: float,
+    best_value: float,
+    best_epoch: float | None,
+    run_id: str,
+    locale: str = "en",
+    counter: Counter | None = None,
+) -> str:
+    """Say a reading is off the run's best, and nothing more.
+
+    For a reading more than 1% below the best when the ones before it were
+    not, or not for long enough (_PAST_PEAK_READINGS). The past-peak story
+    says the run has slipped and should have stopped; on a plateau that was
+    one reading's wobble. The phase stories say the reading is within 1% of
+    the best, which it is not. This says what it is.
+    """
+    templates = _load_special("_belowbest", locale, "{value}, below the best of {best}.")
+    seed = int(hashlib.md5(run_id.encode(), usedforsecurity=False).hexdigest()[:8], 16)
+    template = counter_words(random.Random(seed).choice(templates), counter, locale)
+    best_at = str(int(best_epoch)) if best_epoch is not None else "?"
+    story = (
+        template.replace("{epoch}", str(int(epoch)) if epoch is not None else "?")
+        .replace("{value}", f"{primary_value:.4f}")
+        .replace("{best}", f"{best_value:.4f}")
+        .replace("{best_epoch}", best_at)
+    )
+    return f"{story[:1].upper()}{story[1:]}"
+
+
 def narrate_single_reading(
     primary_value: float,
     run_id: str,

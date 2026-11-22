@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [Unreleased]
+
+### Fixed
+
+- **A plateau's wobble is no longer told as a slip.** "Past its best" fired on
+  any reading more than 1% below the best, and the story says more than that:
+  "performance has slipped … the later rounds are moving away from the best
+  result", then "keep the checkpoint … use early stopping". A real XGBoost run
+  converged on 0.149 and went 0.1491, 0.1508, 0.1500. At the middle reading,
+  one round after its best, it was told all of that beside an A+, and the
+  story switched off again at the next round. A run is now past its best once
+  three readings in a row have been more than 1% worse, and the sentences
+  say so instead of claiming a direction. One reading that far off is said as
+  just that ("more than 1% off the best of …"), in all three languages and
+  both engines. The phase stories, which say a reading is within 1% of the
+  best, are no longer told for one that is not. No letter, phase or metric of
+  any log in the corpus changes.
+
 ## [0.7.42] — 2026-11-23
 
 ### Added

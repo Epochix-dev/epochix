@@ -41,6 +41,7 @@ import {
 import {
   DIVERGE_GROWTH,
   OVERFIT_WINDOW,
+  PAST_PEAK_READINGS,
   PAST_PEAK_REL_DROP,
   PLATEAU_DELTA,
   PLATEAU_WINDOW,
@@ -52,6 +53,7 @@ import {
 import {
   narrate,
   narrateDiverged,
+  narrateBelowBest,
   narratePastPeak,
   narrateSingleReading,
   narrateStalled,
@@ -350,6 +352,8 @@ export class StandaloneEngine {
   private _primaryReadings = 0;
   private _best: number | null = null;
   private _bestEpoch: number | null = null;
+  /** Readings in a row more than PAST_PEAK_REL_DROP below the best. */
+  private _belowBestRun = 0;
   // Set once, at the first `key: nan`. A MetricEvent-style value cannot carry
   // NaN (the parsers will not read it), so the raw line is checked instead.
   private _diverged = false;
@@ -834,6 +838,7 @@ export class StandaloneEngine {
       this._baseline = null;
       this._best = null;
       this._bestEpoch = null;
+      this._belowBestRun = 0;
       this._lastPrimary = value;
       this._prevPrimary = null;
       this._primaryReadings = 0;
@@ -908,20 +913,24 @@ export class StandaloneEngine {
     );
     this._prevPrimary = value;
 
-    let pastPeak = false;
+    let belowBest = false;
     if (Math.abs(this._best) > 1e-9) {
       const drop = (lowerBetter ? value - this._best : this._best - value) / Math.abs(this._best);
       // Not for an unsteady metric: its best is its luckiest batch. Nor for a
       // running average: its best is its luckiest window.
-      pastPeak = drop > PAST_PEAK_REL_DROP && !incomparable;
+      belowBest = drop > PAST_PEAK_REL_DROP && !incomparable;
     }
+    // Told it is past its best once that many readings in a row have been, as
+    // in the Python engine; a new best starts the count again.
+    this._belowBestRun = belowBest ? this._belowBestRun + 1 : 0;
+    const pastPeak = this._belowBestRun >= PAST_PEAK_READINGS;
     // Stalled means FLAT. A run that got worse clears "less than 3% improvement"
     // exactly as a flat one does, and was told it was "not learning yet".
     const stalled =
       this._primaryReadings >= STALL_MIN_EPOCHS &&
       rel !== null &&
       rel < STALL_REL_IMPROVEMENT &&
-      !pastPeak;
+      !belowBest;
 
     let narrative: string;
     // A result, not a stage of training: one reading and no epoch is a script
@@ -946,6 +955,11 @@ export class StandaloneEngine {
       });
     } else if (pastPeak) {
       narrative = narratePastPeak({
+        epoch, value, best: this._best, bestEpoch: this._bestEpoch, runId: this._runId,
+        locale: this._locale, counter,
+      });
+    } else if (belowBest) {
+      narrative = narrateBelowBest({
         epoch, value, best: this._best, bestEpoch: this._bestEpoch, runId: this._runId,
         locale: this._locale, counter,
       });

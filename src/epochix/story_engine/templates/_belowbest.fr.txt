@@ -1,0 +1,2 @@
+{Counter} {epoch} : {value}, à plus de 1 % du meilleur score de {best} {at_counter} {best_epoch}.
+{value} {at_counter} {epoch}, à plus de 1 % du meilleur score de {best} ({counter} {best_epoch}).
