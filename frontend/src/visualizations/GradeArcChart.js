@@ -21,6 +21,7 @@ import {
 } from '../viz-util.js';
 import { escapeHtml as _esc } from '../escape.js';
 import { t } from '../i18n/apply.js';
+import { counterWord, frameCounter, latestCounter } from '../counter.js';
 
 const PHASE_BG = {
   awakening:     'rgba(167,139,250,0.10)',
@@ -170,7 +171,7 @@ export class GradeArcChart {
     // when it's actually MAE≈7.
     const pm = acc != null ? formatPrimaryMetric(this._primaryKey, acc) : null;
     const rows = [
-      `<div class="arc-tip-epoch">Epoch ${_esc(String(epoch))}</div>`,
+      `<div class="arc-tip-epoch">${counterWord(frameCounter(f), 'title')} ${_esc(String(epoch))}</div>`,
       pm ? `<div><span class="arc-tip-k">${_esc(pm.label.toLowerCase())}</span><span class="arc-tip-v">${_esc(pm.text)}</span></div>` : '',
       valLoss != null ? `<div><span class="arc-tip-k">${lossKey}</span><span class="arc-tip-v">${valLoss.toFixed(3)}</span></div>` : '',
       grade         ? `<div><span class="arc-tip-k">grade</span><span class="arc-tip-v">${_esc(grade)}</span></div>` : '',
@@ -307,7 +308,9 @@ export class GradeArcChart {
       const x = xScale(e);
       ctx.fillText(Math.round(e), x, MT + ch + 14);
     }
-    ctx.fillText('epoch', ML + cw / 2, MT + ch + 24);
+    // Named for what the run counts by: a nanoGPT run's axis ran to step
+    // 2000 under the word "epoch".
+    ctx.fillText(counterWord(latestCounter(frames)), ML + cw / 2, MT + ch + 24);
 
     // ── Loss line (val_loss preferred, fall back to train_loss) ──────────
     // Normalise: loss is 0..∞, invert to 0..1 so it tracks quality visually.

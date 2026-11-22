@@ -13,6 +13,7 @@
  * already shipped once for the export button.
  */
 import { escapeHtml } from './escape.js';
+import { counterWord, frameCounter } from './counter.js';
 
 const ISSUE_URL = 'https://github.com/Epochix-dev/epochix/issues/new';
 
@@ -58,7 +59,7 @@ export function reportFrame(frame, run, version = '(unknown)') {
     '```',
     `epochix      ${version}`,
     `surface      dashboard (single frame)`,
-    `epoch        ${frame?.epoch ?? '(none)'}`,
+    `${counterWord(frameCounter(frame)).padEnd(12)} ${frame?.epoch ?? '(none)'}`,
     `metric       ${frame?.primary_metric ?? run?.primary_metric ?? '(unknown)'}`,
     `value        ${frame?.primary_metric_value ?? '(none)'}`,
     `grade        ${frame?.grade ?? '(none)'}`,
@@ -71,7 +72,7 @@ export function reportFrame(frame, run, version = '(unknown)') {
   ].join('\n');
 
   return openIssue({
-    title: `Wrong reading at epoch ${frame?.epoch ?? '?'}: `,
+    title: `Wrong reading at ${counterWord(frameCounter(frame))} ${frame?.epoch ?? '?'}: `,
     labels: REPORT_LABELS,
     body,
   });
@@ -97,7 +98,7 @@ export function frameReportButton(frame) {
   return (
     `<button class="frame-report" type="button" ` +
     `title="Report this reading as wrong" ` +
-    `aria-label="Report the reading at epoch ${epoch} as wrong">` +
+    `aria-label="Report the reading at ${counterWord(frameCounter(frame))} ${epoch} as wrong">` +
     `this looks wrong</button>`
   );
 }

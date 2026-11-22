@@ -27,6 +27,9 @@
   },
   "labels": {
     "epoch": "Epoch",
+    "step": "Step",
+    "iteration": "Iteration",
+    "round": "Round",
     "connected": "Live",
     "disconnected": "Offline",
     "waiting": "Waiting for training data…",

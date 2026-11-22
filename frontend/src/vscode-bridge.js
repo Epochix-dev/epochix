@@ -18,6 +18,8 @@ export function mapFrame(f) {
   return {
     seq: f.seq,
     epoch: f.epoch,
+    // What that number counts: an epoch, a step, an iteration, a round.
+    counter: f.counter ?? null,
     progress: f.progress,
     phase: f.phase,
     grade: f.grade,

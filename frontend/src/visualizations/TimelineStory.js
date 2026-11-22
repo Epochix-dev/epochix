@@ -1,4 +1,5 @@
 import { escapeHtml as _esc } from '../escape.js';
+import { counterWord, latestCounter } from '../counter.js';
 /**
  * TimelineStory.js — milestone and warning cards in a scrolling timeline.
  *
@@ -64,6 +65,8 @@ export class TimelineStory {
 
   /** @param {import('../store.js').AppState} s */
   _onState(s) {
+    // What the number on each card counts: "ep 250" was a step.
+    this._counter = latestCounter(s.frames);
     // Render milestones
     for (const m of s.milestones) {
       const key = `m:${m.kind}:${m.epoch}`;
@@ -108,7 +111,7 @@ export class TimelineStory {
         <div class="tc-title">${_esc(title)}</div>
         ${message ? `<div class="tc-msg">${_esc(message)}</div>` : ''}
       </div>
-      ${epoch != null ? `<span class="tc-epoch">ep ${epoch}</span>` : ''}
+      ${epoch != null ? `<span class="tc-epoch">${counterWord(this._counter, 'short')} ${epoch}</span>` : ''}
     `;
     this._el.appendChild(card);
   }

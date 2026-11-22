@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING
 
 from epochix import cross_validation
 from epochix.i18n import t
-from epochix.story_engine.messages import phase_name
+from epochix.story_engine.messages import frames_counter, phase_name
 from epochix.story_engine.warnings import standing_warnings
 
 if TYPE_CHECKING:
@@ -132,7 +132,9 @@ def build_markdown(run_id: str, store: RunStore) -> str:
         f"| **{t('md.primary_metric', locale)}** | {_md_escape(str(run.primary_metric))} |"
     )
     if run.total_epochs_est:
-        lines.append(f"| **{t('md.epochs', locale)}** | {run.total_epochs_est} |")
+        # The run's length, in what it counts by: a LoRA's 120 steps are not epochs.
+        length = t("md.epochs", locale, frames_counter(frames))
+        lines.append(f"| **{length}** | {run.total_epochs_est} |")
     if run.framework_detected:
         lines.append(f"| **{t('md.framework', locale)}** | {run.framework_detected} |")
     if run.finished_at:
@@ -184,7 +186,7 @@ def build_markdown(run_id: str, store: RunStore) -> str:
             for m in frame.milestones:
                 emoji = _MILESTONE_EMOJI.get(m.kind, "📌")
                 epoch_str = (
-                    f" ({t('cover.epoch_n', locale)} {frame.epoch:g})"
+                    f" ({t('cover.epoch_n', locale, frame.counter)} {frame.epoch:g})"
                     if frame.epoch is not None
                     else ""
                 )

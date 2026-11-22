@@ -99,6 +99,8 @@ _EN: dict[str, str] = {
     "md.final_value": "Final Value",
     "md.milestones": "Milestones",
     "md.warnings": "Warnings",
+    # A comparison's count of readings, where its runs do not all count epochs.
+    "cmp.readings": "Readings",
 }
 
 _FA: dict[str, str] = {
@@ -140,6 +142,7 @@ _FA: dict[str, str] = {
     "md.task": "وظیفه",
     "cmp.title": "مقایسهٔ اجراها",
     "cmp.run": "اجرا",
+    "cmp.readings": "خوانش‌ها",
     "cv.title": "اعتبارسنجی متقابل",
     "cv.search_title": "جست‌وجوی پارامتر",
     "cv.setting": "تنظیم",
@@ -250,20 +253,73 @@ _FR: dict[str, str] = {
     "md.final_value": "Valeur finale",
     "md.milestones": "Jalons",
     "md.warnings": "Avertissements",
+    "cmp.readings": "Mesures",
 }
 
 _LOCALES: dict[str, dict[str, str]] = {"en": _EN, "fa": _FA, "fr": _FR}
 
+
+def _counted(one: str, many: str, title: str, every: str, continued: str) -> dict[str, str]:
+    """The labels that name the counter, for one kind of counter in one language."""
+    return {
+        "col.epoch": one,
+        "cover.epoch_n": one,
+        "cover.epochs": many,
+        "phase.covers": many,
+        "md.epochs": title,
+        # The table has a row for every reading. That is a row an epoch only
+        # for a run read once an epoch: a run told every 250 steps has nine.
+        "pdf.epochs": every,
+        "pdf.epochs_continued": continued,
+    }
+
+
+# The same labels for a run that does not count epochs. A report on a nanoGPT
+# run had a column headed "epoch" running to 2000, and a CatBoost run's sixty
+# rounds were listed under "Every epoch". Whole words per language and kind,
+# as the story's own are (story_engine.messages.COUNTER_FORMS).
+_COUNTED: dict[str, dict[str, dict[str, str]]] = {
+    "en": {
+        "step": _counted("step", "steps", "Steps", "Every reading", "Every reading (continued)"),
+        "iteration": _counted(
+            "iteration", "iterations", "Iterations", "Every reading", "Every reading (continued)"
+        ),
+        "round": _counted(
+            "round", "rounds", "Rounds", "Every reading", "Every reading (continued)"
+        ),
+    },
+    "fa": {
+        "step": _counted("گام", "گام‌ها", "گام‌ها", "همه خوانش‌ها", "همه خوانش‌ها (ادامه)"),
+        "iteration": _counted("تکرار", "تکرارها", "تکرارها", "همه خوانش‌ها", "همه خوانش‌ها (ادامه)"),
+        "round": _counted("دور", "دورها", "دورها", "همه خوانش‌ها", "همه خوانش‌ها (ادامه)"),
+    },
+    "fr": {
+        "step": _counted("étape", "étapes", "Étapes", "Chaque mesure", "Chaque mesure (suite)"),
+        "iteration": _counted(
+            "itération", "itérations", "Itérations", "Chaque mesure", "Chaque mesure (suite)"
+        ),
+        "round": _counted("tour", "tours", "Tours", "Chaque mesure", "Chaque mesure (suite)"),
+    },
+}
+
 SUPPORTED_LOCALES = tuple(_LOCALES)
 
 
-def t(key: str, locale: str = "en") -> str:
+def t(key: str, locale: str = "en", counter: str | None = None) -> str:
     """Translate *key*, falling back to English and then to the key itself.
 
     An unknown locale is not an error: a run created by a newer client, or a
     user passing ``de``, gets English rather than a crash in the middle of an
     export.
+
+    *counter* is what the run counts by (StoryFrame.counter), for a label
+    that names it: "step" where an epoch run's report says "epoch". None, or
+    "epoch", is the label as it has always read.
     """
+    if counter not in (None, "epoch"):
+        counted = _COUNTED.get(locale, _COUNTED["en"]).get(counter or "", {})
+        if key in counted:
+            return counted[key]
     table = _LOCALES.get(locale, _EN)
     return table.get(key) or _EN.get(key) or key
 

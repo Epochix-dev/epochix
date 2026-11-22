@@ -27,6 +27,9 @@
   },
   "labels": {
     "epoch": "دوره",
+    "step": "گام",
+    "iteration": "تکرار",
+    "round": "دور",
     "connected": "زنده",
     "disconnected": "آفلاین",
     "waiting": "در انتظار داده آموزشی…",

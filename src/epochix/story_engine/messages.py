@@ -11,9 +11,14 @@ narrative templates are, so both engines fill them identically.
 
 from __future__ import annotations
 
-from typing import get_args
+from typing import TYPE_CHECKING, get_args
 
 from epochix.models import Counter
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
+
+    from epochix.models import StoryFrame
 
 COUNTERS: tuple[Counter, ...] = get_args(Counter)
 
@@ -162,6 +167,18 @@ COUNTER_FORMS: dict[str, dict[Counter, dict[str, str]]] = {
         },
     },
 }
+
+
+def frames_counter(frames: Sequence[StoryFrame]) -> Counter | None:
+    """What a run counts by, from its frames: the latest one that says.
+
+    For a report's labels and a comparison, which speak of the run and not of
+    one reading. None when no frame has anything in its epoch slot.
+    """
+    for frame in reversed(frames):
+        if frame.counter is not None:
+            return frame.counter
+    return None
 
 
 def counter_words(text: str, counter: Counter | None, locale: str = "en") -> str:

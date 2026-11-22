@@ -10,6 +10,7 @@ import {
 } from '../viz-util.js';
 import { escapeHtml as _esc } from '../escape.js';
 import { t } from '../i18n/apply.js';
+import { counterWord, sharedCounter } from '../counter.js';
 
 const _PREFERRED = ['val_accuracy', 'accuracy', 'val_loss', 'train_loss', 'mAP50'];
 
@@ -271,7 +272,10 @@ export class CompareView {
       const e = minX + (i / 5) * (maxX - minX);
       ctx.fillText(Math.round(e), xs(e), MT + ch + 14);
     }
-    ctx.fillText('epoch', ML + cw / 2, MT + ch + 26);
+    // One word only where the runs share a counter: an epoch of one run
+    // against a step of another has no common name.
+    const shared = sharedCounter(this._runs.map((cr) => cr.frames));
+    if (shared) ctx.fillText(counterWord(shared), ML + cw / 2, MT + ch + 26);
 
     // lines
     for (const s of series) {

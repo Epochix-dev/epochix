@@ -27,6 +27,9 @@
   },
   "labels": {
     "epoch": "Époque",
+    "step": "Étape",
+    "iteration": "Itération",
+    "round": "Tour",
     "connected": "En direct",
     "disconnected": "Hors ligne",
     "waiting": "En attente des données d'entraînement…",

@@ -12,6 +12,7 @@ import { escapeHtml as _esc } from '../escape.js';
 import { frameReportButton, reportFrame } from '../report.js';
 import { t } from '../i18n/apply.js';
 import { emptyState, EMPTY_STATE_COMMANDS } from './emptyState.js';
+import { counterWord, frameCounter, latestCounter } from '../counter.js';
 
 const PHASE_ICON = {
   awakening:     '🌱',
@@ -118,17 +119,20 @@ export class JourneyPanel {
     if (statRow && frame) {
       if (!this._statEls) {
         statRow.innerHTML = `
-          <span class="stat"><span class="stat-label">Epoch</span><span class="stat-val" data-k="epoch">—</span></span>
+          <span class="stat"><span class="stat-label" data-l="counter">Epoch</span><span class="stat-val" data-k="epoch">—</span></span>
           <span class="stat"><span class="stat-label" data-l="metric">Accuracy</span><span class="stat-val" data-k="acc">—</span></span>
           <span class="stat"><span class="stat-label">Progress</span><span class="stat-val" data-k="prog">—</span></span>`;
         this._statEls = {
           epoch:  statRow.querySelector('[data-k="epoch"]'),
+          epochLbl: statRow.querySelector('[data-l="counter"]'),
           acc:    statRow.querySelector('[data-k="acc"]'),
           accLbl: statRow.querySelector('[data-l="metric"]'),
           prog:   statRow.querySelector('[data-k="prog"]'),
         };
       }
       if (frame.epoch != null) _countUp(this._statEls.epoch, frame.epoch, { decimals: 0 });
+      // The number is a step or a boosting round for a run that has no epochs.
+      this._statEls.epochLbl.textContent = counterWord(frameCounter(frame), 'title');
       // The primary metric is NOT always accuracy — for regression/gaze it's
       // MAE/RMSE/loss (raw units), which must never be shown as a percentage
       // (MAE≈7 rendered as "700%" was the classic bug). Label + format follow
@@ -282,7 +286,8 @@ function _renderSparkline(svg, frames) {
   const fmt = (v) => (Math.abs(v) < 10 ? v.toFixed(3) : v.toFixed(1));
   svg.setAttribute(
     'aria-label',
-    `${dominant || 'metric'} from ${fmt(min)} to ${fmt(max)} over ${pts.length} epochs`,
+    // One point per reading: an epoch each for a run read once an epoch.
+    `${dominant || 'metric'} from ${fmt(min)} to ${fmt(max)} over ${pts.length} ${counterWord(latestCounter(frames), 'readings')}`,
   );
   const caption = svg.parentElement?.querySelector('.sc-spark-range');
   if (caption) caption.textContent = `${fmt(min)} – ${fmt(max)}`;

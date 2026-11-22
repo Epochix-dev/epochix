@@ -1,5 +1,6 @@
 import { escapeHtml as _esc } from '../escape.js';
 import { readGap } from '../generalisation.js';
+import { counterWord, latestCounter } from '../counter.js';
 /**
  * TrainingDiagnostics.js — interpreted training-health dashboard.
  *
@@ -78,6 +79,8 @@ export class TrainingDiagnostics {
 function _diagnose(s) {
   const metrics = s.metrics ?? [];
   if (metrics.length === 0) return null;
+  // What the series' x values count: a step or a boosting round is not an epoch.
+  const counter = latestCounter(s.frames);
 
   const trainLoss = _series(metrics, 'train_loss');
   const valLoss   = _series(metrics, 'val_loss');
@@ -89,12 +92,12 @@ function _diagnose(s) {
     return null;
   }
 
-  const overfit        = _diagnoseOverfit(metrics);
+  const overfit        = _diagnoseOverfit(metrics, counter);
   const convergence    = _diagnoseConvergence(valLoss.length >= 2 ? valLoss : trainLoss,
                                               valLoss.length >= 2 ? 'val loss' : 'train loss',
-                                              trainLoss);
-  const best           = _diagnoseBest(valLoss, valAcc, trainLoss, acc);
-  const stability      = _diagnoseStability(trainLoss.length >= 3 ? trainLoss : valLoss);
+                                              trainLoss, counter);
+  const best           = _diagnoseBest(valLoss, valAcc, trainLoss, acc, counter);
+  const stability      = _diagnoseStability(trainLoss.length >= 3 ? trainLoss : valLoss, counter);
   const generalisation = _diagnoseGeneralisation(valAcc, acc);
 
   const health = _healthScore({ overfit, convergence, stability, generalisation });
@@ -110,7 +113,7 @@ function _diagnose(s) {
  * worse while training improves; the card says that only when it is so
  * (generalisation.js), and is read the same way as the plain-English panel.
  */
-function _diagnoseOverfit(metrics) {
+function _diagnoseOverfit(metrics, counter) {
   const g = readGap(metrics);
   if (!g) {
     return {
@@ -119,7 +122,7 @@ function _diagnoseOverfit(metrics) {
       tech: 'No paired train/val series found.',
     };
   }
-  const since = g.bestEpoch == null ? '' : ` since epoch ${fmtEpoch(g.bestEpoch)}`;
+  const since = g.bestEpoch == null ? '' : ` since ${counterWord(counter)} ${fmtEpoch(g.bestEpoch)}`;
   let plain;
   if (g.size === 'small') {
     plain = 'Does about as well on new data as on its training data.';
@@ -153,10 +156,10 @@ function _diagnoseOverfit(metrics) {
   };
 }
 
-function _diagnoseConvergence(series, name, trainLoss = []) {
+function _diagnoseConvergence(series, name, trainLoss = [], counter = 'epoch') {
   if (series.length < 2) {
     return { label: 'Convergence', status: 'neutral', big: '—',
-             plain: 'Not enough epochs yet.', tech: `${name}: <2 points` };
+             plain: `Not enough ${counterWord(counter, 'readings')} yet.`, tech: `${name}: <2 points` };
   }
   const tail = series.slice(-Math.min(5, series.length));
   const slope = _slope(tail);                 // per-epoch change (absolute)
@@ -184,40 +187,43 @@ function _diagnoseConvergence(series, name, trainLoss = []) {
   return {
     label: 'Convergence', status, big: head,
     plain: verdict,
-    tech: `slope ${slope.toFixed(4)}/epoch (${(relSlope * 100).toFixed(1)}%) · Δ(last ${tail.length}) ${span.toFixed(3)}`,
+    tech: `slope ${slope.toFixed(4)}/${counterWord(counter)} (${(relSlope * 100).toFixed(1)}%) · Δ(last ${tail.length}) ${span.toFixed(3)}`,
   };
 }
 
-function _diagnoseBest(valLoss, valAcc, trainLoss, acc) {
+function _diagnoseBest(valLoss, valAcc, trainLoss, acc, counter = 'epoch') {
+  const word = counterWord(counter);
+  const short = counterWord(counter, 'short');
   if (valAcc.length >= 1) {
     const b = _argbest(valAcc, 'max');
     return { label: 'Best checkpoint', status: 'neutral',
-             big: `ep ${fmtEpoch(b.epoch)}`,
-             plain: `Best validation accuracy reached at epoch ${fmtEpoch(b.epoch)}.`,
-             tech: `val_acc max = ${(b.value * 100).toFixed(1)}% @ epoch ${fmtEpoch(b.epoch)}` };
+             big: `${short} ${fmtEpoch(b.epoch)}`,
+             plain: `Best validation accuracy reached at ${word} ${fmtEpoch(b.epoch)}.`,
+             tech: `val_acc max = ${(b.value * 100).toFixed(1)}% @ ${word} ${fmtEpoch(b.epoch)}` };
   }
   if (valLoss.length >= 1) {
     const b = _argbest(valLoss, 'min');
     return { label: 'Best checkpoint', status: 'neutral',
-             big: `ep ${fmtEpoch(b.epoch)}`,
-             plain: `Lowest validation loss reached at epoch ${fmtEpoch(b.epoch)}.`,
-             tech: `val_loss min = ${b.value.toFixed(3)} @ epoch ${fmtEpoch(b.epoch)}` };
+             big: `${short} ${fmtEpoch(b.epoch)}`,
+             plain: `Lowest validation loss reached at ${word} ${fmtEpoch(b.epoch)}.`,
+             tech: `val_loss min = ${b.value.toFixed(3)} @ ${word} ${fmtEpoch(b.epoch)}` };
   }
   const src = acc.length ? { s: acc, m: 'max', k: 'accuracy' } : { s: trainLoss, m: 'min', k: 'train_loss' };
   if (src.s.length >= 1) {
     const b = _argbest(src.s, src.m);
     const val = src.m === 'max' ? `${(b.value * 100).toFixed(1)}%` : b.value.toFixed(3);
-    return { label: 'Best checkpoint', status: 'neutral', big: `ep ${fmtEpoch(b.epoch)}`,
-             plain: `Best ${src.k} reached at epoch ${fmtEpoch(b.epoch)}.`,
-             tech: `${src.k} ${src.m} = ${val} @ epoch ${fmtEpoch(b.epoch)}` };
+    return { label: 'Best checkpoint', status: 'neutral', big: `${short} ${fmtEpoch(b.epoch)}`,
+             plain: `Best ${src.k} reached at ${word} ${fmtEpoch(b.epoch)}.`,
+             tech: `${src.k} ${src.m} = ${val} @ ${word} ${fmtEpoch(b.epoch)}` };
   }
   return { label: 'Best checkpoint', status: 'neutral', big: '—', plain: 'No series yet.', tech: '' };
 }
 
-function _diagnoseStability(series) {
+function _diagnoseStability(series, counter = 'epoch') {
+  const readings = counterWord(counter, 'readings');
   if (series.length < 3) {
     return { label: 'Stability', status: 'neutral', big: '—',
-             plain: 'Needs a few more epochs.', tech: 'σ of Δ: n/a' };
+             plain: `Needs a few more ${readings}.`, tech: 'σ of Δ: n/a' };
   }
   // Measure noise AROUND the trend, not the trend itself. The first differences
   // of a healthy run are dominated by the loss legitimately falling, so σ(Δ)
@@ -229,7 +235,7 @@ function _diagnoseStability(series) {
   for (let i = 1; i < series.length; i++) d1.push(series[i].value - series[i - 1].value);
   if (d1.length < 2) {
     return { label: 'Stability', status: 'neutral', big: '—',
-             plain: 'Needs a few more epochs.', tech: 'detrended σ: n/a' };
+             plain: `Needs a few more ${readings}.`, tech: 'detrended σ: n/a' };
   }
   const d2 = [];
   for (let i = 1; i < d1.length; i++) d2.push(d1[i] - d1[i - 1]);
@@ -237,8 +243,8 @@ function _diagnoseStability(series) {
   const scale = Math.max(_mean(series.map((p) => Math.abs(p.value))), 1e-6);
   const rel = sigma / scale;
   let status = 'good', verdict = 'Smooth, steady training — no instability.';
-  if (rel > 0.5)      { status = 'bad';  verdict = 'Noisy / unstable — loss bounces between epochs.'; }
-  else if (rel > 0.2) { status = 'warn'; verdict = 'Some epoch-to-epoch jitter.'; }
+  if (rel > 0.5)      { status = 'bad';  verdict = `Noisy / unstable — loss bounces between ${readings}.`; }
+  else if (rel > 0.2) { status = 'warn'; verdict = counter === 'epoch' ? 'Some epoch-to-epoch jitter.' : 'Some reading-to-reading jitter.'; }
   return { label: 'Stability', status, big: sigma.toFixed(3),
            plain: verdict,
            tech: `detrended σ = ${sigma.toFixed(4)} (${(rel * 100).toFixed(0)}% of level)` };

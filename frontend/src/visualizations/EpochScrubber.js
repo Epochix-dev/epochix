@@ -7,6 +7,7 @@
 
 import { scrubTo } from '../store.js';
 import { t } from '../i18n/apply.js';
+import { counterLabel, frameCounter, latestCounter } from '../counter.js';
 
 export class EpochScrubber {
   /** @param {HTMLElement} container */
@@ -69,11 +70,11 @@ export class EpochScrubber {
   _updateLabel(s) {
     const frame = s.currentFrame;
     if (frame?.epoch != null) {
-      this._label.textContent = `${t('labels.epoch', 'Epoch')} ${frame.epoch}`;
+      this._label.textContent = `${counterLabel(frameCounter(frame))} ${frame.epoch}`;
     } else if (this._totalFrames > 0) {
       this._label.textContent = `${t('labels.frame', 'Frame')} ${this._totalFrames}`;
     } else {
-      this._label.textContent = `${t('labels.epoch', 'Epoch')} —`;
+      this._label.textContent = `${counterLabel(latestCounter(s.frames))} —`;
     }
   }
 }

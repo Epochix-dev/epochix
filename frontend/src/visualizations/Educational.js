@@ -8,6 +8,7 @@
 import { readGap } from '../generalisation.js';
 import { escapeHtml as _esc } from '../escape.js';
 import { isLowerBetter, latestPrimaryKey, metricLabel } from '../viz-util.js';
+import { counterWord, latestCounter } from '../counter.js';
 
 const PHASE_EMOJI = {
   awakening: '🌱', learning: '📈', understanding: '💡', mastering: '🎯', polishing: '✨',
@@ -49,6 +50,8 @@ export class Educational {
     const first = frames[0].primary_metric_value ?? last.primary_metric_value;
     const lastV = last.primary_metric_value;
     const epochs = _epochsTold(frames);
+    // "Over 60 epochs" was said of sixty boosting rounds.
+    const counters = counterWord(latestCounter(frames), 'many');
     const grade = last.grade ?? '—';
     const phase = last.phase ?? 'learning';
 
@@ -65,13 +68,13 @@ export class Educational {
 
     let lead;
     if (isAccuracy) {
-      lead = `Over <b>${epochs} epochs</b> your model went from <b>${_pct(first)}</b> to
+      lead = `Over <b>${epochs} ${counters}</b> your model went from <b>${_pct(first)}</b> to
         <b>${_pct(lastV)}</b> accuracy — earning a grade of <b>${_esc(grade)}</b>.`;
     } else if (lowerBetter && lastV < first) {
-      lead = `Over <b>${epochs} epochs</b> your model reduced its ${_esc(label)} from
+      lead = `Over <b>${epochs} ${counters}</b> your model reduced its ${_esc(label)} from
         <b>${_num(first)}</b> to <b>${_num(lastV)}</b> — earning a grade of <b>${_esc(grade)}</b>.`;
     } else {
-      lead = `Over <b>${epochs} epochs</b> its ${_esc(label)} went from <b>${_num(first)}</b> to
+      lead = `Over <b>${epochs} ${counters}</b> its ${_esc(label)} went from <b>${_num(first)}</b> to
         <b>${_num(lastV)}</b> — earning a grade of <b>${_esc(grade)}</b>.`;
     }
 
@@ -102,7 +105,7 @@ export class Educational {
     // "Right on data it hasn't seen" is true only of validation accuracy:
     // training accuracy was measured on the data it learned from.
     const meter = key === 'val_accuracy' ? _meter(lastV) : '';
-    const analogy = _analogy(s.metrics ?? []);
+    const analogy = _analogy(s.metrics ?? [], latestCounter(frames));
 
     this._el.innerHTML = `
       <div class="edu">
@@ -143,10 +146,10 @@ function _meter(v) {
  * numbers do show is how large it is and whether the score on unseen data is
  * still improving (generalisation.js).
  */
-function _analogy(metrics) {
+function _analogy(metrics, counter) {
   const g = readGap(metrics);
   if (!g) return '';
-  const since = g.bestEpoch == null ? '' : ` since epoch ${Math.round(g.bestEpoch)}`;
+  const since = g.bestEpoch == null ? '' : ` since ${counterWord(counter)} ${Math.round(g.bestEpoch)}`;
 
   if (g.kind === 'accuracy') {
     const points = `<b>${(g.gap * 100).toFixed(1)} points</b>`;
