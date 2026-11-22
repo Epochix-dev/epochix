@@ -32,7 +32,6 @@ import {
   gradeBands,
   gradeByTrajectory,
   gradeNote,
-  gradeRank,
   hasAbsoluteScale,
   metricLowerBetter,
   taskLowerBetter,
@@ -67,6 +66,7 @@ import type {
   CrossValidation, GradeBandsMsg, StoryFrameMsg, MilestoneMsg, WarningMsg, RunSummaryMsg,
 } from "./messages";
 import { parseArchitecture, type ArchLayer } from "../story/architecture";
+import { MilestoneTracker } from "../story/milestones";
 import {
   ON_SCALE,
   PREFERRED_KEYS,
@@ -362,6 +362,11 @@ export class StandaloneEngine {
   private _allMetrics: RawMetric[] = [];
   private _frames: StoryFrameMsg[] = [];
   private _milestones: MilestoneMsg[] = [];
+  // Python's MilestoneTracker, ported; and the story metric's reading
+  // before this one (null at the start and after the metric changes).
+  private readonly _tracker: MilestoneTracker;
+  private _prevPrimary: number | null = null;
+  private _finalized = false;
   private _warnings: WarningMsg[] = [];
   /** Whether nothing says which way the latest frame's metric runs — the
    *  plateau warning then states its measurement and no advice. */
@@ -384,6 +389,7 @@ export class StandaloneEngine {
   constructor(taskHint?: TaskType, locale?: string, gradeConfig?: GradeConfig | null) {
     this._locale = resolveLocale(locale);
     this._gradeConfig = gradeConfig ?? null;
+    this._tracker = new MilestoneTracker(this._locale);
     this._parsers = makeParsers();
 
     // A task the user pinned (`epochix.taskHint`) is locked in, so detection
@@ -519,6 +525,13 @@ export class StandaloneEngine {
   finish(): RunSummaryMsg | null {
     if (this._frames.length === 0) return null;
     const last = this._frames[this._frames.length - 1];
+    // The milestones a run ends with, once: the biggest jump, at the reading
+    // it happened, and training_complete. Python's pipeline calls finalize
+    // with the last seq and the epoch of the last frame that had one.
+    if (!this._finalized) {
+      this._finalized = true;
+      this._milestones.push(...this._tracker.finalize(this._ctx.seq, this._lastEpoch()));
+    }
     return {
       id: this._runId,
       name: null,
@@ -527,6 +540,18 @@ export class StandaloneEngine {
       storySummary: last.narrative,
       crossValidation: this.crossValidation(),
     };
+  }
+
+  /**
+   * The epoch the run was last told at: an interrupted epoch that printed
+   * only a training loss is not one (interrupted.log ends "Epoch 4/100: 45%").
+   */
+  private _lastEpoch(): number | null {
+    for (let i = this._frames.length - 1; i >= 0; i--) {
+      const epoch = this._frames[i].epoch;
+      if (epoch !== null) return epoch;
+    }
+    return null;
   }
 
   /**
@@ -592,8 +617,12 @@ export class StandaloneEngine {
     return [...this._frames];
   }
 
+  /**
+   * In the order the run reached them, as the Python store lists them: the
+   * biggest jump is known only at the end but sits at the reading it was.
+   */
   milestones(): MilestoneMsg[] {
-    return [...this._milestones];
+    return [...this._milestones].sort((a, b) => a.seq - b.seq);
   }
 
   warnings(): WarningMsg[] {
@@ -749,7 +778,6 @@ export class StandaloneEngine {
 
   private _emit(frame: StoryFrameMsg): StoryFrameMsg {
     this._frames.push(frame);
-    this._checkMilestones(frame);
     this._checkWarnings();
     return frame;
   }
@@ -785,6 +813,7 @@ export class StandaloneEngine {
       this._best = null;
       this._bestEpoch = null;
       this._lastPrimary = value;
+      this._prevPrimary = null;
       this._primaryReadings = 0;
     }
     this._primaryKeyUsed = key;
@@ -845,6 +874,13 @@ export class StandaloneEngine {
     progress = Math.max(0.0, Math.min(1.0, progress));
     const [grade, gradeBasis, gradeBands]: [Grade, GradeBasis | null, GradeBandsMsg | null] =
       swing !== null ? ["I", null, null] : this._grade(value, lowerBetter, directionUnknown);
+
+    // As StoryEngine._emit: every reading of the story's metric, before the
+    // frame is built; not the frame that closes a run on NaN.
+    this._milestones.push(
+      ...this._tracker.check(epoch, this._ctx.seq, value, this._prevPrimary, key, lowerBetter),
+    );
+    this._prevPrimary = value;
 
     let pastPeak = false;
     if (Math.abs(this._best) > 1e-9) {
@@ -985,57 +1021,6 @@ export class StandaloneEngine {
         lastEpoch: prev.epoch, runId: this._runId, locale: this._locale,
       }),
     };
-  }
-
-  private _checkMilestones(frame: StoryFrameMsg): void {
-    // First improvement
-    if (this._frames.length === 1 && !this._seenMilestones.has("first_metric")) {
-      this._seenMilestones.add("first_metric");
-      this._milestones.push({
-        kind: "first_metric",
-        epoch: frame.epoch,
-        message: message("ms_first_metric", this._locale, {
-          metric: displayMetric(this._primaryMetric, this._locale),
-          value: frame.primaryMetricValue.toFixed(4),
-        }),
-      });
-    }
-
-    // Grade transitions
-    const prevFrame = this._frames.length > 1
-      ? this._frames[this._frames.length - 2]
-      : null;
-    if (prevFrame && prevFrame.grade !== frame.grade) {
-      const key = `grade_${frame.grade}`;
-      if (!this._seenMilestones.has(key)) {
-        this._seenMilestones.add(key);
-        // Every change used to read "Grade improved to …" — including a fall
-        // to F.
-        const rose = gradeRank(frame.grade) > gradeRank(prevFrame.grade);
-        this._milestones.push({
-          kind: "grade_transition",
-          epoch: frame.epoch,
-          message: message(rose ? "ms_grade_up" : "ms_grade_down", this._locale, {
-            grade: frame.grade,
-          }),
-        });
-      }
-    }
-
-    // Phase transitions
-    if (prevFrame && prevFrame.phase !== frame.phase) {
-      const key = `phase_${frame.phase}`;
-      if (!this._seenMilestones.has(key)) {
-        this._seenMilestones.add(key);
-        this._milestones.push({
-          kind: "phase_transition",
-          epoch: frame.epoch,
-          message: message("ms_phase", this._locale, {
-            phase: message(`phase_${frame.phase}`, this._locale),
-          }),
-        });
-      }
-    }
   }
 
   /**

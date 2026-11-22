@@ -20,10 +20,7 @@
     "lr_drop": "Taux d'apprentissage réduit",
     "divergence": "Divergence de l'entraînement",
     "divergence_cleared": "Perte redescendue",
-    "training_complete": "Entraînement terminé",
-    "first_metric": "Première mesure",
-    "grade_transition": "Changement de note",
-    "phase_transition": "Nouvelle phase"
+    "training_complete": "Entraînement terminé"
   },
   "labels": {
     "epoch": "Époque",
