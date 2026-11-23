@@ -29,7 +29,9 @@ The engine is sound on what it reads; the gap is what it does not read. Two of
 the audit's items shipped in 0.7.41 (2026-11-22) and are not listed: runs that
 count steps (nanoGPT, the PyTorch ImageNet example, a diffusers LoRA bar), and
 a notice when a watched terminal's command is seen and not told. So did
-everything the first coverage run found unexecuted (item 7).
+everything the first coverage run found unexecuted (item 7). 0.7.42
+(2026-11-23) shipped two of the three parts left in item 3: a kohya-ss run,
+and a step bar read as it is drawn over a pipe or SSH.
 
 Two kinds of evidence appear below, and they are not the same:
 
@@ -84,17 +86,17 @@ install on Windows; record it on Linux or leave it out and say so.
 
 ### 3. What is left of the step-counted runs
 
-nanoGPT, the PyTorch ImageNet example and a diffusers LoRA bar are read, from
-recordings. Not done, as `docs/parsers.md` ("Not read yet") says:
+nanoGPT, the PyTorch ImageNet example, a diffusers LoRA bar (0.7.41) and a
+kohya-ss `sd-scripts` run (0.7.42, #195) are read, from recordings. Since
+0.7.42 the three that count steps (nanoGPT and both LoRA runs) are told by
+step, not as epochs; the ImageNet example has epochs (#194). A bar redrawn
+over the whole run is read as it is drawn when piped to `epochix -` or
+tailed over SSH (#195), as it already was from a file. Not done, as
+`docs/parsers.md` ("Not read yet") says:
 
 - **MLX-LM** (`Iter 10: Train loss …, Learning Rate …` / `Iter 10: Val loss
   …, Val took …s`) has not been recorded: it needs Apple silicon. Record it on
   a Mac or leave it out.
-- **kohya-ss `sd-scripts`** has not been recorded, and `avr_loss`, the loss on
-  its bar, is not a name Epochix recognises.
-- A bar piped to `epochix -` on Linux or macOS, or tailed over SSH, is read
-  only when its line ends: for one bar redrawn over the whole run, when the
-  training ends.
 
 ### 4. Reinforcement learning
 
@@ -130,14 +132,22 @@ is a separate question.
 ### 6. One engine, or a cheaper second one — a spike
 
 Every engine change is written twice. #150 and #152 were each a Python change
-and a hand port to `StandaloneEngine.ts` (1,194 lines in 0.7.41); the
-parsers, tables and thresholds are generated or replayed from goldens, but
-the pipeline — sniffing, fallbacks, warm-up, frames, milestones — is ported
-by hand and checked only by the corpus and the tests someone remembers to
-mirror. 0.7.41 measured what that costs: the extension's milestones had
-drifted into a different set altogether, and 58 of the 60 corpus logs gave
-different milestones in VS Code than everywhere else. Nothing compared them
+and a hand port to `StandaloneEngine.ts` (1,194 lines in 0.7.41, 1,229 in
+0.7.42); the parsers, tables and thresholds are generated or replayed from
+goldens, but the pipeline — sniffing, fallbacks, warm-up, frames,
+milestones — is ported by hand and checked only by the corpus and the tests
+someone remembers to mirror. 0.7.41 measured what that costs: the
+extension's milestones had drifted into a different set altogether, and 58
+of the 60 corpus logs gave different milestones in VS Code than everywhere
+else. Nothing compared them
 until `corpus_truth.json` recorded milestones (#175).
+
+0.7.42's counter (#194) was ported the same way, and checked once by hand:
+the extension's engine was bundled from `main` and from the branch, and every
+corpus log was told through both in three languages. 150 of 180 outputs were
+the same; the other 30 differed in 1,538 lines, each only in the counter's
+name. That is (b) below, run once from a script that is not in the
+repository and checks nothing the next time.
 
 A spike, with a written answer rather than a merge: (a) can the Python engine
 run inside the extension through Pyodide — bundle size, start-up time on a
