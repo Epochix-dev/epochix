@@ -14,7 +14,7 @@ which covers the extension too; entries here resume with 0.7.16.
 
 ---
 
-## [Unreleased]
+## [0.7.42] — 2026-11-23
 
 ### Fixed
 
