@@ -1,3 +1,3 @@
-{Counter} {epoch} : {value}, moins bon que le meilleur score de {best} {at_counter} {best_epoch}. L'entraînement est sous son meilleur niveau — le point de contrôle antérieur reste le meilleur pour l'instant.
-Au-delà de son maximum : {best} {at_counter} {best_epoch}, maintenant {value}. {Later_counters} ne l'améliorent pas.
-{Counter} {epoch} : la performance est passée de {best} ({counter} {best_epoch}) à {value}. {Later_counters} s'éloignent du meilleur résultat au lieu de s'en rapprocher.
+{Counter} {epoch} : {value}, moins bon que le meilleur score de {best} {at_counter} {best_epoch}. L'entraînement est sous son meilleur niveau, à plus de 1 % sur les trois dernières {counter_readings} — le point de contrôle antérieur reste le meilleur pour l'instant.
+Au-delà de son maximum : {best} {at_counter} {best_epoch}, maintenant {value}. {Later_counters} ne l'ont pas égalé : aucune des trois dernières {counter_readings} n'en est revenue à 1 % près.
+{Counter} {epoch} : la performance est passée de {best} ({counter} {best_epoch}) à {value}, et reste à plus de 1 % sous ce meilleur score sur les trois dernières {counter_readings}.

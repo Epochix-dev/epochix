@@ -14,6 +14,15 @@ which covers the extension too; entries here resume with 0.7.16.
 
 ---
 
+## [0.7.43] — 2026-11-23
+
+### Fixed
+
+- **A plateau's wobble is no longer told as a slip.** One reading more than
+  1% below the best was told "performance has slipped … use early stopping",
+  even beside an A+. A run is now past its best once three readings in a row
+  have been more than 1% worse, and one such reading is said as just that.
+
 ## [0.7.42] — 2026-11-23
 
 ### Fixed

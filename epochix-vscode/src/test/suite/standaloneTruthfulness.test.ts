@@ -208,6 +208,32 @@ suite("Standalone engine — runs that are not progressing", () => {
     assert.ok(/peak|best|slipped/i.test(r.last.narrative), r.last.narrative);
   });
 
+  // Python: tests/integration/test_past_best.py. One reading more than 1% off
+  // the best was told "slipped … use early stopping": a plateau's wobble.
+  test("past its best only after three readings in a row off it", () => {
+    const told = (accs: number[]): string[] => {
+      const engine = new StandaloneEngine();
+      const lines = accs.map((a, i) => `Epoch ${i + 1}/${accs.length} - loss: 0.5000 - val_accuracy: ${a.toFixed(4)}\n`);
+      const frames = [...engine.feed(lines.join("")), ...engine.flush()];
+      return frames.map((f) => f.narrative);
+    };
+    const past = (s: string): boolean => /slipped|Past its best|below its best/.test(s);
+    const off = (s: string): boolean => s.includes("off the best");
+
+    const dip = told([0.6, 0.7, 0.8, 0.78, 0.81]);
+    assert.ok(off(dip[3]) && !past(dip[3]) && !dip[3].includes("early stopping"), dip[3]);
+    assert.ok(!off(dip[4]) && !past(dip[4]), dip[4]);
+
+    const slip = told([0.6, 0.7, 0.8, 0.78, 0.77, 0.76, 0.75]);
+    assert.deepStrictEqual(slip.slice(3).map(off), [true, true, false, false]);
+    assert.deepStrictEqual(slip.slice(3).map(past), [false, false, true, true]);
+    assert.ok(slip[6].includes("early stopping") && slip[6].includes("0.8000"), slip[6]);
+
+    const reset = told([0.6, 0.8, 0.78, 0.77, 0.82, 0.8, 0.79]);
+    assert.ok(!reset.some(past), reset.join("\n"));
+    assert.deepStrictEqual(reset.map(off), [false, false, true, true, false, true, true]);
+  });
+
   test("a flat run is reported as stalled, with advice", () => {
     const r = drive(range(8, (e) =>
       `Epoch ${e}/8 train_loss=2.3010 val_accuracy=${(0.101 + 0.0005 * e).toFixed(4)}`));

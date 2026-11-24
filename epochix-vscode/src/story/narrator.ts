@@ -145,6 +145,24 @@ export function narratePastPeak(o: {
   return `${story} ${message("next_pastpeak", o.locale, { best_epoch: bestAt }, o.counter)}`;
 }
 
+/**
+ * A reading off the run's best, and nothing more — mirrors narrate_below_best.
+ * More than 1% below the best, and not yet for PAST_PEAK_READINGS readings in a
+ * row: not told it slipped, and not told it is within 1% of the best either.
+ */
+export function narrateBelowBest(o: {
+  epoch: number | null; value: number; best: number;
+  bestEpoch: number | null; runId: string; locale?: string; counter?: Counter | null;
+}): string {
+  const loc = resolveLocale(o.locale);
+  const story = counterWords(pick(SPECIAL_TEMPLATES[loc].belowBest, o.runId), o.counter, loc)
+    .replace(/\{epoch\}/g, fmtEpoch(o.epoch))
+    .replace(/\{value\}/g, o.value.toFixed(4))
+    .replace(/\{best\}/g, o.best.toFixed(4))
+    .replace(/\{best_epoch\}/g, fmtEpoch(o.bestEpoch));
+  return `${story.slice(0, 1).toUpperCase()}${story.slice(1)}`;
+}
+
 export function narrateStalled(o: {
   epoch: number | null; value: number; baseline: number;
   epochsSeen: number; runId: string; locale?: string; counter?: Counter | null;

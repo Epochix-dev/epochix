@@ -118,6 +118,17 @@ made, and its ten end-of-epoch values, which share no batch, show no trend.
 A metric known to be computed this way gets no letter, no "past its best" and
 no "stalled": its readings are charted as logged, and the card says why.
 
+### Past its best
+
+The story says a run is past its best, and suggests keeping the earlier
+checkpoint and stopping early, once **three readings in a row** have been more
+than 1% worse than the best. That is what early stopping with a patience of
+three would do. A single reading that far off is said as just that ("more
+than 1% off the best of 0.1491 at round 55"). On a converged run the metric
+wobbles about its best, and one wobble is not a slip. Everything else the story
+says about a reading's progress holds only while that reading is within 1% of
+the best.
+
 ## What not to print
 
 Some things look like metrics and are not, so epochix deliberately ignores

@@ -332,6 +332,9 @@ def render_narratives() -> str:
         "pastPeak": lambda loc: narrator._load_special(
             "_pastpeak", loc, "The run is past its best value."
         ),
+        "belowBest": lambda loc: narrator._load_special(
+            "_belowbest", loc, "{value}, below the best of {best}."
+        ),
         "stalled": narrator._load_stalled,
         "diverged": narrator._load_diverged,
         "singleReading": lambda loc: narrator._load_special(
@@ -372,6 +375,7 @@ def render_narratives() -> str:
         " *  single result with no arc. */",
         "export const SPECIAL_TEMPLATES: Readonly<Record<Locale, Readonly<{",
         "  pastPeak: readonly string[];",
+        "  belowBest: readonly string[];",
         "  stalled: readonly string[];",
         "  diverged: readonly string[];",
         "  singleReading: readonly string[];",
@@ -530,6 +534,7 @@ def render_grading() -> str:
         + "];",
         "",
         f"export const PAST_PEAK_REL_DROP = {_num(engine._PAST_PEAK_REL_DROP)};",
+        f"export const PAST_PEAK_READINGS = {engine._PAST_PEAK_READINGS};",
         f"export const STALL_MIN_EPOCHS = {engine._STALL_MIN_EPOCHS};",
         f"export const STALL_REL_IMPROVEMENT = {_num(engine._STALL_REL_IMPROVEMENT)};",
         f"export const OVERFIT_WINDOW = {warnings_mod._OVERFIT_WINDOW};",

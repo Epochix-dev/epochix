@@ -32,6 +32,7 @@ from epochix.story_engine.milestones import MilestoneTracker
 from epochix.story_engine.narrator import (
     _display_metric,
     narrate,
+    narrate_below_best,
     narrate_diverged,
     narrate_past_peak,
     narrate_running_mean,
@@ -217,6 +218,13 @@ _PREFERRED_KEYS_FOR_TASK: dict[TaskType, tuple[str, ...]] = {
 # A run is 'past peak' when the primary metric has fallen this far (relative)
 # below its own best. Above noise, below the point of nagging about jitter.
 _PAST_PEAK_REL_DROP = 0.01
+# ...and it is told so only once this many readings in a row have been. One
+# reading that far off is said as just that (narrate_below_best): an
+# XGBoost run converged on a plateau (xgboost_real_classifier.log) went
+# 0.1491, 0.1508, 0.1500 and was told at the middle one that it had
+# "slipped ... the later rounds are moving away from the best result",
+# beside an A+, and advised to stop early there.
+_PAST_PEAK_READINGS = 3
 
 _STALL_MIN_EPOCHS = 3
 _STALL_REL_IMPROVEMENT = 0.03
@@ -317,6 +325,8 @@ class StoryEngine:
     _baseline: float | None = field(default=None, init=False)
     _best_primary: float | None = field(default=None, init=False)
     _best_epoch: float | None = field(default=None, init=False)
+    # Readings in a row more than _PAST_PEAK_REL_DROP below the best.
+    _below_best_run: int = field(default=0, init=False)
     # The bands the latest letter was measured against (best first) and
     # whether lower is better; None when it was not graded on bands. Written
     # to the run so a chart draws the lines the grader used, not a copy.
@@ -665,6 +675,7 @@ class StoryEngine:
             self._best_primary = None
             self._best_epoch = None
             self._prev_primary = None
+            self._below_best_run = 0
         self._primary_key_used = primary_key
 
         if self._baseline is None:
@@ -853,7 +864,7 @@ class StoryEngine:
             self._best_primary = primary_value
             self._best_epoch = event.epoch
 
-        past_peak = False
+        below_best = False
         if self._best_primary is not None and abs(self._best_primary) > 1e-9:
             drop = (
                 (primary_value - self._best_primary)
@@ -862,7 +873,11 @@ class StoryEngine:
             ) / abs(self._best_primary)
             # Not for an unsteady metric: its best is its luckiest batch. Nor
             # for a running average: its best is its luckiest window.
-            past_peak = drop > _PAST_PEAK_REL_DROP and not incomparable
+            below_best = drop > _PAST_PEAK_REL_DROP and not incomparable
+        # How many readings in a row have been that far below the best. A
+        # new best is not, so it starts the count again.
+        self._below_best_run = self._below_best_run + 1 if below_best else 0
+        past_peak = self._below_best_run >= _PAST_PEAK_READINGS
 
         epochs_seen = len(self._metric_history.get(event.canonical_key, ()))
         # `rel` is the fraction of achievable improvement realised, so a run
@@ -881,7 +896,7 @@ class StoryEngine:
             epochs_seen >= _STALL_MIN_EPOCHS
             and rel is not None
             and rel < _STALL_REL_IMPROVEMENT
-            and not past_peak
+            and not below_best
         )
         # A result, not a stage of training. Both conditions are needed: one
         # reading alone also describes epoch 1 of a live run, which genuinely
@@ -928,6 +943,19 @@ class StoryEngine:
             )
         elif past_peak and self._best_primary is not None:
             narrative = narrate_past_peak(
+                epoch=event.epoch,
+                primary_value=primary_value,
+                best_value=self._best_primary,
+                best_epoch=self._best_epoch,
+                run_id=self.run_id,
+                locale=self.locale,
+                counter=counter,
+            )
+        elif below_best and self._best_primary is not None:
+            # Off its best, and not yet for long enough to say it slipped. The
+            # phase stories say a reading is within 1% of the best, so this
+            # one is not told with them either.
+            narrative = narrate_below_best(
                 epoch=event.epoch,
                 primary_value=primary_value,
                 best_value=self._best_primary,

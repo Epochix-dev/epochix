@@ -161,7 +161,10 @@ def test_what_is_still_said_before_the_sixth_reading() -> None:
     _store, _run, frames, _events = _told(LORA)
     early = frames[: UNSTEADY_MIN_READINGS - 1]
     assert [f.grade.value for f in early] == ["I", "F", "F", "A", "F"]
-    assert ["ast its best" in f.narrative for f in early] == [False, True, True, False, True]
+    # Off the best, said as just that: no reading has been that far off for
+    # three in a row, so none is told the run has slipped or should stop.
+    assert ["off the best" in f.narrative for f in early] == [False, True, True, False, True]
+    assert not any("ast its best" in f.narrative for f in early)
 
 
 @pytest.mark.parametrize(
