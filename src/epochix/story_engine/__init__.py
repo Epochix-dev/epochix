@@ -863,7 +863,8 @@ class StoryEngine:
             grade = Grade.INCOMPLETE
             self.grade_bands_used = None
 
-        delta = primary_value - self._prev_primary if self._prev_primary is not None else 0.0
+        # None when there is no reading before to measure from (narrate).
+        delta = primary_value - self._prev_primary if self._prev_primary is not None else None
 
         # Honesty guard: the phase templates are driven by how far through
         # training we are, so a model stuck at chance level was still narrated

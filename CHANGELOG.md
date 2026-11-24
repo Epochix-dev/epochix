@@ -11,6 +11,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **A run's first reading is not told how it changed.** It has no reading
+  before it, and was given a change of 0: "Epoch 0: accuracy 20.4%, a change
+  of 0 points since the previous reading." So were the first readings of a
+  metric the story moves to. Each phase has one variant that quotes the
+  change, and such a reading is now told by one of the others, in all three
+  languages and both engines. Told over the corpus in three languages and
+  every variant, 130 such sentences change, 75 of them on a run's first
+  reading; every other sentence reads as it did.
 - **VS Code tells a run in the same sentences as every other surface.**
   Nothing compared the two engines' sentences, and told under the same run
   id they differed in 4,194 of the corpus's 4,206 frames. The variant of a
