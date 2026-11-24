@@ -11,6 +11,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **VS Code tells a run in the same sentences as every other surface.**
+  Nothing compared the two engines' sentences, and told under the same run
+  id they differed in 4,194 of the corpus's 4,206 frames. The variant of a
+  sentence was picked from the run id by an MD5-seeded `random.Random` in
+  Python and a djb2 hash in the extension; Python now uses the extension's
+  hash, so a run told again here may read in another of its variants. With
+  that alike, the rest was the extension's: an exact half was rounded up
+  ("73.3%" for Python's "73.2%", nine frames), a run's first reading was
+  measured from zero ("+7.8 points" compared with a reading that never was),
+  the learning-rate warning was never raised (23 in nine logs, in each
+  language), and two warnings of one frame came in the other order. Every
+  corpus log, in every language and under run ids that reach every variant,
+  is now told by both engines word for word, and a test holds them to it
+  (`stories.golden.json`).
 - **A rising PSNR or inception score is no longer told it made no progress.**
   The phase read every higher-is-better metric as a share of the way to 1.0,
   the top of an accuracy's scale. PSNR (in decibels) and the inception score

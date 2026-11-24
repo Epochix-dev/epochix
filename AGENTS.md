@@ -93,7 +93,14 @@ npm --prefix epochix-vscode test    # launches a real VS Code host
   once and replay `grading.golden.json`, Python's own answers. After changing
   any of it run `make gen-ts-tables` and commit the output;
   `test_ts_engine_tables_sync.py` fails until you do. Do not type a threshold
-  into the TypeScript: add it to the Python and the generator.
+  into the TypeScript: add it to the Python and the generator. The sentences
+  are held to it too: `stories.golden.json` is every corpus log told by
+  Python in each language, under run ids that between them pick every variant
+  of every template, and `storiesGolden.test.ts` holds the extension to it
+  word for word. Corpus parity never compared a sentence, and the engines
+  differed in all but 12 of 4,206 frames. A number goes into a sentence
+  through `story/pyFormat.ts`, not `toFixed`: JavaScript rounds an exact half
+  up, Python to even, and 73.25% was "73.3%" in VS Code only.
 - **A task and its primary metric are chosen separately.** The task comes from
   the metric *names* in a log, the primary metric from the first *preferred*
   key actually seen, and they routinely disagree — prose that names its metric

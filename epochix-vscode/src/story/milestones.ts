@@ -10,6 +10,7 @@
  */
 import { MILESTONE_THRESHOLDS, NOT_A_FRACTION, UNIT_BOUNDED_METRICS } from "./grading.generated";
 import { message, type Counter } from "./narrator";
+import { fixed } from "./pyFormat";
 
 /** A milestone, shaped like the Python model's (models.Milestone). */
 export interface Milestone {
@@ -65,7 +66,7 @@ export class MilestoneTracker {
       if (!this._fired.has("best_so_far")) {
         fired.push({
           seq, kind: "best_so_far", epoch, value,
-          message: message("ms_best", this._locale, { value: value.toFixed(4) }),
+          message: message("ms_best", this._locale, { value: fixed(value, 4) }),
         });
         this._fired.add("best_so_far");
       }
@@ -83,7 +84,7 @@ export class MilestoneTracker {
           this._fired.add(kind);
           fired.push({
             seq, kind, epoch, value,
-            message: message("ms_crossed", this._locale, { pct, value: value.toFixed(4) }),
+            message: message("ms_crossed", this._locale, { pct, value: fixed(value, 4) }),
           });
         }
       }
@@ -111,7 +112,7 @@ export class MilestoneTracker {
       this._fired.add("biggest_jump");
       result.push({
         seq: jumpSeq, kind: "biggest_jump", epoch: jumpEpoch, value: gain,
-        message: message("ms_biggest_jump", this._locale, { value: gain.toFixed(4) }, counter),
+        message: message("ms_biggest_jump", this._locale, { value: fixed(gain, 4) }, counter),
       });
     }
     result.push({

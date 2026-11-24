@@ -7,6 +7,7 @@
  * `epochix.locale` said, in wording that had drifted from the Python engine's.
  */
 import type { Phase } from "./phases";
+import { fixed, general } from "./pyFormat";
 import type { TaskType } from "./grader";
 import {
   COUNTER_FORMS,
@@ -111,15 +112,15 @@ export function narrate(opts: NarrateOptions): string {
     PHASE_TEMPLATES[loc][`${proseTask}/${opts.phase}`] ??
     PHASE_TEMPLATES[loc][`custom/${opts.phase}`];
 
-  const valuePct = `${(opts.primaryValue * 100).toFixed(1)}%`;
-  const deltaStr = opts.delta !== 0 ? (opts.delta >= 0 ? "+" : "") + opts.delta.toFixed(4) : "0";
+  const valuePct = `${fixed(opts.primaryValue * 100, 1)}%`;
+  const deltaStr = opts.delta !== 0 ? (opts.delta >= 0 ? "+" : "") + fixed(opts.delta, 4) : "0";
   // The same change in percentage points, for metrics told as a percentage.
   const deltaPct =
-    opts.delta !== 0 ? (opts.delta >= 0 ? "+" : "") + (opts.delta * 100).toFixed(1) : "0";
+    opts.delta !== 0 ? (opts.delta >= 0 ? "+" : "") + fixed(opts.delta * 100, 1) : "0";
 
   return counterWords(pick(templates, opts.runId), opts.counter, loc)
     .replace(/\{epoch\}/g, fmtEpoch(opts.epoch))
-    .replace(/\{value\}/g, opts.primaryValue.toFixed(4))
+    .replace(/\{value\}/g, fixed(opts.primaryValue, 4))
     .replace(/\{delta_pct\}/g, deltaPct)
     .replace(/\{delta\}/g, deltaStr)
     .replace(/\{value_pct\}/g, valuePct)
@@ -139,8 +140,8 @@ export function narratePastPeak(o: {
   const loc = resolveLocale(o.locale);
   const story = counterWords(pick(SPECIAL_TEMPLATES[loc].pastPeak, o.runId), o.counter, loc)
     .replace(/\{epoch\}/g, fmtEpoch(o.epoch))
-    .replace(/\{value\}/g, o.value.toFixed(4))
-    .replace(/\{best\}/g, o.best.toFixed(4))
+    .replace(/\{value\}/g, fixed(o.value, 4))
+    .replace(/\{best\}/g, fixed(o.best, 4))
     .replace(/\{best_epoch\}/g, bestAt);
   return `${story} ${message("next_pastpeak", o.locale, { best_epoch: bestAt }, o.counter)}`;
 }
@@ -157,8 +158,8 @@ export function narrateBelowBest(o: {
   const loc = resolveLocale(o.locale);
   const story = counterWords(pick(SPECIAL_TEMPLATES[loc].belowBest, o.runId), o.counter, loc)
     .replace(/\{epoch\}/g, fmtEpoch(o.epoch))
-    .replace(/\{value\}/g, o.value.toFixed(4))
-    .replace(/\{best\}/g, o.best.toFixed(4))
+    .replace(/\{value\}/g, fixed(o.value, 4))
+    .replace(/\{best\}/g, fixed(o.best, 4))
     .replace(/\{best_epoch\}/g, fmtEpoch(o.bestEpoch));
   return `${story.slice(0, 1).toUpperCase()}${story.slice(1)}`;
 }
@@ -170,8 +171,8 @@ export function narrateStalled(o: {
   const loc = resolveLocale(o.locale);
   const story = counterWords(pick(SPECIAL_TEMPLATES[loc].stalled, o.runId), o.counter, loc)
     .replace(/\{epoch\}/g, fmtEpoch(o.epoch))
-    .replace(/\{value\}/g, o.value.toFixed(4))
-    .replace(/\{baseline\}/g, o.baseline.toFixed(4))
+    .replace(/\{value\}/g, fixed(o.value, 4))
+    .replace(/\{baseline\}/g, fixed(o.baseline, 4))
     .replace(/\{epochs_seen\}/g, String(o.epochsSeen));
   return `${story} ${message("next_stalled", o.locale)}`;
 }
@@ -185,7 +186,7 @@ export function narrateDiverged(o: {
   const story = counterWords(pick(SPECIAL_TEMPLATES[loc].diverged, o.runId), o.counter, loc)
     .replace(/\{epoch\}/g, fmtEpoch(o.epoch))
     .replace(/\{last_epoch\}/g, lastAt)
-    .replace(/\{value\}/g, o.lastValue.toFixed(4))
+    .replace(/\{value\}/g, fixed(o.lastValue, 4))
     .replace(/\{metric\}/g, displayMetric(o.metric, loc));
   return `${story} ${message("next_diverged", loc, { last_epoch: lastAt }, o.counter)}`;
 }
@@ -203,7 +204,7 @@ export function narrateUnsteady(o: {
   const loc = resolveLocale(o.locale);
   const story = counterWords(pick(SPECIAL_TEMPLATES[loc].unsteady, o.runId), o.counter, loc)
     .replace(/\{epoch\}/g, fmtEpoch(o.epoch))
-    .replace(/\{value\}/g, o.value.toFixed(4))
+    .replace(/\{value\}/g, fixed(o.value, 4))
     .replace(/\{metric\}/g, displayMetric(o.metric, loc))
     .replace(/\{turns\}/g, String(o.turns))
     .replace(/\{readings\}/g, String(o.readings))
@@ -224,7 +225,7 @@ export function narrateRunningMean(o: {
   const loc = resolveLocale(o.locale);
   const story = counterWords(pick(SPECIAL_TEMPLATES[loc].runningMean, o.runId), o.counter, loc)
     .replace(/\{epoch\}/g, fmtEpoch(o.epoch))
-    .replace(/\{value\}/g, o.value.toFixed(4))
+    .replace(/\{value\}/g, fixed(o.value, 4))
     .replace(/\{metric\}/g, displayMetric(o.metric, loc));
   return `${story.slice(0, 1).toUpperCase()}${story.slice(1)} ${message("next_running_mean", loc)}`;
 }
@@ -240,7 +241,7 @@ export function narrateSingleReading(o: {
 }): string {
   const loc = resolveLocale(o.locale);
   return pick(SPECIAL_TEMPLATES[loc].singleReading, o.runId)
-    .replace(/\{value\}/g, o.value.toFixed(4))
+    .replace(/\{value\}/g, fixed(o.value, 4))
     .replace(/\{metric\}/g, displayMetric(o.metric, loc));
 }
 
@@ -265,15 +266,7 @@ export function message(
 
 /** A loss as a warning quotes it. Python's `:.4g`; see loss_text in warnings.py. */
 export function lossText(value: number): string {
-  if (value === 0) return "0";
-  const [mantissa, exponent] = value.toExponential(3).split("e");
-  const power = Number(exponent);
-  const trim = (s: string): string => (s.includes(".") ? s.replace(/\.?0+$/, "") : s);
-  if (power < -4 || power >= 4) {
-    const digits = String(Math.abs(power)).padStart(2, "0");
-    return `${trim(mantissa)}e${power < 0 ? "-" : "+"}${digits}`;
-  }
-  return trim(value.toFixed(3 - power));
+  return general(value, 4);
 }
 
 /** Every variant in every locale, so tests can assert over all of them. */

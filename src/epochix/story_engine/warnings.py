@@ -31,6 +31,8 @@ _PLATEAU_DELTA = 0.01
 # epochs before it finally prints `nan`, and `nan` itself never reaches this
 # detector because the log parser will not read a non-numeric value.
 _DIVERGE_GROWTH = 10.0
+# A learning rate below this share of the one before it was cut by a schedule.
+_LR_DROP_RATIO = 0.6
 
 _CLEARED = "_cleared"
 
@@ -335,7 +337,7 @@ class WarningDetector:
 
         # LR drop
         if lr is not None:
-            if self._lr_prev is not None and lr < self._lr_prev * 0.6:
+            if self._lr_prev is not None and lr < self._lr_prev * _LR_DROP_RATIO:
                 warnings.append(
                     Warning(
                         kind="lr_drop",

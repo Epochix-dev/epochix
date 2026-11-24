@@ -85,6 +85,17 @@ CONFIG_GOLDEN = REPO / "epochix-vscode" / "src" / "test" / "fixtures" / "gradeCo
 # engine, so a line one parser read differently could hide behind another.
 # Its test replays every recorded line through its own parser.
 PARSERS_GOLDEN = REPO / "epochix-vscode" / "src" / "test" / "fixtures" / "parsers.golden.json"
+# Every corpus log told by the whole Python pipeline, in each language, under
+# one run id: each frame's sentence and each warning. The extension replays
+# the corpus and must tell it word for word. Nothing compared the two engines'
+# sentences: they picked variants differently, rounded an exact half
+# differently, and the extension raised no learning-rate warning at all.
+STORIES_GOLDEN = REPO / "epochix-vscode" / "src" / "test" / "fixtures" / "stories.golden.json"
+# The stem of the run ids it is told under: see stories_run_ids().
+STORIES_RUN_ID = "corpus"
+# Python's own formatting of numbers into those sentences, which the
+# extension's formatters (story/pyFormat.ts) replay.
+FORMAT_GOLDEN = REPO / "epochix-vscode" / "src" / "test" / "fixtures" / "format.golden.json"
 # Random input and lines megabytes long are not samples worth replaying, and
 # the LLM fallback has no port in the extension.
 _UNRECORDED_TESTS = frozenset(
@@ -541,6 +552,7 @@ def render_grading() -> str:
         f"export const PLATEAU_WINDOW = {warnings_mod._PLATEAU_WINDOW};",
         f"export const PLATEAU_DELTA = {_num(warnings_mod._PLATEAU_DELTA)};",
         f"export const DIVERGE_GROWTH = {_num(warnings_mod._DIVERGE_GROWTH)};",
+        f"export const LR_DROP_RATIO = {_num(warnings_mod._LR_DROP_RATIO)};",
         "",
         "/** When one reading cannot be set against another (story_engine/steadiness.py). */",
         f"export const UNSTEADY_MIN_READINGS = {steadiness.UNSTEADY_MIN_READINGS};",
@@ -1045,6 +1057,138 @@ def replay_parsers_golden(golden: dict[str, list[dict[str, Any]]]) -> list[str]:
     return wrong
 
 
+def stories_run_ids() -> list[str]:
+    """Run ids that, between them, reach every variant of every template.
+
+    The variant is the run id's hash modulo the number of variants
+    (narrator._pick). With M the most variants any template has and L the
+    least common multiple of every count, M ids whose hashes are 0 .. M-1
+    modulo L reach every variant of a template with m variants, for each m.
+    One id reached one variant of each, and a drift in a sentence only
+    another variant uses went unseen: the first reading's "+7.8 points".
+    """
+    counts = {
+        len([line for line in path.read_text(encoding="utf-8").splitlines() if line.strip()])
+        for path in (REPO / "src" / "epochix" / "story_engine" / "templates").rglob("*.txt")
+    }
+    counts.discard(0)
+    most = max(counts)
+    lcm = math.lcm(*counts)
+    found: dict[int, str] = {}
+    n = 0
+    while len(found) < most:
+        run_id = f"{STORIES_RUN_ID}-{n}"
+        residue = int(narrator._pick([str(i) for i in range(lcm)], run_id))
+        if residue < most and residue not in found:
+            found[residue] = run_id
+        n += 1
+    return [found[i] for i in range(most)]
+
+
+def render_stories_golden() -> str:
+    """Every log in corpus_truth.json, told in every locale and every variant.
+
+    Each log is told under each of stories_run_ids(). A frame keeps its epoch
+    and its sentence under each id, or one sentence when every id told the
+    same. A frame's warnings are the ones raised at it, so the run's warnings
+    are theirs in frame order, the list the extension's engine keeps; a
+    warning has no variants, and the generator checks every id agrees.
+    """
+    import asyncio
+
+    from epochix.ingester.file_batch import FileBatchIngester
+    from epochix.pipeline import run_pipeline
+    from epochix.server.hub import Hub
+    from epochix.store.sqlite_store import RunStore
+
+    truth = json.loads(
+        (REPO / "tests" / "fixtures" / "corpus_truth.json").read_text(encoding="utf-8")
+    )
+    run_ids = stories_run_ids()
+    # A developer's own .epochix.yaml must not change what is recorded.
+    before = os.environ.get("EPOCHIX_GRADE_CONFIG")
+    os.environ["EPOCHIX_GRADE_CONFIG"] = "off"
+    try:
+        logs: dict[str, dict[str, Any]] = {}
+        for name in sorted(truth):
+            told: dict[str, Any] = {}
+            for locale in LOCALES:
+                runs = []
+                for run_id in run_ids:
+                    store = RunStore(":memory:")
+                    asyncio.run(
+                        run_pipeline(
+                            ingester=FileBatchIngester(run_id, str(REPO / truth[name]["path"])),
+                            run_id=run_id,
+                            store=store,
+                            hub=Hub(),
+                            locale=locale,
+                        )
+                    )
+                    runs.append(store.get_story_frames(run_id))
+                epochs = [[_golden_number(f.epoch) for f in frames] for frames in runs]
+                warnings = [
+                    [
+                        [w.kind, _golden_number(w.epoch), w.message]
+                        for f in frames
+                        for w in f.warnings
+                    ]
+                    for frames in runs
+                ]
+                assert all(e == epochs[0] for e in epochs), f"{name}: epochs vary by run id"
+                assert all(w == warnings[0] for w in warnings), f"{name}: warnings vary by run id"
+                frames_out: list[list[Any]] = []
+                for i, epoch in enumerate(epochs[0]):
+                    said = [frames[i].narrative for frames in runs]
+                    frames_out.append([epoch, said[0] if len(set(said)) == 1 else said])
+                told[locale] = {"frames": frames_out, "warnings": warnings[0]}
+            logs[name] = told
+    finally:
+        if before is None:
+            del os.environ["EPOCHIX_GRADE_CONFIG"]
+        else:
+            os.environ["EPOCHIX_GRADE_CONFIG"] = before
+    golden = {"run_ids": run_ids, "logs": logs}
+    return json.dumps(golden, indent=1, ensure_ascii=False, sort_keys=True) + "\n"
+
+
+def _format_inputs() -> list[float]:
+    """Values worth formatting: exact ties, edges, and a spread of magnitudes."""
+    values = [
+        0.0, -0.0, 1.0, -1.0, 0.5, 1.5, 2.5, -2.5, 0.125, 0.375, -0.375,
+        73.25, 79.25, 89.25, -73.25, 0.7325, 0.00125, 0.00015, 0.99995, 9.9995, 99.995,
+        999.95, 9999.5, 99999.5, 0.0001, 0.00001, 1e-5, 1.5e-5, 2.5e-7, 123456.789, 1e16,
+        1.7976931348623157e308, 5e-324, 2.2250738585072014e-308, 1e-3, 5e-4, 6.07e-4, 3.07e-4,
+        6.98e-06, float("nan"), float("inf"), float("-inf"),
+    ]
+    rng = random.Random(1909)
+    for _ in range(300):
+        values.append(rng.uniform(-1, 1) * 10 ** rng.randint(-8, 8))
+    for _ in range(200):
+        # k / 2**n: exact in binary, so many are exact halves at some digit.
+        values.append(rng.randint(-4096, 4096) / 2 ** rng.randint(1, 16))
+    return values
+
+
+def _format_key(x: float) -> float | str:
+    if math.isnan(x):
+        return "nan"
+    if math.isinf(x):
+        return "inf" if x > 0 else "-inf"
+    if x == 0 and math.copysign(1.0, x) < 0:
+        return "-0"
+    return x
+
+
+def render_format_golden() -> str:
+    cases = [
+        [_format_key(x), f"{x:.4f}", f"{x:.1f}", f"{x * 100:.1f}", f"{x:.2e}", f"{x:.4g}"]
+        for x in _format_inputs()
+    ]
+    golden = {"columns": ["x", ".4f", ".1f", "x*100 .1f", ".2e", ".4g"], "cases": cases}
+    return json.dumps(golden, indent=0, ensure_ascii=False) + "\n"
+
+
 def main() -> int:
     outputs = {
         TARGET: render(),
@@ -1056,6 +1200,8 @@ def main() -> int:
         CONFIG_GOLDEN: render_config_golden(),
         ARCH_GOLDEN: render_arch_golden(),
         PARSERS_GOLDEN: render_parsers_golden(),
+        STORIES_GOLDEN: render_stories_golden(),
+        FORMAT_GOLDEN: render_format_golden(),
     }
     if "--check" in sys.argv:
         stale = [
