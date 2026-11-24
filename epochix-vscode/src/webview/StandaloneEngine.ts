@@ -40,6 +40,7 @@ import {
 // engine (story_engine/warnings.py and __init__.py) — no longer copied.
 import {
   DIVERGE_GROWTH,
+  LR_DROP_RATIO,
   OVERFIT_WINDOW,
   PAST_PEAK_READINGS,
   PAST_PEAK_REL_DROP,
@@ -65,6 +66,7 @@ import {
   resolveLocale,
   type Locale,
 } from "../story/narrator";
+import { sci } from "../story/pyFormat";
 import type {
   CrossValidation, GradeBandsMsg, StoryFrameMsg, MilestoneMsg, WarningMsg, RunSummaryMsg,
 } from "./messages";
@@ -348,7 +350,6 @@ export class StandaloneEngine {
   private _task: TaskType = "custom";
   private _primaryMetric = "val_loss";
   private _baseline: number | null = null;
-  private _lastPrimary = 0;
   private _primaryReadings = 0;
   private _best: number | null = null;
   private _bestEpoch: number | null = null;
@@ -360,6 +361,8 @@ export class StandaloneEngine {
   // Inputs to the pathology checks, mirroring story_engine/warnings.py.
   private _trainLosses: number[] = [];
   private _valLosses: number[] = [];
+  /** The learning rate at the last frame, for lr_drop. */
+  private _lrPrev: number | null = null;
   private _bestTrainLoss: number | null = null;
   private _trainSeen = 0;
   private _bestValLoss: number | null = null;
@@ -400,7 +403,18 @@ export class StandaloneEngine {
   // The project's .epochix.yaml, or null for the built-in thresholds.
   private readonly _gradeConfig: GradeConfig | null;
 
-  constructor(taskHint?: TaskType, locale?: string, gradeConfig?: GradeConfig | null) {
+  /**
+   * `runId` picks each sentence's variant, as the Python engine's run id does;
+   * a run told under the same id reads the same in both (stories.golden.json).
+   * Left out, the run gets an id of its own.
+   */
+  constructor(
+    taskHint?: TaskType,
+    locale?: string,
+    gradeConfig?: GradeConfig | null,
+    runId?: string,
+  ) {
+    if (runId !== undefined) this._runId = runId;
     this._locale = resolveLocale(locale);
     this._gradeConfig = gradeConfig ?? null;
     this._tracker = new MilestoneTracker(this._locale);
@@ -839,15 +853,15 @@ export class StandaloneEngine {
       this._best = null;
       this._bestEpoch = null;
       this._belowBestRun = 0;
-      this._lastPrimary = value;
       this._prevPrimary = null;
       this._primaryReadings = 0;
     }
     this._primaryKeyUsed = key;
 
     if (this._baseline === null) this._baseline = value;
-    const delta = value - this._lastPrimary;
-    this._lastPrimary = value;
+    // No change at a first reading, as in Python: measured from 0 it was
+    // "+7.8 points" at a run's first epoch, against a reading that never was.
+    const delta = this._prevPrimary !== null ? value - this._prevPrimary : 0;
     this._primaryReadings++;
 
     // Direction from the metric's own name first: the task default is right
@@ -1085,71 +1099,11 @@ export class StandaloneEngine {
       this._warnings.push({ kind, epoch, message });
     };
 
-    // Plateau: the primary metric's span over the window is under 1% of where
-    // the window began. Direction-free, which is what makes it correct. The
-    // warning describes those readings, so it is withdrawn once the window is
-    // no longer flat, and may fire again. Mirrors story_engine/warnings.py.
-    if (this._frames.length >= PLATEAU_WINDOW) {
-      const w = this._frames.slice(-PLATEAU_WINDOW).map((f) => f.primaryMetricValue);
-      const span = Math.max(...w) - Math.min(...w);
-      const flat = span / (Math.abs(w[0]) + 1e-9) < PLATEAU_DELTA;
-      if (flat) {
-        // "Progress has slowed … may restart progress" presupposes progress:
-        // not of a metric that has not moved since its first reading, nor of
-        // one nothing says the direction of. Mirrors _plateau_message.
-        const all = this._frames.map((f) => f.primaryMetricValue).filter(Number.isFinite);
-        const unmoved =
-          all.length > 0 &&
-          (Math.max(...all) - Math.min(...all)) / (Math.abs(all[0]) + 1e-9) < PLATEAU_DELTA;
-        const key = !this._directionUnknown && !unmoved ? "warn_plateau" : "warn_plateau_measured";
-        warn("plateau_warning", "plateau", message(key, this._locale, {}, counter));
-      } else if (this._seenMilestones.has("plateau_warning")) {
-        this._seenMilestones.delete("plateau_warning");
-        this._warnings.push({
-          kind: "plateau_cleared",
-          epoch,
-          message: message("warn_plateau_cleared", this._locale),
-        });
-      }
-    }
-
-    // Overfitting: validation loss rising while training loss falls.
+    // In Python's order (story_engine/warnings.py): divergence, overfitting,
+    // plateau, learning rate. Two raised on one frame were listed the other
+    // way round, and a CatBoost run's plateau came before its overfit.
     const t = this._trainLosses;
     const v = this._valLosses;
-    if (t.length >= OVERFIT_WINDOW && v.length >= OVERFIT_WINDOW) {
-      const tw = t.slice(-OVERFIT_WINDOW);
-      const vw = v.slice(-OVERFIT_WINDOW);
-      const valRising = vw.every((x, i) => i === 0 || x > vw[i - 1]);
-      const trainFalling = tw.every((x, i) => i === 0 || x < tw[i - 1]);
-      if (valRising && trainFalling && !this._seenMilestones.has("overfit_warning")) {
-        this._overfitMark = this._bestValLoss;
-        warn("overfit_warning", "overfit", message("warn_overfit", this._locale, {}, counter));
-      }
-    }
-
-    // A validation loss that later beats its best from before the rise was a
-    // blip, not memorising: withdraw the warning, and let it fire again if it
-    // recurs. Mirrors story_engine/warnings.py.
-    for (; this._valSeen < v.length; this._valSeen++) {
-      const x = v[this._valSeen];
-      if (
-        this._overfitMark !== null &&
-        this._seenMilestones.has("overfit_warning") &&
-        x < this._overfitMark
-      ) {
-        this._seenMilestones.delete("overfit_warning");
-        this._overfitMark = null;
-        this._warnings.push({
-          kind: "overfit_cleared",
-          epoch,
-          message: message("warn_overfit_cleared", this._locale),
-        });
-      }
-      if (Number.isFinite(x) && (this._bestValLoss === null || x < this._bestValLoss)) {
-        this._bestValLoss = x;
-      }
-    }
-
     // Divergence: a single 10x jump, or a climb to 10x the best loss seen. The
     // gradual case is the common one — 3.59 -> 2881 over eight epochs never
     // takes a single 10x step. The ratios need a positive loss to mean anything.
@@ -1231,6 +1185,90 @@ export class StandaloneEngine {
       if (Number.isFinite(x) && (this._highTrainLoss === null || x > this._highTrainLoss)) {
         this._highTrainLoss = x;
       }
+    }
+
+    // Overfitting: validation loss rising while training loss falls.
+    if (t.length >= OVERFIT_WINDOW && v.length >= OVERFIT_WINDOW) {
+      const tw = t.slice(-OVERFIT_WINDOW);
+      const vw = v.slice(-OVERFIT_WINDOW);
+      const valRising = vw.every((x, i) => i === 0 || x > vw[i - 1]);
+      const trainFalling = tw.every((x, i) => i === 0 || x < tw[i - 1]);
+      if (valRising && trainFalling && !this._seenMilestones.has("overfit_warning")) {
+        this._overfitMark = this._bestValLoss;
+        warn("overfit_warning", "overfit", message("warn_overfit", this._locale, {}, counter));
+      }
+    }
+
+    // A validation loss that later beats its best from before the rise was a
+    // blip, not memorising: withdraw the warning, and let it fire again if it
+    // recurs. Mirrors story_engine/warnings.py.
+    for (; this._valSeen < v.length; this._valSeen++) {
+      const x = v[this._valSeen];
+      if (
+        this._overfitMark !== null &&
+        this._seenMilestones.has("overfit_warning") &&
+        x < this._overfitMark
+      ) {
+        this._seenMilestones.delete("overfit_warning");
+        this._overfitMark = null;
+        this._warnings.push({
+          kind: "overfit_cleared",
+          epoch,
+          message: message("warn_overfit_cleared", this._locale),
+        });
+      }
+      if (Number.isFinite(x) && (this._bestValLoss === null || x < this._bestValLoss)) {
+        this._bestValLoss = x;
+      }
+    }
+
+    // Plateau: the primary metric's span over the window is under 1% of where
+    // the window began. Direction-free, which is what makes it correct. The
+    // warning describes those readings, so it is withdrawn once the window is
+    // no longer flat, and may fire again. Mirrors story_engine/warnings.py.
+    if (this._frames.length >= PLATEAU_WINDOW) {
+      const w = this._frames.slice(-PLATEAU_WINDOW).map((f) => f.primaryMetricValue);
+      const span = Math.max(...w) - Math.min(...w);
+      const flat = span / (Math.abs(w[0]) + 1e-9) < PLATEAU_DELTA;
+      if (flat) {
+        // "Progress has slowed … may restart progress" presupposes progress:
+        // not of a metric that has not moved since its first reading, nor of
+        // one nothing says the direction of. Mirrors _plateau_message.
+        const all = this._frames.map((f) => f.primaryMetricValue).filter(Number.isFinite);
+        const unmoved =
+          all.length > 0 &&
+          (Math.max(...all) - Math.min(...all)) / (Math.abs(all[0]) + 1e-9) < PLATEAU_DELTA;
+        const key = !this._directionUnknown && !unmoved ? "warn_plateau" : "warn_plateau_measured";
+        warn("plateau_warning", "plateau", message(key, this._locale, {}, counter));
+      } else if (this._seenMilestones.has("plateau_warning")) {
+        this._seenMilestones.delete("plateau_warning");
+        this._warnings.push({
+          kind: "plateau_cleared",
+          epoch,
+          message: message("warn_plateau_cleared", this._locale),
+        });
+      }
+    }
+
+    // Learning rate: one below LR_DROP_RATIO of the reading before was cut by a
+    // schedule. Not a problem (the dashboard does not raise it as one), but a
+    // moment of the run worth marking. The extension never raised it: VS Code
+    // showed none of the 69 a corpus run raises in Python. Mirrors
+    // story_engine/warnings.py, which reads the last learning rate recorded.
+    const lrs = this._history.get("lr");
+    const lr = lrs !== undefined && lrs.length > 0 ? lrs[lrs.length - 1] : null;
+    if (lr !== null) {
+      if (this._lrPrev !== null && lr < this._lrPrev * LR_DROP_RATIO) {
+        this._warnings.push({
+          kind: "lr_drop",
+          epoch,
+          message: message("warn_lr_drop", this._locale, {
+            old: sci(this._lrPrev, 2),
+            new: sci(lr, 2),
+          }),
+        });
+      }
+      this._lrPrev = lr;
     }
   }
 }

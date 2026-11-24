@@ -157,8 +157,18 @@ told it is within 1%, and none is told it slipped before three such
 readings in a row. The extension's copy is tested on three synthetic runs
 of five to seven readings. `corpusParity.test.ts` compares each log's
 metrics, final grade and phase, and milestones, but not the sentence any
-frame tells, so nothing would notice the two engines telling a corpus log's
-story differently.
+frame tells.
+
+The sentences are now compared: `stories.golden.json` is every corpus log
+told by Python in three languages, under run ids that between them pick
+every variant, and `storiesGolden.test.ts` holds the extension to it word
+for word. Measured first, the engines told 4,194 of 4,206 frames
+differently. Most of that was the variant each picked from a run id, but
+under one pick they still differed in an exact half's rounding, a first
+reading's change, the learning-rate warning (never raised in VS Code) and
+the order of two warnings. That is the sentences, not the pipeline: the
+sniffing, fallbacks and warm-up are still ported by hand, and a log the
+corpus lacks is still unchecked.
 
 A spike, with a written answer rather than a merge: (a) can the Python engine
 run inside the extension through Pyodide — bundle size, start-up time on a

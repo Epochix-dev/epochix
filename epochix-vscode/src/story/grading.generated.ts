@@ -57,6 +57,7 @@ export const OVERFIT_WINDOW = 3;
 export const PLATEAU_WINDOW = 5;
 export const PLATEAU_DELTA = 0.01;
 export const DIVERGE_GROWTH = 10.0;
+export const LR_DROP_RATIO = 0.6;
 
 /** When one reading cannot be set against another (story_engine/steadiness.py). */
 export const UNSTEADY_MIN_READINGS = 6;

@@ -14,6 +14,16 @@ which covers the extension too; entries here resume with 0.7.16.
 
 ---
 
+## [Unreleased]
+
+### Fixed
+
+- **A run reads in VS Code in the sentences the dashboard and the reports
+  use.** Numbers are rounded as Python rounds them (73.25% is "73.2%"), a
+  run's first reading no longer claims a change of "+7.8 points" from
+  nothing, a learning rate cut by a schedule is marked as it is in the
+  browser, and two warnings of one frame come in the same order.
+
 ## [0.7.43] — 2026-11-23
 
 ### Fixed
