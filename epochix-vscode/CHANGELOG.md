@@ -25,11 +25,24 @@ which covers the extension too; entries here resume with 0.7.16.
 
 ## [0.7.42] — 2026-11-23
 
+### Added
+
+- **A kohya-ss LoRA run opens the dashboard from a terminal.** Nothing
+  sd-scripts prints counted as a training signal (its `epoch 1/10` is
+  lower-case and carries no loss), so a watched terminal never opened the
+  panel for one. A step bar carrying a value now counts, and the run is told
+  by step.
+
 ### Fixed
 
 - **A run without epochs is told in what it counts**: step, iteration or
   boosting round, in the story, the warnings, the milestones and the panel's
   axes, not epoch.
+- **A running average over overlapping batches is not graded.** kohya's
+  `avr_loss` averages the last epoch's batches. Read as any other loss, a
+  LoRA run was graded A while its story said "performance has slipped … use
+  early stopping", and neither was true. It is now graded I, with a sentence
+  saying why, and every reading is still charted.
 
 ## [0.7.41] — 2026-11-22
 
