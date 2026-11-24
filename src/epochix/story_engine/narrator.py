@@ -31,6 +31,11 @@ def _load_templates(task: TaskType, phase: Phase, locale: str = "en") -> list[st
     return [fallback]
 
 
+def states_a_change(template: str) -> bool:
+    """Whether a phase template quotes the change since the reading before."""
+    return "{delta}" in template or "{delta_pct}" in template
+
+
 def _pick(templates: list[str], run_id: str) -> str:
     """One variant, the same for a run id every time it is told.
 
@@ -367,13 +372,19 @@ def narrate(
     phase: Phase,
     epoch: float | None,
     primary_value: float,
-    delta: float,
+    delta: float | None,
     run_id: str,
     locale: str = "en",
     metric: str | None = None,
     counter: Counter | None = None,
 ) -> str:
     """Select and fill a narrative template deterministically for this run + epoch.
+
+    ``delta`` is the change since the reading before, or None when there was
+    none: a run's first reading, or the first of a metric the story moved to.
+    Such a reading is told by a variant that states no change. It was given a
+    change of 0, and 75 first frames of the corpus said "a change of 0 points
+    since the previous reading" of a reading that never was.
 
     ``counter`` is what the number in ``epoch`` counts — an epoch, a step, an
     iteration, a boosting round — and the sentence names it by that.
@@ -385,8 +396,16 @@ def narrate(
     """
     prose_task = task if _prose_fits_metric(task, metric) else TaskType.CUSTOM
     templates = _load_templates(prose_task, phase, locale)
+    picked = _pick(templates, run_id)
+    if delta is None:
+        # Picked again only if the variant states a change, so a first reading
+        # already told without one keeps its sentence. Every phase's set has
+        # such a variant (test_first_reading.py); the fallback is never taken.
+        if states_a_change(picked):
+            picked = _pick([t for t in templates if not states_a_change(t)] or templates, run_id)
+        delta = 0.0
 
-    template = counter_words(_pick(templates, run_id), counter, locale)
+    template = counter_words(picked, counter, locale)
 
     epoch_str = str(int(epoch)) if epoch is not None else "?"
     delta_str = f"{delta:+.4f}" if delta != 0 else "0"

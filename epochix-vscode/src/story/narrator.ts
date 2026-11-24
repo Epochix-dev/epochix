@@ -52,7 +52,8 @@ export interface NarrateOptions {
   phase: Phase;
   epoch: number | null;
   primaryValue: number;
-  delta: number;
+  /** The change since the reading before, or null when there was none. */
+  delta: number | null;
   runId: string;
   /** The series the numbers came from, e.g. "val_loss". */
   metric?: string;
@@ -105,20 +106,34 @@ function fmtEpoch(epoch: number | null): string {
   return epoch !== null ? String(Math.trunc(epoch)) : "?";
 }
 
+/** Whether a phase template quotes the change since the reading before. */
+export function statesAChange(template: string): boolean {
+  return template.includes("{delta}") || template.includes("{delta_pct}");
+}
+
 export function narrate(opts: NarrateOptions): string {
   const loc = resolveLocale(opts.locale);
   const proseTask: TaskType = proseFitsMetric(opts.task, opts.metric) ? opts.task : "custom";
   const templates =
     PHASE_TEMPLATES[loc][`${proseTask}/${opts.phase}`] ??
     PHASE_TEMPLATES[loc][`custom/${opts.phase}`];
+  // A reading with none before it is told by a variant that states no change,
+  // as in Python: "a change of 0 points since the previous reading" was said
+  // of a run's first reading. Picked again only if the variant states one, so
+  // a first reading already told without one keeps its sentence.
+  let picked = pick(templates, opts.runId);
+  if (opts.delta === null && statesAChange(picked)) {
+    const without = templates.filter((t) => !statesAChange(t));
+    picked = pick(without.length > 0 ? without : templates, opts.runId);
+  }
+  const delta = opts.delta ?? 0;
 
   const valuePct = `${fixed(opts.primaryValue * 100, 1)}%`;
-  const deltaStr = opts.delta !== 0 ? (opts.delta >= 0 ? "+" : "") + fixed(opts.delta, 4) : "0";
+  const deltaStr = delta !== 0 ? (delta >= 0 ? "+" : "") + fixed(delta, 4) : "0";
   // The same change in percentage points, for metrics told as a percentage.
-  const deltaPct =
-    opts.delta !== 0 ? (opts.delta >= 0 ? "+" : "") + fixed(opts.delta * 100, 1) : "0";
+  const deltaPct = delta !== 0 ? (delta >= 0 ? "+" : "") + fixed(delta * 100, 1) : "0";
 
-  return counterWords(pick(templates, opts.runId), opts.counter, loc)
+  return counterWords(picked, opts.counter, loc)
     .replace(/\{epoch\}/g, fmtEpoch(opts.epoch))
     .replace(/\{value\}/g, fixed(opts.primaryValue, 4))
     .replace(/\{delta_pct\}/g, deltaPct)

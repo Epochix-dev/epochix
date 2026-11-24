@@ -18,6 +18,8 @@ which covers the extension too; entries here resume with 0.7.16.
 
 ### Fixed
 
+- **A run's first reading is not told how it changed** ("a change of 0
+  points since the previous reading"), as in the dashboard and the reports.
 - **A run reads in VS Code in the sentences the dashboard and the reports
   use.** Numbers are rounded as Python rounds them (73.25% is "73.2%"), a
   run's first reading no longer claims a change of "+7.8 points" from

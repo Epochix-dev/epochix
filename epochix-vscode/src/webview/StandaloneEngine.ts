@@ -859,9 +859,10 @@ export class StandaloneEngine {
     this._primaryKeyUsed = key;
 
     if (this._baseline === null) this._baseline = value;
-    // No change at a first reading, as in Python: measured from 0 it was
-    // "+7.8 points" at a run's first epoch, against a reading that never was.
-    const delta = this._prevPrimary !== null ? value - this._prevPrimary : 0;
+    // Null with no reading before to measure from, as in Python: measured
+    // from 0 it was "+7.8 points" at a run's first epoch. narrate then picks
+    // a variant that states no change.
+    const delta = this._prevPrimary !== null ? value - this._prevPrimary : null;
     this._primaryReadings++;
 
     // Direction from the metric's own name first: the task default is right

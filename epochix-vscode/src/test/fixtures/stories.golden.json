@@ -7,7 +7,7 @@
       0.0,
       [
        "The run is under way: accuracy 20.4% at epoch 0, at or within 1% of its best so far.",
-       "Epoch 0: accuracy 20.4%, a change of 0 points since the previous reading. The learning phase continues.",
+       "Learning: accuracy 20.4% at epoch 0 — the best this run has reached, or within 1% of it.",
        "Learning: accuracy 20.4% at epoch 0 — the best this run has reached, or within 1% of it.",
        "The run is under way: accuracy 20.4% at epoch 0, at or within 1% of its best so far."
       ]
@@ -46,12 +46,7 @@
     "frames": [
      [
       0.0,
-      [
-       "آموزش در جریان است: دقت 20.4% در دوره 0؛ برابر با بهترین مقدار تاکنون یا در فاصلهٔ ۱٪ از آن.",
-       "دوره 0: دقت 20.4%، با تغییر 0 واحد درصد نسبت به اندازه‌گیری قبلی. مرحلهٔ یادگیری ادامه دارد.",
-       "آموزش در جریان است: دقت 20.4% در دوره 0؛ برابر با بهترین مقدار تاکنون یا در فاصلهٔ ۱٪ از آن.",
-       "دوره 0: دقت 20.4%، با تغییر 0 واحد درصد نسبت به اندازه‌گیری قبلی. مرحلهٔ یادگیری ادامه دارد."
-      ]
+      "آموزش در جریان است: دقت 20.4% در دوره 0؛ برابر با بهترین مقدار تاکنون یا در فاصلهٔ ۱٪ از آن."
      ],
      [
       1.0,
@@ -87,12 +82,7 @@
     "frames": [
      [
       0.0,
-      [
-       "L'entraînement est en cours : précision 20.4% à l'époque 0, à 1 % près de son meilleur niveau jusqu'ici.",
-       "Époque 0 : précision 20.4%, soit 0 points par rapport à la mesure précédente. La phase d'apprentissage se poursuit.",
-       "L'entraînement est en cours : précision 20.4% à l'époque 0, à 1 % près de son meilleur niveau jusqu'ici.",
-       "Époque 0 : précision 20.4%, soit 0 points par rapport à la mesure précédente. La phase d'apprentissage se poursuit."
-      ]
+      "L'entraînement est en cours : précision 20.4% à l'époque 0, à 1 % près de son meilleur niveau jusqu'ici."
      ],
      [
       1.0,
@@ -132,7 +122,7 @@
       1.0,
       [
        "The run is under way: accuracy 45.6% at epoch 1, at or within 1% of its best so far.",
-       "Epoch 1: accuracy 45.6%, a change of 0 points since the previous reading. The learning phase continues.",
+       "Learning: accuracy 45.6% at epoch 1 — the best this run has reached, or within 1% of it.",
        "Learning: accuracy 45.6% at epoch 1 — the best this run has reached, or within 1% of it.",
        "The run is under way: accuracy 45.6% at epoch 1, at or within 1% of its best so far."
       ]
@@ -162,12 +152,7 @@
     "frames": [
      [
       1.0,
-      [
-       "آموزش در جریان است: دقت 45.6% در دوره 1؛ برابر با بهترین مقدار تاکنون یا در فاصلهٔ ۱٪ از آن.",
-       "دوره 1: دقت 45.6%، با تغییر 0 واحد درصد نسبت به اندازه‌گیری قبلی. مرحلهٔ یادگیری ادامه دارد.",
-       "آموزش در جریان است: دقت 45.6% در دوره 1؛ برابر با بهترین مقدار تاکنون یا در فاصلهٔ ۱٪ از آن.",
-       "دوره 1: دقت 45.6%، با تغییر 0 واحد درصد نسبت به اندازه‌گیری قبلی. مرحلهٔ یادگیری ادامه دارد."
-      ]
+      "آموزش در جریان است: دقت 45.6% در دوره 1؛ برابر با بهترین مقدار تاکنون یا در فاصلهٔ ۱٪ از آن."
      ],
      [
       2.0,
@@ -194,12 +179,7 @@
     "frames": [
      [
       1.0,
-      [
-       "L'entraînement est en cours : précision 45.6% à l'époque 1, à 1 % près de son meilleur niveau jusqu'ici.",
-       "Époque 1 : précision 45.6%, soit 0 points par rapport à la mesure précédente. La phase d'apprentissage se poursuit.",
-       "L'entraînement est en cours : précision 45.6% à l'époque 1, à 1 % près de son meilleur niveau jusqu'ici.",
-       "Époque 1 : précision 45.6%, soit 0 points par rapport à la mesure précédente. La phase d'apprentissage se poursuit."
-      ]
+      "L'entraînement est en cours : précision 45.6% à l'époque 1, à 1 % près de son meilleur niveau jusqu'ici."
      ],
      [
       2.0,
@@ -230,7 +210,7 @@
       0.0,
       [
        "Polishing phase: validation score 0.9790 at round 0.",
-       "Round 0: validation score 0.9790, a change of 0 since the previous reading. Final touches.",
+       "Final touches: validation score 0.9790 at round 0.",
        "Final touches: validation score 0.9790 at round 0.",
        "Polishing phase: validation score 0.9790 at round 0."
       ]
@@ -779,12 +759,7 @@
     "frames": [
      [
       0.0,
-      [
-       "مرحلهٔ پالایش: score اعتبارسنجی 0.9790 در دور 0.",
-       "دور 0: score اعتبارسنجی 0.9790، با تغییر 0 نسبت به اندازه‌گیری قبلی. آخرین پرداخت‌ها.",
-       "مرحلهٔ پالایش: score اعتبارسنجی 0.9790 در دور 0.",
-       "دور 0: score اعتبارسنجی 0.9790، با تغییر 0 نسبت به اندازه‌گیری قبلی. آخرین پرداخت‌ها."
-      ]
+      "مرحلهٔ پالایش: score اعتبارسنجی 0.9790 در دور 0."
      ],
      [
       1.0,
@@ -1330,12 +1305,7 @@
     "frames": [
      [
       0.0,
-      [
-       "Phase de perfectionnement : score de validation 0.9790 au tour 0.",
-       "Tour 0 : score de validation 0.9790, soit 0 par rapport à la mesure précédente. Dernières retouches.",
-       "Phase de perfectionnement : score de validation 0.9790 au tour 0.",
-       "Tour 0 : score de validation 0.9790, soit 0 par rapport à la mesure précédente. Dernières retouches."
-      ]
+      "Phase de perfectionnement : score de validation 0.9790 au tour 0."
      ],
      [
       1.0,
@@ -1885,7 +1855,7 @@
       0.0,
       [
        "Polishing phase: validation metric 1.0000 at round 0.",
-       "Round 0: validation metric 1.0000, a change of 0 since the previous reading. Final touches.",
+       "Final touches: validation metric 1.0000 at round 0.",
        "Final touches: validation metric 1.0000 at round 0.",
        "Polishing phase: validation metric 1.0000 at round 0."
       ]
@@ -2164,12 +2134,7 @@
     "frames": [
      [
       0.0,
-      [
-       "مرحلهٔ پالایش: metric اعتبارسنجی 1.0000 در دور 0.",
-       "دور 0: metric اعتبارسنجی 1.0000، با تغییر 0 نسبت به اندازه‌گیری قبلی. آخرین پرداخت‌ها.",
-       "مرحلهٔ پالایش: metric اعتبارسنجی 1.0000 در دور 0.",
-       "دور 0: metric اعتبارسنجی 1.0000، با تغییر 0 نسبت به اندازه‌گیری قبلی. آخرین پرداخت‌ها."
-      ]
+      "مرحلهٔ پالایش: metric اعتبارسنجی 1.0000 در دور 0."
      ],
      [
       1.0,
@@ -2445,12 +2410,7 @@
     "frames": [
      [
       0.0,
-      [
-       "Phase de perfectionnement : metric de validation 1.0000 au tour 0.",
-       "Tour 0 : metric de validation 1.0000, soit 0 par rapport à la mesure précédente. Dernières retouches.",
-       "Phase de perfectionnement : metric de validation 1.0000 au tour 0.",
-       "Tour 0 : metric de validation 1.0000, soit 0 par rapport à la mesure précédente. Dernières retouches."
-      ]
+      "Phase de perfectionnement : metric de validation 1.0000 au tour 0."
      ],
      [
       1.0,
@@ -6666,7 +6626,7 @@
       5.0,
       [
        "The run is under way: mAP50 51.2% at epoch 5, at or within 1% of its best so far.",
-       "Epoch 5: mAP50 51.2%, a change of 0 points since the previous reading. The learning phase continues.",
+       "Learning: mAP50 51.2% at epoch 5 — the best this run has reached, or within 1% of it.",
        "Learning: mAP50 51.2% at epoch 5 — the best this run has reached, or within 1% of it.",
        "The run is under way: mAP50 51.2% at epoch 5, at or within 1% of its best so far."
       ]
@@ -6759,12 +6719,7 @@
      ],
      [
       5.0,
-      [
-       "آموزش در جریان است: mAP50 51.2% در دوره 5؛ برابر با بهترین مقدار تاکنون یا در فاصلهٔ ۱٪ از آن.",
-       "دوره 5: mAP50 51.2%، با تغییر 0 واحد درصد نسبت به اندازه‌گیری قبلی. مرحلهٔ یادگیری ادامه دارد.",
-       "آموزش در جریان است: mAP50 51.2% در دوره 5؛ برابر با بهترین مقدار تاکنون یا در فاصلهٔ ۱٪ از آن.",
-       "دوره 5: mAP50 51.2%، با تغییر 0 واحد درصد نسبت به اندازه‌گیری قبلی. مرحلهٔ یادگیری ادامه دارد."
-      ]
+      "آموزش در جریان است: mAP50 51.2% در دوره 5؛ برابر با بهترین مقدار تاکنون یا در فاصلهٔ ۱٪ از آن."
      ],
      [
       10.0,
@@ -6854,12 +6809,7 @@
      ],
      [
       5.0,
-      [
-       "L'entraînement est en cours : mAP50 51.2% à l'époque 5, à 1 % près de son meilleur niveau jusqu'ici.",
-       "Époque 5 : mAP50 51.2%, soit 0 points par rapport à la mesure précédente. La phase d'apprentissage se poursuit.",
-       "L'entraînement est en cours : mAP50 51.2% à l'époque 5, à 1 % près de son meilleur niveau jusqu'ici.",
-       "Époque 5 : mAP50 51.2%, soit 0 points par rapport à la mesure précédente. La phase d'apprentissage se poursuit."
-      ]
+      "L'entraînement est en cours : mAP50 51.2% à l'époque 5, à 1 % près de son meilleur niveau jusqu'ici."
      ],
      [
       10.0,
@@ -10349,7 +10299,7 @@
       0.0,
       [
        "Mastering: accuracy 93.7% at epoch 0 — three quarters of the way to a perfect score, or more.",
-       "Epoch 0: accuracy 93.7%, a change of 0 points since the previous reading. Most of the distance to a perfect score is behind this run.",
+       "Far along: accuracy 93.7% at epoch 0, at or within 1% of the best this run has reached.",
        "Far along: accuracy 93.7% at epoch 0, at or within 1% of the best this run has reached.",
        "Mastering: accuracy 93.7% at epoch 0 — three quarters of the way to a perfect score, or more."
       ]
@@ -10388,12 +10338,7 @@
     "frames": [
      [
       0.0,
-      [
-       "تسلط: دقت 93.7% در دوره 0 — دست‌کم سه‌چهارم راه تا نمرهٔ کامل پیموده شده است.",
-       "دوره 0: دقت 93.7%، با تغییر 0 واحد درصد نسبت به اندازه‌گیری قبلی. بیشترِ راه تا نمرهٔ کامل طی شده است.",
-       "تسلط: دقت 93.7% در دوره 0 — دست‌کم سه‌چهارم راه تا نمرهٔ کامل پیموده شده است.",
-       "دوره 0: دقت 93.7%، با تغییر 0 واحد درصد نسبت به اندازه‌گیری قبلی. بیشترِ راه تا نمرهٔ کامل طی شده است."
-      ]
+      "تسلط: دقت 93.7% در دوره 0 — دست‌کم سه‌چهارم راه تا نمرهٔ کامل پیموده شده است."
      ],
      [
       1.0,
@@ -10429,12 +10374,7 @@
     "frames": [
      [
       0.0,
-      [
-       "Maîtrise : précision 93.7% à l'époque 0 — au moins les trois quarts du chemin vers un score parfait.",
-       "Époque 0 : précision 93.7%, soit 0 points par rapport à la mesure précédente. L'essentiel du chemin vers un score parfait est parcouru.",
-       "Maîtrise : précision 93.7% à l'époque 0 — au moins les trois quarts du chemin vers un score parfait.",
-       "Époque 0 : précision 93.7%, soit 0 points par rapport à la mesure précédente. L'essentiel du chemin vers un score parfait est parcouru."
-      ]
+      "Maîtrise : précision 93.7% à l'époque 0 — au moins les trois quarts du chemin vers un score parfait."
      ],
      [
       1.0,
@@ -12221,7 +12161,7 @@
       1.0,
       [
        "The run is under way: accuracy 13.2% at epoch 1, at or within 1% of its best so far.",
-       "Epoch 1: accuracy 13.2%, a change of 0 points since the previous reading. The learning phase continues.",
+       "Learning: accuracy 13.2% at epoch 1 — the best this run has reached, or within 1% of it.",
        "Learning: accuracy 13.2% at epoch 1 — the best this run has reached, or within 1% of it.",
        "The run is under way: accuracy 13.2% at epoch 1, at or within 1% of its best so far."
       ]
@@ -12280,12 +12220,7 @@
     "frames": [
      [
       1.0,
-      [
-       "آموزش در جریان است: دقت 13.2% در دوره 1؛ برابر با بهترین مقدار تاکنون یا در فاصلهٔ ۱٪ از آن.",
-       "دوره 1: دقت 13.2%، با تغییر 0 واحد درصد نسبت به اندازه‌گیری قبلی. مرحلهٔ یادگیری ادامه دارد.",
-       "آموزش در جریان است: دقت 13.2% در دوره 1؛ برابر با بهترین مقدار تاکنون یا در فاصلهٔ ۱٪ از آن.",
-       "دوره 1: دقت 13.2%، با تغییر 0 واحد درصد نسبت به اندازه‌گیری قبلی. مرحلهٔ یادگیری ادامه دارد."
-      ]
+      "آموزش در جریان است: دقت 13.2% در دوره 1؛ برابر با بهترین مقدار تاکنون یا در فاصلهٔ ۱٪ از آن."
      ],
      [
       2.0,
@@ -12341,12 +12276,7 @@
     "frames": [
      [
       1.0,
-      [
-       "L'entraînement est en cours : précision 13.2% à l'époque 1, à 1 % près de son meilleur niveau jusqu'ici.",
-       "Époque 1 : précision 13.2%, soit 0 points par rapport à la mesure précédente. La phase d'apprentissage se poursuit.",
-       "L'entraînement est en cours : précision 13.2% à l'époque 1, à 1 % près de son meilleur niveau jusqu'ici.",
-       "Époque 1 : précision 13.2%, soit 0 points par rapport à la mesure précédente. La phase d'apprentissage se poursuit."
-      ]
+      "L'entraînement est en cours : précision 13.2% à l'époque 1, à 1 % près de son meilleur niveau jusqu'ici."
      ],
      [
       2.0,
@@ -12424,7 +12354,7 @@
       1.0,
       [
        "The run is under way: accuracy 34.6% at epoch 1, at or within 1% of its best so far.",
-       "Epoch 1: accuracy 34.6%, a change of 0 points since the previous reading. The learning phase continues.",
+       "Learning: accuracy 34.6% at epoch 1 — the best this run has reached, or within 1% of it.",
        "Learning: accuracy 34.6% at epoch 1 — the best this run has reached, or within 1% of it.",
        "The run is under way: accuracy 34.6% at epoch 1, at or within 1% of its best so far."
       ]
@@ -12517,12 +12447,7 @@
      ],
      [
       1.0,
-      [
-       "آموزش در جریان است: دقت 34.6% در دوره 1؛ برابر با بهترین مقدار تاکنون یا در فاصلهٔ ۱٪ از آن.",
-       "دوره 1: دقت 34.6%، با تغییر 0 واحد درصد نسبت به اندازه‌گیری قبلی. مرحلهٔ یادگیری ادامه دارد.",
-       "آموزش در جریان است: دقت 34.6% در دوره 1؛ برابر با بهترین مقدار تاکنون یا در فاصلهٔ ۱٪ از آن.",
-       "دوره 1: دقت 34.6%، با تغییر 0 واحد درصد نسبت به اندازه‌گیری قبلی. مرحلهٔ یادگیری ادامه دارد."
-      ]
+      "آموزش در جریان است: دقت 34.6% در دوره 1؛ برابر با بهترین مقدار تاکنون یا در فاصلهٔ ۱٪ از آن."
      ],
      [
       2.0,
@@ -12612,12 +12537,7 @@
      ],
      [
       1.0,
-      [
-       "L'entraînement est en cours : précision 34.6% à l'époque 1, à 1 % près de son meilleur niveau jusqu'ici.",
-       "Époque 1 : précision 34.6%, soit 0 points par rapport à la mesure précédente. La phase d'apprentissage se poursuit.",
-       "L'entraînement est en cours : précision 34.6% à l'époque 1, à 1 % près de son meilleur niveau jusqu'ici.",
-       "Époque 1 : précision 34.6%, soit 0 points par rapport à la mesure précédente. La phase d'apprentissage se poursuit."
-      ]
+      "L'entraînement est en cours : précision 34.6% à l'époque 1, à 1 % près de son meilleur niveau jusqu'ici."
      ],
      [
       2.0,
@@ -13022,7 +12942,7 @@
       1.0,
       [
        "Mastering: accuracy 81.8% at epoch 1 — three quarters of the way to a perfect score, or more.",
-       "Epoch 1: accuracy 81.8%, a change of 0 points since the previous reading. Most of the distance to a perfect score is behind this run.",
+       "Far along: accuracy 81.8% at epoch 1, at or within 1% of the best this run has reached.",
        "Far along: accuracy 81.8% at epoch 1, at or within 1% of the best this run has reached.",
        "Mastering: accuracy 81.8% at epoch 1 — three quarters of the way to a perfect score, or more."
       ]
@@ -13140,12 +13060,7 @@
      ],
      [
       1.0,
-      [
-       "تسلط: دقت 81.8% در دوره 1 — دست‌کم سه‌چهارم راه تا نمرهٔ کامل پیموده شده است.",
-       "دوره 1: دقت 81.8%، با تغییر 0 واحد درصد نسبت به اندازه‌گیری قبلی. بیشترِ راه تا نمرهٔ کامل طی شده است.",
-       "تسلط: دقت 81.8% در دوره 1 — دست‌کم سه‌چهارم راه تا نمرهٔ کامل پیموده شده است.",
-       "دوره 1: دقت 81.8%، با تغییر 0 واحد درصد نسبت به اندازه‌گیری قبلی. بیشترِ راه تا نمرهٔ کامل طی شده است."
-      ]
+      "تسلط: دقت 81.8% در دوره 1 — دست‌کم سه‌چهارم راه تا نمرهٔ کامل پیموده شده است."
      ],
      [
       2.0,
@@ -13260,12 +13175,7 @@
      ],
      [
       1.0,
-      [
-       "Maîtrise : précision 81.8% à l'époque 1 — au moins les trois quarts du chemin vers un score parfait.",
-       "Époque 1 : précision 81.8%, soit 0 points par rapport à la mesure précédente. L'essentiel du chemin vers un score parfait est parcouru.",
-       "Maîtrise : précision 81.8% à l'époque 1 — au moins les trois quarts du chemin vers un score parfait.",
-       "Époque 1 : précision 81.8%, soit 0 points par rapport à la mesure précédente. L'essentiel du chemin vers un score parfait est parcouru."
-      ]
+      "Maîtrise : précision 81.8% à l'époque 1 — au moins les trois quarts du chemin vers un score parfait."
      ],
      [
       2.0,
@@ -13384,7 +13294,7 @@
       1.0,
       [
        "Mastering: accuracy 81.8% at epoch 1 — three quarters of the way to a perfect score, or more.",
-       "Epoch 1: accuracy 81.8%, a change of 0 points since the previous reading. Most of the distance to a perfect score is behind this run.",
+       "Far along: accuracy 81.8% at epoch 1, at or within 1% of the best this run has reached.",
        "Far along: accuracy 81.8% at epoch 1, at or within 1% of the best this run has reached.",
        "Mastering: accuracy 81.8% at epoch 1 — three quarters of the way to a perfect score, or more."
       ]
@@ -13502,12 +13412,7 @@
      ],
      [
       1.0,
-      [
-       "تسلط: دقت 81.8% در دوره 1 — دست‌کم سه‌چهارم راه تا نمرهٔ کامل پیموده شده است.",
-       "دوره 1: دقت 81.8%، با تغییر 0 واحد درصد نسبت به اندازه‌گیری قبلی. بیشترِ راه تا نمرهٔ کامل طی شده است.",
-       "تسلط: دقت 81.8% در دوره 1 — دست‌کم سه‌چهارم راه تا نمرهٔ کامل پیموده شده است.",
-       "دوره 1: دقت 81.8%، با تغییر 0 واحد درصد نسبت به اندازه‌گیری قبلی. بیشترِ راه تا نمرهٔ کامل طی شده است."
-      ]
+      "تسلط: دقت 81.8% در دوره 1 — دست‌کم سه‌چهارم راه تا نمرهٔ کامل پیموده شده است."
      ],
      [
       2.0,
@@ -13622,12 +13527,7 @@
      ],
      [
       1.0,
-      [
-       "Maîtrise : précision 81.8% à l'époque 1 — au moins les trois quarts du chemin vers un score parfait.",
-       "Époque 1 : précision 81.8%, soit 0 points par rapport à la mesure précédente. L'essentiel du chemin vers un score parfait est parcouru.",
-       "Maîtrise : précision 81.8% à l'époque 1 — au moins les trois quarts du chemin vers un score parfait.",
-       "Époque 1 : précision 81.8%, soit 0 points par rapport à la mesure précédente. L'essentiel du chemin vers un score parfait est parcouru."
-      ]
+      "Maîtrise : précision 81.8% à l'époque 1 — au moins les trois quarts du chemin vers un score parfait."
      ],
      [
       2.0,
@@ -19811,7 +19711,7 @@
       1.0,
       [
        "The run is under way: accuracy 7.8% at epoch 1, at or within 1% of its best so far.",
-       "Epoch 1: accuracy 7.8%, a change of 0 points since the previous reading. The learning phase continues.",
+       "Learning: accuracy 7.8% at epoch 1 — the best this run has reached, or within 1% of it.",
        "Learning: accuracy 7.8% at epoch 1 — the best this run has reached, or within 1% of it.",
        "The run is under way: accuracy 7.8% at epoch 1, at or within 1% of its best so far."
       ]
@@ -19904,12 +19804,7 @@
     "frames": [
      [
       1.0,
-      [
-       "آموزش در جریان است: دقت 7.8% در دوره 1؛ برابر با بهترین مقدار تاکنون یا در فاصلهٔ ۱٪ از آن.",
-       "دوره 1: دقت 7.8%، با تغییر 0 واحد درصد نسبت به اندازه‌گیری قبلی. مرحلهٔ یادگیری ادامه دارد.",
-       "آموزش در جریان است: دقت 7.8% در دوره 1؛ برابر با بهترین مقدار تاکنون یا در فاصلهٔ ۱٪ از آن.",
-       "دوره 1: دقت 7.8%، با تغییر 0 واحد درصد نسبت به اندازه‌گیری قبلی. مرحلهٔ یادگیری ادامه دارد."
-      ]
+      "آموزش در جریان است: دقت 7.8% در دوره 1؛ برابر با بهترین مقدار تاکنون یا در فاصلهٔ ۱٪ از آن."
      ],
      [
       2.0,
@@ -19999,12 +19894,7 @@
     "frames": [
      [
       1.0,
-      [
-       "L'entraînement est en cours : précision 7.8% à l'époque 1, à 1 % près de son meilleur niveau jusqu'ici.",
-       "Époque 1 : précision 7.8%, soit 0 points par rapport à la mesure précédente. La phase d'apprentissage se poursuit.",
-       "L'entraînement est en cours : précision 7.8% à l'époque 1, à 1 % près de son meilleur niveau jusqu'ici.",
-       "Époque 1 : précision 7.8%, soit 0 points par rapport à la mesure précédente. La phase d'apprentissage se poursuit."
-      ]
+      "L'entraînement est en cours : précision 7.8% à l'époque 1, à 1 % près de son meilleur niveau jusqu'ici."
      ],
      [
       2.0,
@@ -23166,7 +23056,7 @@
       1.0,
       [
        "Polishing phase: validation AUC 0.9631 at round 1.",
-       "Round 1: validation AUC 0.9631, a change of 0 since the previous reading. Final touches.",
+       "Final touches: validation AUC 0.9631 at round 1.",
        "Final touches: validation AUC 0.9631 at round 1.",
        "Polishing phase: validation AUC 0.9631 at round 1."
       ]
@@ -23725,12 +23615,7 @@
     "frames": [
      [
       1.0,
-      [
-       "مرحلهٔ پالایش: AUC اعتبارسنجی 0.9631 در دور 1.",
-       "دور 1: AUC اعتبارسنجی 0.9631، با تغییر 0 نسبت به اندازه‌گیری قبلی. آخرین پرداخت‌ها.",
-       "مرحلهٔ پالایش: AUC اعتبارسنجی 0.9631 در دور 1.",
-       "دور 1: AUC اعتبارسنجی 0.9631، با تغییر 0 نسبت به اندازه‌گیری قبلی. آخرین پرداخت‌ها."
-      ]
+      "مرحلهٔ پالایش: AUC اعتبارسنجی 0.9631 در دور 1."
      ],
      [
       2.0,
@@ -24286,12 +24171,7 @@
     "frames": [
      [
       1.0,
-      [
-       "Phase de perfectionnement : AUC de validation 0.9631 au tour 1.",
-       "Tour 1 : AUC de validation 0.9631, soit 0 par rapport à la mesure précédente. Dernières retouches.",
-       "Phase de perfectionnement : AUC de validation 0.9631 au tour 1.",
-       "Tour 1 : AUC de validation 0.9631, soit 0 par rapport à la mesure précédente. Dernières retouches."
-      ]
+      "Phase de perfectionnement : AUC de validation 0.9631 au tour 1."
      ],
      [
       2.0,
@@ -25699,7 +25579,7 @@
       1.0,
       [
        "The run is under way: accuracy 45.6% at epoch 1, at or within 1% of its best so far.",
-       "Epoch 1: accuracy 45.6%, a change of 0 points since the previous reading. The learning phase continues.",
+       "Learning: accuracy 45.6% at epoch 1 — the best this run has reached, or within 1% of it.",
        "Learning: accuracy 45.6% at epoch 1 — the best this run has reached, or within 1% of it.",
        "The run is under way: accuracy 45.6% at epoch 1, at or within 1% of its best so far."
       ]
@@ -25717,7 +25597,7 @@
       3.0,
       [
        "The run is under way: accuracy 67.9% at epoch 3, at or within 1% of its best so far.",
-       "Epoch 3: accuracy 67.9%, a change of 0 points since the previous reading. The learning phase continues.",
+       "Learning: accuracy 67.9% at epoch 3 — the best this run has reached, or within 1% of it.",
        "Learning: accuracy 67.9% at epoch 3 — the best this run has reached, or within 1% of it.",
        "The run is under way: accuracy 67.9% at epoch 3, at or within 1% of its best so far."
       ]
@@ -25747,12 +25627,7 @@
     "frames": [
      [
       1.0,
-      [
-       "آموزش در جریان است: دقت 45.6% در دوره 1؛ برابر با بهترین مقدار تاکنون یا در فاصلهٔ ۱٪ از آن.",
-       "دوره 1: دقت 45.6%، با تغییر 0 واحد درصد نسبت به اندازه‌گیری قبلی. مرحلهٔ یادگیری ادامه دارد.",
-       "آموزش در جریان است: دقت 45.6% در دوره 1؛ برابر با بهترین مقدار تاکنون یا در فاصلهٔ ۱٪ از آن.",
-       "دوره 1: دقت 45.6%، با تغییر 0 واحد درصد نسبت به اندازه‌گیری قبلی. مرحلهٔ یادگیری ادامه دارد."
-      ]
+      "آموزش در جریان است: دقت 45.6% در دوره 1؛ برابر با بهترین مقدار تاکنون یا در فاصلهٔ ۱٪ از آن."
      ],
      [
       2.0,
@@ -25765,12 +25640,7 @@
      ],
      [
       3.0,
-      [
-       "آموزش در جریان است: دقت 67.9% در دوره 3؛ برابر با بهترین مقدار تاکنون یا در فاصلهٔ ۱٪ از آن.",
-       "دوره 3: دقت 67.9%، با تغییر 0 واحد درصد نسبت به اندازه‌گیری قبلی. مرحلهٔ یادگیری ادامه دارد.",
-       "آموزش در جریان است: دقت 67.9% در دوره 3؛ برابر با بهترین مقدار تاکنون یا در فاصلهٔ ۱٪ از آن.",
-       "دوره 3: دقت 67.9%، با تغییر 0 واحد درصد نسبت به اندازه‌گیری قبلی. مرحلهٔ یادگیری ادامه دارد."
-      ]
+      "آموزش در جریان است: دقت 67.9% در دوره 3؛ برابر با بهترین مقدار تاکنون یا در فاصلهٔ ۱٪ از آن."
      ],
      [
       4.0,
@@ -25797,12 +25667,7 @@
     "frames": [
      [
       1.0,
-      [
-       "L'entraînement est en cours : précision 45.6% à l'époque 1, à 1 % près de son meilleur niveau jusqu'ici.",
-       "Époque 1 : précision 45.6%, soit 0 points par rapport à la mesure précédente. La phase d'apprentissage se poursuit.",
-       "L'entraînement est en cours : précision 45.6% à l'époque 1, à 1 % près de son meilleur niveau jusqu'ici.",
-       "Époque 1 : précision 45.6%, soit 0 points par rapport à la mesure précédente. La phase d'apprentissage se poursuit."
-      ]
+      "L'entraînement est en cours : précision 45.6% à l'époque 1, à 1 % près de son meilleur niveau jusqu'ici."
      ],
      [
       2.0,
@@ -25815,12 +25680,7 @@
      ],
      [
       3.0,
-      [
-       "L'entraînement est en cours : précision 67.9% à l'époque 3, à 1 % près de son meilleur niveau jusqu'ici.",
-       "Époque 3 : précision 67.9%, soit 0 points par rapport à la mesure précédente. La phase d'apprentissage se poursuit.",
-       "L'entraînement est en cours : précision 67.9% à l'époque 3, à 1 % près de son meilleur niveau jusqu'ici.",
-       "Époque 3 : précision 67.9%, soit 0 points par rapport à la mesure précédente. La phase d'apprentissage se poursuit."
-      ]
+      "L'entraînement est en cours : précision 67.9% à l'époque 3, à 1 % près de son meilleur niveau jusqu'ici."
      ],
      [
       4.0,
@@ -25869,7 +25729,7 @@
       1.0,
       [
        "The run is taking shape: accuracy 43.2% at epoch 1, at or within 1% of its best so far.",
-       "Epoch 1: accuracy 43.2%, a change of 0 points since the previous reading. The run has reached its understanding phase.",
+       "Understanding: accuracy 43.2% at epoch 1 — holding at, or within 1% of, the best this run has reached.",
        "Understanding: accuracy 43.2% at epoch 1 — holding at, or within 1% of, the best this run has reached.",
        "The run is taking shape: accuracy 43.2% at epoch 1, at or within 1% of its best so far."
       ]
@@ -25917,12 +25777,7 @@
      ],
      [
       1.0,
-      [
-       "آموزش شکل می‌گیرد: دقت 43.2% در دوره 1؛ برابر با بهترین مقدار تاکنون یا در فاصلهٔ ۱٪ از آن.",
-       "دوره 1: دقت 43.2%، با تغییر 0 واحد درصد نسبت به اندازه‌گیری قبلی. آموزش به مرحلهٔ درک رسیده است.",
-       "آموزش شکل می‌گیرد: دقت 43.2% در دوره 1؛ برابر با بهترین مقدار تاکنون یا در فاصلهٔ ۱٪ از آن.",
-       "دوره 1: دقت 43.2%، با تغییر 0 واحد درصد نسبت به اندازه‌گیری قبلی. آموزش به مرحلهٔ درک رسیده است."
-      ]
+      "آموزش شکل می‌گیرد: دقت 43.2% در دوره 1؛ برابر با بهترین مقدار تاکنون یا در فاصلهٔ ۱٪ از آن."
      ],
      [
       2.0,
@@ -25967,12 +25822,7 @@
      ],
      [
       1.0,
-      [
-       "L'entraînement prend forme : précision 43.2% à l'époque 1, à 1 % près de son meilleur niveau jusqu'ici.",
-       "Époque 1 : précision 43.2%, soit 0 points par rapport à la mesure précédente. L'entraînement atteint sa phase de compréhension.",
-       "L'entraînement prend forme : précision 43.2% à l'époque 1, à 1 % près de son meilleur niveau jusqu'ici.",
-       "Époque 1 : précision 43.2%, soit 0 points par rapport à la mesure précédente. L'entraînement atteint sa phase de compréhension."
-      ]
+      "L'entraînement prend forme : précision 43.2% à l'époque 1, à 1 % près de son meilleur niveau jusqu'ici."
      ],
      [
       2.0,
@@ -27340,7 +27190,7 @@
       1.0,
       [
        "The run is under way: accuracy 10.3% at epoch 1, at or within 1% of its best so far.",
-       "Epoch 1: accuracy 10.3%, a change of 0 points since the previous reading. The learning phase continues.",
+       "Learning: accuracy 10.3% at epoch 1 — the best this run has reached, or within 1% of it.",
        "Learning: accuracy 10.3% at epoch 1 — the best this run has reached, or within 1% of it.",
        "The run is under way: accuracy 10.3% at epoch 1, at or within 1% of its best so far."
       ]
@@ -27478,12 +27328,7 @@
      ],
      [
       1.0,
-      [
-       "آموزش در جریان است: دقت 10.3% در دوره 1؛ برابر با بهترین مقدار تاکنون یا در فاصلهٔ ۱٪ از آن.",
-       "دوره 1: دقت 10.3%، با تغییر 0 واحد درصد نسبت به اندازه‌گیری قبلی. مرحلهٔ یادگیری ادامه دارد.",
-       "آموزش در جریان است: دقت 10.3% در دوره 1؛ برابر با بهترین مقدار تاکنون یا در فاصلهٔ ۱٪ از آن.",
-       "دوره 1: دقت 10.3%، با تغییر 0 واحد درصد نسبت به اندازه‌گیری قبلی. مرحلهٔ یادگیری ادامه دارد."
-      ]
+      "آموزش در جریان است: دقت 10.3% در دوره 1؛ برابر با بهترین مقدار تاکنون یا در فاصلهٔ ۱٪ از آن."
      ],
      [
       2.0,
@@ -27618,12 +27463,7 @@
      ],
      [
       1.0,
-      [
-       "L'entraînement est en cours : précision 10.3% à l'époque 1, à 1 % près de son meilleur niveau jusqu'ici.",
-       "Époque 1 : précision 10.3%, soit 0 points par rapport à la mesure précédente. La phase d'apprentissage se poursuit.",
-       "L'entraînement est en cours : précision 10.3% à l'époque 1, à 1 % près de son meilleur niveau jusqu'ici.",
-       "Époque 1 : précision 10.3%, soit 0 points par rapport à la mesure précédente. La phase d'apprentissage se poursuit."
-      ]
+      "L'entraînement est en cours : précision 10.3% à l'époque 1, à 1 % près de son meilleur niveau jusqu'ici."
      ],
      [
       2.0,
@@ -27780,7 +27620,7 @@
       10.0,
       [
        "The run is under way: accuracy 73.1% at epoch 10, at or within 1% of its best so far.",
-       "Epoch 10: accuracy 73.1%, a change of 0 points since the previous reading. The learning phase continues.",
+       "Learning: accuracy 73.1% at epoch 10 — the best this run has reached, or within 1% of it.",
        "Learning: accuracy 73.1% at epoch 10 — the best this run has reached, or within 1% of it.",
        "The run is under way: accuracy 73.1% at epoch 10, at or within 1% of its best so far."
       ]
@@ -27909,12 +27749,7 @@
      ],
      [
       10.0,
-      [
-       "آموزش در جریان است: دقت 73.1% در دوره 10؛ برابر با بهترین مقدار تاکنون یا در فاصلهٔ ۱٪ از آن.",
-       "دوره 10: دقت 73.1%، با تغییر 0 واحد درصد نسبت به اندازه‌گیری قبلی. مرحلهٔ یادگیری ادامه دارد.",
-       "آموزش در جریان است: دقت 73.1% در دوره 10؛ برابر با بهترین مقدار تاکنون یا در فاصلهٔ ۱٪ از آن.",
-       "دوره 10: دقت 73.1%، با تغییر 0 واحد درصد نسبت به اندازه‌گیری قبلی. مرحلهٔ یادگیری ادامه دارد."
-      ]
+      "آموزش در جریان است: دقت 73.1% در دوره 10؛ برابر با بهترین مقدار تاکنون یا در فاصلهٔ ۱٪ از آن."
      ],
      [
       15.0,
@@ -28040,12 +27875,7 @@
      ],
      [
       10.0,
-      [
-       "L'entraînement est en cours : précision 73.1% à l'époque 10, à 1 % près de son meilleur niveau jusqu'ici.",
-       "Époque 10 : précision 73.1%, soit 0 points par rapport à la mesure précédente. La phase d'apprentissage se poursuit.",
-       "L'entraînement est en cours : précision 73.1% à l'époque 10, à 1 % près de son meilleur niveau jusqu'ici.",
-       "Époque 10 : précision 73.1%, soit 0 points par rapport à la mesure précédente. La phase d'apprentissage se poursuit."
-      ]
+      "L'entraînement est en cours : précision 73.1% à l'époque 10, à 1 % près de son meilleur niveau jusqu'ici."
      ],
      [
       15.0,
@@ -31701,7 +31531,7 @@
       1.0,
       [
        "The run is under way: accuracy 12.4% at epoch 1, at or within 1% of its best so far.",
-       "Epoch 1: accuracy 12.4%, a change of 0 points since the previous reading. The learning phase continues.",
+       "Learning: accuracy 12.4% at epoch 1 — the best this run has reached, or within 1% of it.",
        "Learning: accuracy 12.4% at epoch 1 — the best this run has reached, or within 1% of it.",
        "The run is under way: accuracy 12.4% at epoch 1, at or within 1% of its best so far."
       ]
@@ -31749,12 +31579,7 @@
     "frames": [
      [
       1.0,
-      [
-       "آموزش در جریان است: دقت 12.4% در دوره 1؛ برابر با بهترین مقدار تاکنون یا در فاصلهٔ ۱٪ از آن.",
-       "دوره 1: دقت 12.4%، با تغییر 0 واحد درصد نسبت به اندازه‌گیری قبلی. مرحلهٔ یادگیری ادامه دارد.",
-       "آموزش در جریان است: دقت 12.4% در دوره 1؛ برابر با بهترین مقدار تاکنون یا در فاصلهٔ ۱٪ از آن.",
-       "دوره 1: دقت 12.4%، با تغییر 0 واحد درصد نسبت به اندازه‌گیری قبلی. مرحلهٔ یادگیری ادامه دارد."
-      ]
+      "آموزش در جریان است: دقت 12.4% در دوره 1؛ برابر با بهترین مقدار تاکنون یا در فاصلهٔ ۱٪ از آن."
      ],
      [
       2.0,
@@ -31799,12 +31624,7 @@
     "frames": [
      [
       1.0,
-      [
-       "L'entraînement est en cours : précision 12.4% à l'époque 1, à 1 % près de son meilleur niveau jusqu'ici.",
-       "Époque 1 : précision 12.4%, soit 0 points par rapport à la mesure précédente. La phase d'apprentissage se poursuit.",
-       "L'entraînement est en cours : précision 12.4% à l'époque 1, à 1 % près de son meilleur niveau jusqu'ici.",
-       "Époque 1 : précision 12.4%, soit 0 points par rapport à la mesure précédente. La phase d'apprentissage se poursuit."
-      ]
+      "L'entraînement est en cours : précision 12.4% à l'époque 1, à 1 % près de son meilleur niveau jusqu'ici."
      ],
      [
       2.0,
@@ -32773,7 +32593,7 @@
       1.0,
       [
        "The run is under way: validation loss 2.4000 at epoch 1.",
-       "Epoch 1: validation loss 2.4000, a change of 0 since the previous reading.",
+       "Learning phase: validation loss stands at 2.4000 at epoch 1.",
        "Learning phase: validation loss stands at 2.4000 at epoch 1.",
        "The run is under way: validation loss 2.4000 at epoch 1."
       ]
@@ -32821,12 +32641,7 @@
     "frames": [
      [
       1.0,
-      [
-       "آموزش در جریان است: loss اعتبارسنجی 2.4000 در دوره 1.",
-       "دوره 1: loss اعتبارسنجی 2.4000، با تغییر 0 نسبت به اندازه‌گیری قبلی.",
-       "آموزش در جریان است: loss اعتبارسنجی 2.4000 در دوره 1.",
-       "دوره 1: loss اعتبارسنجی 2.4000، با تغییر 0 نسبت به اندازه‌گیری قبلی."
-      ]
+      "آموزش در جریان است: loss اعتبارسنجی 2.4000 در دوره 1."
      ],
      [
       2.0,
@@ -32871,12 +32686,7 @@
     "frames": [
      [
       1.0,
-      [
-       "L'entraînement est en cours : loss de validation 2.4000 à l'époque 1.",
-       "Époque 1 : loss de validation 2.4000, soit 0 par rapport à la mesure précédente.",
-       "L'entraînement est en cours : loss de validation 2.4000 à l'époque 1.",
-       "Époque 1 : loss de validation 2.4000, soit 0 par rapport à la mesure précédente."
-      ]
+      "L'entraînement est en cours : loss de validation 2.4000 à l'époque 1."
      ],
      [
       2.0,
@@ -32925,7 +32735,7 @@
       1.0,
       [
        "The run is taking shape: accuracy 61.4% at epoch 1, at or within 1% of its best so far.",
-       "Epoch 1: accuracy 61.4%, a change of 0 points since the previous reading. The run has reached its understanding phase.",
+       "Understanding: accuracy 61.4% at epoch 1 — holding at, or within 1% of, the best this run has reached.",
        "Understanding: accuracy 61.4% at epoch 1 — holding at, or within 1% of, the best this run has reached.",
        "The run is taking shape: accuracy 61.4% at epoch 1, at or within 1% of its best so far."
       ]
@@ -33119,12 +32929,7 @@
     "frames": [
      [
       1.0,
-      [
-       "آموزش شکل می‌گیرد: دقت 61.4% در دوره 1؛ برابر با بهترین مقدار تاکنون یا در فاصلهٔ ۱٪ از آن.",
-       "دوره 1: دقت 61.4%، با تغییر 0 واحد درصد نسبت به اندازه‌گیری قبلی. آموزش به مرحلهٔ درک رسیده است.",
-       "آموزش شکل می‌گیرد: دقت 61.4% در دوره 1؛ برابر با بهترین مقدار تاکنون یا در فاصلهٔ ۱٪ از آن.",
-       "دوره 1: دقت 61.4%، با تغییر 0 واحد درصد نسبت به اندازه‌گیری قبلی. آموزش به مرحلهٔ درک رسیده است."
-      ]
+      "آموزش شکل می‌گیرد: دقت 61.4% در دوره 1؛ برابر با بهترین مقدار تاکنون یا در فاصلهٔ ۱٪ از آن."
      ],
      [
       2.0,
@@ -33315,12 +33120,7 @@
     "frames": [
      [
       1.0,
-      [
-       "L'entraînement prend forme : précision 61.4% à l'époque 1, à 1 % près de son meilleur niveau jusqu'ici.",
-       "Époque 1 : précision 61.4%, soit 0 points par rapport à la mesure précédente. L'entraînement atteint sa phase de compréhension.",
-       "L'entraînement prend forme : précision 61.4% à l'époque 1, à 1 % près de son meilleur niveau jusqu'ici.",
-       "Époque 1 : précision 61.4%, soit 0 points par rapport à la mesure précédente. L'entraînement atteint sa phase de compréhension."
-      ]
+      "L'entraînement prend forme : précision 61.4% à l'époque 1, à 1 % près de son meilleur niveau jusqu'ici."
      ],
      [
       2.0,
@@ -33515,7 +33315,7 @@
       1.0,
       [
        "Mastering: accuracy 87.4% at epoch 1 — three quarters of the way to a perfect score, or more.",
-       "Epoch 1: accuracy 87.4%, a change of 0 points since the previous reading. Most of the distance to a perfect score is behind this run.",
+       "Far along: accuracy 87.4% at epoch 1, at or within 1% of the best this run has reached.",
        "Far along: accuracy 87.4% at epoch 1, at or within 1% of the best this run has reached.",
        "Mastering: accuracy 87.4% at epoch 1 — three quarters of the way to a perfect score, or more."
       ]
@@ -33527,12 +33327,7 @@
     "frames": [
      [
       1.0,
-      [
-       "تسلط: دقت 87.4% در دوره 1 — دست‌کم سه‌چهارم راه تا نمرهٔ کامل پیموده شده است.",
-       "دوره 1: دقت 87.4%، با تغییر 0 واحد درصد نسبت به اندازه‌گیری قبلی. بیشترِ راه تا نمرهٔ کامل طی شده است.",
-       "تسلط: دقت 87.4% در دوره 1 — دست‌کم سه‌چهارم راه تا نمرهٔ کامل پیموده شده است.",
-       "دوره 1: دقت 87.4%، با تغییر 0 واحد درصد نسبت به اندازه‌گیری قبلی. بیشترِ راه تا نمرهٔ کامل طی شده است."
-      ]
+      "تسلط: دقت 87.4% در دوره 1 — دست‌کم سه‌چهارم راه تا نمرهٔ کامل پیموده شده است."
      ]
     ],
     "warnings": []
@@ -33541,12 +33336,7 @@
     "frames": [
      [
       1.0,
-      [
-       "Maîtrise : précision 87.4% à l'époque 1 — au moins les trois quarts du chemin vers un score parfait.",
-       "Époque 1 : précision 87.4%, soit 0 points par rapport à la mesure précédente. L'essentiel du chemin vers un score parfait est parcouru.",
-       "Maîtrise : précision 87.4% à l'époque 1 — au moins les trois quarts du chemin vers un score parfait.",
-       "Époque 1 : précision 87.4%, soit 0 points par rapport à la mesure précédente. L'essentiel du chemin vers un score parfait est parcouru."
-      ]
+      "Maîtrise : précision 87.4% à l'époque 1 — au moins les trois quarts du chemin vers un score parfait."
      ]
     ],
     "warnings": []
@@ -38278,7 +38068,7 @@
       5.0,
       [
        "The run is under way: mAP50 6.1% at epoch 5, at or within 1% of its best so far.",
-       "Epoch 5: mAP50 6.1%, a change of 0 points since the previous reading. The learning phase continues.",
+       "Learning: mAP50 6.1% at epoch 5 — the best this run has reached, or within 1% of it.",
        "Learning: mAP50 6.1% at epoch 5 — the best this run has reached, or within 1% of it.",
        "The run is under way: mAP50 6.1% at epoch 5, at or within 1% of its best so far."
       ]
@@ -38416,12 +38206,7 @@
      ],
      [
       5.0,
-      [
-       "آموزش در جریان است: mAP50 6.1% در دوره 5؛ برابر با بهترین مقدار تاکنون یا در فاصلهٔ ۱٪ از آن.",
-       "دوره 5: mAP50 6.1%، با تغییر 0 واحد درصد نسبت به اندازه‌گیری قبلی. مرحلهٔ یادگیری ادامه دارد.",
-       "آموزش در جریان است: mAP50 6.1% در دوره 5؛ برابر با بهترین مقدار تاکنون یا در فاصلهٔ ۱٪ از آن.",
-       "دوره 5: mAP50 6.1%، با تغییر 0 واحد درصد نسبت به اندازه‌گیری قبلی. مرحلهٔ یادگیری ادامه دارد."
-      ]
+      "آموزش در جریان است: mAP50 6.1% در دوره 5؛ برابر با بهترین مقدار تاکنون یا در فاصلهٔ ۱٪ از آن."
      ],
      [
       10.0,
@@ -38556,12 +38341,7 @@
      ],
      [
       5.0,
-      [
-       "L'entraînement est en cours : mAP50 6.1% à l'époque 5, à 1 % près de son meilleur niveau jusqu'ici.",
-       "Époque 5 : mAP50 6.1%, soit 0 points par rapport à la mesure précédente. La phase d'apprentissage se poursuit.",
-       "L'entraînement est en cours : mAP50 6.1% à l'époque 5, à 1 % près de son meilleur niveau jusqu'ici.",
-       "Époque 5 : mAP50 6.1%, soit 0 points par rapport à la mesure précédente. La phase d'apprentissage se poursuit."
-      ]
+      "L'entraînement est en cours : mAP50 6.1% à l'époque 5, à 1 % près de son meilleur niveau jusqu'ici."
      ],
      [
       10.0,
@@ -38655,7 +38435,7 @@
       1.0,
       [
        "The run is under way: box loss 1.1350 at epoch 1.",
-       "Epoch 1: box loss 1.1350, a change of 0 since the previous reading.",
+       "Learning phase: box loss stands at 1.1350 at epoch 1.",
        "Learning phase: box loss stands at 1.1350 at epoch 1.",
        "The run is under way: box loss 1.1350 at epoch 1."
       ]
@@ -38664,7 +38444,7 @@
       1.0,
       [
        "The run is under way: mAP50 62.0% at epoch 1, at or within 1% of its best so far.",
-       "Epoch 1: mAP50 62.0%, a change of 0 points since the previous reading. The learning phase continues.",
+       "Learning: mAP50 62.0% at epoch 1 — the best this run has reached, or within 1% of it.",
        "Learning: mAP50 62.0% at epoch 1 — the best this run has reached, or within 1% of it.",
        "The run is under way: mAP50 62.0% at epoch 1, at or within 1% of its best so far."
       ]
@@ -38694,21 +38474,11 @@
     "frames": [
      [
       1.0,
-      [
-       "آموزش در جریان است: box loss 1.1350 در دوره 1.",
-       "دوره 1: box loss 1.1350، با تغییر 0 نسبت به اندازه‌گیری قبلی.",
-       "آموزش در جریان است: box loss 1.1350 در دوره 1.",
-       "دوره 1: box loss 1.1350، با تغییر 0 نسبت به اندازه‌گیری قبلی."
-      ]
+      "آموزش در جریان است: box loss 1.1350 در دوره 1."
      ],
      [
       1.0,
-      [
-       "آموزش در جریان است: mAP50 62.0% در دوره 1؛ برابر با بهترین مقدار تاکنون یا در فاصلهٔ ۱٪ از آن.",
-       "دوره 1: mAP50 62.0%، با تغییر 0 واحد درصد نسبت به اندازه‌گیری قبلی. مرحلهٔ یادگیری ادامه دارد.",
-       "آموزش در جریان است: mAP50 62.0% در دوره 1؛ برابر با بهترین مقدار تاکنون یا در فاصلهٔ ۱٪ از آن.",
-       "دوره 1: mAP50 62.0%، با تغییر 0 واحد درصد نسبت به اندازه‌گیری قبلی. مرحلهٔ یادگیری ادامه دارد."
-      ]
+      "آموزش در جریان است: mAP50 62.0% در دوره 1؛ برابر با بهترین مقدار تاکنون یا در فاصلهٔ ۱٪ از آن."
      ],
      [
       2.0,
@@ -38735,21 +38505,11 @@
     "frames": [
      [
       1.0,
-      [
-       "L'entraînement est en cours : box loss 1.1350 à l'époque 1.",
-       "Époque 1 : box loss 1.1350, soit 0 par rapport à la mesure précédente.",
-       "L'entraînement est en cours : box loss 1.1350 à l'époque 1.",
-       "Époque 1 : box loss 1.1350, soit 0 par rapport à la mesure précédente."
-      ]
+      "L'entraînement est en cours : box loss 1.1350 à l'époque 1."
      ],
      [
       1.0,
-      [
-       "L'entraînement est en cours : mAP50 62.0% à l'époque 1, à 1 % près de son meilleur niveau jusqu'ici.",
-       "Époque 1 : mAP50 62.0%, soit 0 points par rapport à la mesure précédente. La phase d'apprentissage se poursuit.",
-       "L'entraînement est en cours : mAP50 62.0% à l'époque 1, à 1 % près de son meilleur niveau jusqu'ici.",
-       "Époque 1 : mAP50 62.0%, soit 0 points par rapport à la mesure précédente. La phase d'apprentissage se poursuit."
-      ]
+      "L'entraînement est en cours : mAP50 62.0% à l'époque 1, à 1 % près de son meilleur niveau jusqu'ici."
      ],
      [
       2.0,
@@ -38780,7 +38540,7 @@
       1.0,
       [
        "The run is under way: box loss 0.8360 at epoch 1.",
-       "Epoch 1: box loss 0.8360, a change of 0 since the previous reading.",
+       "Learning phase: box loss stands at 0.8360 at epoch 1.",
        "Learning phase: box loss stands at 0.8360 at epoch 1.",
        "The run is under way: box loss 0.8360 at epoch 1."
       ]
@@ -38825,7 +38585,7 @@
       5.0,
       [
        "The run is taking shape: mAP50 41.5% at epoch 5, at or within 1% of its best so far.",
-       "Epoch 5: mAP50 41.5%, a change of 0 points since the previous reading. The run has reached its understanding phase.",
+       "Understanding: mAP50 41.5% at epoch 5 — holding at, or within 1% of, the best this run has reached.",
        "Understanding: mAP50 41.5% at epoch 5 — holding at, or within 1% of, the best this run has reached.",
        "The run is taking shape: mAP50 41.5% at epoch 5, at or within 1% of its best so far."
       ]
@@ -38846,12 +38606,7 @@
     "frames": [
      [
       1.0,
-      [
-       "آموزش در جریان است: box loss 0.8360 در دوره 1.",
-       "دوره 1: box loss 0.8360، با تغییر 0 نسبت به اندازه‌گیری قبلی.",
-       "آموزش در جریان است: box loss 0.8360 در دوره 1.",
-       "دوره 1: box loss 0.8360، با تغییر 0 نسبت به اندازه‌گیری قبلی."
-      ]
+      "آموزش در جریان است: box loss 0.8360 در دوره 1."
      ],
      [
       2.0,
@@ -38891,12 +38646,7 @@
      ],
      [
       5.0,
-      [
-       "آموزش شکل می‌گیرد: mAP50 41.5% در دوره 5؛ برابر با بهترین مقدار تاکنون یا در فاصلهٔ ۱٪ از آن.",
-       "دوره 5: mAP50 41.5%، با تغییر 0 واحد درصد نسبت به اندازه‌گیری قبلی. آموزش به مرحلهٔ درک رسیده است.",
-       "آموزش شکل می‌گیرد: mAP50 41.5% در دوره 5؛ برابر با بهترین مقدار تاکنون یا در فاصلهٔ ۱٪ از آن.",
-       "دوره 5: mAP50 41.5%، با تغییر 0 واحد درصد نسبت به اندازه‌گیری قبلی. آموزش به مرحلهٔ درک رسیده است."
-      ]
+      "آموزش شکل می‌گیرد: mAP50 41.5% در دوره 5؛ برابر با بهترین مقدار تاکنون یا در فاصلهٔ ۱٪ از آن."
      ],
      [
       10.0,
@@ -38914,12 +38664,7 @@
     "frames": [
      [
       1.0,
-      [
-       "L'entraînement est en cours : box loss 0.8360 à l'époque 1.",
-       "Époque 1 : box loss 0.8360, soit 0 par rapport à la mesure précédente.",
-       "L'entraînement est en cours : box loss 0.8360 à l'époque 1.",
-       "Époque 1 : box loss 0.8360, soit 0 par rapport à la mesure précédente."
-      ]
+      "L'entraînement est en cours : box loss 0.8360 à l'époque 1."
      ],
      [
       2.0,
@@ -38959,12 +38704,7 @@
      ],
      [
       5.0,
-      [
-       "L'entraînement prend forme : mAP50 41.5% à l'époque 5, à 1 % près de son meilleur niveau jusqu'ici.",
-       "Époque 5 : mAP50 41.5%, soit 0 points par rapport à la mesure précédente. L'entraînement atteint sa phase de compréhension.",
-       "L'entraînement prend forme : mAP50 41.5% à l'époque 5, à 1 % près de son meilleur niveau jusqu'ici.",
-       "Époque 5 : mAP50 41.5%, soit 0 points par rapport à la mesure précédente. L'entraînement atteint sa phase de compréhension."
-      ]
+      "L'entraînement prend forme : mAP50 41.5% à l'époque 5, à 1 % près de son meilleur niveau jusqu'ici."
      ],
      [
       10.0,
