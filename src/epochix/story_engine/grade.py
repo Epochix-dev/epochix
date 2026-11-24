@@ -364,6 +364,18 @@ def grade_note(
     return None
 
 
+def improvement_from_baseline(baseline: float, current: float, lower_better: bool) -> float:
+    """How far *current* moved the right way from *baseline*, as a share of it.
+
+    Unclamped: 0.6 is a 60% rise (or fall, for an error), a negative value
+    moved the wrong way. The size of the first reading is the only scale a
+    metric with no ideal has, so this is what grade_by_trajectory grades and
+    what the phase and the stall read for such a metric (NO_IDEAL_METRICS).
+    """
+    denom = abs(baseline) if abs(baseline) > 1e-9 else 1e-9
+    return (baseline - current) / denom if lower_better else (current - baseline) / denom
+
+
 def grade_by_trajectory(baseline: float, current: float, lower_better: bool) -> Grade:
     """Grade a metric that has no absolute scale by how far it improved.
 
@@ -374,8 +386,7 @@ def grade_by_trajectory(baseline: float, current: float, lower_better: bool) -> 
     "the trend is positive/negative" narrative instead of scoring a healthy,
     decreasing loss as if it were 19% accuracy.
     """
-    denom = abs(baseline) if abs(baseline) > 1e-9 else 1e-9
-    improvement = (baseline - current) / denom if lower_better else (current - baseline) / denom
+    improvement = improvement_from_baseline(baseline, current, lower_better)
     for grade, threshold in _TRAJECTORY_THRESHOLDS:
         if improvement >= threshold:
             return grade
@@ -597,6 +608,23 @@ UNIT_BOUNDED_METRICS = frozenset(
         "MRR",
     }
 )
+
+
+# Higher-is-better metrics with no ideal value to measure a share of. PSNR is
+# in decibels and grows without bound as the error shrinks; the inception score
+# runs from 1 to the number of classes, which no log states. Every other
+# higher-is-better metric's improvement is read as a share of the way to 1.0,
+# the top of an accuracy's scale; these start above 1, so that share was
+# negative, clamped to nothing, and a GENERATIVE run whose PSNR climbed 20 to
+# 32 was placed in Awakening and told "No meaningful progress yet ... a setup
+# problem" beside an A. Their improvement is measured from the first reading
+# instead (improvement_from_baseline).
+NO_IDEAL_METRICS = frozenset({"PSNR", "is_score"})
+
+
+def has_no_ideal(metric: str | None) -> bool:
+    """True when *metric* rises without a known best value (NO_IDEAL_METRICS)."""
+    return bool(metric) and metric in NO_IDEAL_METRICS
 
 
 def is_unit_bounded(metric: str | None) -> bool:

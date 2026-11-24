@@ -7,6 +7,7 @@
  * the improvement ratio, fell back to the clock on a negative span, and
  * answered a made-up 0.05 of progress when the run's length was unknown.
  */
+import { improvementFromBaseline } from "./grader";
 import { AWAKENING_BELOW, PHASE_STEPS, type Phase } from "./grading.generated";
 
 export type { Phase };
@@ -24,13 +25,22 @@ export const PHASE_EMOJIS: Record<Phase, string> = {
  * relative_improvement. For a higher-is-better metric the ideal defaults to 1,
  * for a lower-is-better one to 0. Null when the span is degenerate (the
  * baseline already at the ideal), so callers can fall back.
+ *
+ * `unbounded` is for a metric with no ideal (hasNoIdeal: PSNR, the inception
+ * score): the move from the baseline as a share of it, as gradeByTrajectory
+ * measures it, clamped to [0, 1]. Measured against 1, a PSNR that rose 20 to
+ * 32 read as no improvement.
  */
 export function relativeImprovement(
   primaryValue: number,
   baseline: number,
   lowerBetter: boolean,
   ideal: number | null = null,
+  unbounded = false,
 ): number | null {
+  if (unbounded) {
+    return Math.max(0.0, Math.min(1.0, improvementFromBaseline(baseline, primaryValue, lowerBetter)));
+  }
   const target = ideal ?? (lowerBetter ? 0.0 : 1.0);
   const span = lowerBetter ? baseline - target : target - baseline;
   if (Math.abs(span) <= 1e-9) return null;
@@ -41,7 +51,9 @@ export function relativeImprovement(
 /**
  * Hybrid phase detector — compute_phase. `progress` is the fraction of
  * training completed, or null when the run's length is unknown; then the
- * advancement is the relative improvement alone.
+ * advancement is the relative improvement alone. `unbounded`: the metric has
+ * no ideal, and its improvement is read from the baseline alone; the clock
+ * still advances it, and each phase still needs its share of improvement.
  */
 export function computePhase(
   progress: number | null,
@@ -49,8 +61,9 @@ export function computePhase(
   baseline: number,
   lowerBetter = false,
   ideal: number | null = null,
+  unbounded = false,
 ): Phase {
-  const rel = relativeImprovement(primaryValue, baseline, lowerBetter, ideal);
+  const rel = relativeImprovement(primaryValue, baseline, lowerBetter, ideal, unbounded);
   // When the metric span is degenerate, lean on the clock (or 0 if unknown).
   const relative = rel !== null ? rel : progress !== null ? progress : 0.0;
   // Advancement = the clock when there is one, else metric-driven progress.

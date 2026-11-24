@@ -69,6 +69,9 @@ export const RUNNING_MEANS: ReadonlySet<string> = new Set(["avr_loss"]);
 
 /** Metrics that cannot leave [0, 1] (grade.UNIT_BOUNDED_METRICS). */
 export const UNIT_BOUNDED_METRICS: ReadonlySet<string> = new Set(["AUC", "Dice", "EER", "IoU", "MRR", "NDCG", "PR_AUC", "R2", "SSIM", "TAR", "accuracy", "f1", "mAP", "mAP50", "mAP75", "mIoU", "pixel_accuracy", "precision", "recall", "specificity", "top5_accuracy", "train_accuracy", "val_accuracy"]);
+/** Higher-is-better metrics with no ideal (grade.NO_IDEAL_METRICS): their
+ *  improvement is read from the first reading, not as a share of 1.0. */
+export const NO_IDEAL_METRICS: ReadonlySet<string> = new Set(["PSNR", "is_score"]);
 /** The fractions a milestone announces crossing (story_engine/milestones.py). */
 export const MILESTONE_THRESHOLDS: readonly number[] = [0.25, 0.5, 0.75, 0.9];
 /** Bounded to [0, 1] but not a fraction of anything: no "crossed N%". */

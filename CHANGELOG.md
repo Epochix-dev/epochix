@@ -33,6 +33,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   corpus log, in every language and under run ids that reach every variant,
   is now told by both engines word for word, and a test holds them to it
   (`stories.golden.json`).
+- **A rising PSNR or inception score is no longer told it made no progress.**
+  The phase read every higher-is-better metric as a share of the way to 1.0,
+  the top of an accuracy's scale. PSNR (in decibels) and the inception score
+  start above 1, so that share was negative and clamped to nothing: every
+  frame was placed in Awakening, and a GENERATIVE run whose PSNR climbed 20 to
+  32 was told "No meaningful progress yet … This usually points to a setup
+  problem", beside an A graded on that same climb. Neither metric has an ideal
+  to take a share of, so their improvement is now measured from the first
+  reading, as the improvement grade measures it: the clock still advances the
+  run when its length is known, and each phase still needs its share of
+  improvement (PSNR 20 to 32 is up 60%, and ends in Understanding). The stall
+  is measured the same way, so a PSNR that stays within 3% of its first
+  reading is still told it has barely moved. Scores on 0–1 and errors are
+  placed exactly as before. Both engines. No log in the corpus is told by
+  either metric, so none of their phases or letters change.
 
 ## [0.7.43] — 2026-11-23
 

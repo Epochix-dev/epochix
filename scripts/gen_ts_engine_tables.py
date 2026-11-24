@@ -568,6 +568,11 @@ def render_grading() -> str:
         "export const UNIT_BOUNDED_METRICS: ReadonlySet<string> = new Set("
         + _js(sorted(grade.UNIT_BOUNDED_METRICS))
         + ");",
+        "/** Higher-is-better metrics with no ideal (grade.NO_IDEAL_METRICS): their",
+        " *  improvement is read from the first reading, not as a share of 1.0. */",
+        "export const NO_IDEAL_METRICS: ReadonlySet<string> = new Set("
+        + _js(sorted(grade.NO_IDEAL_METRICS))
+        + ");",
         "/** The fractions a milestone announces crossing (story_engine/milestones.py). */",
         "export const MILESTONE_THRESHOLDS: readonly number[] = ["
         + ", ".join(_num(t) for t in milestones_mod._ACCURACY_THRESHOLDS)
@@ -664,6 +669,26 @@ def render_grading_golden() -> str:
                 for progress in (None, 0.0, 0.05, 0.1, 0.39, 0.4, 0.69, 0.7, 0.94, 0.95, 1.0):
                     got = phases.compute_phase(progress, value, baseline, lower_better=lower).value
                     phase.append([progress, value, baseline, lower, got])
+
+    # A metric with no ideal: baselines above 1, at 0 and below it (a reward
+    # starts negative), and values that fall, hold, and rise past each bar.
+    relative_unbounded = []
+    phase_unbounded = []
+    for baseline in (-1500.0, -1.0, 0.0, 1e-12, 0.5, 2.0, 20.0):
+        for share in (-0.5, -0.02, 0.0, 0.029, 0.03, 0.39, 0.4, 0.74, 0.75, 0.94, 0.95, 1.0, 3.5):
+            for lower in (True, False):
+                move = abs(baseline) * share
+                value = baseline - move if lower else baseline + move
+                rel = phases.relative_improvement(
+                    value, baseline, lower_better=lower, unbounded=True
+                )
+                relative_unbounded.append([value, baseline, lower, rel])
+                for progress in (None, 0.0, 0.05, 0.1, 0.4, 0.7, 0.95, 1.0):
+                    got = phases.compute_phase(
+                        progress, value, baseline, lower_better=lower, unbounded=True
+                    ).value
+                    phase_unbounded.append([progress, value, baseline, lower, got])
+    no_ideal = {name: grade.has_no_ideal(name) for name in names}
 
     note = []
     for g in (Grade.A, Grade.F, Grade.INCOMPLETE):
@@ -762,6 +787,9 @@ def render_grading_golden() -> str:
         "metric_lower_better": direction,
         "relative_improvement": relative,
         "compute_phase": phase,
+        "relative_improvement_unbounded": relative_unbounded,
+        "compute_phase_unbounded": phase_unbounded,
+        "has_no_ideal": no_ideal,
         "grade_note": note,
         "grade_note_unsteady": note_unsteady,
         "grade_note_running_mean": note_running_mean,

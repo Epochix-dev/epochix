@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from epochix.enums import Phase
+from epochix.story_engine.grade import improvement_from_baseline
 
 # Below this advancement a run is AWAKENING whatever its metric says.
 AWAKENING_BELOW = 0.10
@@ -21,6 +22,7 @@ def relative_improvement(
     *,
     lower_better: bool = False,
     ideal: float | None = None,
+    unbounded: bool = False,
 ) -> float | None:
     """Fraction of the achievable improvement realised so far, in [0, 1].
 
@@ -29,7 +31,15 @@ def relative_improvement(
     (loss, MAE, EER, perplexity) the ideal defaults to 0.0 and improvement
     means moving *down* from the baseline. Returns ``None`` when the span is
     degenerate (baseline already at the ideal), so callers can fall back.
+
+    *unbounded* is for a metric with no ideal at all (grade.has_no_ideal:
+    PSNR, the inception score). There is no "achievable" to take a share of,
+    so the improvement is the move from the baseline as a share of the
+    baseline — what grade_by_trajectory grades — clamped to [0, 1]. Measured
+    against 1.0 instead, a PSNR that rose 20 to 32 read as no improvement.
     """
+    if unbounded:
+        return max(0.0, min(1.0, improvement_from_baseline(baseline, primary_value, lower_better)))
     if ideal is None:
         ideal = 0.0 if lower_better else 1.0
     span = (baseline - ideal) if lower_better else (ideal - baseline)
@@ -46,6 +56,7 @@ def compute_phase(
     *,
     lower_better: bool = False,
     ideal: float | None = None,
+    unbounded: bool = False,
 ) -> Phase:
     """Hybrid phase detector using both progress and relative metric improvement.
 
@@ -57,12 +68,17 @@ def compute_phase(
         baseline:      Value at the first recorded epoch.
         lower_better:  True for loss-like metrics where smaller is better.
         ideal:         Optional override for the metric's ideal value.
+        unbounded:     The metric has no ideal (grade.has_no_ideal): its
+                       improvement is read from the baseline alone. The clock
+                       still advances it when there is one, and each phase
+                       still needs its share of improvement.
     """
     rel = relative_improvement(
         primary_value,
         baseline,
         lower_better=lower_better,
         ideal=ideal,
+        unbounded=unbounded,
     )
     # When the metric span is degenerate, lean on the clock (or 0 if unknown).
     relative = rel if rel is not None else (progress if progress is not None else 0.0)
