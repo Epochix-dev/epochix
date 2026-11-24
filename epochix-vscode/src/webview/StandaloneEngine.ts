@@ -33,6 +33,7 @@ import {
   gradeByTrajectory,
   gradeNote,
   hasAbsoluteScale,
+  hasNoIdeal,
   metricLowerBetter,
   taskLowerBetter,
 } from "../story/grader";
@@ -889,14 +890,21 @@ export class StandaloneEngine {
     // whatever its readings look like (steadiness.ts runningMean).
     const averaged = runningMean(primary.key);
     const incomparable = swing !== null || averaged;
+    // A metric with no ideal (PSNR, the inception score) has no scale of its
+    // own to sit on: its improvement is read from its first reading, as
+    // gradeByTrajectory reads it. Measured against 1 it was negative, and a
+    // PSNR that climbed 20 to 32 was told it had made no progress.
+    const noIdeal = hasNoIdeal(key);
     const phaseBaseline =
       incomparable
         ? value
-        : this._primaryReadings < 2 && !lowerBetter && value >= 0 && value <= 1
+        : this._primaryReadings < 2 && !lowerBetter && !noIdeal && value >= 0 && value <= 1
           ? 0.0
           : this._baseline;
-    const phase: Phase = computePhase(clock, value, phaseBaseline, lowerBetter);
-    const rel = incomparable ? null : relativeImprovement(value, this._baseline, lowerBetter);
+    const phase: Phase = computePhase(clock, value, phaseBaseline, lowerBetter, null, noIdeal);
+    const rel = incomparable
+      ? null
+      : relativeImprovement(value, this._baseline, lowerBetter, null, noIdeal);
     // Honest advancement: the clock when the length is known, otherwise the
     // fraction of achievable improvement realised. Not a made-up constant,
     // which pinned runs without a length in their first phase for life.

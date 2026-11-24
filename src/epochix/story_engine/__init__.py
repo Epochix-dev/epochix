@@ -23,6 +23,7 @@ from epochix.story_engine.grade import (
     grade_by_trajectory,
     grade_note,
     has_absolute_scale,
+    has_no_ideal,
     impossible_reason,
     is_lower_better,
     metric_lower_better,
@@ -211,7 +212,9 @@ _PREFERRED_KEYS_FOR_TASK: dict[TaskType, tuple[str, ...]] = {
 }
 
 # A run is "stalled" when, after this many epochs of the primary metric, it has
-# realised less than this fraction of its achievable improvement. Deliberately
+# realised less than this fraction of its achievable improvement — for a metric
+# with no ideal (grade.NO_IDEAL_METRICS), moved less than this share of its
+# first reading, as grade_by_trajectory measures a move. Deliberately
 # conservative: we would rather stay quiet than wrongly call a slow-but-real
 # improvement a failure.
 
@@ -720,10 +723,18 @@ class StoryEngine:
         # For a bounded higher-is-better metric there is another honest reading:
         # where the value sits on its own scale. Only for the first reading —
         # once there are two, real movement is the better signal.
+        #
+        # A metric with no ideal (PSNR, the inception score) has no scale of
+        # its own to sit on, whatever its value: its improvement is read from
+        # its first reading, as grade_by_trajectory reads it, and measured
+        # against 1.0 it was negative — every frame in Awakening, and the
+        # stall story told of a PSNR that climbed 20 to 32.
+        no_ideal = has_no_ideal(primary_key)
         phase_baseline = self._baseline
         if (
             len(self._metric_history.get(primary_key, ())) < 2
             and not lower_better
+            and not no_ideal
             and 0.0 <= primary_value <= 1.0
         ):
             phase_baseline = 0.0
@@ -748,14 +759,19 @@ class StoryEngine:
             primary_value=primary_value,
             baseline=phase_baseline,
             lower_better=lower_better,
+            unbounded=no_ideal,
         )
 
         # Honest "advancement" 0–1: the clock when total length is known, else
-        # the fraction of achievable metric improvement realised so far. Used
+        # the fraction of achievable metric improvement realised so far (for a
+        # metric with no ideal, the rise from its first reading as a share of
+        # it, clamped to 1). Used
         # for both the progress bar and the maturity signal (NOT a statistical
         # prediction confidence).
         rel = (
-            relative_improvement(primary_value, self._baseline, lower_better=lower_better)
+            relative_improvement(
+                primary_value, self._baseline, lower_better=lower_better, unbounded=no_ideal
+            )
             if not incomparable
             else None
         )

@@ -21,6 +21,7 @@ import {
   computeGrade,
   gradeByTrajectory,
   gradeNote,
+  hasNoIdeal,
   metricLowerBetter,
   type Grade,
   type TaskType,
@@ -35,6 +36,9 @@ interface Golden {
   metric_lower_better: Record<string, boolean | null>;
   relative_improvement: [number, number, boolean, number | null][];
   compute_phase: [number | null, number, number, boolean, string][];
+  relative_improvement_unbounded: [number, number, boolean, number | null][];
+  compute_phase_unbounded: [number | null, number, number, boolean, string][];
+  has_no_ideal: Record<string, boolean>;
   grade_note: [Grade, number, boolean, boolean, string | null][];
   grade_note_unsteady: [Grade, number, boolean, boolean, string | null][];
   grade_note_running_mean: [Grade, number, boolean, string | null][];
@@ -93,6 +97,39 @@ suite("Grading matches the Python engine", () => {
     check(g.compute_phase, "compute_phase", ([progress, value, baseline, lower, want]) => {
       const got = computePhase(progress, value, baseline, lower);
       return got === want ? null : `p=${progress} ${value} from ${baseline} (${lower}): ${got} != ${want}`;
+    });
+  });
+
+  test("relative_improvement, for a metric with no ideal", () => {
+    check(
+      g.relative_improvement_unbounded,
+      "relative_improvement (unbounded)",
+      ([value, baseline, lower, want]) => {
+        const got = relativeImprovement(value, baseline, lower, null, true);
+        return got === want ? null : `${value} from ${baseline} (${lower}): ${got} != ${want}`;
+      },
+    );
+  });
+
+  test("compute_phase, for a metric with no ideal", () => {
+    check(
+      g.compute_phase_unbounded,
+      "compute_phase (unbounded)",
+      ([progress, value, baseline, lower, want]) => {
+        const got = computePhase(progress, value, baseline, lower, null, true);
+        return got === want
+          ? null
+          : `p=${progress} ${value} from ${baseline} (${lower}): ${got} != ${want}`;
+      },
+    );
+  });
+
+  test("has_no_ideal, for every canonical and raw name", () => {
+    const cases = Object.entries(g.has_no_ideal);
+    assert.ok(cases.some(([, want]) => want), "the golden names no metric without an ideal");
+    check(cases, "has_no_ideal", ([name, want]) => {
+      const got = hasNoIdeal(name);
+      return got === want ? null : `${name}: ${got} != ${want}`;
     });
   });
 
