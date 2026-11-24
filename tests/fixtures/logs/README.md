@@ -30,6 +30,7 @@ paths they use); never edit a capture by hand.
 | `lightgbm_real_classifier.log` | LightGBM classifier, two eval sets. | `boosting_real_source.py` (`lgb_clf`) |
 | `lightgbm_real_early_stopping.log` | LightGBM's native API with early stopping. | `boosting_real_source.py` (`lgb_native`) |
 | `resnet18_cifar10.log` | ResNet-18 on CIFAR-10, a hand-written PyTorch loop that prints its own lines. | `resnet18_cifar10_source.py` |
+| `sb3_ppo_real.log` | Stable-Baselines3 2.9's PPO on CartPole-v1, `verbose=1`, 25 iterations on CPU: one table per iteration, the first without a `train/` section. Nothing is read from it yet (ROADMAP "Reinforcement learning"); `corpus_truth.json` pins that until the parser and the task land. | `sb3_ppo_real_source.py` |
 | `tqdm_loop_real.log` | A hand-written PyTorch loop with a tqdm bar over the training and the validation batches, `set_postfix` carrying the numbers. | `tqdm_loop_real_source.py` |
 | `xgboost_real_classifier.log` | XGBoost classifier, two eval sets, two metrics. | `boosting_real_source.py` (`xgb_clf`) |
 | `yolo_real_ultralytics.log` | Ultralytics 8.4 on coco8, 3 epochs on CPU. | `../../../demo/yolov8_detection_source.py` (`3 coco8 320 cpu`) |

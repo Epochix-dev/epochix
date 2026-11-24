@@ -1101,6 +1101,20 @@
   "final_grade_basis": "thresholds",
   "final_phase": "mastering"
  },
+ "sb3_ppo_real.log": {
+  "path": "tests/fixtures/logs/sb3_ppo_real.log",
+  "task": "custom",
+  "metric": null,
+  "frames": 0,
+  "last_value": null,
+  "keys": [],
+  "metric_from_epoch": null,
+  "grade_note": null,
+  "cross_validation": null,
+  "final_grade": null,
+  "final_grade_basis": null,
+  "final_phase": null
+ },
  "scientific_notation.log": {
   "path": "tests/fixtures/logs/scientific_notation.log",
   "task": "custom",
