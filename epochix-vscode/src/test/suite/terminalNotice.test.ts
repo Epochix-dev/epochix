@@ -6,10 +6,11 @@
  * dashboard; a command whose output the terminal feed never recognised
  * produced no panel and no message, so nobody knew their run had been seen.
  *
- * The rule is held to recordings (tests/fixtures/terminal): ordinary commands,
- * recorded from a neutral folder, must say nothing; a Stable-Baselines3 run,
- * a layout nothing reads, must say it was seen and not read. And to the whole
- * corpus: no training log may end silent, with neither a dashboard nor a word.
+ * The rule is held to recordings: ordinary commands (tests/fixtures/terminal),
+ * recorded from a neutral folder, must say nothing; a Stable-Baselines3 run
+ * (tests/fixtures/logs/sb3_ppo_real.log), a layout nothing reads, must say it
+ * was seen and not read. And to the whole corpus: no training log may end
+ * silent, with neither a dashboard nor a word.
  */
 import * as assert from "assert";
 import * as fs from "fs";
@@ -34,6 +35,14 @@ function repoRoot(): string {
 const terminalLog = (name: string): string =>
   path.join(repoRoot(), "tests", "fixtures", "terminal", name);
 
+/** A log of the corpus: the Stable-Baselines3 recording lives there, with the
+ * corpus entry that pins that nothing reads it. */
+const corpusLog = (name: string): string => path.join(repoRoot(), "tests", "fixtures", "logs", name);
+
+/** Training runs in the corpus that no reader takes: they tell nothing, and
+ * must be said to have been seen. A reader for one moves it out of here. */
+const UNREAD_TRAINING_LOGS = new Set(["sb3_ppo_real.log"]);
+
 /** Terminals do not respect line endings: chunks of n characters. */
 function chunked(text: string, n: number): string[] {
   const out: string[] = [];
@@ -53,7 +62,7 @@ function read(text: string, n = 997): { reading: CommandReading; verdict: Verdic
 function ordinaryRecordings(): string[] {
   const readme = fs.readFileSync(terminalLog("README.md"), "utf-8");
   const names = [...readme.matchAll(/^\| `([\w.-]{1,80}\.log)` \|/gm)].map((m) => m[1]);
-  return names.filter((n) => n !== "sb3_ppo_real.log");
+  return names;
 }
 
 interface Expectation {
@@ -131,7 +140,7 @@ suite("A watched command that was not told", () => {
   });
 
   test("a Stable-Baselines3 run is seen and not read", () => {
-    const text = fs.readFileSync(terminalLog("sb3_ppo_real.log"), "utf-8");
+    const text = fs.readFileSync(corpusLog("sb3_ppo_real.log"), "utf-8");
     const { reading, verdict } = read(text);
     assert.ok(verdict !== null && verdict.kind === "unread", JSON.stringify(verdict));
     assert.strictEqual(reading.opened, false, "the premise: the dashboard never opened for it");
@@ -159,9 +168,17 @@ suite("A watched command that was not told", () => {
     const truth = corpus();
     assert.ok(Object.keys(truth).length >= 50, "the corpus was not found");
     const unopened: string[] = [];
+    const unread: string[] = [];
     for (const [name, expected] of Object.entries(truth)) {
       const text = fs.readFileSync(path.join(repoRoot(), expected.path), "utf-8");
       const { reading, verdict } = read(text);
+      if (UNREAD_TRAINING_LOGS.has(name)) {
+        assert.strictEqual(expected.frames, 0, `${name} is told now: take it off UNREAD_TRAINING_LOGS`);
+        assert.ok(verdict !== null && verdict.kind === "unread", `${name} ends silent: ${JSON.stringify(verdict)}`);
+        assertRendered(verdict, text, name);
+        unread.push(name);
+        continue;
+      }
       if (expected.frames === 0) {
         assert.strictEqual(verdict, null, `${name} tells nothing, and was spoken of`);
         continue;
@@ -187,6 +204,8 @@ suite("A watched command that was not told", () => {
       "gridsearch_real_multimetric.log",
       "gridsearch_real_train_score.log",
     ]);
+    // Guard: the unread branch ran on every log it names, not on none.
+    assert.deepStrictEqual(unread.sort(), [...UNREAD_TRAINING_LOGS].sort());
   });
 
   test("a story the engine tells of a name it does not know is not offered", () => {
@@ -218,7 +237,7 @@ suite("A watched command that was not told", () => {
   });
 
   test("output beyond the capture is read from its start, and said so", () => {
-    const text = fs.readFileSync(terminalLog("sb3_ppo_real.log"), "utf-8");
+    const text = fs.readFileSync(corpusLog("sb3_ppo_real.log"), "utf-8");
     const big = text.repeat(Math.ceil((4 * 1024 * 1024) / text.length) + 1);
     const { verdict } = read(big, 65536);
     assert.ok(verdict !== null && verdict.kind === "unread");

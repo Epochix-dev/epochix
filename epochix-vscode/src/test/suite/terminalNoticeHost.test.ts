@@ -73,7 +73,7 @@ suite("The terminal notice in a real host", () => {
   test("a run in a layout nothing reads is said once, in the status bar", async () => {
     const { watcher, terminal, root } = await setUp();
     owned.push(watcher, terminal);
-    await play(watcher, terminal, path.join(root, "tests", "fixtures", "terminal", "sb3_ppo_real.log"));
+    await play(watcher, terminal, path.join(root, "tests", "fixtures", "logs", "sb3_ppo_real.log"));
 
     assert.strictEqual(DashboardPanel.current, undefined, "a dashboard was opened");
     const shown = watcher.notice.shown;
@@ -142,7 +142,7 @@ suite("The terminal notice in a real host", () => {
       }));
     assert.ok(integration, "shell integration never activated in the test terminal");
 
-    const log = path.join(root, "tests", "fixtures", "terminal", "sb3_ppo_real.log");
+    const log = path.join(root, "tests", "fixtures", "logs", "sb3_ppo_real.log");
     const quoted = `'${log.replace(/'/g, "''")}'`;
     integration.executeCommand(
       process.platform === "win32" ? `Get-Content -Raw ${quoted}` : `cat ${quoted}`,
@@ -160,7 +160,7 @@ suite("The terminal notice in a real host", () => {
   test("a recognised run withdraws what was said while it was not", async () => {
     const { watcher: quick, terminal, root } = await setUp({ quietMs: 50 });
     owned.push(quick, terminal);
-    const sb3 = fs.readFileSync(path.join(root, "tests", "fixtures", "terminal", "sb3_ppo_real.log"), "utf-8");
+    const sb3 = fs.readFileSync(path.join(root, "tests", "fixtures", "logs", "sb3_ppo_real.log"), "utf-8");
     let epochs = "";
     for (let e = 1; e <= 4; e++) {
       epochs += `Epoch ${e}/4\n100/100 - 2s - loss: ${(2 - e * 0.3).toFixed(3)} - val_accuracy: ${(0.5 + e * 0.1).toFixed(3)}\n`;

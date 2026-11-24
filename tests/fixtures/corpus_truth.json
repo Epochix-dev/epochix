@@ -2664,11 +2664,13 @@
   "last_value": null,
   "keys": [],
   "metric_from_epoch": null,
+  "counter": null,
   "grade_note": null,
   "cross_validation": null,
   "final_grade": null,
   "final_grade_basis": null,
-  "final_phase": null
+  "final_phase": null,
+  "milestones": []
  },
  "scientific_notation.log": {
   "path": "tests/fixtures/logs/scientific_notation.log",

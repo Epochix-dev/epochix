@@ -76,7 +76,7 @@ def test_a_log_named_real_is_a_recording() -> None:
 
 @pytest.mark.parametrize(
     ("folder", "at_least"),
-    [(ROOT / "tests" / "fixtures" / "logs", 10), (ROOT / "tests" / "fixtures" / "terminal", 9)],
+    [(ROOT / "tests" / "fixtures" / "logs", 10), (ROOT / "tests" / "fixtures" / "terminal", 8)],
     ids=lambda v: v.name if isinstance(v, Path) else str(v),
 )
 def test_every_recording_names_a_script_that_exists(folder: Path, at_least: int) -> None:

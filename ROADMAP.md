@@ -102,16 +102,28 @@ tailed over SSH (#195), as it already was from a file. Not done, as
 
 ### 4. Reinforcement learning
 
-**Probe.** Nothing was read from a Stable-Baselines3 table
-(`|    ep_rew_mean          | …           |` between rules of dashes, one
-block per iteration, `total_timesteps` as the counter).
+**Measured.** `tests/fixtures/logs/sb3_ppo_real.log` is a real PPO run on
+CartPole (Stable-Baselines3 2.9, CPU, 25 iterations; script beside it), and
+nothing is read from it: parser `universal`, task `custom`, no frames.
+`corpus_truth.json` pins that. Each iteration prints one table between rules
+of dashes: a section row (`| rollout/ |`), its rows indented under it
+(`|    ep_rew_mean | 395 |`), and `time/iterations` and
+`time/total_timesteps` (`iterations × 2048`). The first table has no
+`train/` section. An iteration is not an epoch: PPO runs ten optimisation
+epochs in each (`train/n_updates` reads 10, 20 … 240), so it is told by
+iteration (`Counter` "iteration"). Off-policy algorithms (DQN, SAC, TD3) print
+`time/episodes` and no iterations, according to SB3's source; record a DQN run
+before writing the parser, so it is not shaped by PPO alone.
 
-This is more than a parser. There is no reinforcement-learning task: the
-story's metric is mean episode reward, which has no fixed scale, so it can
-only be graded on improvement, and the phase sentences written for accuracy
-do not apply. Needs a `TaskType`, its direction pinned, templates in three
-languages that claim only what the numbers support, and a recording (PPO on
-CartPole runs on CPU). Do it last: it touches every layer.
+The story's metric is mean episode reward. It has no fixed scale, so it is
+graded on improvement, and it has no ideal, so it belongs in
+`grade.NO_IDEAL_METRICS`, whose phases are read from the rise since the first
+reading. Still needed: the parser in both engines (one frame per table, every
+row claimed, `time/*` never a metric), a `TaskType` with its classifier
+signal, the reward keys' direction pinned higher-is-better (and episode length
+left without one: longer is better in CartPole and worse in MountainCar),
+templates in three languages that claim only what the numbers support, the
+dashboard not calling the reward an accuracy, and the corpus entries.
 
 ### 5. A page that tells a pasted log's story
 
