@@ -31,7 +31,9 @@ count steps (nanoGPT, the PyTorch ImageNet example, a diffusers LoRA bar), and
 a notice when a watched terminal's command is seen and not told. So did
 everything the first coverage run found unexecuted (item 7). 0.7.42
 (2026-11-23) shipped two of the three parts left in item 3: a kohya-ss run,
-and a step bar read as it is drawn over a pipe or SSH.
+and a step bar read as it is drawn over a pipe or SSH. 0.7.43, the same day,
+shipped one fix that was on no list here: a run is told it is past its best
+only after three readings in a row more than 1% off it (#197).
 
 Two kinds of evidence appear below, and they are not the same:
 
@@ -133,14 +135,13 @@ is a separate question.
 
 Every engine change is written twice. #150 and #152 were each a Python change
 and a hand port to `StandaloneEngine.ts` (1,194 lines in 0.7.41, 1,229 in
-0.7.42); the parsers, tables and thresholds are generated or replayed from
-goldens, but the pipeline — sniffing, fallbacks, warm-up, frames,
-milestones — is ported by hand and checked only by the corpus and the tests
-someone remembers to mirror. 0.7.41 measured what that costs: the
-extension's milestones had drifted into a different set altogether, and 58
-of the 60 corpus logs gave different milestones in VS Code than everywhere
-else. Nothing compared them
-until `corpus_truth.json` recorded milestones (#175).
+0.7.42, 1,243 in 0.7.43); the parsers, tables and thresholds are generated or
+replayed from goldens, but the pipeline — sniffing, fallbacks, warm-up,
+frames, milestones — is ported by hand and checked only by the corpus and the
+tests someone remembers to mirror. 0.7.41 measured what that costs: the
+extension's milestones had drifted into a different set altogether, and 58 of
+the 60 corpus logs gave different milestones in VS Code than everywhere else.
+Nothing compared them until `corpus_truth.json` recorded milestones (#175).
 
 0.7.42's counter (#194) was ported the same way, and checked once by hand:
 the extension's engine was bundled from `main` and from the branch, and every
@@ -148,6 +149,16 @@ corpus log was told through both in three languages. 150 of 180 outputs were
 the same; the other 30 differed in 1,538 lines, each only in the counter's
 name. That is (b) below, run once from a script that is not in the
 repository and checks nothing the next time.
+
+0.7.43's past-its-best rule (#197) shows the gap from the other side. The
+rule is a count kept between readings, written twice. In Python a test
+holds it over every corpus log: no reading more than 1% off its best is
+told it is within 1%, and none is told it slipped before three such
+readings in a row. The extension's copy is tested on three synthetic runs
+of five to seven readings. `corpusParity.test.ts` compares each log's
+metrics, final grade and phase, and milestones, but not the sentence any
+frame tells, so nothing would notice the two engines telling a corpus log's
+story differently.
 
 A spike, with a written answer rather than a merge: (a) can the Python engine
 run inside the extension through Pyodide — bundle size, start-up time on a
