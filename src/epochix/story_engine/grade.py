@@ -330,7 +330,9 @@ def grade_note(
     *,
     has_epoch: bool,
     new_best: bool,
-) -> Literal["few_readings", "still_improving"] | None:
+    unsteady: bool = False,
+    running_mean: bool = False,
+) -> Literal["few_readings", "still_improving", "unsteady", "running_mean"] | None:
     """Why this letter deserves less weight than it looks, or None.
 
     An 11-epoch run and a 200-epoch run received equally confident letters.
@@ -339,7 +341,18 @@ def grade_note(
     the letter says where the run got to rather than where it was heading.
     A single fit-and-score result (no epoch, one reading) is a finished
     result, not an early epoch, and an ``I`` grade has nothing to qualify.
+
+    A metric whose readings cannot be compared one with another
+    (story_engine/steadiness.py) is not graded at all, and that is why: an
+    ``I`` otherwise means there was nothing to measure against, which is not
+    true of a run with a hundred readings. Nor is one whose readings are
+    running averages over overlapping batches (steadiness.RUNNING_MEANS):
+    that is a fact of how the metric is computed, so it is said first.
     """
+    if running_mean:
+        return "running_mean"
+    if unsteady:
+        return "unsteady"
     if grade is Grade.INCOMPLETE:
         return None
     if not has_epoch and readings <= 1:
@@ -349,6 +362,18 @@ def grade_note(
     if new_best:
         return "still_improving"
     return None
+
+
+def improvement_from_baseline(baseline: float, current: float, lower_better: bool) -> float:
+    """How far *current* moved the right way from *baseline*, as a share of it.
+
+    Unclamped: 0.6 is a 60% rise (or fall, for an error), a negative value
+    moved the wrong way. The size of the first reading is the only scale a
+    metric with no ideal has, so this is what grade_by_trajectory grades and
+    what the phase and the stall read for such a metric (NO_IDEAL_METRICS).
+    """
+    denom = abs(baseline) if abs(baseline) > 1e-9 else 1e-9
+    return (baseline - current) / denom if lower_better else (current - baseline) / denom
 
 
 def grade_by_trajectory(baseline: float, current: float, lower_better: bool) -> Grade:
@@ -361,8 +386,7 @@ def grade_by_trajectory(baseline: float, current: float, lower_better: bool) -> 
     "the trend is positive/negative" narrative instead of scoring a healthy,
     decreasing loss as if it were 19% accuracy.
     """
-    denom = abs(baseline) if abs(baseline) > 1e-9 else 1e-9
-    improvement = (baseline - current) / denom if lower_better else (current - baseline) / denom
+    improvement = improvement_from_baseline(baseline, current, lower_better)
     for grade, threshold in _TRAJECTORY_THRESHOLDS:
         if improvement >= threshold:
             return grade
@@ -584,6 +608,23 @@ UNIT_BOUNDED_METRICS = frozenset(
         "MRR",
     }
 )
+
+
+# Higher-is-better metrics with no ideal value to measure a share of. PSNR is
+# in decibels and grows without bound as the error shrinks; the inception score
+# runs from 1 to the number of classes, which no log states. Every other
+# higher-is-better metric's improvement is read as a share of the way to 1.0,
+# the top of an accuracy's scale; these start above 1, so that share was
+# negative, clamped to nothing, and a GENERATIVE run whose PSNR climbed 20 to
+# 32 was placed in Awakening and told "No meaningful progress yet ... a setup
+# problem" beside an A. Their improvement is measured from the first reading
+# instead (improvement_from_baseline).
+NO_IDEAL_METRICS = frozenset({"PSNR", "is_score"})
+
+
+def has_no_ideal(metric: str | None) -> bool:
+    """True when *metric* rises without a known best value (NO_IDEAL_METRICS)."""
+    return bool(metric) and metric in NO_IDEAL_METRICS
 
 
 def is_unit_bounded(metric: str | None) -> bool:

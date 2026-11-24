@@ -11,11 +11,44 @@
    "val_loss"
   ],
   "metric_from_epoch": 0.0,
+  "counter": "epoch",
   "grade_note": "few_readings",
   "cross_validation": null,
   "final_grade": "C",
   "final_grade_basis": "thresholds",
-  "final_phase": "understanding"
+  "final_phase": "understanding",
+  "milestones": [
+   {
+    "kind": "best_so_far",
+    "epoch": 0.0,
+    "value": 0.2044,
+    "message": "New best: 0.2044"
+   },
+   {
+    "kind": "first_above_25",
+    "epoch": 1.0,
+    "value": 0.4289,
+    "message": "Crossed 25%: 0.4289"
+   },
+   {
+    "kind": "biggest_jump",
+    "epoch": 1.0,
+    "value": 0.2245,
+    "message": "Biggest single-epoch improvement: 0.2245"
+   },
+   {
+    "kind": "first_above_50",
+    "epoch": 2.0,
+    "value": 0.5356,
+    "message": "Crossed 50%: 0.5356"
+   },
+   {
+    "kind": "training_complete",
+    "epoch": 3.0,
+    "value": 0.6378,
+    "message": "Training completed."
+   }
+  ]
  },
  "ansi_colors.log": {
   "path": "tests/fixtures/logs/ansi_colors.log",
@@ -28,11 +61,44 @@
    "train_loss"
   ],
   "metric_from_epoch": 1.0,
+  "counter": "epoch",
   "grade_note": "few_readings",
   "cross_validation": null,
   "final_grade": "C",
   "final_grade_basis": "thresholds",
-  "final_phase": "learning"
+  "final_phase": "learning",
+  "milestones": [
+   {
+    "kind": "best_so_far",
+    "epoch": 1.0,
+    "value": 0.456,
+    "message": "New best: 0.4560"
+   },
+   {
+    "kind": "first_above_25",
+    "epoch": 1.0,
+    "value": 0.456,
+    "message": "Crossed 25%: 0.4560"
+   },
+   {
+    "kind": "first_above_50",
+    "epoch": 2.0,
+    "value": 0.543,
+    "message": "Crossed 50%: 0.5430"
+   },
+   {
+    "kind": "biggest_jump",
+    "epoch": 3.0,
+    "value": 0.089,
+    "message": "Biggest single-epoch improvement: 0.0890"
+   },
+   {
+    "kind": "training_complete",
+    "epoch": 3.0,
+    "value": 0.632,
+    "message": "Training completed."
+   }
+  ]
  },
  "catboost_real_classifier.log": {
   "path": "tests/fixtures/logs/catboost_real_classifier.log",
@@ -44,11 +110,32 @@
    "val_score"
   ],
   "metric_from_epoch": 0.0,
+  "counter": "round",
   "grade_note": null,
   "cross_validation": null,
   "final_grade": "C-",
   "final_grade_basis": "improvement",
-  "final_phase": "understanding"
+  "final_phase": "understanding",
+  "milestones": [
+   {
+    "kind": "best_so_far",
+    "epoch": 0.0,
+    "value": 0.979,
+    "message": "New best: 0.9790"
+   },
+   {
+    "kind": "biggest_jump",
+    "epoch": 1.0,
+    "value": 0.0064,
+    "message": "Biggest single-reading improvement: 0.0064"
+   },
+   {
+    "kind": "training_complete",
+    "epoch": 59.0,
+    "value": 0.9927,
+    "message": "Training completed."
+   }
+  ]
  },
  "catboost_real_flat_auc.log": {
   "path": "tests/fixtures/logs/catboost_real_flat_auc.log",
@@ -60,11 +147,26 @@
    "val_metric"
   ],
   "metric_from_epoch": 0.0,
+  "counter": "round",
   "grade_note": null,
   "cross_validation": null,
   "final_grade": "I",
   "final_grade_basis": null,
-  "final_phase": "awakening"
+  "final_phase": "awakening",
+  "milestones": [
+   {
+    "kind": "best_so_far",
+    "epoch": 0.0,
+    "value": 1.0,
+    "message": "New best: 1.0000"
+   },
+   {
+    "kind": "training_complete",
+    "epoch": 29.0,
+    "value": 1.0,
+    "message": "Training completed."
+   }
+  ]
  },
  "catboost_real_no_eval_set.log": {
   "path": "tests/fixtures/logs/catboost_real_no_eval_set.log",
@@ -76,11 +178,32 @@
    "train_loss"
   ],
   "metric_from_epoch": 0.0,
+  "counter": "round",
   "grade_note": "still_improving",
   "cross_validation": null,
   "final_grade": "A+",
   "final_grade_basis": "improvement",
-  "final_phase": "mastering"
+  "final_phase": "mastering",
+  "milestones": [
+   {
+    "kind": "best_so_far",
+    "epoch": 0.0,
+    "value": 0.5397,
+    "message": "New best: 0.5397"
+   },
+   {
+    "kind": "biggest_jump",
+    "epoch": 1.0,
+    "value": 0.104,
+    "message": "Biggest single-reading improvement: 0.1040"
+   },
+   {
+    "kind": "training_complete",
+    "epoch": 39.0,
+    "value": 0.0383,
+    "message": "Training completed."
+   }
+  ]
  },
  "catboost_real_regressor.log": {
   "path": "tests/fixtures/logs/catboost_real_regressor.log",
@@ -93,11 +216,32 @@
    "val_loss"
   ],
   "metric_from_epoch": 0.0,
+  "counter": "round",
   "grade_note": null,
   "cross_validation": null,
   "final_grade": "B-",
   "final_grade_basis": "improvement",
-  "final_phase": "learning"
+  "final_phase": "learning",
+  "milestones": [
+   {
+    "kind": "best_so_far",
+    "epoch": 0.0,
+    "value": 69.8619,
+    "message": "New best: 69.8619"
+   },
+   {
+    "kind": "biggest_jump",
+    "epoch": 1.0,
+    "value": 2.2608,
+    "message": "Biggest single-reading improvement: 2.2608"
+   },
+   {
+    "kind": "training_complete",
+    "epoch": 56.0,
+    "value": 55.2598,
+    "message": "Training completed."
+   }
+  ]
  },
  "catboost_real_two_eval_sets.log": {
   "path": "tests/fixtures/logs/catboost_real_two_eval_sets.log",
@@ -111,11 +255,32 @@
    "val_loss"
   ],
   "metric_from_epoch": 0.0,
+  "counter": "round",
   "grade_note": "still_improving",
   "cross_validation": null,
   "final_grade": "B-",
   "final_grade_basis": "improvement",
-  "final_phase": "learning"
+  "final_phase": "learning",
+  "milestones": [
+   {
+    "kind": "best_so_far",
+    "epoch": 0.0,
+    "value": 75.9203,
+    "message": "New best: 75.9203"
+   },
+   {
+    "kind": "biggest_jump",
+    "epoch": 1.0,
+    "value": 2.4621,
+    "message": "Biggest single-reading improvement: 2.4621"
+   },
+   {
+    "kind": "training_complete",
+    "epoch": 39.0,
+    "value": 57.202,
+    "message": "Training completed."
+   }
+  ]
  },
  "detection_coco.log": {
   "path": "tests/fixtures/logs/detection_coco.log",
@@ -133,11 +298,82 @@
    "recall"
   ],
   "metric_from_epoch": 5.0,
+  "counter": "epoch",
   "grade_note": "still_improving",
   "cross_validation": null,
   "final_grade": "A",
   "final_grade_basis": "thresholds",
-  "final_phase": "understanding"
+  "final_phase": "understanding",
+  "milestones": [
+   {
+    "kind": "best_so_far",
+    "epoch": 1.0,
+    "value": 1.456,
+    "message": "New best: 1.4560"
+   },
+   {
+    "kind": "first_above_25",
+    "epoch": 5.0,
+    "value": 0.512,
+    "message": "Crossed 25%: 0.5120"
+   },
+   {
+    "kind": "first_above_50",
+    "epoch": 5.0,
+    "value": 0.512,
+    "message": "Crossed 50%: 0.5120"
+   },
+   {
+    "kind": "biggest_jump",
+    "epoch": 10.0,
+    "value": 0.089,
+    "message": "Biggest single-epoch improvement: 0.0890"
+   },
+   {
+    "kind": "training_complete",
+    "epoch": 50.0,
+    "value": 0.741,
+    "message": "Training completed."
+   }
+  ]
+ },
+ "diffusers_lora_real.log": {
+  "path": "tests/fixtures/logs/diffusers_lora_real.log",
+  "task": "custom",
+  "metric": "train_loss",
+  "frames": 120,
+  "last_value": 0.0036,
+  "keys": [
+   "lr",
+   "train_loss"
+  ],
+  "metric_from_epoch": 1.0,
+  "counter": "step",
+  "grade_note": "unsteady",
+  "cross_validation": null,
+  "final_grade": "I",
+  "final_grade_basis": null,
+  "final_phase": "learning",
+  "milestones": [
+   {
+    "kind": "best_so_far",
+    "epoch": 1.0,
+    "value": 0.0086,
+    "message": "New best: 0.0086"
+   },
+   {
+    "kind": "biggest_jump",
+    "epoch": 93.0,
+    "value": 0.0291,
+    "message": "Biggest single-reading improvement: 0.0291"
+   },
+   {
+    "kind": "training_complete",
+    "epoch": 120.0,
+    "value": 0.001,
+    "message": "Training completed."
+   }
+  ]
  },
  "diverging_loss.log": {
   "path": "tests/fixtures/logs/diverging_loss.log",
@@ -152,11 +388,38 @@
    "val_loss"
   ],
   "metric_from_epoch": 1.0,
+  "counter": "epoch",
   "grade_note": null,
   "cross_validation": null,
   "final_grade": "C-",
   "final_grade_basis": "thresholds",
-  "final_phase": "learning"
+  "final_phase": "learning",
+  "milestones": [
+   {
+    "kind": "best_so_far",
+    "epoch": 1.0,
+    "value": 0.745,
+    "message": "New best: 0.7450"
+   },
+   {
+    "kind": "first_above_25",
+    "epoch": 1.0,
+    "value": 0.745,
+    "message": "Crossed 25%: 0.7450"
+   },
+   {
+    "kind": "first_above_50",
+    "epoch": 1.0,
+    "value": 0.745,
+    "message": "Crossed 50%: 0.7450"
+   },
+   {
+    "kind": "training_complete",
+    "epoch": 5.0,
+    "value": 0.745,
+    "message": "Training completed."
+   }
+  ]
  },
  "empty.log": {
   "path": "tests/fixtures/logs/empty.log",
@@ -166,11 +429,13 @@
   "last_value": null,
   "keys": [],
   "metric_from_epoch": null,
+  "counter": null,
   "grade_note": null,
   "cross_validation": null,
   "final_grade": null,
   "final_grade_basis": null,
-  "final_phase": null
+  "final_phase": null,
+  "milestones": []
  },
  "fastai_real.log": {
   "path": "tests/fixtures/logs/fastai_real.log",
@@ -184,11 +449,56 @@
    "val_loss"
   ],
   "metric_from_epoch": 0.0,
+  "counter": "epoch",
   "grade_note": "few_readings",
   "cross_validation": null,
   "final_grade": "A+",
   "final_grade_basis": "thresholds",
-  "final_phase": "mastering"
+  "final_phase": "mastering",
+  "milestones": [
+   {
+    "kind": "best_so_far",
+    "epoch": 0.0,
+    "value": 0.9371,
+    "message": "New best: 0.9371"
+   },
+   {
+    "kind": "first_above_25",
+    "epoch": 0.0,
+    "value": 0.9371,
+    "message": "Crossed 25%: 0.9371"
+   },
+   {
+    "kind": "first_above_50",
+    "epoch": 0.0,
+    "value": 0.9371,
+    "message": "Crossed 50%: 0.9371"
+   },
+   {
+    "kind": "first_above_75",
+    "epoch": 0.0,
+    "value": 0.9371,
+    "message": "Crossed 75%: 0.9371"
+   },
+   {
+    "kind": "first_above_90",
+    "epoch": 0.0,
+    "value": 0.9371,
+    "message": "Crossed 90%: 0.9371"
+   },
+   {
+    "kind": "biggest_jump",
+    "epoch": 1.0,
+    "value": 0.042,
+    "message": "Biggest single-epoch improvement: 0.0420"
+   },
+   {
+    "kind": "training_complete",
+    "epoch": 3.0,
+    "value": 0.993,
+    "message": "Training completed."
+   }
+  ]
  },
  "fingerprint_matching.log": {
   "path": "demo/fingerprint_matching.log",
@@ -203,11 +513,32 @@
    "train_loss"
   ],
   "metric_from_epoch": 1.0,
+  "counter": "epoch",
   "grade_note": null,
   "cross_validation": null,
   "final_grade": "A",
   "final_grade_basis": "thresholds",
-  "final_phase": "mastering"
+  "final_phase": "mastering",
+  "milestones": [
+   {
+    "kind": "best_so_far",
+    "epoch": 1.0,
+    "value": 0.4123,
+    "message": "New best: 0.4123"
+   },
+   {
+    "kind": "biggest_jump",
+    "epoch": 5.0,
+    "value": 0.0911,
+    "message": "Biggest single-epoch improvement: 0.0911"
+   },
+   {
+    "kind": "training_complete",
+    "epoch": 50.0,
+    "value": 0.0212,
+    "message": "Training completed."
+   }
+  ]
  },
  "garbage.log": {
   "path": "tests/fixtures/logs/garbage.log",
@@ -217,11 +548,13 @@
   "last_value": null,
   "keys": [],
   "metric_from_epoch": null,
+  "counter": null,
   "grade_note": null,
   "cross_validation": null,
   "final_grade": null,
   "final_grade_basis": null,
-  "final_phase": null
+  "final_phase": null,
+  "milestones": []
  },
  "gaze_estimation.log": {
   "path": "demo/gaze_estimation.log",
@@ -235,11 +568,32 @@
    "train_loss"
   ],
   "metric_from_epoch": 1.0,
+  "counter": "epoch",
   "grade_note": null,
   "cross_validation": null,
   "final_grade": "A+",
   "final_grade_basis": "improvement",
-  "final_phase": "mastering"
+  "final_phase": "mastering",
+  "milestones": [
+   {
+    "kind": "best_so_far",
+    "epoch": 1.0,
+    "value": 18.432,
+    "message": "New best: 18.4320"
+   },
+   {
+    "kind": "biggest_jump",
+    "epoch": 2.0,
+    "value": 3.198,
+    "message": "Biggest single-epoch improvement: 3.1980"
+   },
+   {
+    "kind": "training_complete",
+    "epoch": 100.0,
+    "value": 1.587,
+    "message": "Training completed."
+   }
+  ]
  },
  "gridsearch_cv.log": {
   "path": "tests/fixtures/logs/gridsearch_cv.log",
@@ -251,6 +605,7 @@
    "score"
   ],
   "metric_from_epoch": null,
+  "counter": null,
   "grade_note": null,
   "cross_validation": {
    "folds": {
@@ -302,7 +657,21 @@
   },
   "final_grade": "I",
   "final_grade_basis": null,
-  "final_phase": "polishing"
+  "final_phase": "polishing",
+  "milestones": [
+   {
+    "kind": "best_so_far",
+    "epoch": null,
+    "value": 0.96,
+    "message": "New best: 0.9600"
+   },
+   {
+    "kind": "training_complete",
+    "epoch": null,
+    "value": 0.96,
+    "message": "Training completed."
+   }
+  ]
  },
  "gridsearch_real.log": {
   "path": "tests/fixtures/logs/gridsearch_real.log",
@@ -314,6 +683,7 @@
    "score"
   ],
   "metric_from_epoch": null,
+  "counter": null,
   "grade_note": null,
   "cross_validation": {
    "folds": {
@@ -385,7 +755,21 @@
   },
   "final_grade": "I",
   "final_grade_basis": null,
-  "final_phase": "polishing"
+  "final_phase": "polishing",
+  "milestones": [
+   {
+    "kind": "best_so_far",
+    "epoch": null,
+    "value": 0.954,
+    "message": "New best: 0.9540"
+   },
+   {
+    "kind": "training_complete",
+    "epoch": null,
+    "value": 0.954,
+    "message": "Training completed."
+   }
+  ]
  },
  "gridsearch_real_multimetric.log": {
   "path": "tests/fixtures/logs/gridsearch_real_multimetric.log",
@@ -398,6 +782,7 @@
    "f1_macro"
   ],
   "metric_from_epoch": null,
+  "counter": null,
   "grade_note": null,
   "cross_validation": {
    "folds": {
@@ -519,7 +904,45 @@
   },
   "final_grade": "A+",
   "final_grade_basis": "thresholds",
-  "final_phase": "polishing"
+  "final_phase": "polishing",
+  "milestones": [
+   {
+    "kind": "best_so_far",
+    "epoch": null,
+    "value": 0.954,
+    "message": "New best: 0.9540"
+   },
+   {
+    "kind": "first_above_25",
+    "epoch": null,
+    "value": 0.954,
+    "message": "Crossed 25%: 0.9540"
+   },
+   {
+    "kind": "first_above_50",
+    "epoch": null,
+    "value": 0.954,
+    "message": "Crossed 50%: 0.9540"
+   },
+   {
+    "kind": "first_above_75",
+    "epoch": null,
+    "value": 0.954,
+    "message": "Crossed 75%: 0.9540"
+   },
+   {
+    "kind": "first_above_90",
+    "epoch": null,
+    "value": 0.954,
+    "message": "Crossed 90%: 0.9540"
+   },
+   {
+    "kind": "training_complete",
+    "epoch": null,
+    "value": 0.954,
+    "message": "Training completed."
+   }
+  ]
  },
  "gridsearch_real_train_score.log": {
   "path": "tests/fixtures/logs/gridsearch_real_train_score.log",
@@ -531,6 +954,7 @@
    "score"
   ],
   "metric_from_epoch": null,
+  "counter": null,
   "grade_note": null,
   "cross_validation": {
    "folds": {
@@ -602,7 +1026,21 @@
   },
   "final_grade": "I",
   "final_grade_basis": null,
-  "final_phase": "polishing"
+  "final_phase": "polishing",
+  "milestones": [
+   {
+    "kind": "best_so_far",
+    "epoch": null,
+    "value": 0.954,
+    "message": "New best: 0.9540"
+   },
+   {
+    "kind": "training_complete",
+    "epoch": null,
+    "value": 0.954,
+    "message": "Training completed."
+   }
+  ]
  },
  "hf_classification.log": {
   "path": "tests/fixtures/logs/hf_classification.log",
@@ -617,11 +1055,50 @@
    "val_loss"
   ],
   "metric_from_epoch": 1.0,
+  "counter": "epoch",
   "grade_note": "still_improving",
   "cross_validation": null,
   "final_grade": "A-",
   "final_grade_basis": "thresholds",
-  "final_phase": "mastering"
+  "final_phase": "mastering",
+  "milestones": [
+   {
+    "kind": "best_so_far",
+    "epoch": 1.0,
+    "value": 0.0656,
+    "message": "New best: 0.0656"
+   },
+   {
+    "kind": "first_above_25",
+    "epoch": 7.0,
+    "value": 0.2761,
+    "message": "Crossed 25%: 0.2761"
+   },
+   {
+    "kind": "biggest_jump",
+    "epoch": 9.0,
+    "value": 0.0793,
+    "message": "Biggest single-epoch improvement: 0.0793"
+   },
+   {
+    "kind": "first_above_50",
+    "epoch": 11.0,
+    "value": 0.5436,
+    "message": "Crossed 50%: 0.5436"
+   },
+   {
+    "kind": "first_above_75",
+    "epoch": 15.0,
+    "value": 0.7779,
+    "message": "Crossed 75%: 0.7779"
+   },
+   {
+    "kind": "training_complete",
+    "epoch": 20.0,
+    "value": 0.8964,
+    "message": "Training completed."
+   }
+  ]
  },
  "huggingface_5ep.log": {
   "path": "tests/fixtures/logs/huggingface_5ep.log",
@@ -636,11 +1113,50 @@
    "val_loss"
   ],
   "metric_from_epoch": 1.0,
+  "counter": "epoch",
   "grade_note": "still_improving",
   "cross_validation": null,
   "final_grade": "A-",
   "final_grade_basis": "thresholds",
-  "final_phase": "mastering"
+  "final_phase": "mastering",
+  "milestones": [
+   {
+    "kind": "best_so_far",
+    "epoch": 1.0,
+    "value": 0.1324,
+    "message": "New best: 0.1324"
+   },
+   {
+    "kind": "first_above_25",
+    "epoch": 2.0,
+    "value": 0.3211,
+    "message": "Crossed 25%: 0.3211"
+   },
+   {
+    "kind": "first_above_50",
+    "epoch": 3.0,
+    "value": 0.6052,
+    "message": "Crossed 50%: 0.6052"
+   },
+   {
+    "kind": "biggest_jump",
+    "epoch": 3.0,
+    "value": 0.2841,
+    "message": "Biggest single-epoch improvement: 0.2841"
+   },
+   {
+    "kind": "first_above_75",
+    "epoch": 4.0,
+    "value": 0.816,
+    "message": "Crossed 75%: 0.8160"
+   },
+   {
+    "kind": "training_complete",
+    "epoch": 5.0,
+    "value": 0.8895,
+    "message": "Training completed."
+   }
+  ]
  },
  "huggingface_bert.log": {
   "path": "demo/huggingface_bert.log",
@@ -656,11 +1172,50 @@
    "val_loss"
   ],
   "metric_from_epoch": 1.0,
+  "counter": "epoch",
   "grade_note": "still_improving",
   "cross_validation": null,
   "final_grade": "B+",
   "final_grade_basis": "thresholds",
-  "final_phase": "mastering"
+  "final_phase": "mastering",
+  "milestones": [
+   {
+    "kind": "best_so_far",
+    "epoch": 0.5,
+    "value": 2.3456,
+    "message": "New best: 2.3456"
+   },
+   {
+    "kind": "first_above_25",
+    "epoch": 1.0,
+    "value": 0.3456,
+    "message": "Crossed 25%: 0.3456"
+   },
+   {
+    "kind": "biggest_jump",
+    "epoch": 2.0,
+    "value": 0.1111,
+    "message": "Biggest single-epoch improvement: 0.1111"
+   },
+   {
+    "kind": "first_above_50",
+    "epoch": 3.0,
+    "value": 0.5678,
+    "message": "Crossed 50%: 0.5678"
+   },
+   {
+    "kind": "first_above_75",
+    "epoch": 6.0,
+    "value": 0.7812,
+    "message": "Crossed 75%: 0.7812"
+   },
+   {
+    "kind": "training_complete",
+    "epoch": 8.0,
+    "value": 0.8456,
+    "message": "Training completed."
+   }
+  ]
  },
  "huggingface_nlp_10ep.log": {
   "path": "tests/fixtures/logs/huggingface_nlp_10ep.log",
@@ -675,11 +1230,32 @@
    "val_loss"
   ],
   "metric_from_epoch": 1.0,
+  "counter": "epoch",
   "grade_note": null,
   "cross_validation": null,
   "final_grade": "A+",
   "final_grade_basis": "thresholds",
-  "final_phase": "polishing"
+  "final_phase": "polishing",
+  "milestones": [
+   {
+    "kind": "best_so_far",
+    "epoch": 1.0,
+    "value": 24.63,
+    "message": "New best: 24.6300"
+   },
+   {
+    "kind": "biggest_jump",
+    "epoch": 2.0,
+    "value": 16.01,
+    "message": "Biggest single-epoch improvement: 16.0100"
+   },
+   {
+    "kind": "training_complete",
+    "epoch": 10.0,
+    "value": 1.17,
+    "message": "Training completed."
+   }
+  ]
  },
  "huggingface_real_trainer.log": {
   "path": "tests/fixtures/logs/huggingface_real_trainer.log",
@@ -695,11 +1271,56 @@
    "val_loss"
   ],
   "metric_from_epoch": 1.0,
+  "counter": "epoch",
   "grade_note": null,
   "cross_validation": null,
   "final_grade": "A",
   "final_grade_basis": "thresholds",
-  "final_phase": "understanding"
+  "final_phase": "understanding",
+  "milestones": [
+   {
+    "kind": "best_so_far",
+    "epoch": 1.0,
+    "value": 1.925,
+    "message": "New best: 1.9250"
+   },
+   {
+    "kind": "first_above_25",
+    "epoch": 1.0,
+    "value": 0.8178,
+    "message": "Crossed 25%: 0.8178"
+   },
+   {
+    "kind": "first_above_50",
+    "epoch": 1.0,
+    "value": 0.8178,
+    "message": "Crossed 50%: 0.8178"
+   },
+   {
+    "kind": "first_above_75",
+    "epoch": 1.0,
+    "value": 0.8178,
+    "message": "Crossed 75%: 0.8178"
+   },
+   {
+    "kind": "biggest_jump",
+    "epoch": 2.0,
+    "value": 0.0755,
+    "message": "Biggest single-epoch improvement: 0.0755"
+   },
+   {
+    "kind": "first_above_90",
+    "epoch": 3.0,
+    "value": 0.9244,
+    "message": "Crossed 90%: 0.9244"
+   },
+   {
+    "kind": "training_complete",
+    "epoch": 10.0,
+    "value": 0.9467,
+    "message": "Training completed."
+   }
+  ]
  },
  "huggingface_real_trainer_v4.log": {
   "path": "tests/fixtures/logs/huggingface_real_trainer_v4.log",
@@ -715,11 +1336,56 @@
    "val_loss"
   ],
   "metric_from_epoch": 1.0,
+  "counter": "epoch",
   "grade_note": null,
   "cross_validation": null,
   "final_grade": "A",
   "final_grade_basis": "thresholds",
-  "final_phase": "understanding"
+  "final_phase": "understanding",
+  "milestones": [
+   {
+    "kind": "best_so_far",
+    "epoch": 1.0,
+    "value": 1.9246,
+    "message": "New best: 1.9246"
+   },
+   {
+    "kind": "first_above_25",
+    "epoch": 1.0,
+    "value": 0.8178,
+    "message": "Crossed 25%: 0.8178"
+   },
+   {
+    "kind": "first_above_50",
+    "epoch": 1.0,
+    "value": 0.8178,
+    "message": "Crossed 50%: 0.8178"
+   },
+   {
+    "kind": "first_above_75",
+    "epoch": 1.0,
+    "value": 0.8178,
+    "message": "Crossed 75%: 0.8178"
+   },
+   {
+    "kind": "biggest_jump",
+    "epoch": 2.0,
+    "value": 0.0756,
+    "message": "Biggest single-epoch improvement: 0.0756"
+   },
+   {
+    "kind": "first_above_90",
+    "epoch": 3.0,
+    "value": 0.9244,
+    "message": "Crossed 90%: 0.9244"
+   },
+   {
+    "kind": "training_complete",
+    "epoch": 10.0,
+    "value": 0.9467,
+    "message": "Training completed."
+   }
+  ]
  },
  "interrupted.log": {
   "path": "tests/fixtures/logs/interrupted.log",
@@ -732,11 +1398,44 @@
    "val_accuracy"
   ],
   "metric_from_epoch": 1.0,
+  "counter": "epoch",
   "grade_note": "few_readings",
   "cross_validation": null,
   "final_grade": "D",
   "final_grade_basis": "thresholds",
-  "final_phase": "awakening"
+  "final_phase": "awakening",
+  "milestones": [
+   {
+    "kind": "best_so_far",
+    "epoch": 1.0,
+    "value": 0.312,
+    "message": "New best: 0.3120"
+   },
+   {
+    "kind": "first_above_25",
+    "epoch": 1.0,
+    "value": 0.312,
+    "message": "Crossed 25%: 0.3120"
+   },
+   {
+    "kind": "biggest_jump",
+    "epoch": 2.0,
+    "value": 0.111,
+    "message": "Biggest single-epoch improvement: 0.1110"
+   },
+   {
+    "kind": "first_above_50",
+    "epoch": 3.0,
+    "value": 0.521,
+    "message": "Crossed 50%: 0.5210"
+   },
+   {
+    "kind": "training_complete",
+    "epoch": 3.0,
+    "value": 0.521,
+    "message": "Training completed."
+   }
+  ]
  },
  "keras2_real_verbose1.log": {
   "path": "tests/fixtures/logs/keras2_real_verbose1.log",
@@ -752,11 +1451,56 @@
    "val_loss"
   ],
   "metric_from_epoch": 1.0,
+  "counter": "epoch",
   "grade_note": "still_improving",
   "cross_validation": null,
   "final_grade": "A",
   "final_grade_basis": "thresholds",
-  "final_phase": "mastering"
+  "final_phase": "mastering",
+  "milestones": [
+   {
+    "kind": "best_so_far",
+    "epoch": 1.0,
+    "value": 0.5089,
+    "message": "New best: 0.5089"
+   },
+   {
+    "kind": "first_above_25",
+    "epoch": 1.0,
+    "value": 0.5089,
+    "message": "Crossed 25%: 0.5089"
+   },
+   {
+    "kind": "first_above_50",
+    "epoch": 1.0,
+    "value": 0.5089,
+    "message": "Crossed 50%: 0.5089"
+   },
+   {
+    "kind": "first_above_75",
+    "epoch": 2.0,
+    "value": 0.7689,
+    "message": "Crossed 75%: 0.7689"
+   },
+   {
+    "kind": "biggest_jump",
+    "epoch": 2.0,
+    "value": 0.26,
+    "message": "Biggest single-epoch improvement: 0.2600"
+   },
+   {
+    "kind": "first_above_90",
+    "epoch": 5.0,
+    "value": 0.9,
+    "message": "Crossed 90%: 0.9000"
+   },
+   {
+    "kind": "training_complete",
+    "epoch": 12.0,
+    "value": 0.9422,
+    "message": "Training completed."
+   }
+  ]
  },
  "keras2_real_verbose2.log": {
   "path": "tests/fixtures/logs/keras2_real_verbose2.log",
@@ -772,11 +1516,56 @@
    "val_loss"
   ],
   "metric_from_epoch": 1.0,
+  "counter": "epoch",
   "grade_note": "still_improving",
   "cross_validation": null,
   "final_grade": "A",
   "final_grade_basis": "thresholds",
-  "final_phase": "mastering"
+  "final_phase": "mastering",
+  "milestones": [
+   {
+    "kind": "best_so_far",
+    "epoch": 1.0,
+    "value": 0.5089,
+    "message": "New best: 0.5089"
+   },
+   {
+    "kind": "first_above_25",
+    "epoch": 1.0,
+    "value": 0.5089,
+    "message": "Crossed 25%: 0.5089"
+   },
+   {
+    "kind": "first_above_50",
+    "epoch": 1.0,
+    "value": 0.5089,
+    "message": "Crossed 50%: 0.5089"
+   },
+   {
+    "kind": "first_above_75",
+    "epoch": 2.0,
+    "value": 0.7689,
+    "message": "Crossed 75%: 0.7689"
+   },
+   {
+    "kind": "biggest_jump",
+    "epoch": 2.0,
+    "value": 0.26,
+    "message": "Biggest single-epoch improvement: 0.2600"
+   },
+   {
+    "kind": "first_above_90",
+    "epoch": 5.0,
+    "value": 0.9,
+    "message": "Crossed 90%: 0.9000"
+   },
+   {
+    "kind": "training_complete",
+    "epoch": 12.0,
+    "value": 0.9422,
+    "message": "Training completed."
+   }
+  ]
  },
  "keras_100ep.log": {
   "path": "tests/fixtures/logs/keras_100ep.log",
@@ -791,11 +1580,50 @@
    "val_loss"
   ],
   "metric_from_epoch": 1.0,
+  "counter": "epoch",
   "grade_note": null,
   "cross_validation": null,
   "final_grade": "B+",
   "final_grade_basis": "thresholds",
-  "final_phase": "mastering"
+  "final_phase": "mastering",
+  "milestones": [
+   {
+    "kind": "best_so_far",
+    "epoch": 1.0,
+    "value": 0.0479,
+    "message": "New best: 0.0479"
+   },
+   {
+    "kind": "first_above_25",
+    "epoch": 34.0,
+    "value": 0.2518,
+    "message": "Crossed 25%: 0.2518"
+   },
+   {
+    "kind": "biggest_jump",
+    "epoch": 36.0,
+    "value": 0.0354,
+    "message": "Biggest single-epoch improvement: 0.0354"
+   },
+   {
+    "kind": "first_above_50",
+    "epoch": 54.0,
+    "value": 0.5112,
+    "message": "Crossed 50%: 0.5112"
+   },
+   {
+    "kind": "first_above_75",
+    "epoch": 76.0,
+    "value": 0.7521,
+    "message": "Crossed 75%: 0.7521"
+   },
+   {
+    "kind": "training_complete",
+    "epoch": 100.0,
+    "value": 0.8744,
+    "message": "Training completed."
+   }
+  ]
  },
  "keras_50ep.log": {
   "path": "tests/fixtures/logs/keras_50ep.log",
@@ -810,11 +1638,50 @@
    "val_loss"
   ],
   "metric_from_epoch": 1.0,
+  "counter": "epoch",
   "grade_note": null,
   "cross_validation": null,
   "final_grade": "B+",
   "final_grade_basis": "thresholds",
-  "final_phase": "mastering"
+  "final_phase": "mastering",
+  "milestones": [
+   {
+    "kind": "best_so_far",
+    "epoch": 1.0,
+    "value": 0.054,
+    "message": "New best: 0.0540"
+   },
+   {
+    "kind": "first_above_25",
+    "epoch": 17.0,
+    "value": 0.254,
+    "message": "Crossed 25%: 0.2540"
+   },
+   {
+    "kind": "first_above_50",
+    "epoch": 27.0,
+    "value": 0.5149,
+    "message": "Crossed 50%: 0.5149"
+   },
+   {
+    "kind": "biggest_jump",
+    "epoch": 27.0,
+    "value": 0.0417,
+    "message": "Biggest single-epoch improvement: 0.0417"
+   },
+   {
+    "kind": "first_above_75",
+    "epoch": 38.0,
+    "value": 0.7516,
+    "message": "Crossed 75%: 0.7516"
+   },
+   {
+    "kind": "training_complete",
+    "epoch": 50.0,
+    "value": 0.8672,
+    "message": "Training completed."
+   }
+  ]
  },
  "keras_image_classifier.log": {
   "path": "demo/keras_image_classifier.log",
@@ -829,11 +1696,56 @@
    "val_loss"
   ],
   "metric_from_epoch": 1.0,
+  "counter": "epoch",
   "grade_note": "still_improving",
   "cross_validation": null,
   "final_grade": "A+",
   "final_grade_basis": "thresholds",
-  "final_phase": "mastering"
+  "final_phase": "mastering",
+  "milestones": [
+   {
+    "kind": "best_so_far",
+    "epoch": 1.0,
+    "value": 0.2933,
+    "message": "New best: 0.2933"
+   },
+   {
+    "kind": "first_above_25",
+    "epoch": 1.0,
+    "value": 0.2933,
+    "message": "Crossed 25%: 0.2933"
+   },
+   {
+    "kind": "biggest_jump",
+    "epoch": 2.0,
+    "value": 0.18,
+    "message": "Biggest single-epoch improvement: 0.1800"
+   },
+   {
+    "kind": "first_above_50",
+    "epoch": 3.0,
+    "value": 0.5156,
+    "message": "Crossed 50%: 0.5156"
+   },
+   {
+    "kind": "first_above_75",
+    "epoch": 5.0,
+    "value": 0.8244,
+    "message": "Crossed 75%: 0.8244"
+   },
+   {
+    "kind": "first_above_90",
+    "epoch": 7.0,
+    "value": 0.9156,
+    "message": "Crossed 90%: 0.9156"
+   },
+   {
+    "kind": "training_complete",
+    "epoch": 20.0,
+    "value": 0.9578,
+    "message": "Training completed."
+   }
+  ]
  },
  "keras_real_verbose2.log": {
   "path": "tests/fixtures/logs/keras_real_verbose2.log",
@@ -848,11 +1760,56 @@
    "val_loss"
   ],
   "metric_from_epoch": 1.0,
+  "counter": "epoch",
   "grade_note": "still_improving",
   "cross_validation": null,
   "final_grade": "A+",
   "final_grade_basis": "thresholds",
-  "final_phase": "mastering"
+  "final_phase": "mastering",
+  "milestones": [
+   {
+    "kind": "best_so_far",
+    "epoch": 1.0,
+    "value": 0.2933,
+    "message": "New best: 0.2933"
+   },
+   {
+    "kind": "first_above_25",
+    "epoch": 1.0,
+    "value": 0.2933,
+    "message": "Crossed 25%: 0.2933"
+   },
+   {
+    "kind": "biggest_jump",
+    "epoch": 2.0,
+    "value": 0.18,
+    "message": "Biggest single-epoch improvement: 0.1800"
+   },
+   {
+    "kind": "first_above_50",
+    "epoch": 3.0,
+    "value": 0.5156,
+    "message": "Crossed 50%: 0.5156"
+   },
+   {
+    "kind": "first_above_75",
+    "epoch": 5.0,
+    "value": 0.8244,
+    "message": "Crossed 75%: 0.8244"
+   },
+   {
+    "kind": "first_above_90",
+    "epoch": 7.0,
+    "value": 0.9156,
+    "message": "Crossed 90%: 0.9156"
+   },
+   {
+    "kind": "training_complete",
+    "epoch": 20.0,
+    "value": 0.9578,
+    "message": "Training completed."
+   }
+  ]
  },
  "keras_short.log": {
   "path": "tests/fixtures/logs/keras_short.log",
@@ -867,11 +1824,87 @@
    "val_loss"
   ],
   "metric_from_epoch": 1.0,
+  "counter": "epoch",
   "grade_note": "still_improving",
   "cross_validation": null,
   "final_grade": "B+",
   "final_grade_basis": "thresholds",
-  "final_phase": "mastering"
+  "final_phase": "mastering",
+  "milestones": [
+   {
+    "kind": "best_so_far",
+    "epoch": 1.0,
+    "value": 0.0785,
+    "message": "New best: 0.0785"
+   },
+   {
+    "kind": "first_above_25",
+    "epoch": 4.0,
+    "value": 0.3403,
+    "message": "Crossed 25%: 0.3403"
+   },
+   {
+    "kind": "biggest_jump",
+    "epoch": 4.0,
+    "value": 0.1311,
+    "message": "Biggest single-epoch improvement: 0.1311"
+   },
+   {
+    "kind": "first_above_50",
+    "epoch": 6.0,
+    "value": 0.5719,
+    "message": "Crossed 50%: 0.5719"
+   },
+   {
+    "kind": "first_above_75",
+    "epoch": 8.0,
+    "value": 0.7815,
+    "message": "Crossed 75%: 0.7815"
+   },
+   {
+    "kind": "training_complete",
+    "epoch": 10.0,
+    "value": 0.8564,
+    "message": "Training completed."
+   }
+  ]
+ },
+ "kohya_lora_real.log": {
+  "path": "tests/fixtures/logs/kohya_lora_real.log",
+  "task": "custom",
+  "metric": "train_loss",
+  "frames": 113,
+  "last_value": 0.0123,
+  "keys": [
+   "train_loss"
+  ],
+  "metric_from_epoch": 1.0,
+  "counter": "step",
+  "grade_note": "running_mean",
+  "cross_validation": null,
+  "final_grade": "I",
+  "final_grade_basis": null,
+  "final_phase": "learning",
+  "milestones": [
+   {
+    "kind": "best_so_far",
+    "epoch": 1.0,
+    "value": 0.0304,
+    "message": "New best: 0.0304"
+   },
+   {
+    "kind": "biggest_jump",
+    "epoch": 2.0,
+    "value": 0.0131,
+    "message": "Biggest single-reading improvement: 0.0131"
+   },
+   {
+    "kind": "training_complete",
+    "epoch": 120.0,
+    "value": 0.007,
+    "message": "Training completed."
+   }
+  ]
  },
  "lightgbm_real_classifier.log": {
   "path": "tests/fixtures/logs/lightgbm_real_classifier.log",
@@ -886,11 +1919,32 @@
    "val_log_loss"
   ],
   "metric_from_epoch": 1.0,
+  "counter": "round",
   "grade_note": null,
   "cross_validation": null,
   "final_grade": "A+",
   "final_grade_basis": "thresholds",
-  "final_phase": "understanding"
+  "final_phase": "understanding",
+  "milestones": [
+   {
+    "kind": "best_so_far",
+    "epoch": 1.0,
+    "value": 0.9631,
+    "message": "New best: 0.9631"
+   },
+   {
+    "kind": "biggest_jump",
+    "epoch": 3.0,
+    "value": 0.0102,
+    "message": "Biggest single-reading improvement: 0.0102"
+   },
+   {
+    "kind": "training_complete",
+    "epoch": 60.0,
+    "value": 0.9841,
+    "message": "Training completed."
+   }
+  ]
  },
  "lightgbm_real_early_stopping.log": {
   "path": "tests/fixtures/logs/lightgbm_real_early_stopping.log",
@@ -905,11 +1959,32 @@
    "val_MSE"
   ],
   "metric_from_epoch": 1.0,
+  "counter": "round",
   "grade_note": null,
   "cross_validation": null,
   "final_grade": "B-",
   "final_grade_basis": "improvement",
-  "final_phase": "learning"
+  "final_phase": "learning",
+  "milestones": [
+   {
+    "kind": "best_so_far",
+    "epoch": 1.0,
+    "value": 59.2228,
+    "message": "New best: 59.2228"
+   },
+   {
+    "kind": "biggest_jump",
+    "epoch": 2.0,
+    "value": 2.1472,
+    "message": "Biggest single-reading improvement: 2.1472"
+   },
+   {
+    "kind": "training_complete",
+    "epoch": 29.0,
+    "value": 44.9725,
+    "message": "Training completed."
+   }
+  ]
  },
  "mixed_frameworks.log": {
   "path": "tests/fixtures/logs/mixed_frameworks.log",
@@ -925,11 +2000,50 @@
    "val_loss"
   ],
   "metric_from_epoch": 3.0,
+  "counter": "epoch",
   "grade_note": "few_readings",
   "cross_validation": null,
   "final_grade": "B",
   "final_grade_basis": "thresholds",
-  "final_phase": "learning"
+  "final_phase": "learning",
+  "milestones": [
+   {
+    "kind": "best_so_far",
+    "epoch": 1.0,
+    "value": 0.456,
+    "message": "New best: 0.4560"
+   },
+   {
+    "kind": "first_above_25",
+    "epoch": 1.0,
+    "value": 0.456,
+    "message": "Crossed 25%: 0.4560"
+   },
+   {
+    "kind": "first_above_50",
+    "epoch": 2.0,
+    "value": 0.543,
+    "message": "Crossed 50%: 0.5430"
+   },
+   {
+    "kind": "biggest_jump",
+    "epoch": 4.0,
+    "value": 0.0661,
+    "message": "Biggest single-epoch improvement: 0.0661"
+   },
+   {
+    "kind": "first_above_75",
+    "epoch": 4.0,
+    "value": 0.801,
+    "message": "Crossed 75%: 0.8010"
+   },
+   {
+    "kind": "training_complete",
+    "epoch": 4.0,
+    "value": 0.801,
+    "message": "Training completed."
+   }
+  ]
  },
  "multiline_json.log": {
   "path": "tests/fixtures/logs/multiline_json.log",
@@ -945,11 +2059,82 @@
    "val_loss"
   ],
   "metric_from_epoch": 1.0,
+  "counter": "epoch",
   "grade_note": "few_readings",
   "cross_validation": null,
   "final_grade": "C+",
   "final_grade_basis": "thresholds",
-  "final_phase": "understanding"
+  "final_phase": "understanding",
+  "milestones": [
+   {
+    "kind": "best_so_far",
+    "epoch": 0.5,
+    "value": 2.3456,
+    "message": "New best: 2.3456"
+   },
+   {
+    "kind": "first_above_25",
+    "epoch": 1.0,
+    "value": 0.4321,
+    "message": "Crossed 25%: 0.4321"
+   },
+   {
+    "kind": "first_above_50",
+    "epoch": 2.0,
+    "value": 0.5678,
+    "message": "Crossed 50%: 0.5678"
+   },
+   {
+    "kind": "biggest_jump",
+    "epoch": 2.0,
+    "value": 0.1357,
+    "message": "Biggest single-epoch improvement: 0.1357"
+   },
+   {
+    "kind": "training_complete",
+    "epoch": 3.0,
+    "value": 0.6789,
+    "message": "Training completed."
+   }
+  ]
+ },
+ "nanogpt_real.log": {
+  "path": "tests/fixtures/logs/nanogpt_real.log",
+  "task": "custom",
+  "metric": "val_loss",
+  "frames": 9,
+  "last_value": 1.8857,
+  "keys": [
+   "train_loss",
+   "val_loss"
+  ],
+  "metric_from_epoch": 0.0,
+  "counter": "step",
+  "grade_note": "still_improving",
+  "cross_validation": null,
+  "final_grade": "A-",
+  "final_grade_basis": "improvement",
+  "final_phase": "understanding",
+  "milestones": [
+   {
+    "kind": "best_so_far",
+    "epoch": 0.0,
+    "value": 4.1649,
+    "message": "New best: 4.1649"
+   },
+   {
+    "kind": "biggest_jump",
+    "epoch": 250.0,
+    "value": 1.7202,
+    "message": "Biggest single-reading improvement: 1.7202"
+   },
+   {
+    "kind": "training_complete",
+    "epoch": 2000.0,
+    "value": 1.8857,
+    "message": "Training completed."
+   }
+  ]
  },
  "no_val_metrics.log": {
   "path": "tests/fixtures/logs/no_val_metrics.log",
@@ -962,11 +2147,44 @@
    "train_loss"
   ],
   "metric_from_epoch": 1.0,
+  "counter": "epoch",
   "grade_note": "still_improving",
   "cross_validation": null,
   "final_grade": "C+",
   "final_grade_basis": "thresholds",
-  "final_phase": "learning"
+  "final_phase": "learning",
+  "milestones": [
+   {
+    "kind": "best_so_far",
+    "epoch": 1.0,
+    "value": 0.312,
+    "message": "New best: 0.3120"
+   },
+   {
+    "kind": "first_above_25",
+    "epoch": 1.0,
+    "value": 0.312,
+    "message": "Crossed 25%: 0.3120"
+   },
+   {
+    "kind": "biggest_jump",
+    "epoch": 2.0,
+    "value": 0.111,
+    "message": "Biggest single-epoch improvement: 0.1110"
+   },
+   {
+    "kind": "first_above_50",
+    "epoch": 3.0,
+    "value": 0.521,
+    "message": "Crossed 50%: 0.5210"
+   },
+   {
+    "kind": "training_complete",
+    "epoch": 5.0,
+    "value": 0.689,
+    "message": "Training completed."
+   }
+  ]
  },
  "pl_high_accuracy.log": {
   "path": "tests/fixtures/logs/pl_high_accuracy.log",
@@ -981,11 +2199,50 @@
    "val_loss"
   ],
   "metric_from_epoch": 1.0,
+  "counter": "epoch",
   "grade_note": "still_improving",
   "cross_validation": null,
   "final_grade": "A-",
   "final_grade_basis": "thresholds",
-  "final_phase": "mastering"
+  "final_phase": "mastering",
+  "milestones": [
+   {
+    "kind": "best_so_far",
+    "epoch": 1.0,
+    "value": 0.0407,
+    "message": "New best: 0.0407"
+   },
+   {
+    "kind": "first_above_25",
+    "epoch": 7.0,
+    "value": 0.2667,
+    "message": "Crossed 25%: 0.2667"
+   },
+   {
+    "kind": "first_above_50",
+    "epoch": 11.0,
+    "value": 0.5372,
+    "message": "Crossed 50%: 0.5372"
+   },
+   {
+    "kind": "biggest_jump",
+    "epoch": 11.0,
+    "value": 0.0759,
+    "message": "Biggest single-epoch improvement: 0.0759"
+   },
+   {
+    "kind": "first_above_75",
+    "epoch": 16.0,
+    "value": 0.7862,
+    "message": "Crossed 75%: 0.7862"
+   },
+   {
+    "kind": "training_complete",
+    "epoch": 20.0,
+    "value": 0.8728,
+    "message": "Training completed."
+   }
+  ]
  },
  "plateau.log": {
   "path": "tests/fixtures/logs/plateau.log",
@@ -998,11 +2255,108 @@
    "val_accuracy"
   ],
   "metric_from_epoch": 1.0,
+  "counter": "epoch",
   "grade_note": null,
   "cross_validation": null,
   "final_grade": "B+",
   "final_grade_basis": "thresholds",
-  "final_phase": "learning"
+  "final_phase": "learning",
+  "milestones": [
+   {
+    "kind": "best_so_far",
+    "epoch": 1.0,
+    "value": 0.623,
+    "message": "New best: 0.6230"
+   },
+   {
+    "kind": "first_above_25",
+    "epoch": 1.0,
+    "value": 0.623,
+    "message": "Crossed 25%: 0.6230"
+   },
+   {
+    "kind": "first_above_50",
+    "epoch": 1.0,
+    "value": 0.623,
+    "message": "Crossed 50%: 0.6230"
+   },
+   {
+    "kind": "biggest_jump",
+    "epoch": 2.0,
+    "value": 0.089,
+    "message": "Biggest single-epoch improvement: 0.0890"
+   },
+   {
+    "kind": "first_above_75",
+    "epoch": 3.0,
+    "value": 0.798,
+    "message": "Crossed 75%: 0.7980"
+   },
+   {
+    "kind": "training_complete",
+    "epoch": 10.0,
+    "value": 0.825,
+    "message": "Training completed."
+   }
+  ]
+ },
+ "pytorch_imagenet_real.log": {
+  "path": "tests/fixtures/logs/pytorch_imagenet_real.log",
+  "task": "classification",
+  "metric": "val_accuracy",
+  "frames": 15,
+  "last_value": 0.89,
+  "keys": [
+   "accuracy",
+   "top5_accuracy",
+   "train_loss",
+   "val_accuracy"
+  ],
+  "metric_from_epoch": 1.0,
+  "counter": "epoch",
+  "grade_note": "still_improving",
+  "cross_validation": null,
+  "final_grade": "A-",
+  "final_grade_basis": "thresholds",
+  "final_phase": "mastering",
+  "milestones": [
+   {
+    "kind": "best_so_far",
+    "epoch": 0.03125,
+    "value": 7.1568,
+    "message": "New best: 7.1568"
+   },
+   {
+    "kind": "first_above_25",
+    "epoch": 3.0,
+    "value": 0.27,
+    "message": "Crossed 25%: 0.2700"
+   },
+   {
+    "kind": "first_above_50",
+    "epoch": 4.0,
+    "value": 0.5833,
+    "message": "Crossed 50%: 0.5833"
+   },
+   {
+    "kind": "biggest_jump",
+    "epoch": 4.0,
+    "value": 0.3133,
+    "message": "Biggest single-epoch improvement: 0.3133"
+   },
+   {
+    "kind": "first_above_75",
+    "epoch": 6.0,
+    "value": 0.8333,
+    "message": "Crossed 75%: 0.8333"
+   },
+   {
+    "kind": "training_complete",
+    "epoch": 8.0,
+    "value": 0.89,
+    "message": "Training completed."
+   }
+  ]
  },
  "pytorch_lightning.log": {
   "path": "demo/pytorch_lightning.log",
@@ -1017,11 +2371,50 @@
    "val_loss"
   ],
   "metric_from_epoch": 10.0,
+  "counter": "epoch",
   "grade_note": "still_improving",
   "cross_validation": null,
   "final_grade": "A-",
   "final_grade_basis": "thresholds",
-  "final_phase": "understanding"
+  "final_phase": "understanding",
+  "milestones": [
+   {
+    "kind": "best_so_far",
+    "epoch": 1.0,
+    "value": 0.412,
+    "message": "New best: 0.4120"
+   },
+   {
+    "kind": "first_above_25",
+    "epoch": 1.0,
+    "value": 0.412,
+    "message": "Crossed 25%: 0.4120"
+   },
+   {
+    "kind": "first_above_50",
+    "epoch": 3.0,
+    "value": 0.543,
+    "message": "Crossed 50%: 0.5430"
+   },
+   {
+    "kind": "first_above_75",
+    "epoch": 15.0,
+    "value": 0.787,
+    "message": "Crossed 75%: 0.7870"
+   },
+   {
+    "kind": "biggest_jump",
+    "epoch": 15.0,
+    "value": 0.056,
+    "message": "Biggest single-epoch improvement: 0.0560"
+   },
+   {
+    "kind": "training_complete",
+    "epoch": 30.0,
+    "value": 0.876,
+    "message": "Training completed."
+   }
+  ]
  },
  "pytorch_lightning_30ep.log": {
   "path": "tests/fixtures/logs/pytorch_lightning_30ep.log",
@@ -1036,11 +2429,50 @@
    "val_loss"
   ],
   "metric_from_epoch": 1.0,
+  "counter": "epoch",
   "grade_note": "still_improving",
   "cross_validation": null,
   "final_grade": "A-",
   "final_grade_basis": "thresholds",
-  "final_phase": "mastering"
+  "final_phase": "mastering",
+  "milestones": [
+   {
+    "kind": "best_so_far",
+    "epoch": 1.0,
+    "value": 0.0584,
+    "message": "New best: 0.0584"
+   },
+   {
+    "kind": "first_above_25",
+    "epoch": 11.0,
+    "value": 0.2918,
+    "message": "Crossed 25%: 0.2918"
+   },
+   {
+    "kind": "biggest_jump",
+    "epoch": 15.0,
+    "value": 0.0613,
+    "message": "Biggest single-epoch improvement: 0.0613"
+   },
+   {
+    "kind": "first_above_50",
+    "epoch": 16.0,
+    "value": 0.5016,
+    "message": "Crossed 50%: 0.5016"
+   },
+   {
+    "kind": "first_above_75",
+    "epoch": 23.0,
+    "value": 0.7726,
+    "message": "Crossed 75%: 0.7726"
+   },
+   {
+    "kind": "training_complete",
+    "epoch": 30.0,
+    "value": 0.8735,
+    "message": "Training completed."
+   }
+  ]
  },
  "pytorch_lightning_long.log": {
   "path": "tests/fixtures/logs/pytorch_lightning_long.log",
@@ -1055,11 +2487,50 @@
    "val_loss"
   ],
   "metric_from_epoch": 1.0,
+  "counter": "epoch",
   "grade_note": "still_improving",
   "cross_validation": null,
   "final_grade": "A-",
   "final_grade_basis": "thresholds",
-  "final_phase": "mastering"
+  "final_phase": "mastering",
+  "milestones": [
+   {
+    "kind": "best_so_far",
+    "epoch": 1.0,
+    "value": 0.0474,
+    "message": "New best: 0.0474"
+   },
+   {
+    "kind": "biggest_jump",
+    "epoch": 11.0,
+    "value": 0.0395,
+    "message": "Biggest single-epoch improvement: 0.0395"
+   },
+   {
+    "kind": "first_above_25",
+    "epoch": 35.0,
+    "value": 0.263,
+    "message": "Crossed 25%: 0.2630"
+   },
+   {
+    "kind": "first_above_50",
+    "epoch": 53.0,
+    "value": 0.5022,
+    "message": "Crossed 50%: 0.5022"
+   },
+   {
+    "kind": "first_above_75",
+    "epoch": 75.0,
+    "value": 0.7531,
+    "message": "Crossed 75%: 0.7531"
+   },
+   {
+    "kind": "training_complete",
+    "epoch": 100.0,
+    "value": 0.8818,
+    "message": "Training completed."
+   }
+  ]
  },
  "pytorch_lightning_short.log": {
   "path": "tests/fixtures/logs/pytorch_lightning_short.log",
@@ -1074,11 +2545,50 @@
    "val_loss"
   ],
   "metric_from_epoch": 1.0,
+  "counter": "epoch",
   "grade_note": "still_improving",
   "cross_validation": null,
   "final_grade": "A-",
   "final_grade_basis": "thresholds",
-  "final_phase": "mastering"
+  "final_phase": "mastering",
+  "milestones": [
+   {
+    "kind": "best_so_far",
+    "epoch": 1.0,
+    "value": 0.1244,
+    "message": "New best: 0.1244"
+   },
+   {
+    "kind": "first_above_25",
+    "epoch": 2.0,
+    "value": 0.3145,
+    "message": "Crossed 25%: 0.3145"
+   },
+   {
+    "kind": "first_above_50",
+    "epoch": 3.0,
+    "value": 0.5867,
+    "message": "Crossed 50%: 0.5867"
+   },
+   {
+    "kind": "biggest_jump",
+    "epoch": 3.0,
+    "value": 0.2722,
+    "message": "Biggest single-epoch improvement: 0.2722"
+   },
+   {
+    "kind": "first_above_75",
+    "epoch": 4.0,
+    "value": 0.7938,
+    "message": "Crossed 75%: 0.7938"
+   },
+   {
+    "kind": "training_complete",
+    "epoch": 5.0,
+    "value": 0.8752,
+    "message": "Training completed."
+   }
+  ]
  },
  "resnet18_cifar10.log": {
   "path": "tests/fixtures/logs/resnet18_cifar10.log",
@@ -1095,11 +2605,56 @@
    "val_loss"
   ],
   "metric_from_epoch": 1.0,
+  "counter": "epoch",
   "grade_note": "still_improving",
   "cross_validation": null,
   "final_grade": "A",
   "final_grade_basis": "thresholds",
-  "final_phase": "mastering"
+  "final_phase": "mastering",
+  "milestones": [
+   {
+    "kind": "best_so_far",
+    "epoch": 1.0,
+    "value": 0.5131,
+    "message": "New best: 0.5131"
+   },
+   {
+    "kind": "first_above_25",
+    "epoch": 1.0,
+    "value": 0.5131,
+    "message": "Crossed 25%: 0.5131"
+   },
+   {
+    "kind": "first_above_50",
+    "epoch": 1.0,
+    "value": 0.5131,
+    "message": "Crossed 50%: 0.5131"
+   },
+   {
+    "kind": "biggest_jump",
+    "epoch": 2.0,
+    "value": 0.1393,
+    "message": "Biggest single-epoch improvement: 0.1393"
+   },
+   {
+    "kind": "first_above_75",
+    "epoch": 6.0,
+    "value": 0.7763,
+    "message": "Crossed 75%: 0.7763"
+   },
+   {
+    "kind": "first_above_90",
+    "epoch": 25.0,
+    "value": 0.9171,
+    "message": "Crossed 90%: 0.9171"
+   },
+   {
+    "kind": "training_complete",
+    "epoch": 30.0,
+    "value": 0.9387,
+    "message": "Training completed."
+   }
+  ]
  },
  "sb3_ppo_real.log": {
   "path": "tests/fixtures/logs/sb3_ppo_real.log",
@@ -1127,11 +2682,32 @@
    "val_loss"
   ],
   "metric_from_epoch": 1.0,
+  "counter": "epoch",
   "grade_note": "still_improving",
   "cross_validation": null,
   "final_grade": "A+",
   "final_grade_basis": "improvement",
-  "final_phase": "understanding"
+  "final_phase": "understanding",
+  "milestones": [
+   {
+    "kind": "best_so_far",
+    "epoch": 1.0,
+    "value": 2.4,
+    "message": "New best: 2.4000"
+   },
+   {
+    "kind": "biggest_jump",
+    "epoch": 2.0,
+    "value": 0.7,
+    "message": "Biggest single-epoch improvement: 0.7000"
+   },
+   {
+    "kind": "training_complete",
+    "epoch": 5.0,
+    "value": 0.28,
+    "message": "Training completed."
+   }
+  ]
  },
  "seq2seq_attention.log": {
   "path": "demo/seq2seq_attention.log",
@@ -1146,11 +2722,50 @@
    "val_loss"
   ],
   "metric_from_epoch": 1.0,
+  "counter": "epoch",
   "grade_note": null,
   "cross_validation": null,
   "final_grade": "B+",
   "final_grade_basis": "thresholds",
-  "final_phase": "understanding"
+  "final_phase": "understanding",
+  "milestones": [
+   {
+    "kind": "best_so_far",
+    "epoch": 1.0,
+    "value": 0.614,
+    "message": "New best: 0.6140"
+   },
+   {
+    "kind": "first_above_25",
+    "epoch": 1.0,
+    "value": 0.614,
+    "message": "Crossed 25%: 0.6140"
+   },
+   {
+    "kind": "first_above_50",
+    "epoch": 1.0,
+    "value": 0.614,
+    "message": "Crossed 50%: 0.6140"
+   },
+   {
+    "kind": "biggest_jump",
+    "epoch": 2.0,
+    "value": 0.047,
+    "message": "Biggest single-epoch improvement: 0.0470"
+   },
+   {
+    "kind": "first_above_75",
+    "epoch": 5.0,
+    "value": 0.755,
+    "message": "Crossed 75%: 0.7550"
+   },
+   {
+    "kind": "training_complete",
+    "epoch": 20.0,
+    "value": 0.824,
+    "message": "Training completed."
+   }
+  ]
  },
  "single_epoch.log": {
   "path": "tests/fixtures/logs/single_epoch.log",
@@ -1165,11 +2780,44 @@
    "val_loss"
   ],
   "metric_from_epoch": 1.0,
+  "counter": "epoch",
   "grade_note": "few_readings",
   "cross_validation": null,
   "final_grade": "A-",
   "final_grade_basis": "thresholds",
-  "final_phase": "mastering"
+  "final_phase": "mastering",
+  "milestones": [
+   {
+    "kind": "best_so_far",
+    "epoch": 1.0,
+    "value": 0.874,
+    "message": "New best: 0.8740"
+   },
+   {
+    "kind": "first_above_25",
+    "epoch": 1.0,
+    "value": 0.874,
+    "message": "Crossed 25%: 0.8740"
+   },
+   {
+    "kind": "first_above_50",
+    "epoch": 1.0,
+    "value": 0.874,
+    "message": "Crossed 50%: 0.8740"
+   },
+   {
+    "kind": "first_above_75",
+    "epoch": 1.0,
+    "value": 0.874,
+    "message": "Crossed 75%: 0.8740"
+   },
+   {
+    "kind": "training_complete",
+    "epoch": 1.0,
+    "value": 0.874,
+    "message": "Training completed."
+   }
+  ]
  },
  "tqdm_loop_real.log": {
   "path": "tests/fixtures/logs/tqdm_loop_real.log",
@@ -1184,11 +2832,56 @@
    "val_loss"
   ],
   "metric_from_epoch": 1.0,
+  "counter": "epoch",
   "grade_note": null,
   "cross_validation": null,
   "final_grade": "A",
   "final_grade_basis": "thresholds",
-  "final_phase": "mastering"
+  "final_phase": "mastering",
+  "milestones": [
+   {
+    "kind": "best_so_far",
+    "epoch": 1.0,
+    "value": 0.3133,
+    "message": "New best: 0.3133"
+   },
+   {
+    "kind": "first_above_25",
+    "epoch": 1.0,
+    "value": 0.3133,
+    "message": "Crossed 25%: 0.3133"
+   },
+   {
+    "kind": "first_above_50",
+    "epoch": 2.0,
+    "value": 0.6556,
+    "message": "Crossed 50%: 0.6556"
+   },
+   {
+    "kind": "biggest_jump",
+    "epoch": 2.0,
+    "value": 0.3423,
+    "message": "Biggest single-epoch improvement: 0.3423"
+   },
+   {
+    "kind": "first_above_75",
+    "epoch": 3.0,
+    "value": 0.8044,
+    "message": "Crossed 75%: 0.8044"
+   },
+   {
+    "kind": "first_above_90",
+    "epoch": 9.0,
+    "value": 0.9089,
+    "message": "Crossed 90%: 0.9089"
+   },
+   {
+    "kind": "training_complete",
+    "epoch": 12.0,
+    "value": 0.92,
+    "message": "Training completed."
+   }
+  ]
  },
  "universal_20ep.log": {
   "path": "tests/fixtures/logs/universal_20ep.log",
@@ -1204,11 +2897,50 @@
    "val_loss"
   ],
   "metric_from_epoch": 1.0,
+  "counter": "epoch",
   "grade_note": "still_improving",
   "cross_validation": null,
   "final_grade": "A-",
   "final_grade_basis": "thresholds",
-  "final_phase": "mastering"
+  "final_phase": "mastering",
+  "milestones": [
+   {
+    "kind": "best_so_far",
+    "epoch": 1.0,
+    "value": 0.0629,
+    "message": "New best: 0.0629"
+   },
+   {
+    "kind": "first_above_25",
+    "epoch": 7.0,
+    "value": 0.265,
+    "message": "Crossed 25%: 0.2650"
+   },
+   {
+    "kind": "biggest_jump",
+    "epoch": 9.0,
+    "value": 0.084,
+    "message": "Biggest single-epoch improvement: 0.0840"
+   },
+   {
+    "kind": "first_above_50",
+    "epoch": 11.0,
+    "value": 0.5293,
+    "message": "Crossed 50%: 0.5293"
+   },
+   {
+    "kind": "first_above_75",
+    "epoch": 15.0,
+    "value": 0.7507,
+    "message": "Crossed 75%: 0.7507"
+   },
+   {
+    "kind": "training_complete",
+    "epoch": 20.0,
+    "value": 0.8728,
+    "message": "Training completed."
+   }
+  ]
  },
  "universal_kv_colon.log": {
   "path": "tests/fixtures/logs/universal_kv_colon.log",
@@ -1224,11 +2956,50 @@
    "val_loss"
   ],
   "metric_from_epoch": 1.0,
+  "counter": "epoch",
   "grade_note": "still_improving",
   "cross_validation": null,
   "final_grade": "B+",
   "final_grade_basis": "thresholds",
-  "final_phase": "mastering"
+  "final_phase": "mastering",
+  "milestones": [
+   {
+    "kind": "best_so_far",
+    "epoch": 1.0,
+    "value": 0.0496,
+    "message": "New best: 0.0496"
+   },
+   {
+    "kind": "first_above_25",
+    "epoch": 11.0,
+    "value": 0.2833,
+    "message": "Crossed 25%: 0.2833"
+   },
+   {
+    "kind": "first_above_50",
+    "epoch": 16.0,
+    "value": 0.5113,
+    "message": "Crossed 50%: 0.5113"
+   },
+   {
+    "kind": "biggest_jump",
+    "epoch": 16.0,
+    "value": 0.0591,
+    "message": "Biggest single-epoch improvement: 0.0591"
+   },
+   {
+    "kind": "first_above_75",
+    "epoch": 23.0,
+    "value": 0.7577,
+    "message": "Crossed 75%: 0.7577"
+   },
+   {
+    "kind": "training_complete",
+    "epoch": 30.0,
+    "value": 0.8527,
+    "message": "Training completed."
+   }
+  ]
  },
  "vscode-demo.log": {
   "path": "epochix-vscode/media/demo.log",
@@ -1244,11 +3015,56 @@
    "val_loss"
   ],
   "metric_from_epoch": 1.0,
+  "counter": "epoch",
   "grade_note": null,
   "cross_validation": null,
   "final_grade": "A+",
   "final_grade_basis": "thresholds",
-  "final_phase": "mastering"
+  "final_phase": "mastering",
+  "milestones": [
+   {
+    "kind": "best_so_far",
+    "epoch": 1.0,
+    "value": 0.7822,
+    "message": "New best: 0.7822"
+   },
+   {
+    "kind": "first_above_25",
+    "epoch": 1.0,
+    "value": 0.7822,
+    "message": "Crossed 25%: 0.7822"
+   },
+   {
+    "kind": "first_above_50",
+    "epoch": 1.0,
+    "value": 0.7822,
+    "message": "Crossed 50%: 0.7822"
+   },
+   {
+    "kind": "first_above_75",
+    "epoch": 1.0,
+    "value": 0.7822,
+    "message": "Crossed 75%: 0.7822"
+   },
+   {
+    "kind": "biggest_jump",
+    "epoch": 2.0,
+    "value": 0.0889,
+    "message": "Biggest single-epoch improvement: 0.0889"
+   },
+   {
+    "kind": "first_above_90",
+    "epoch": 3.0,
+    "value": 0.9289,
+    "message": "Crossed 90%: 0.9289"
+   },
+   {
+    "kind": "training_complete",
+    "epoch": 20.0,
+    "value": 0.9889,
+    "message": "Training completed."
+   }
+  ]
  },
  "xgboost_real_classifier.log": {
   "path": "tests/fixtures/logs/xgboost_real_classifier.log",
@@ -1263,11 +3079,32 @@
    "val_log_loss"
   ],
   "metric_from_epoch": 0.0,
+  "counter": "round",
   "grade_note": null,
   "cross_validation": null,
   "final_grade": "A+",
   "final_grade_basis": "improvement",
-  "final_phase": "understanding"
+  "final_phase": "understanding",
+  "milestones": [
+   {
+    "kind": "best_so_far",
+    "epoch": 0.0,
+    "value": 0.5825,
+    "message": "New best: 0.5825"
+   },
+   {
+    "kind": "biggest_jump",
+    "epoch": 1.0,
+    "value": 0.0599,
+    "message": "Biggest single-reading improvement: 0.0599"
+   },
+   {
+    "kind": "training_complete",
+    "epoch": 59.0,
+    "value": 0.1491,
+    "message": "Training completed."
+   }
+  ]
  },
  "yolo_100ep.log": {
   "path": "tests/fixtures/logs/yolo_100ep.log",
@@ -1285,11 +3122,50 @@
    "recall"
   ],
   "metric_from_epoch": 5.0,
+  "counter": "epoch",
   "grade_note": "still_improving",
   "cross_validation": null,
   "final_grade": "A+",
   "final_grade_basis": "thresholds",
-  "final_phase": "mastering"
+  "final_phase": "mastering",
+  "milestones": [
+   {
+    "kind": "best_so_far",
+    "epoch": 1.0,
+    "value": 1.167,
+    "message": "New best: 1.1670"
+   },
+   {
+    "kind": "first_above_25",
+    "epoch": 40.0,
+    "value": 0.3,
+    "message": "Crossed 25%: 0.3000"
+   },
+   {
+    "kind": "biggest_jump",
+    "epoch": 40.0,
+    "value": 0.069,
+    "message": "Biggest single-epoch improvement: 0.0690"
+   },
+   {
+    "kind": "first_above_50",
+    "epoch": 60.0,
+    "value": 0.526,
+    "message": "Crossed 50%: 0.5260"
+   },
+   {
+    "kind": "first_above_75",
+    "epoch": 95.0,
+    "value": 0.766,
+    "message": "Crossed 75%: 0.7660"
+   },
+   {
+    "kind": "training_complete",
+    "epoch": 100.0,
+    "value": 0.783,
+    "message": "Training completed."
+   }
+  ]
  },
  "yolo_50ep.log": {
   "path": "tests/fixtures/logs/yolo_50ep.log",
@@ -1307,11 +3183,50 @@
    "recall"
   ],
   "metric_from_epoch": 5.0,
+  "counter": "epoch",
   "grade_note": "still_improving",
   "cross_validation": null,
   "final_grade": "A+",
   "final_grade_basis": "thresholds",
-  "final_phase": "mastering"
+  "final_phase": "mastering",
+  "milestones": [
+   {
+    "kind": "best_so_far",
+    "epoch": 1.0,
+    "value": 1.135,
+    "message": "New best: 1.1350"
+   },
+   {
+    "kind": "first_above_25",
+    "epoch": 20.0,
+    "value": 0.298,
+    "message": "Crossed 25%: 0.2980"
+   },
+   {
+    "kind": "biggest_jump",
+    "epoch": 25.0,
+    "value": 0.128,
+    "message": "Biggest single-epoch improvement: 0.1280"
+   },
+   {
+    "kind": "first_above_50",
+    "epoch": 30.0,
+    "value": 0.535,
+    "message": "Crossed 50%: 0.5350"
+   },
+   {
+    "kind": "first_above_75",
+    "epoch": 45.0,
+    "value": 0.76,
+    "message": "Crossed 75%: 0.7600"
+   },
+   {
+    "kind": "training_complete",
+    "epoch": 50.0,
+    "value": 0.798,
+    "message": "Training completed."
+   }
+  ]
  },
  "yolo_real_ultralytics.log": {
   "path": "tests/fixtures/logs/yolo_real_ultralytics.log",
@@ -1329,11 +3244,38 @@
    "recall"
   ],
   "metric_from_epoch": 1.0,
+  "counter": "epoch",
   "grade_note": "few_readings",
   "cross_validation": null,
   "final_grade": "A-",
   "final_grade_basis": "thresholds",
-  "final_phase": "learning"
+  "final_phase": "learning",
+  "milestones": [
+   {
+    "kind": "best_so_far",
+    "epoch": 1.0,
+    "value": 1.135,
+    "message": "New best: 1.1350"
+   },
+   {
+    "kind": "first_above_25",
+    "epoch": 1.0,
+    "value": 0.62,
+    "message": "Crossed 25%: 0.6200"
+   },
+   {
+    "kind": "first_above_50",
+    "epoch": 1.0,
+    "value": 0.62,
+    "message": "Crossed 50%: 0.6200"
+   },
+   {
+    "kind": "training_complete",
+    "epoch": 3.0,
+    "value": 0.62,
+    "message": "Training completed."
+   }
+  ]
  },
  "yolo_short.log": {
   "path": "tests/fixtures/logs/yolo_short.log",
@@ -1351,11 +3293,50 @@
    "recall"
   ],
   "metric_from_epoch": 5.0,
+  "counter": "epoch",
   "grade_note": "few_readings",
   "cross_validation": null,
   "final_grade": "A+",
   "final_grade_basis": "thresholds",
-  "final_phase": "understanding"
+  "final_phase": "understanding",
+  "milestones": [
+   {
+    "kind": "best_so_far",
+    "epoch": 1.0,
+    "value": 0.836,
+    "message": "New best: 0.8360"
+   },
+   {
+    "kind": "first_above_25",
+    "epoch": 5.0,
+    "value": 0.415,
+    "message": "Crossed 25%: 0.4150"
+   },
+   {
+    "kind": "first_above_50",
+    "epoch": 10.0,
+    "value": 0.781,
+    "message": "Crossed 50%: 0.7810"
+   },
+   {
+    "kind": "first_above_75",
+    "epoch": 10.0,
+    "value": 0.781,
+    "message": "Crossed 75%: 0.7810"
+   },
+   {
+    "kind": "biggest_jump",
+    "epoch": 10.0,
+    "value": 0.366,
+    "message": "Biggest single-epoch improvement: 0.3660"
+   },
+   {
+    "kind": "training_complete",
+    "epoch": 10.0,
+    "value": 0.781,
+    "message": "Training completed."
+   }
+  ]
  },
  "yolov8_detection.log": {
   "path": "demo/yolov8_detection.log",
@@ -1373,10 +3354,49 @@
    "recall"
   ],
   "metric_from_epoch": 1.0,
+  "counter": "epoch",
   "grade_note": "still_improving",
   "cross_validation": null,
   "final_grade": "A+",
   "final_grade_basis": "thresholds",
-  "final_phase": "understanding"
+  "final_phase": "understanding",
+  "milestones": [
+   {
+    "kind": "best_so_far",
+    "epoch": 1.0,
+    "value": 1.189,
+    "message": "New best: 1.1890"
+   },
+   {
+    "kind": "first_above_25",
+    "epoch": 1.0,
+    "value": 0.619,
+    "message": "Crossed 25%: 0.6190"
+   },
+   {
+    "kind": "first_above_50",
+    "epoch": 1.0,
+    "value": 0.619,
+    "message": "Crossed 50%: 0.6190"
+   },
+   {
+    "kind": "biggest_jump",
+    "epoch": 2.0,
+    "value": 0.028,
+    "message": "Biggest single-epoch improvement: 0.0280"
+   },
+   {
+    "kind": "first_above_75",
+    "epoch": 10.0,
+    "value": 0.758,
+    "message": "Crossed 75%: 0.7580"
+   },
+   {
+    "kind": "training_complete",
+    "epoch": 30.0,
+    "value": 0.816,
+    "message": "Training completed."
+   }
+  ]
  }
 }

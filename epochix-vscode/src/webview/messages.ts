@@ -8,6 +8,7 @@
 import type { Phase } from "../story/phases";
 import type { Grade, TaskType } from "../story/grader";
 import type { GradeBasis } from "../story/grading.generated";
+import type { Counter } from "../story/narratives.generated";
 
 // ── Shared data shapes ────────────────────────────────────────────────────────
 
@@ -15,6 +16,9 @@ export interface StoryFrameMsg {
   runId: string;
   seq: number;
   epoch: number | null;
+  /** What the number in `epoch` counts — an epoch, a step, an iteration, a
+   *  boosting round. Null when the slot is empty. Mirrors StoryFrame.counter. */
+  counter: Counter | null;
   progress: number;
   phase: Phase;
   grade: Grade;
@@ -43,14 +47,12 @@ export interface GradeBandsMsg {
   bands: Array<{ grade: Grade; value: number }>;
 }
 
-export type GradeNote = "few_readings" | "still_improving";
-export type { GradeBasis };
+export type GradeNote = "few_readings" | "still_improving" | "unsteady" | "running_mean";
+export type { Counter, GradeBasis };
 
-export interface MilestoneMsg {
-  kind: string;
-  epoch: number | null;
-  message: string;
-}
+/** A milestone, shaped as the Python engine's (story/milestones.ts). */
+import type { Milestone as MilestoneMsg } from "../story/milestones";
+export type { MilestoneMsg };
 
 export interface WarningMsg {
   kind: string;

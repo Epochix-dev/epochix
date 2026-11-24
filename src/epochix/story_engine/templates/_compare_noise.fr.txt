@@ -1,1 +1,1 @@
-{a} et {b} terminent à {gap} l'un de l'autre ({metric}), pas plus que la variation d'une époque à l'autre dans chaque run. Sur cette base, aucune différence significative.
+{a} et {b} terminent à {gap} l'un de l'autre ({metric}), pas plus que la variation {counter_to_counter} dans chaque run. Sur cette base, aucune différence significative.

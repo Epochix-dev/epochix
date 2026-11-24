@@ -7,6 +7,7 @@ from itertools import groupby
 
 from epochix.enums import Grade, Phase, TaskType
 from epochix.models import (
+    Counter,
     GradeBasis,
     MetaphorCard,
     MetricEvent,
@@ -22,25 +23,30 @@ from epochix.story_engine.grade import (
     grade_by_trajectory,
     grade_note,
     has_absolute_scale,
+    has_no_ideal,
     impossible_reason,
     is_lower_better,
     metric_lower_better,
 )
-from epochix.story_engine.messages import message
+from epochix.story_engine.messages import counter_words, message
 from epochix.story_engine.milestones import MilestoneTracker
 from epochix.story_engine.narrator import (
     _display_metric,
     narrate,
+    narrate_below_best,
     narrate_diverged,
     narrate_past_peak,
+    narrate_running_mean,
     narrate_single_reading,
     narrate_stalled,
+    narrate_unsteady,
 )
 from epochix.story_engine.phases import (
     compute_phase,
     estimate_progress,
     relative_improvement,
 )
+from epochix.story_engine.steadiness import running_mean, unsteady
 from epochix.story_engine.task_classifier import classify_task, refine_gaze
 from epochix.story_engine.warnings import WarningDetector
 
@@ -206,13 +212,22 @@ _PREFERRED_KEYS_FOR_TASK: dict[TaskType, tuple[str, ...]] = {
 }
 
 # A run is "stalled" when, after this many epochs of the primary metric, it has
-# realised less than this fraction of its achievable improvement. Deliberately
+# realised less than this fraction of its achievable improvement — for a metric
+# with no ideal (grade.NO_IDEAL_METRICS), moved less than this share of its
+# first reading, as grade_by_trajectory measures a move. Deliberately
 # conservative: we would rather stay quiet than wrongly call a slow-but-real
 # improvement a failure.
 
 # A run is 'past peak' when the primary metric has fallen this far (relative)
 # below its own best. Above noise, below the point of nagging about jitter.
 _PAST_PEAK_REL_DROP = 0.01
+# ...and it is told so only once this many readings in a row have been. One
+# reading that far off is said as just that (narrate_below_best): an
+# XGBoost run converged on a plateau (xgboost_real_classifier.log) went
+# 0.1491, 0.1508, 0.1500 and was told at the middle one that it had
+# "slipped ... the later rounds are moving away from the best result",
+# beside an A+, and advised to stop early there.
+_PAST_PEAK_READINGS = 3
 
 _STALL_MIN_EPOCHS = 3
 _STALL_REL_IMPROVEMENT = 0.03
@@ -296,6 +311,10 @@ class StoryEngine:
     total_epochs: int | None = None
     locale: str = "en"
     grade_config: GradeConfig | None = None  # loaded from .epochix.yaml
+    # What the number in an event's `epoch` slot counts. The pipeline keeps it
+    # in step with the parser, line by line (parsers.base.counter_after), as
+    # it does `total_epochs`; an event pushed by the SDK names an epoch.
+    counter: Counter = "epoch"
 
     _seen_keys: set[str] = field(default_factory=set, init=False)
     # Keys on the line being processed, announced before its events arrive
@@ -309,6 +328,8 @@ class StoryEngine:
     _baseline: float | None = field(default=None, init=False)
     _best_primary: float | None = field(default=None, init=False)
     _best_epoch: float | None = field(default=None, init=False)
+    # Readings in a row more than _PAST_PEAK_REL_DROP below the best.
+    _below_best_run: int = field(default=0, init=False)
     # The bands the latest letter was measured against (best first) and
     # whether lower is better; None when it was not graded on bands. Written
     # to the run so a chart draws the lines the grader used, not a copy.
@@ -325,7 +346,11 @@ class StoryEngine:
     # are buffered here and replayed once emission begins, so early epochs aren't
     # silently dropped from the story (grade-arc chart / stat chip). Each keeps
     # how many readings every metric had when it arrived; see _replay_warmup.
-    _warmup: list[tuple[MetricEvent, dict[str, int]]] = field(default_factory=list, init=False)
+    # ... and what its epoch slot counted then: the frames are built later,
+    # by which time a nanoGPT run has gone from a `step` row to an `iter` one.
+    _warmup: list[tuple[MetricEvent, dict[str, int], Counter]] = field(
+        default_factory=list, init=False
+    )
     _started: bool = field(default=False, init=False)
     # (metric key, epoch) of the first non-numeric reading the log reported.
     # A MetricEvent's value is a FiniteFloat, so a NaN can never travel as one
@@ -436,9 +461,14 @@ class StoryEngine:
                         detected = refine_gaze(detected, mae_hist[-1], self._seen_raw_keys)
                 self.task = detected
                 self._task_locked = True
-                self._milestones = MilestoneTracker(
-                    run_id=self.run_id, task=self.task, locale=self.locale
-                )
+                # The milestone tracker is NOT replaced here. A new one forgot
+                # what had fired, so a run told on its training loss until the
+                # task was known announced "New best" twice (Hugging Face,
+                # PyTorch ImageNet); one told on box_loss until then (YOLO)
+                # did not. The tracker is given each reading's direction, so
+                # the task it was built with never decides anything.
+                if self._milestones is not None:
+                    self._milestones.task = detected
 
     def _advance(self, event: MetricEvent) -> list[StoryFrame]:
         """Warm up, or build the frame this event triggers (see process_all)."""
@@ -447,7 +477,9 @@ class StoryEngine:
         # events so early primary-metric epochs produce frames too (previously
         # anything logged in the first <3 events was lost from the story).
         if not self._started:
-            self._warmup.append((event, {key: len(h) for key, h in self._metric_history.items()}))
+            self._warmup.append(
+                (event, {key: len(h) for key, h in self._metric_history.items()}, self.counter)
+            )
             if self._events_count < 3:
                 return []
             self._started = True
@@ -455,7 +487,7 @@ class StoryEngine:
             return self._replay_warmup()
 
         self._ensure_milestones()
-        f = self._emit(event)
+        f = self._emit(event, self.counter)
         return [f] if f is not None else []
 
     def _replay_warmup(self) -> list[StoryFrame]:
@@ -470,11 +502,11 @@ class StoryEngine:
         history = self._metric_history
         frames: list[StoryFrame] = []
         try:
-            for buffered, lengths in self._warmup:
+            for buffered, lengths, counted_by in self._warmup:
                 self._metric_history = {
                     key: values[: lengths.get(key, 0)] for key, values in history.items()
                 }
-                frame = self._emit(buffered)
+                frame = self._emit(buffered, counted_by)
                 if frame is not None:
                     frames.append(frame)
         finally:
@@ -577,11 +609,13 @@ class StoryEngine:
             last_epoch=prev.epoch,
             run_id=self.run_id,
             locale=self.locale,
+            counter=prev.counter,
         )
         frame = StoryFrame(
             run_id=self.run_id,
             seq=last_seq + 1,
             epoch=prev.epoch,
+            counter=prev.counter,
             # The run did not get further along by failing.
             progress=prev.progress,
             phase=prev.phase,
@@ -620,11 +654,17 @@ class StoryEngine:
                 locale=self.locale,
             )
 
-    def _emit(self, event: MetricEvent) -> StoryFrame | None:
-        """Build a StoryFrame for a primary-metric event, or None otherwise."""
+    def _emit(self, event: MetricEvent, counted_by: Counter) -> StoryFrame | None:
+        """Build a StoryFrame for a primary-metric event, or None otherwise.
+
+        *counted_by* is what the event's epoch slot counted when it arrived.
+        """
         primary_key = self._effective_primary_key()
         if event.canonical_key != primary_key:
             return None  # only emit frames on primary metric updates
+        # Nothing in the slot, nothing counted: a script that fits once and
+        # prints a score has no counter to name.
+        counter: Counter | None = counted_by if event.epoch is not None else None
 
         assert self._milestones is not None  # callers run _ensure_milestones first
         primary_value = event.value
@@ -638,6 +678,7 @@ class StoryEngine:
             self._best_primary = None
             self._best_epoch = None
             self._prev_primary = None
+            self._below_best_run = 0
         self._primary_key_used = primary_key
 
         if self._baseline is None:
@@ -682,29 +723,57 @@ class StoryEngine:
         # For a bounded higher-is-better metric there is another honest reading:
         # where the value sits on its own scale. Only for the first reading —
         # once there are two, real movement is the better signal.
+        #
+        # A metric with no ideal (PSNR, the inception score) has no scale of
+        # its own to sit on, whatever its value: its improvement is read from
+        # its first reading, as grade_by_trajectory reads it, and measured
+        # against 1.0 it was negative — every frame in Awakening, and the
+        # stall story told of a PSNR that climbed 20 to 32.
+        no_ideal = has_no_ideal(primary_key)
         phase_baseline = self._baseline
         if (
             len(self._metric_history.get(primary_key, ())) < 2
             and not lower_better
+            and not no_ideal
             and 0.0 <= primary_value <= 1.0
         ):
             phase_baseline = 0.0
+
+        # Everything below sets this reading against another: the first (the
+        # phase, the grade of a metric with no scale), the best (past its
+        # peak), the one before. A metric whose readings rise and fall from
+        # one to the next by more than any trend in them supports none of
+        # that — see steadiness.py. Then no improvement is claimed, no letter
+        # is given, and the story says what the readings are.
+        swing = unsteady(self._metric_history.get(primary_key, ()))
+        # A running average over overlapping batches (steadiness.RUNNING_MEANS)
+        # supports none of it either, whatever its readings look like: that is
+        # how the metric is computed, not something read off the series.
+        averaged = running_mean(event.raw_key)
+        incomparable = swing is not None or averaged
+        if incomparable:
+            phase_baseline = primary_value
 
         phase = compute_phase(
             progress=progress,
             primary_value=primary_value,
             baseline=phase_baseline,
             lower_better=lower_better,
+            unbounded=no_ideal,
         )
 
         # Honest "advancement" 0–1: the clock when total length is known, else
-        # the fraction of achievable metric improvement realised so far. Used
+        # the fraction of achievable metric improvement realised so far (for a
+        # metric with no ideal, the rise from its first reading as a share of
+        # it, clamped to 1). Used
         # for both the progress bar and the maturity signal (NOT a statistical
         # prediction confidence).
-        rel = relative_improvement(
-            primary_value,
-            self._baseline,
-            lower_better=lower_better,
+        rel = (
+            relative_improvement(
+                primary_value, self._baseline, lower_better=lower_better, unbounded=no_ideal
+            )
+            if not incomparable
+            else None
         )
         advancement = progress if progress is not None else (rel if rel is not None else 0.0)
         # A non-finite primary (diverged run) can make relative-improvement NaN;
@@ -740,7 +809,13 @@ class StoryEngine:
         # upside down.
         own_bands = self.grade_config.bands_for(task, primary_key) if self.grade_config else None
         grade_basis: GradeBasis | None = None
-        if own_bands:
+        if incomparable:
+            # On any scale: a letter for one reading is not a letter for the
+            # run when the next reading is as likely to be half or double, or
+            # when it is the same average with one batch changed.
+            grade = Grade.INCOMPLETE
+            self.grade_bands_used = None
+        elif own_bands:
             stated = bands_lower_better(own_bands)
             grade = compute_grade(
                 task=task,
@@ -788,7 +863,8 @@ class StoryEngine:
             grade = Grade.INCOMPLETE
             self.grade_bands_used = None
 
-        delta = primary_value - self._prev_primary if self._prev_primary is not None else 0.0
+        # None when there is no reading before to measure from (narrate).
+        delta = primary_value - self._prev_primary if self._prev_primary is not None else None
 
         # Honesty guard: the phase templates are driven by how far through
         # training we are, so a model stuck at chance level was still narrated
@@ -805,14 +881,20 @@ class StoryEngine:
             self._best_primary = primary_value
             self._best_epoch = event.epoch
 
-        past_peak = False
+        below_best = False
         if self._best_primary is not None and abs(self._best_primary) > 1e-9:
             drop = (
                 (primary_value - self._best_primary)
                 if lower_better
                 else (self._best_primary - primary_value)
             ) / abs(self._best_primary)
-            past_peak = drop > _PAST_PEAK_REL_DROP
+            # Not for an unsteady metric: its best is its luckiest batch. Nor
+            # for a running average: its best is its luckiest window.
+            below_best = drop > _PAST_PEAK_REL_DROP and not incomparable
+        # How many readings in a row have been that far below the best. A
+        # new best is not, so it starts the count again.
+        self._below_best_run = self._below_best_run + 1 if below_best else 0
+        past_peak = self._below_best_run >= _PAST_PEAK_READINGS
 
         epochs_seen = len(self._metric_history.get(event.canonical_key, ()))
         # `rel` is the fraction of achievable improvement realised, so a run
@@ -831,7 +913,7 @@ class StoryEngine:
             epochs_seen >= _STALL_MIN_EPOCHS
             and rel is not None
             and rel < _STALL_REL_IMPROVEMENT
-            and not past_peak
+            and not below_best
         )
         # A result, not a stage of training. Both conditions are needed: one
         # reading alone also describes epoch 1 of a live run, which genuinely
@@ -845,6 +927,27 @@ class StoryEngine:
                 locale=self.locale,
                 metric=primary_key,
             )
+        elif averaged:
+            narrative = narrate_running_mean(
+                epoch=event.epoch,
+                primary_value=primary_value,
+                run_id=self.run_id,
+                locale=self.locale,
+                metric=primary_key,
+                counter=counter,
+            )
+        elif swing is not None:
+            narrative = narrate_unsteady(
+                epoch=event.epoch,
+                primary_value=primary_value,
+                turns=swing.turns,
+                readings=swing.readings,
+                step=swing.step_text,
+                run_id=self.run_id,
+                locale=self.locale,
+                metric=primary_key,
+                counter=counter,
+            )
         elif stalled and self._baseline is not None:
             narrative = narrate_stalled(
                 epoch=event.epoch,
@@ -853,6 +956,7 @@ class StoryEngine:
                 epochs_seen=epochs_seen,
                 run_id=self.run_id,
                 locale=self.locale,
+                counter=counter,
             )
         elif past_peak and self._best_primary is not None:
             narrative = narrate_past_peak(
@@ -862,6 +966,20 @@ class StoryEngine:
                 best_epoch=self._best_epoch,
                 run_id=self.run_id,
                 locale=self.locale,
+                counter=counter,
+            )
+        elif below_best and self._best_primary is not None:
+            # Off its best, and not yet for long enough to say it slipped. The
+            # phase stories say a reading is within 1% of the best, so this
+            # one is not told with them either.
+            narrative = narrate_below_best(
+                epoch=event.epoch,
+                primary_value=primary_value,
+                best_value=self._best_primary,
+                best_epoch=self._best_epoch,
+                run_id=self.run_id,
+                locale=self.locale,
+                counter=counter,
             )
         else:
             narrative = narrate(
@@ -873,6 +991,7 @@ class StoryEngine:
                 run_id=self.run_id,
                 locale=self.locale,
                 metric=primary_key,
+                counter=counter,
             )
 
         milestones = self._milestones.check(
@@ -896,6 +1015,8 @@ class StoryEngine:
             primary_value=primary_value,
             lr=last("lr"),
             direction_known=not direction_unknown,
+            train_swing=unsteady(self._metric_history.get("train_loss", ())),
+            counter=counter,
         )
 
         # Build skill dimensions (radar data)
@@ -910,13 +1031,14 @@ class StoryEngine:
             shown = "NaN" if primary_value is None else f"{primary_value:.4g}"
             narrative = (
                 f"{primary_key} reported {shown}, which {reason}. "
-                f"No reading is given for this epoch."
+                f"No reading is given for this {counter_words('{counter}', counter)}."
             )
 
         frame = StoryFrame(
             run_id=self.run_id,
             seq=event.seq,
             epoch=event.epoch,
+            counter=counter,
             progress=advancement,
             phase=phase,
             grade=grade,
@@ -931,6 +1053,8 @@ class StoryEngine:
                 len(self._metric_history.get(primary_key, ())),
                 has_epoch=event.epoch is not None,
                 new_best=new_best,
+                unsteady=swing is not None,
+                running_mean=averaged,
             ),
             grade_basis=grade_basis,
             narrative=narrative,
@@ -1041,4 +1165,5 @@ class StoryEngine:
         """Return final milestones. Call when training stream ends."""
         if self._milestones is None:
             return []
-        return self._milestones.finalize(last_seq, last_epoch)
+        counter = self._prev_frame.counter if self._prev_frame is not None else None
+        return self._milestones.finalize(last_seq, last_epoch, counter)

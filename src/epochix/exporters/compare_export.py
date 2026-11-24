@@ -59,6 +59,10 @@ class Comparison:
     def has_notes(self) -> bool:
         return any(row.note for row in self.rows)
 
+    @property
+    def counts_epochs(self) -> bool:
+        return all(tr.counter in (None, "epoch") for tr in self.trajectories)
+
     def headers(self) -> list[str]:
         head = [
             t("cmp.run", self.locale),
@@ -66,7 +70,9 @@ class Comparison:
             t("md.primary_metric", self.locale),
             t("col.final", self.locale),
             t("cover.best", self.locale),
-            t("md.epochs", self.locale),
+            # The column counts each run's readings. That is its epochs only
+            # where every run counts epochs.
+            t("md.epochs" if self.counts_epochs else "cmp.readings", self.locale),
         ]
         if self.has_notes:
             head.append(t("md.grade_note", self.locale))
@@ -102,14 +108,17 @@ def build_comparison(run_ids: list[str], store: RunStore, locale: str | None = N
             metric = traj.primary_metric
             final = f"{traj.final_value:.4g}"
             best_epoch, best_value = traj.best
-            best = f"{best_value:.4g} ({t('cover.epoch_n', locale)} {best_epoch:g})"
+            best = f"{best_value:.4g} ({t('cover.epoch_n', locale, traj.counter)} {best_epoch:g})"
             epochs = str(len(traj.values))
         elif run_frames:
             # One reading, or readings without epochs: no trajectory, but the
             # value is real and is shown as what it is.
             metric = run_frames[-1].primary_metric or run.primary_metric
             final = f"{run_frames[-1].primary_metric_value:.4g}"
-            best, epochs = "—", str(len(run_frames))
+            # Readings of this metric, not of whatever the story began on.
+            named = run_frames[-1].primary_metric
+            best = "—"
+            epochs = str(sum(1 for f in run_frames if named is None or f.primary_metric == named))
         else:
             metric, final, best, epochs = run.primary_metric, "—", "—", "0"
         last = run_frames[-1] if run_frames else None

@@ -1,3 +1,3 @@
-The run is under way: FID {value} at epoch {epoch}, at or within 1% of its best so far.
-Epoch {epoch}: FID {value}, a change of {delta} since the previous reading. The learning phase continues.
-Learning: FID {value} at epoch {epoch} — the best this run has reached, or within 1% of it.
+The run is under way: FID {value} at {counter} {epoch}, at or within 1% of its best so far.
+{Counter} {epoch}: FID {value}, a change of {delta} since the previous reading. The learning phase continues.
+Learning: FID {value} at {counter} {epoch} — the best this run has reached, or within 1% of it.

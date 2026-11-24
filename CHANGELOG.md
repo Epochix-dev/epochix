@@ -7,6 +7,403 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [Unreleased]
+
+### Fixed
+
+- **A run's first reading is not told how it changed.** It has no reading
+  before it, and was given a change of 0: "Epoch 0: accuracy 20.4%, a change
+  of 0 points since the previous reading." So were the first readings of a
+  metric the story moves to. Each phase has one variant that quotes the
+  change, and such a reading is now told by one of the others, in all three
+  languages and both engines. Told over the corpus in three languages and
+  every variant, 130 such sentences change, 75 of them on a run's first
+  reading; every other sentence reads as it did.
+- **VS Code tells a run in the same sentences as every other surface.**
+  Nothing compared the two engines' sentences, and told under the same run
+  id they differed in 4,194 of the corpus's 4,206 frames. The variant of a
+  sentence was picked from the run id by an MD5-seeded `random.Random` in
+  Python and a djb2 hash in the extension; Python now uses the extension's
+  hash, so a run told again here may read in another of its variants. With
+  that alike, the rest was the extension's: an exact half was rounded up
+  ("73.3%" for Python's "73.2%", nine frames), a run's first reading was
+  measured from zero ("+7.8 points" compared with a reading that never was),
+  the learning-rate warning was never raised (23 in nine logs, in each
+  language), and two warnings of one frame came in the other order. Every
+  corpus log, in every language and under run ids that reach every variant,
+  is now told by both engines word for word, and a test holds them to it
+  (`stories.golden.json`).
+- **A rising PSNR or inception score is no longer told it made no progress.**
+  The phase read every higher-is-better metric as a share of the way to 1.0,
+  the top of an accuracy's scale. PSNR (in decibels) and the inception score
+  start above 1, so that share was negative and clamped to nothing: every
+  frame was placed in Awakening, and a GENERATIVE run whose PSNR climbed 20 to
+  32 was told "No meaningful progress yet … This usually points to a setup
+  problem", beside an A graded on that same climb. Neither metric has an ideal
+  to take a share of, so their improvement is now measured from the first
+  reading, as the improvement grade measures it: the clock still advances the
+  run when its length is known, and each phase still needs its share of
+  improvement (PSNR 20 to 32 is up 60%, and ends in Understanding). The stall
+  is measured the same way, so a PSNR that stays within 3% of its first
+  reading is still told it has barely moved. Scores on 0–1 and errors are
+  placed exactly as before. Both engines. No log in the corpus is told by
+  either metric, so none of their phases or letters change.
+
+## [0.7.43] — 2026-11-23
+
+### Fixed
+
+- **A plateau's wobble is no longer told as a slip.** "Past its best" fired on
+  any reading more than 1% below the best, and the story says more than that:
+  "performance has slipped … the later rounds are moving away from the best
+  result", then "keep the checkpoint … use early stopping". A real XGBoost run
+  converged on 0.149 and went 0.1491, 0.1508, 0.1500. At the middle reading,
+  one round after its best, it was told all of that beside an A+, and the
+  story switched off again at the next round. A run is now past its best once
+  three readings in a row have been more than 1% worse, and the sentences
+  say so instead of claiming a direction. One reading that far off is said as
+  just that ("more than 1% off the best of …"), in all three languages and
+  both engines. The phase stories, which say a reading is within 1% of the
+  best, are no longer told for one that is not. No letter, phase or metric of
+  any log in the corpus changes.
+
+## [0.7.42] — 2026-11-23
+
+### Added
+
+- **A kohya-ss LoRA run is told.** A real `sdxl_train_network.py` run
+  (sd-scripts v0.9.1, `tests/fixtures/logs/kohya_lora_real.log`) draws one bar
+  described `steps` that carries only `avr_loss`, the training loss averaged
+  over the last epoch's batches. The step-bar parser read it as it was, but
+  `avr_loss` was a custom metric whose direction nothing pinned. It is now
+  read as the training loss, and the run is told by step from 113 readings
+  over 120 steps. It is not given a letter. Read as any other loss it was
+  graded A, while its story said "performance has slipped … use early
+  stopping" on 99 of its 113 frames, and neither was true. Through the first
+  epoch `avr_loss` averages the batches so far, and the first reading was one
+  batch's loss (0.0304, where the next eleven lay between 0.003 and 0.011):
+  the A was that batch being averaged away. "Slipped" measured each reading
+  against the luckiest window. The ten end-of-epoch values, which share no
+  batch, show no trend. A metric known to be a running average over
+  overlapping batches now gets no letter and no claim set against another
+  reading, with grade note `running_mean` and a sentence saying why, in all
+  three languages and both engines. Every reading is still charted.
+  In a VS Code terminal the run never opened the dashboard: nothing kohya
+  prints was a training signal (its `epoch 1/10` is lower-case and holds no
+  loss), so it scored 0.15 against 0.45. A step bar carrying a value is now
+  one.
+
+### Fixed
+
+- **A run without epochs is told in what it counts.** A boosting round, an
+  `iter N` row, a `step N` row and a LoRA trainer's step bar fill the slot an
+  epoch fills, and every sentence called it an epoch: nanoGPT's step 2000 was
+  told as "Epoch 2000", a CatBoost run's round 59 as "Epoch 59", the LoRA
+  run's step 120 as "at epoch 120", and `epochix check` printed "epochs seen
+  201" for 201 iterations. Each parser now says what it counts, and the frame
+  carries it (`StoryFrame.counter`: `epoch`, `step`, `iteration` or `round`).
+  The story, warnings, milestones, comparison narrative, Markdown, PDF and
+  comparison reports, `epochix check` and the dashboard's axes name it, in
+  all three languages. A count of readings says readings for such a run: a
+  nanoGPT run told every 250 steps has nine readings, not nine steps. Over
+  the 60 logs of the corpus, only the 10 without epochs read differently, and
+  only in the counter's name. Both engines. Frames stored by an earlier
+  version have no counter and read as epochs, as they did.
+- **A LoRA run piped to `epochix -` or tailed over SSH is read as it trains.**
+  Both read by line, and a run-long step bar ends no line until a checkpoint
+  or the end of training, so such a run piped in on Linux or macOS, or tailed
+  over SSH from any machine, showed nothing for hours. They now hand on the bar's finished redraws
+  as the file tail does, and every other bar still waits for its line to end.
+- **Piped input on Windows read every redraw of every bar.** Text-mode stdin
+  ended a line at each carriage return, so each redraw of an epoch's progress
+  bar was a reading: a recorded tqdm loop gave 1,442 metrics where its file
+  gives 48. Stdin is now read as bytes on every platform.
+- **A long progress-bar line no longer stops a pipe or an SSH tail.**
+  `readline()` raised once 64 KiB arrived without a newline, a minute or two
+  of tqdm output.
+
+## [0.7.41] — 2026-11-22
+
+### Added
+
+- **Runs that count steps are told: nanoGPT, the PyTorch ImageNet example and
+  a diffusers LoRA bar.** Three real runs were recorded, and each was misread
+  or not read at all. nanoGPT's `step 250: train loss 2.4293, val loss
+  2.4447` stored the validation loss as the training loss, its `iter` lines
+  gave nothing, and the config it echoes first gave the run nine metrics. The
+  ImageNet example's `Acc@1` rows and ` *` summary had nothing a parser read.
+  The SDXL LoRA script's single tqdm bar, redrawn in place, was read in its
+  final state only, and the story was told on `Process index: 0`. The
+  universal parser now reads `val loss`-style pairs on a counted row and puts
+  a run that prints only `step N` on a step axis. A new `progress_meter`
+  parser reads the ImageNet layout, storing `Acc@k` as a fraction. A new
+  `step_bar` parser reads each redraw of a `Steps` bar as it arrives. Echoed
+  source lines are claimed. Every other log in the corpus tells exactly what
+  it told before. Both engines. MLX-LM and kohya-ss were not recorded, and
+  `docs/parsers.md` says so.
+- **The dashboard works on a server that wants a token.** With
+  `EPOCHIX_AUTH_TOKEN` set, the dashboard sent neither the `Authorization`
+  header nor `?token=`, so it loaded no run and never went live. Open any page
+  once with `?token=<token>`: the page removes the token from the address bar,
+  keeps it for that tab and sends it on every request — the Bearer header to
+  the API, and `?token=` on the WebSocket and SSE feeds only. No link carries
+  it, and no exported report contains it. Opened without the token, or with a
+  wrong one, the page says so in all three languages. `docs/deployment.md`
+  described `epochix serve --auth user:password` and
+  `EPOCHIX_AUTH_USER`/`EPOCHIX_AUTH_PASS`, none of which exist; it now
+  describes the token.
+- **An installed exporter plugin is used.** The `epochix.exporters` group was
+  documented and loaded by nothing: with a plugin declaring `latex` installed,
+  `epochix export --format latex` answered "Unknown export format". Its format
+  is now written by `epochix export --format <name>`,
+  `epochix run --export <name>`, `GET /api/export/<run-id>/<name>` and
+  `epochix.export(run, "<name>")`. A plugin cannot take a built-in name
+  (`html`, `pdf`, `md`, `json`, `gif`); one that declares it is not loaded,
+  and a warning is logged. A plugin that raises, or returns without writing
+  its file, is a failure naming the package it came from: exit 1 from the
+  CLI, HTTP 500 from the server, `ExporterFailed` from Python. An unknown
+  format is refused before anything is written, and the message lists every
+  format that can be. The VS Code export picker offers the built-in formats
+  only.
+
+### Removed
+
+- **The `epochix.metaphor_packs` and `epochix.tasks` plugin groups.** Both were
+  documented and never loaded. An installed pack's cards appeared nowhere, and
+  a task plugin's thresholds graded nothing: a log printing `wer` was graded
+  by the built-in `nlp` task. Wiring them in would have put a pack's free text
+  beside the grade, and regraded runs in the Python engine only, since the VS
+  Code extension cannot load a plugin. Removed with them:
+  `epochix.plugins.load_all_plugins`, `epochix.plugins.metaphor_loader` and
+  `epochix.plugins.task_registry`. A package declaring either group is
+  ignored, as it always was. A task's grade thresholds are set in
+  `.epochix.yaml`, which both engines read.
+
+### Fixed
+
+- **A loss printed per batch is no longer judged as a loss measured per
+  epoch.** The recorded LoRA run's only metric is the loss of the last batch,
+  which moved by a factor of 2.6 between neighbouring readings on the median
+  with nothing wrong. Its grade went F, F, A, F and ended on the luck of the
+  last batch. It was told "past its best" from its second step and warned of
+  divergence four times. A metric is now unsteady when, over its last 50
+  readings, it changes direction at half of them or more *and* its median
+  step between neighbouring readings is a quarter or more of the larger of
+  the two. An unsteady story metric
+  is graded I, with a grade note saying why, and its sentence gives the
+  reading and both measurements. An unsteady training loss is warned of only
+  for a jump more than 10 times its highest reading. Readings are stored and
+  charted as logged, with nothing smoothed. Of the 60 logs in the corpus,
+  only the LoRA run's story changes. Its first five frames are still told as
+  any metric's would be, since five readings cannot tell a batch's luck from
+  a real rise. Both engines, three languages.
+- **A live run that pauses in its preamble is read in its own format.** 0.7.40
+  chose the parser on a pause once any parser read a number, and setup lines
+  have numbers. A pause after Lightning's `using: 0 IPU cores` or
+  Ultralytics' `ping: 0.1 ms` chose the universal parser for good. Each run
+  then gained three frames without an epoch, named `using` or `ping`. A
+  pause on YOLO's first epoch did the same. A pause now chooses a parser only
+  if that parser would tell something. Over every prefix of the 56 corpus
+  logs, a pause chose a different parser than the full window at 46 prefixes
+  under the 0.7.40 rule, and at 1 now, in a hand-written sample. Both engines.
+- **A pytest run is not told as a training run.** pytest prints a failing
+  test's source, so `val_loss = 0.42` in a test became one reading of
+  `val_loss`. In VS Code, a pytest run of an ML project opened the dashboard
+  on it. The lines of a `FAILURES` or `ERRORS` report are now claimed, and the
+  extension's terminal detector scores neither them nor test ids. Every other
+  log in the corpus is unchanged. Both engines.
+- **The dashboard goes live behind a proxy that refuses WebSockets.** It chose
+  SSE only when the browser had no WebSocket support, which no browser lacks,
+  so behind such a proxy it waited on a socket that never opened. It now
+  switches to SSE after two attempts that never open, resuming from the last
+  frame it had. Both live clients also dropped a frame's milestones, which
+  carry the frame's sequence number, so a live page lost nearly every
+  milestone. The SSE client lacked activations and the final folds. And a
+  reconnecting SSE feed replayed from where the first connection started
+  rather than resuming. One message handler now serves both transports, and
+  the feed resumes from `Last-Event-ID`.
+- **`epochix serve` reads `EPOCHIX_HOST` and `EPOCHIX_PORT`.** `serve` ignored
+  both, and no command read `EPOCHIX_PORT`. `serve`, `epochix <log>` and
+  `epochix --live` now take the flag first, then the setting, then
+  `127.0.0.1:7860`.
+- **`epochix open` reads `EPOCHIX_HOST` and `EPOCHIX_PORT` too.** It was the
+  one command still bound to `127.0.0.1:7860`, so with `EPOCHIX_PORT=9000` it
+  served the run, and opened the browser, on the port epochix had been moved
+  off. It now reads them as `epochix <log>` does, `--port` first, and warns
+  when `EPOCHIX_HOST` binds beyond this machine without a token.
+- **`epochix.serve(db=…)` and `epochix.visualize(run, db=…)` serve that
+  database.** Both served `EPOCHIX_DB` instead: `serve` never read its `db`
+  argument, and the app's startup replaced the store `visualize` set. So the
+  dashboard `visualize` opened could not find its own run.
+- **The VS Code extension's server ignores a token exported in your shell.**
+  See the extension's changelog.
+- **A run from `epochix.parse()` can be exported and compared without `db=`.**
+  `parse()` keeps a run in memory, and `export()` and `compare()` looked for
+  it in the configured database. So `export(parse("train.log"))` raised
+  `ValueError: Run not found` in every format, and `compare(a, b)` returned
+  its verdict with an empty narrative and no word why. `export()`,
+  `compare()` and `visualize()` now look in `db=` if given, then in the store
+  the run was parsed into, then in the configured database. `parse()` still
+  writes nothing to disk. `export(run, "gif")` returned the path of a file it
+  never wrote; it now writes the GIF, as the CLI does.
+- **A run is compared, tabulated and animated on the metric its story ended
+  on.** All three took the metric most of its frames carried. A story can
+  start on one metric and move to another, so the Lightning demo, graded A-
+  on `val_accuracy`, was compared as training accuracy and called not
+  comparable with a Keras run told on `val_accuracy`. Two detection runs
+  graded on mAP50 were ranked on their box loss, and the Lightning demo's
+  default GIF animated nine epochs of training accuracy under "final grade
+  A-". A run stopped right after its first validation pass now has one
+  reading to compare and no default GIF; its training curve is still drawn
+  when asked for by name.
+- **The dashboard reads which way is better for a metric as the engine does.**
+  It kept its own list of eleven lower-is-better names, and read 10 of the 34
+  metric names in the corpus the wrong way up: `box_loss`, `cls_loss` and
+  `dfl_loss` on every YOLO run, `log_loss`, `error_rate`, `eval0_loss`,
+  `val_MAE` and `val_MSE` among them. On a YOLO run each falling loss had a
+  red ▼, the learning meter emptied as `box_loss` improved, and the
+  comparison said "higher is better". The dashboard now reads the engine's
+  own rule, generated from Python. A name that says nothing either way, such
+  as `eta`, is marked neither better nor worse.
+- **A run's milestones are read back.** They were written to the database and
+  never read, so a finished run's page, the snapshot and the JSON and HTML
+  exports showed none, and the Markdown export had no Milestones section. The
+  biggest jump and "training complete" were never stored at all, and the
+  biggest jump was placed at the run's last epoch rather than where it
+  happened. All are now stored, read back onto their frames and listed in
+  the reports. The timeline shows one "Training complete" card, where a live
+  run ended on two.
+- **"New best" is announced once.** On six logs, the Hugging Face demo among
+  them, a run told on its training loss until its first evaluation announced
+  a new best again on `val_accuracy`: the engine started a fresh milestone
+  tracker when it detected the task. One tracker now serves the whole run.
+- **The notebook magics work as the quickstart shows.**
+  - The quickstart's live cell, `%%epochix --live` over `!python train.py`,
+    was run as Python: a `SyntaxError`, and a run stored with no frames. A
+    cell is now all Python or all `!` shell commands, with `{variables}`
+    expanded as IPython does; a cell mixing the two is refused.
+  - The dashboard's server stopped half a second after the last line, so the
+    page in the notebook went dead under the finished story. `%epochix`
+    followed by `%%epochix --live` on the default port lost the live run to
+    `SystemExit: 3`. Both magics now share one server per port for the life
+    of the kernel, stopped by `%unload_ext epochix`.
+  - A Python cell that printed without `flush=True` reached the dashboard
+    only when it ended. The cell now runs unbuffered, until its process ends;
+    interrupting the kernel stops it, and the run is told from what was
+    printed.
+  - A missing log, an unknown option, a bad `--port` and a port another
+    program holds are each said in one line, with no page shown. The magic
+    also says when the cell exited non-zero, and when nothing it printed was
+    read as a metric.
+- **Two stores opening a new database at once both open.** Creating the tables
+  and switching a new file to WAL could collide, failing with `table runs
+  already exists` or `database is locked`: the server and `epochix list`, say,
+  or the extension and a live run. The tables are now created under one
+  write lock, and the switch to WAL is retried for up to 5 seconds.
+- **A project's own `.env` no longer stops epochix.** Settings are read from
+  `.env` in the folder epochix runs from, and one line epochix does not own,
+  such as `OPENAI_API_KEY=…`, made every command fail on start with a
+  traceback. Such lines are now ignored. A setting that does not validate
+  stops a command with one line naming it.
+- **`epochix config set` refuses what it cannot set.** `config set nonsense 1`
+  and `config set port abc` were written to `.env`, after which every command
+  run from that folder failed, `config show` included. An unknown key, a
+  value the setting cannot take and a value spanning lines are refused, and
+  `.env` is left as it was. A key already in the file is replaced however it
+  was written, and duplicates that would decide the value are removed.
+- **`epochix open` checks its port before opening the browser.** With the port
+  taken, the browser showed whatever was already listening there, such as
+  another epochix answering "run not found". With `EPOCHIX_OPEN_BROWSER` off
+  it prints the address, as `epochix <log>` does.
+- **`epochix race -o` creates the folder it writes to,** as `export` does,
+  where it raised a traceback.
+- **`epochix prune` reaches the oldest runs.** It read only the newest 10,000,
+  leaving out exactly the runs it exists to delete.
+- **A port in TIME_WAIT passes the free-port check.** On Linux and macOS,
+  stopping `epochix serve` and starting it again within about a minute was
+  refused with "already in use", though the server would have started.
+  `--host ::1` was refused the same way, and an address this machine does not
+  have was called a busy port. The check now binds as the server does, and
+  says "Cannot listen on …" for an address it cannot use.
+- **`GET /api/raw/<run-id>` says when no lines were kept.** A run read without
+  `EPOCHIX_KEEP_RAW_LINES` answered with an empty list, as if the log had
+  been empty. It now answers 404 naming the setting, and `docs/config.md`
+  says the kept lines are read back from this endpoint.
+- **In VS Code, "Epochix: Export Run" exports, and a run's milestones are the
+  same as everywhere else.** See the extension's changelog.
+
+### Security
+
+- **Binding beyond this machine without a token warns, from every command and
+  the SDK.** Only `epochix serve --host` warned. With `EPOCHIX_HOST=0.0.0.0`,
+  `epochix <log>` and `epochix --live` listened on every interface with no
+  token, so anyone on the network could create and delete runs, and nothing
+  said so. They now warn on stderr (`--json` keeps stdout to its one
+  document). `epochix.serve` and `epochix.visualize` raise `PublicBindWarning`,
+  a `UserWarning`, at the caller's line.
+- **The reverse-proxy examples forward the client's address.** epochix accepts
+  writes from loopback callers when no token is set, and trusts
+  `X-Forwarded-For` from a proxy on the same machine. The nginx example set
+  no such header, so every visitor reached epochix as a loopback caller and
+  could create and delete runs. The nginx example now sets it (Caddy does by
+  default). It also proxied under `/epochix/`, a sub-path the dashboard
+  cannot work behind; it is now a server block for a host of its own.
+- **`epochix config show` hides `auth_token` and `llm_key`.** It printed both in
+  plain text, and its output is what gets pasted into bug reports.
+  `config set` hides them too.
+
+### Tests
+
+- **`/sse/live` is tested against a real live run.** No test had requested
+  it. The route, resuming by query and by header, the token and heartbeats are
+  now driven against `epochix --live`, and a browser test watches a run
+  through a proxy that answers every upgrade with 403.
+- **macOS is tested after a change lands, not on every PR.** Its runners
+  waited 15–18 minutes and were cancelled without running a step on four PRs
+  in one afternoon. `macos.yml` runs the tests at the oldest and newest
+  Python, the WebKit render and, for the first time on a Mac, the VS Code
+  extension's host tests, on every push to `main`, weekly, on demand, and on
+  a PR labelled `macos`. A red run opens one issue.
+- **Coverage is measured, and what nothing executes is listed.** Coverage was
+  configured and measured by nothing. One CI job now runs the unit and
+  integration tests, and both framework-integration rows, under coverage,
+  child processes included. It lists every file at 0%, every module under
+  50% and every function never entered. The floor is 85.5%, just under the
+  first measurement of 85.93%, so it catches only a drop. What it found is
+  ROADMAP item 7.
+- **Reading a log from standard input is tested.** The README's first
+  command had never run in a test. A recorded log piped into the CLI must now
+  be told as `corpus_truth.json` records it.
+- **Everything the coverage run found unexecuted now has a test that runs
+  it.** The SDK's `export`, `compare`, `visualize`, `serve` and `parse_string`;
+  `epochix open`, `race`, `prune` and `config`; the notebook magics, in a real
+  IPython shell; an exporter plugin installed as an installer leaves it;
+  `GET /api/raw`; and the VS Code extension's commands, six of its eight never
+  run before. Each runs against the real store, server or host, and most of
+  the fixes above are what running them found.
+- **The tests that need the wheel's assets run against the wheel.** The
+  dashboard bundle and the brand mark are put into the package only when the
+  wheel is built, so every CI job skipped the check that a run name cannot
+  break out of the HTML export's `<script>` block, along with the export's
+  version stamp and the watermark. A `packaged-assets` job now builds the
+  wheel as the release does, fails if it lacks either asset, and runs those
+  tests against what ships.
+- **The VS Code extension and the Python engine are held to the same
+  milestones,** 292 across the 60 corpus logs, in `corpus_truth.json`.
+
+### Dependencies
+
+- The lock CI installs moves to pydantic 2.14.3, FastAPI 0.162.5, SQLAlchemy
+  2.0.58, Typer 0.29.1 and AnyIO 4.16.0, and to pytest-asyncio 1.5.0,
+  pytest-benchmark 5.3.1 and Playwright 1.65.2 for the tests. The package's
+  own version floors are unchanged.
+- The dashboard is built with d3-path 3.1.1, d3-scale 4.0.3, d3-shape 3.2.1
+  and Vite 8.3.8, and tested with Vitest 5.1.1.
+- The extension's tooling: vsce 4.1.1, ovsx 1.4.0, ESLint 10.15.0,
+  typescript-eslint 8.73.0 and glob 14.0.6.
+
+---
+
 ## [0.7.40] — 2026-11-03
 
 ### Fixed

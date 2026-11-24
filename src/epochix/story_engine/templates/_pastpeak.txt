@@ -1,3 +1,3 @@
-Epoch {epoch}: {value}, worse than the best of {best} at epoch {best_epoch}. The run is below its best — the earlier checkpoint is the better one so far.
-Past its best: {best} at epoch {best_epoch}, now {value}. The later epochs are not improving on it.
-Epoch {epoch}: performance has slipped from {best} (epoch {best_epoch}) to {value}. The later epochs are moving away from the best result, not toward it.
+{Counter} {epoch}: {value}, worse than the best of {best} at {counter} {best_epoch}. The run is below its best, by more than 1% for the last three {counter_readings} — the earlier checkpoint is the better one so far.
+Past its best: {best} at {counter} {best_epoch}, now {value}. None of the last three {counter_readings} has come within 1% of it.
+{Counter} {epoch}: performance has slipped from {best} ({counter} {best_epoch}) to {value}, and has stayed more than 1% below that best for the last three {counter_readings}.

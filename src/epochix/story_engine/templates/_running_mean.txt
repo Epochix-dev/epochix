@@ -1,0 +1,2 @@
+{Counter} {epoch}: {metric} {value}, a running average over the most recent batches. Each reading shares all but one batch with the one before, and the first readings average fewer batches than the rest, so no reading is set against another here.
+{metric} {value} at {counter} {epoch}: an average over the most recent batches, not a measurement of its own. Its readings overlap, all but one batch at a time, and the first ones average fewer batches than the rest, so none is set against another here.

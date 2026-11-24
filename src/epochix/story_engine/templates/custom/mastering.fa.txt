@@ -1,2 +1,2 @@
-مرحلهٔ تسلط: {metric} {value} در دوره {epoch}.
-دوره {epoch}: {metric} {value}، با تغییر {delta} نسبت به اندازه‌گیری قبلی. آموزش بسیار پیش رفته است.
+مرحلهٔ تسلط: {metric} {value} در {counter} {epoch}.
+{counter} {epoch}: {metric} {value}، با تغییر {delta} نسبت به اندازه‌گیری قبلی. آموزش بسیار پیش رفته است.

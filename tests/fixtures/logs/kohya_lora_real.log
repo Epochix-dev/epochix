@@ -1,0 +1,167 @@
+W1122 16:25:05.521000 11892 Lib\site-packages\torch\distributed\elastic\multiprocessing\redirects.py:29] NOTE: Redirects are currently not supported in Windows or MacOs.
+C:\tmp\epochix_demos\kohya\kenv\Lib\site-packages\diffusers\utils\outputs.py:63: FutureWarning: `torch.utils._pytree._register_pytree_node` is deprecated. Please use `torch.utils._pytree.register_pytree_node` instead.
+  torch.utils._pytree._register_pytree_node(
+C:\tmp\epochix_demos\kohya\kenv\Lib\site-packages\einops\einops.py:847: SyntaxWarning: invalid escape sequence '\s'
+  \sum_{c, d, g} x[a, b, c] * y[c, b, d] * z[a, g, k]
+C:\tmp\epochix_demos\kohya\sd-scripts\library\custom_train_functions.py:172: SyntaxWarning: invalid escape sequence '\('
+  \( - literal character '('
+C:\tmp\epochix_demos\kohya\sd-scripts\library\lpw_stable_diffusion.py:70: SyntaxWarning: invalid escape sequence '\('
+  \( - literal character '('
+C:\tmp\epochix_demos\kohya\sd-scripts\library\sdxl_lpw_stable_diffusion.py:74: SyntaxWarning: invalid escape sequence '\('
+  \( - literal character '('
+2026-11-22 16:25:11 INFO     prepare tokenizers          sdxl_train_util.py:138
+                    INFO     load tokenizer from cache:  sdxl_train_util.py:147
+                             tokenizers\openai_clip-vit-                       
+                             large-patch14                                     
+                    INFO     load tokenizer from cache:  sdxl_train_util.py:147
+                             tokenizers\laion_CLIP-ViT-b                       
+                             igG-14-laion2B-39B-b160k                          
+                    INFO     Using DreamBooth method.      train_network.py:172
+                    INFO     prepare images.                 train_util.py:1686
+                    INFO     found directory shapes\1_shapes train_util.py:1633
+                             contains 12 image files                           
+                    INFO     12 train images with repeating. train_util.py:1727
+                    INFO     0 reg images.                   train_util.py:1730
+                    WARNING  no regularization images /      train_util.py:1735
+                             正則化画像が見つかりませんでし                    
+                             た                                                
+                    INFO     [Dataset 0]                     config_util.py:572
+                               batch_size: 1                                   
+                               resolution: (512, 512)                          
+                               enable_bucket: False                            
+                               network_multiplier: 1.0                         
+                                                                               
+                               [Subset 0 of Dataset 0]                         
+                                 image_dir:                                    
+                             "shapes\1_shapes"                                 
+                                 image_count: 12                               
+                                 num_repeats: 1                                
+                                 shuffle_caption: False                        
+                                 keep_tokens: 0                                
+                                 keep_tokens_separator:                        
+                                 caption_separator: ,                          
+                                 secondary_separator: None                     
+                                 enable_wildcard: False                        
+                                 caption_dropout_rate: 0.0                     
+                                 caption_dropout_every_n_epo                   
+                             ches: 0                                           
+                                 caption_tag_dropout_rate:                     
+                             0.0                                               
+                                 caption_prefix: None                          
+                                 caption_suffix: None                          
+                                 color_aug: False                              
+                                 flip_aug: False                               
+                                 face_crop_aug_range: None                     
+                                 random_crop: False                            
+                                 token_warmup_min: 1,                          
+                                 token_warmup_step: 0,                         
+                                 alpha_mask: False,                            
+                                 is_reg: False                                 
+                                 class_tokens: shapes                          
+                                 caption_extension: .txt                       
+                                                                               
+                                                                               
+                    INFO     [Dataset 0]                     config_util.py:578
+                    INFO     loading image sizes.             train_util.py:901
+  0%|          | 0/12 [00:00<?, ?it/s]100%|██████████| 12/12 [00:00<00:00, 11921.28it/s]
+                    INFO     prepare dataset                  train_util.py:909
+                    INFO     preparing accelerator         train_network.py:225
+C:\tmp\epochix_demos\kohya\kenv\Lib\site-packages\accelerate\accelerator.py:479: FutureWarning: `torch.cuda.amp.GradScaler(args...)` is deprecated. Please use `torch.amp.GradScaler('cuda', args...)` instead.
+  self.scaler = torch.cuda.amp.GradScaler(**kwargs)
+accelerator device: cuda
+                    INFO     loading model for process    sdxl_train_util.py:33
+                             0/1                                               
+                    INFO     load Diffusers pretrained    sdxl_train_util.py:88
+                             models: sdxl-base,                                
+                             variant=fp16                                      
+Loading pipeline components...:   0%|          | 0/6 [00:00<?, ?it/s]Loading pipeline components...:  17%|█▋        | 1/6 [00:00<00:00,  6.41it/s]Loading pipeline components...:  50%|█████     | 3/6 [00:00<00:00,  9.56it/s]Loading pipeline components...: 100%|██████████| 6/6 [00:00<00:00, 13.60it/s]Loading pipeline components...: 100%|██████████| 6/6 [00:00<00:00, 12.22it/s]
+2026-11-22 16:25:12 INFO     U-Net converted to original sdxl_train_util.py:124
+                             U-Net                                             
+                    INFO     Enable SDPA for U-Net           train_util.py:2840
+import network module: networks.lora
+                    INFO     [Dataset 0]                     train_util.py:2195
+                    INFO     caching latents.                train_util.py:1022
+                    INFO     checking cache validity...      train_util.py:1049
+  0%|          | 0/12 [00:00<?, ?it/s]100%|██████████| 12/12 [00:00<?, ?it/s]
+                    INFO     caching latents...              train_util.py:1091
+  0%|          | 0/12 [00:00<?, ?it/s]  8%|▊         | 1/12 [00:00<00:10,  1.07it/s] 17%|█▋        | 2/12 [00:01<00:01,  5.97it/s] 25%|██▌       | 3/12 [00:01<00:01,  5.97it/s] 33%|███▎      | 4/12 [00:01<00:01,  6.10it/s] 42%|████▏     | 5/12 [00:01<00:01,  5.90it/s] 50%|█████     | 6/12 [00:01<00:01,  5.90it/s] 58%|█████▊    | 7/12 [00:01<00:00,  5.76it/s] 67%|██████▋   | 8/12 [00:02<00:00,  5.72it/s] 75%|███████▌  | 9/12 [00:02<00:00,  5.72it/s] 83%|████████▎ | 10/12 [00:02<00:00,  5.82it/s] 92%|█████████▏| 11/12 [00:02<00:00,  5.82it/s]100%|██████████| 12/12 [00:02<00:00,  6.09it/s]100%|██████████| 12/12 [00:02<00:00,  4.28it/s]
+2026-11-22 16:25:15 INFO     move vae and unet to cpu  sdxl_train_network.py:65
+                             to save memory                                    
+                    INFO     [Dataset 0]                     train_util.py:2202
+                    INFO     caching text encoder outputs.   train_util.py:1105
+                    INFO     checking cache existence...     train_util.py:1108
+  0%|          | 0/12 [00:00<?, ?it/s]100%|██████████| 12/12 [00:00<?, ?it/s]
+2026-11-22 16:25:17 INFO     caching text encoder outputs... train_util.py:1149
+  0%|          | 0/12 [00:00<?, ?it/s]  8%|▊         | 1/12 [00:00<00:10,  1.05it/s] 50%|█████     | 6/12 [00:01<00:00,  7.32it/s] 92%|█████████▏| 11/12 [00:01<00:00, 13.78it/s]100%|██████████| 12/12 [00:01<00:00, 10.04it/s]
+2026-11-22 16:25:19 INFO     move vae and unet back to sdxl_train_network.py:88
+                             original device                                   
+                    INFO     create LoRA network. base dim (rank):  lora.py:935
+                             4, alpha: 1.0                                     
+                    INFO     neuron dropout: p=None, rank dropout:  lora.py:936
+                             p=None, module dropout: p=None                    
+                    INFO     create LoRA for Text Encoder 1:       lora.py:1027
+                    INFO     create LoRA for Text Encoder 2:       lora.py:1027
+                    INFO     create LoRA for Text Encoder: 264     lora.py:1035
+                             modules.                                          
+                    INFO     create LoRA for U-Net: 722 modules.   lora.py:1043
+                    INFO     enable LoRA for U-Net: 722 modules    lora.py:1089
+prepare optimizer, data loader etc.
+                    INFO     use AdamW optimizer | {}        train_util.py:4365
+running training / 学習開始
+  num train images * repeats / 学習画像の数×繰り返し回数: 12
+  num reg images / 正則化画像の数: 0
+  num batches per epoch / 1epochのバッチ数: 12
+  num epochs / epoch数: 10
+  batch size per device / バッチサイズ: 1
+  gradient accumulation steps / 勾配を合計するステップ数 = 1
+  total optimization steps / 学習ステップ数: 120
+steps:   0%|          | 0/120 [00:00<?, ?it/s]
+epoch 1/10
+2026-11-22 16:25:23 INFO     epoch is incremented.            train_util.py:693
+                             current_epoch: 0, epoch: 1                        
+steps:   1%|          | 1/120 [00:01<03:23,  1.71s/it]steps:   1%|          | 1/120 [00:01<03:23,  1.71s/it, avr_loss=0.0304]steps:   2%|▏         | 2/120 [00:02<02:18,  1.18s/it, avr_loss=0.0304]steps:   2%|▏         | 2/120 [00:02<02:18,  1.18s/it, avr_loss=0.0173]steps:   2%|▎         | 3/120 [00:03<01:57,  1.00s/it, avr_loss=0.0173]steps:   2%|▎         | 3/120 [00:03<01:57,  1.00s/it, avr_loss=0.0146]steps:   3%|▎         | 4/120 [00:03<01:48,  1.07it/s, avr_loss=0.0146]steps:   3%|▎         | 4/120 [00:03<01:48,  1.07it/s, avr_loss=0.0135]steps:   4%|▍         | 5/120 [00:04<01:42,  1.12it/s, avr_loss=0.0135]steps:   4%|▍         | 5/120 [00:04<01:42,  1.12it/s, avr_loss=0.0128]steps:   5%|▌         | 6/120 [00:05<01:37,  1.16it/s, avr_loss=0.0128]steps:   5%|▌         | 6/120 [00:05<01:37,  1.16it/s, avr_loss=0.0124]steps:   6%|▌         | 7/120 [00:05<01:33,  1.20it/s, avr_loss=0.0124]steps:   6%|▌         | 7/120 [00:05<01:33,  1.20it/s, avr_loss=0.0118]steps:   7%|▋         | 8/120 [00:06<01:30,  1.23it/s, avr_loss=0.0118]steps:   7%|▋         | 8/120 [00:06<01:30,  1.23it/s, avr_loss=0.0116]steps:   8%|▊         | 9/120 [00:07<01:28,  1.26it/s, avr_loss=0.0116]steps:   8%|▊         | 9/120 [00:07<01:28,  1.26it/s, avr_loss=0.0107]steps:   8%|▊         | 10/120 [00:07<01:25,  1.28it/s, avr_loss=0.0107]steps:   8%|▊         | 10/120 [00:07<01:25,  1.28it/s, avr_loss=0.00994]steps:   9%|▉         | 11/120 [00:08<01:23,  1.31it/s, avr_loss=0.00994]steps:   9%|▉         | 11/120 [00:08<01:23,  1.31it/s, avr_loss=0.00959]steps:  10%|█         | 12/120 [00:09<01:21,  1.33it/s, avr_loss=0.00959]steps:  10%|█         | 12/120 [00:09<01:21,  1.33it/s, avr_loss=0.0097] 
+epoch 2/10
+2026-11-22 16:25:32 INFO     epoch is incremented.            train_util.py:693
+                             current_epoch: 1, epoch: 2                        
+steps:  11%|█         | 13/120 [00:09<01:20,  1.33it/s, avr_loss=0.0097]steps:  11%|█         | 13/120 [00:09<01:20,  1.33it/s, avr_loss=0.00811]steps:  12%|█▏        | 14/120 [00:10<01:18,  1.34it/s, avr_loss=0.00811]steps:  12%|█▏        | 14/120 [00:10<01:18,  1.34it/s, avr_loss=0.00961]steps:  12%|█▎        | 15/120 [00:11<01:17,  1.36it/s, avr_loss=0.00961]steps:  12%|█▎        | 15/120 [00:11<01:17,  1.36it/s, avr_loss=0.00954]steps:  13%|█▎        | 16/120 [00:11<01:15,  1.37it/s, avr_loss=0.00954]steps:  13%|█▎        | 16/120 [00:11<01:15,  1.37it/s, avr_loss=0.00934]steps:  14%|█▍        | 17/120 [00:12<01:14,  1.38it/s, avr_loss=0.00934]steps:  14%|█▍        | 17/120 [00:12<01:14,  1.38it/s, avr_loss=0.00934]steps:  15%|█▌        | 18/120 [00:12<01:13,  1.39it/s, avr_loss=0.00934]steps:  15%|█▌        | 18/120 [00:12<01:13,  1.39it/s, avr_loss=0.00948]steps:  16%|█▌        | 19/120 [00:13<01:12,  1.40it/s, avr_loss=0.00948]steps:  16%|█▌        | 19/120 [00:13<01:12,  1.40it/s, avr_loss=0.00986]steps:  17%|█▋        | 20/120 [00:14<01:11,  1.39it/s, avr_loss=0.00986]steps:  17%|█▋        | 20/120 [00:14<01:11,  1.39it/s, avr_loss=0.00999]steps:  18%|█▊        | 21/120 [00:15<01:11,  1.39it/s, avr_loss=0.00999]steps:  18%|█▊        | 21/120 [00:15<01:11,  1.39it/s, avr_loss=0.0104] steps:  18%|█▊        | 22/120 [00:15<01:10,  1.40it/s, avr_loss=0.0104]steps:  18%|█▊        | 22/120 [00:15<01:10,  1.40it/s, avr_loss=0.011] steps:  19%|█▉        | 23/120 [00:16<01:09,  1.40it/s, avr_loss=0.011]steps:  19%|█▉        | 23/120 [00:16<01:09,  1.40it/s, avr_loss=0.012]steps:  20%|██        | 24/120 [00:17<01:08,  1.40it/s, avr_loss=0.012]steps:  20%|██        | 24/120 [00:17<01:08,  1.40it/s, avr_loss=0.0123]
+epoch 3/10
+2026-11-22 16:25:40 INFO     epoch is incremented.            train_util.py:693
+                             current_epoch: 2, epoch: 3                        
+steps:  21%|██        | 25/120 [00:17<01:08,  1.39it/s, avr_loss=0.0123]steps:  21%|██        | 25/120 [00:17<01:08,  1.39it/s, avr_loss=0.0115]steps:  22%|██▏       | 26/120 [00:18<01:08,  1.38it/s, avr_loss=0.0115]steps:  22%|██▏       | 26/120 [00:18<01:08,  1.38it/s, avr_loss=0.01]  steps:  22%|██▎       | 27/120 [00:19<01:07,  1.38it/s, avr_loss=0.01]steps:  22%|██▎       | 27/120 [00:19<01:07,  1.38it/s, avr_loss=0.00951]steps:  23%|██▎       | 28/120 [00:20<01:06,  1.38it/s, avr_loss=0.00951]steps:  23%|██▎       | 28/120 [00:20<01:06,  1.38it/s, avr_loss=0.00992]steps:  24%|██▍       | 29/120 [00:21<01:05,  1.38it/s, avr_loss=0.00992]steps:  24%|██▍       | 29/120 [00:21<01:05,  1.38it/s, avr_loss=0.00969]steps:  25%|██▌       | 30/120 [00:21<01:05,  1.38it/s, avr_loss=0.00969]steps:  25%|██▌       | 30/120 [00:21<01:05,  1.38it/s, avr_loss=0.00942]steps:  26%|██▌       | 31/120 [00:22<01:04,  1.38it/s, avr_loss=0.00942]steps:  26%|██▌       | 31/120 [00:22<01:04,  1.38it/s, avr_loss=0.00898]steps:  27%|██▋       | 32/120 [00:23<01:03,  1.38it/s, avr_loss=0.00898]steps:  27%|██▋       | 32/120 [00:23<01:03,  1.38it/s, avr_loss=0.0087] steps:  28%|██▊       | 33/120 [00:23<01:02,  1.39it/s, avr_loss=0.0087]steps:  28%|██▊       | 33/120 [00:23<01:02,  1.39it/s, avr_loss=0.00912]steps:  28%|██▊       | 34/120 [00:24<01:01,  1.39it/s, avr_loss=0.00912]steps:  28%|██▊       | 34/120 [00:24<01:01,  1.39it/s, avr_loss=0.00886]steps:  29%|██▉       | 35/120 [00:25<01:00,  1.39it/s, avr_loss=0.00886]steps:  29%|██▉       | 35/120 [00:25<01:00,  1.39it/s, avr_loss=0.00891]steps:  30%|███       | 36/120 [00:25<01:00,  1.40it/s, avr_loss=0.00891]steps:  30%|███       | 36/120 [00:25<01:00,  1.40it/s, avr_loss=0.00835]
+epoch 4/10
+2026-11-22 16:25:48 INFO     epoch is incremented.            train_util.py:693
+                             current_epoch: 3, epoch: 4                        
+steps:  31%|███       | 37/120 [00:26<00:59,  1.40it/s, avr_loss=0.00835]steps:  31%|███       | 37/120 [00:26<00:59,  1.40it/s, avr_loss=0.00911]steps:  32%|███▏      | 38/120 [00:27<00:58,  1.40it/s, avr_loss=0.00911]steps:  32%|███▏      | 38/120 [00:27<00:58,  1.40it/s, avr_loss=0.0109] steps:  32%|███▎      | 39/120 [00:27<00:57,  1.40it/s, avr_loss=0.0109]steps:  32%|███▎      | 39/120 [00:27<00:57,  1.40it/s, avr_loss=0.0114]steps:  33%|███▎      | 40/120 [00:28<00:56,  1.41it/s, avr_loss=0.0114]
+saving checkpoint: lora_out\shapes-step00000040.safetensors
+steps:  33%|███▎      | 40/120 [00:28<00:57,  1.39it/s, avr_loss=0.0112]steps:  34%|███▍      | 41/120 [00:29<00:56,  1.39it/s, avr_loss=0.0112]steps:  34%|███▍      | 41/120 [00:29<00:56,  1.39it/s, avr_loss=0.0115]steps:  35%|███▌      | 42/120 [00:30<00:56,  1.39it/s, avr_loss=0.0115]steps:  35%|███▌      | 42/120 [00:30<00:56,  1.39it/s, avr_loss=0.0114]steps:  36%|███▌      | 43/120 [00:30<00:55,  1.39it/s, avr_loss=0.0114]steps:  36%|███▌      | 43/120 [00:30<00:55,  1.39it/s, avr_loss=0.0125]steps:  37%|███▋      | 44/120 [00:31<00:54,  1.40it/s, avr_loss=0.0125]steps:  37%|███▋      | 44/120 [00:31<00:54,  1.40it/s, avr_loss=0.0126]steps:  38%|███▊      | 45/120 [00:32<00:53,  1.40it/s, avr_loss=0.0126]steps:  38%|███▊      | 45/120 [00:32<00:53,  1.40it/s, avr_loss=0.012] steps:  38%|███▊      | 46/120 [00:32<00:53,  1.40it/s, avr_loss=0.012]steps:  38%|███▊      | 46/120 [00:32<00:53,  1.40it/s, avr_loss=0.0138]steps:  39%|███▉      | 47/120 [00:33<00:52,  1.40it/s, avr_loss=0.0138]steps:  39%|███▉      | 47/120 [00:33<00:52,  1.40it/s, avr_loss=0.0134]steps:  40%|████      | 48/120 [00:34<00:51,  1.40it/s, avr_loss=0.0134]steps:  40%|████      | 48/120 [00:34<00:51,  1.40it/s, avr_loss=0.0135]
+epoch 5/10
+2026-11-22 16:25:57 INFO     epoch is incremented.            train_util.py:693
+                             current_epoch: 4, epoch: 5                        
+steps:  41%|████      | 49/120 [00:35<00:50,  1.40it/s, avr_loss=0.0135]steps:  41%|████      | 49/120 [00:35<00:50,  1.40it/s, avr_loss=0.0138]steps:  42%|████▏     | 50/120 [00:35<00:50,  1.40it/s, avr_loss=0.0138]steps:  42%|████▏     | 50/120 [00:35<00:50,  1.40it/s, avr_loss=0.0125]steps:  42%|████▎     | 51/120 [00:36<00:49,  1.40it/s, avr_loss=0.0125]steps:  42%|████▎     | 51/120 [00:36<00:49,  1.40it/s, avr_loss=0.0127]steps:  43%|████▎     | 52/120 [00:37<00:48,  1.40it/s, avr_loss=0.0127]steps:  43%|████▎     | 52/120 [00:37<00:48,  1.40it/s, avr_loss=0.0128]steps:  44%|████▍     | 53/120 [00:38<00:48,  1.39it/s, avr_loss=0.0128]steps:  44%|████▍     | 53/120 [00:38<00:48,  1.39it/s, avr_loss=0.012] steps:  45%|████▌     | 54/120 [00:39<00:47,  1.38it/s, avr_loss=0.012]steps:  45%|████▌     | 54/120 [00:39<00:47,  1.38it/s, avr_loss=0.0132]steps:  46%|████▌     | 55/120 [00:39<00:47,  1.38it/s, avr_loss=0.0132]steps:  46%|████▌     | 55/120 [00:39<00:47,  1.38it/s, avr_loss=0.0133]steps:  47%|████▋     | 56/120 [00:40<00:46,  1.37it/s, avr_loss=0.0133]steps:  47%|████▋     | 56/120 [00:40<00:46,  1.37it/s, avr_loss=0.0133]steps:  48%|████▊     | 57/120 [00:41<00:45,  1.37it/s, avr_loss=0.0133]steps:  48%|████▊     | 57/120 [00:41<00:45,  1.37it/s, avr_loss=0.0133]steps:  48%|████▊     | 58/120 [00:42<00:45,  1.37it/s, avr_loss=0.0133]steps:  48%|████▊     | 58/120 [00:42<00:45,  1.37it/s, avr_loss=0.0115]steps:  49%|████▉     | 59/120 [00:43<00:44,  1.36it/s, avr_loss=0.0115]steps:  49%|████▉     | 59/120 [00:43<00:44,  1.36it/s, avr_loss=0.0109]steps:  50%|█████     | 60/120 [00:44<00:44,  1.36it/s, avr_loss=0.0109]steps:  50%|█████     | 60/120 [00:44<00:44,  1.36it/s, avr_loss=0.0119]
+epoch 6/10
+2026-11-22 16:26:07 INFO     epoch is incremented.            train_util.py:693
+                             current_epoch: 5, epoch: 6                        
+steps:  51%|█████     | 61/120 [00:45<00:43,  1.35it/s, avr_loss=0.0119]steps:  51%|█████     | 61/120 [00:45<00:43,  1.35it/s, avr_loss=0.014] steps:  52%|█████▏    | 62/120 [00:45<00:43,  1.35it/s, avr_loss=0.014]steps:  52%|█████▏    | 62/120 [00:45<00:43,  1.35it/s, avr_loss=0.0143]steps:  52%|█████▎    | 63/120 [00:46<00:42,  1.35it/s, avr_loss=0.0143]steps:  52%|█████▎    | 63/120 [00:46<00:42,  1.35it/s, avr_loss=0.015] steps:  53%|█████▎    | 64/120 [00:47<00:41,  1.34it/s, avr_loss=0.015]steps:  53%|█████▎    | 64/120 [00:47<00:41,  1.34it/s, avr_loss=0.0145]steps:  54%|█████▍    | 65/120 [00:48<00:41,  1.34it/s, avr_loss=0.0145]steps:  54%|█████▍    | 65/120 [00:48<00:41,  1.34it/s, avr_loss=0.0145]steps:  55%|█████▌    | 66/120 [00:49<00:40,  1.33it/s, avr_loss=0.0145]steps:  55%|█████▌    | 66/120 [00:49<00:40,  1.33it/s, avr_loss=0.0143]steps:  56%|█████▌    | 67/120 [00:50<00:39,  1.33it/s, avr_loss=0.0143]steps:  56%|█████▌    | 67/120 [00:50<00:39,  1.33it/s, avr_loss=0.0127]steps:  57%|█████▋    | 68/120 [00:51<00:39,  1.32it/s, avr_loss=0.0127]steps:  57%|█████▋    | 68/120 [00:51<00:39,  1.32it/s, avr_loss=0.0134]steps:  57%|█████▊    | 69/120 [00:52<00:38,  1.32it/s, avr_loss=0.0134]steps:  57%|█████▊    | 69/120 [00:52<00:38,  1.32it/s, avr_loss=0.0131]steps:  58%|█████▊    | 70/120 [00:53<00:38,  1.31it/s, avr_loss=0.0131]steps:  58%|█████▊    | 70/120 [00:53<00:38,  1.31it/s, avr_loss=0.0136]steps:  59%|█████▉    | 71/120 [00:54<00:37,  1.31it/s, avr_loss=0.0136]steps:  59%|█████▉    | 71/120 [00:54<00:37,  1.31it/s, avr_loss=0.0134]steps:  60%|██████    | 72/120 [00:55<00:36,  1.31it/s, avr_loss=0.0134]steps:  60%|██████    | 72/120 [00:55<00:36,  1.31it/s, avr_loss=0.0118]
+epoch 7/10
+2026-11-22 16:26:18 INFO     epoch is incremented.            train_util.py:693
+                             current_epoch: 6, epoch: 7                        
+steps:  61%|██████    | 73/120 [00:55<00:36,  1.31it/s, avr_loss=0.0118]steps:  61%|██████    | 73/120 [00:55<00:36,  1.31it/s, avr_loss=0.00894]steps:  62%|██████▏   | 74/120 [00:56<00:35,  1.30it/s, avr_loss=0.00894]steps:  62%|██████▏   | 74/120 [00:56<00:35,  1.30it/s, avr_loss=0.008]  steps:  62%|██████▎   | 75/120 [00:57<00:34,  1.30it/s, avr_loss=0.008]steps:  62%|██████▎   | 75/120 [00:57<00:34,  1.30it/s, avr_loss=0.00701]steps:  63%|██████▎   | 76/120 [00:58<00:33,  1.29it/s, avr_loss=0.00701]steps:  63%|██████▎   | 76/120 [00:58<00:33,  1.29it/s, avr_loss=0.00732]steps:  64%|██████▍   | 77/120 [00:59<00:33,  1.29it/s, avr_loss=0.00732]steps:  64%|██████▍   | 77/120 [00:59<00:33,  1.29it/s, avr_loss=0.00897]steps:  65%|██████▌   | 78/120 [01:00<00:32,  1.29it/s, avr_loss=0.00897]steps:  65%|██████▌   | 78/120 [01:00<00:32,  1.29it/s, avr_loss=0.00798]steps:  66%|██████▌   | 79/120 [01:01<00:31,  1.29it/s, avr_loss=0.00798]steps:  66%|██████▌   | 79/120 [01:01<00:31,  1.29it/s, avr_loss=0.00851]steps:  67%|██████▋   | 80/120 [01:02<00:31,  1.29it/s, avr_loss=0.00851]
+saving checkpoint: lora_out\shapes-step00000080.safetensors
+steps:  67%|██████▋   | 80/120 [01:02<00:31,  1.28it/s, avr_loss=0.00755]steps:  68%|██████▊   | 81/120 [01:03<00:30,  1.27it/s, avr_loss=0.00755]steps:  68%|██████▊   | 81/120 [01:03<00:30,  1.27it/s, avr_loss=0.00772]steps:  68%|██████▊   | 82/120 [01:04<00:29,  1.27it/s, avr_loss=0.00772]steps:  68%|██████▊   | 82/120 [01:04<00:29,  1.27it/s, avr_loss=0.00838]steps:  69%|██████▉   | 83/120 [01:05<00:29,  1.27it/s, avr_loss=0.00838]steps:  69%|██████▉   | 83/120 [01:05<00:29,  1.27it/s, avr_loss=0.00981]steps:  70%|███████   | 84/120 [01:06<00:28,  1.27it/s, avr_loss=0.00981]steps:  70%|███████   | 84/120 [01:06<00:28,  1.27it/s, avr_loss=0.0112] 
+epoch 8/10
+2026-11-22 16:26:29 INFO     epoch is incremented.            train_util.py:693
+                             current_epoch: 7, epoch: 8                        
+steps:  71%|███████   | 85/120 [01:07<00:27,  1.27it/s, avr_loss=0.0112]steps:  71%|███████   | 85/120 [01:07<00:27,  1.27it/s, avr_loss=0.0113]steps:  72%|███████▏  | 86/120 [01:08<00:26,  1.26it/s, avr_loss=0.0113]steps:  72%|███████▏  | 86/120 [01:08<00:26,  1.26it/s, avr_loss=0.0118]steps:  72%|███████▎  | 87/120 [01:09<00:26,  1.26it/s, avr_loss=0.0118]steps:  72%|███████▎  | 87/120 [01:09<00:26,  1.26it/s, avr_loss=0.0116]steps:  73%|███████▎  | 88/120 [01:10<00:25,  1.26it/s, avr_loss=0.0116]steps:  73%|███████▎  | 88/120 [01:10<00:25,  1.26it/s, avr_loss=0.0125]steps:  74%|███████▍  | 89/120 [01:11<00:24,  1.25it/s, avr_loss=0.0125]steps:  74%|███████▍  | 89/120 [01:11<00:24,  1.25it/s, avr_loss=0.0112]steps:  75%|███████▌  | 90/120 [01:11<00:23,  1.25it/s, avr_loss=0.0112]steps:  75%|███████▌  | 90/120 [01:11<00:23,  1.25it/s, avr_loss=0.0113]steps:  76%|███████▌  | 91/120 [01:12<00:23,  1.25it/s, avr_loss=0.0113]steps:  76%|███████▌  | 91/120 [01:12<00:23,  1.25it/s, avr_loss=0.0108]steps:  77%|███████▋  | 92/120 [01:13<00:22,  1.25it/s, avr_loss=0.0108]steps:  77%|███████▋  | 92/120 [01:13<00:22,  1.25it/s, avr_loss=0.011] steps:  78%|███████▊  | 93/120 [01:14<00:21,  1.25it/s, avr_loss=0.011]steps:  78%|███████▊  | 93/120 [01:14<00:21,  1.25it/s, avr_loss=0.0114]steps:  78%|███████▊  | 94/120 [01:15<00:20,  1.24it/s, avr_loss=0.0114]steps:  78%|███████▊  | 94/120 [01:15<00:20,  1.24it/s, avr_loss=0.0112]steps:  79%|███████▉  | 95/120 [01:16<00:20,  1.24it/s, avr_loss=0.0112]steps:  79%|███████▉  | 95/120 [01:16<00:20,  1.24it/s, avr_loss=0.0107]steps:  80%|████████  | 96/120 [01:17<00:19,  1.24it/s, avr_loss=0.0107]steps:  80%|████████  | 96/120 [01:17<00:19,  1.24it/s, avr_loss=0.00946]
+epoch 9/10
+2026-11-22 16:26:40 INFO     epoch is incremented.            train_util.py:693
+                             current_epoch: 8, epoch: 9                        
+steps:  81%|████████  | 97/120 [01:18<00:18,  1.24it/s, avr_loss=0.00946]steps:  81%|████████  | 97/120 [01:18<00:18,  1.24it/s, avr_loss=0.00936]steps:  82%|████████▏ | 98/120 [01:19<00:17,  1.24it/s, avr_loss=0.00936]steps:  82%|████████▏ | 98/120 [01:19<00:17,  1.24it/s, avr_loss=0.00961]steps:  82%|████████▎ | 99/120 [01:20<00:16,  1.24it/s, avr_loss=0.00961]steps:  82%|████████▎ | 99/120 [01:20<00:16,  1.24it/s, avr_loss=0.0097] steps:  83%|████████▎ | 100/120 [01:20<00:16,  1.24it/s, avr_loss=0.0097]steps:  83%|████████▎ | 100/120 [01:20<00:16,  1.24it/s, avr_loss=0.00921]steps:  84%|████████▍ | 101/120 [01:21<00:15,  1.23it/s, avr_loss=0.00921]steps:  84%|████████▍ | 101/120 [01:21<00:15,  1.23it/s, avr_loss=0.00939]steps:  85%|████████▌ | 102/120 [01:22<00:14,  1.23it/s, avr_loss=0.00939]steps:  85%|████████▌ | 102/120 [01:22<00:14,  1.23it/s, avr_loss=0.00964]steps:  86%|████████▌ | 103/120 [01:23<00:13,  1.23it/s, avr_loss=0.00964]steps:  86%|████████▌ | 103/120 [01:23<00:13,  1.23it/s, avr_loss=0.00983]steps:  87%|████████▋ | 104/120 [01:24<00:13,  1.23it/s, avr_loss=0.00983]steps:  87%|████████▋ | 104/120 [01:24<00:13,  1.23it/s, avr_loss=0.0112] steps:  88%|████████▊ | 105/120 [01:25<00:12,  1.23it/s, avr_loss=0.0112]steps:  88%|████████▊ | 105/120 [01:25<00:12,  1.23it/s, avr_loss=0.0109]steps:  88%|████████▊ | 106/120 [01:26<00:11,  1.23it/s, avr_loss=0.0109]steps:  88%|████████▊ | 106/120 [01:26<00:11,  1.23it/s, avr_loss=0.00983]steps:  89%|████████▉ | 107/120 [01:27<00:10,  1.23it/s, avr_loss=0.00983]steps:  89%|████████▉ | 107/120 [01:27<00:10,  1.23it/s, avr_loss=0.00966]steps:  90%|█████████ | 108/120 [01:28<00:09,  1.22it/s, avr_loss=0.00966]steps:  90%|█████████ | 108/120 [01:28<00:09,  1.22it/s, avr_loss=0.01]   
+epoch 10/10
+2026-11-22 16:26:51 INFO     epoch is incremented.            train_util.py:693
+                             current_epoch: 9, epoch: 10                       
+steps:  91%|█████████ | 109/120 [01:29<00:08,  1.22it/s, avr_loss=0.01]steps:  91%|█████████ | 109/120 [01:29<00:08,  1.22it/s, avr_loss=0.0104]steps:  92%|█████████▏| 110/120 [01:29<00:08,  1.22it/s, avr_loss=0.0104]steps:  92%|█████████▏| 110/120 [01:29<00:08,  1.22it/s, avr_loss=0.0102]steps:  92%|█████████▎| 111/120 [01:30<00:07,  1.22it/s, avr_loss=0.0102]steps:  92%|█████████▎| 111/120 [01:30<00:07,  1.22it/s, avr_loss=0.011] steps:  93%|█████████▎| 112/120 [01:31<00:06,  1.22it/s, avr_loss=0.011]steps:  93%|█████████▎| 112/120 [01:31<00:06,  1.22it/s, avr_loss=0.011]steps:  94%|█████████▍| 113/120 [01:32<00:05,  1.22it/s, avr_loss=0.011]steps:  94%|█████████▍| 113/120 [01:32<00:05,  1.22it/s, avr_loss=0.0109]steps:  95%|█████████▌| 114/120 [01:33<00:04,  1.22it/s, avr_loss=0.0109]steps:  95%|█████████▌| 114/120 [01:33<00:04,  1.22it/s, avr_loss=0.0109]steps:  96%|█████████▌| 115/120 [01:34<00:04,  1.22it/s, avr_loss=0.0109]steps:  96%|█████████▌| 115/120 [01:34<00:04,  1.22it/s, avr_loss=0.0116]steps:  97%|█████████▋| 116/120 [01:35<00:03,  1.22it/s, avr_loss=0.0116]steps:  97%|█████████▋| 116/120 [01:35<00:03,  1.22it/s, avr_loss=0.0103]steps:  98%|█████████▊| 117/120 [01:36<00:02,  1.22it/s, avr_loss=0.0103]steps:  98%|█████████▊| 117/120 [01:36<00:02,  1.22it/s, avr_loss=0.0103]steps:  98%|█████████▊| 118/120 [01:36<00:01,  1.22it/s, avr_loss=0.0103]steps:  98%|█████████▊| 118/120 [01:36<00:01,  1.22it/s, avr_loss=0.0114]steps:  99%|█████████▉| 119/120 [01:37<00:00,  1.22it/s, avr_loss=0.0114]steps:  99%|█████████▉| 119/120 [01:37<00:00,  1.22it/s, avr_loss=0.0122]steps: 100%|██████████| 120/120 [01:38<00:00,  1.21it/s, avr_loss=0.0122]
+saving checkpoint: lora_out\shapes-step00000120.safetensors
+steps: 100%|██████████| 120/120 [01:39<00:00,  1.21it/s, avr_loss=0.0123]
+saving checkpoint: lora_out\shapes.safetensors
+2026-11-22 16:27:02 INFO     model saved.                 train_network.py:1104
+steps: 100%|██████████| 120/120 [01:39<00:00,  1.21it/s, avr_loss=0.0123]

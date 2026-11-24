@@ -10,6 +10,7 @@ from __future__ import annotations
 import re
 
 from epochix.story_engine.comparison import RunTrajectory, narrate_comparison
+from epochix.story_engine.messages import COUNTER_FORMS
 
 # Peaks at epoch 7 (0.865) then overfits down to 0.846.
 OVERFIT = RunTrajectory(
@@ -156,6 +157,13 @@ def test_it_is_localised() -> None:
     assert "devant" in fr, fr
 
 
+def _fields(text: str, locale: str) -> set[str]:
+    """Placeholders, with every form of the counter's name counted as one:
+    French writes "{at_counter}" where English writes "on {counter}"."""
+    forms = COUNTER_FORMS[locale]["epoch"]
+    return {"<counter>" if name in forms else name for name in re.findall(r"\{(\w+)\}", text)}
+
+
 def test_every_template_keeps_its_placeholders() -> None:
     """A translation that invents or drops a placeholder breaks one locale
     silently — English tests would never see it."""
@@ -165,10 +173,10 @@ def test_every_template_keeps_its_placeholders() -> None:
     for english in sorted(root.glob("_compare_*.txt")):
         if english.name.count(".") > 1:  # a localised variant
             continue
-        expected = set(re.findall(r"\{(\w+)\}", english.read_text(encoding="utf-8")))
+        expected = _fields(english.read_text(encoding="utf-8"), "en")
         for locale in ("fa", "fr"):
             localised = root / f"{english.stem}.{locale}.txt"
             if not localised.exists():
                 continue  # falls back to English, which is fine
-            found = set(re.findall(r"\{(\w+)\}", localised.read_text(encoding="utf-8")))
+            found = _fields(localised.read_text(encoding="utf-8"), locale)
             assert found == expected, f"{localised.name}: {found} != {expected}"

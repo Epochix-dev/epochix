@@ -19,6 +19,7 @@ import {
   LOWER_BETTER_TASKS,
   LOWER_NAME_HINTS,
   METRIC_THRESHOLDS,
+  NO_IDEAL_METRICS,
   TRAJECTORY_THRESHOLDS,
   type Grade,
   type TaskType,
@@ -83,13 +84,35 @@ export function gradeBands(
 }
 
 /**
+ * How far `current` moved the right way from `baseline`, as a share of it —
+ * improvement_from_baseline. Unclamped; negative when it moved the wrong way.
+ * What gradeByTrajectory grades, and what the phase and the stall read for a
+ * metric with no ideal.
+ */
+export function improvementFromBaseline(
+  baseline: number,
+  current: number,
+  lowerBetter: boolean,
+): number {
+  const denom = Math.abs(baseline) > 1e-9 ? Math.abs(baseline) : 1e-9;
+  return lowerBetter ? (baseline - current) / denom : (current - baseline) / denom;
+}
+
+/**
+ * A higher-is-better metric with no known best value (PSNR, the inception
+ * score) — has_no_ideal. Its improvement is not a share of the way to 1.0.
+ */
+export function hasNoIdeal(metric: string | null | undefined): boolean {
+  return metric !== null && metric !== undefined && NO_IDEAL_METRICS.has(metric);
+}
+
+/**
  * Grade a metric with no absolute scale by how far it improved —
  * grade_by_trajectory. A bare loss means nothing except relative to where it
  * started; one that got worse earns an F.
  */
 export function gradeByTrajectory(baseline: number, current: number, lowerBetter: boolean): Grade {
-  const denom = Math.abs(baseline) > 1e-9 ? Math.abs(baseline) : 1e-9;
-  const improvement = lowerBetter ? (baseline - current) / denom : (current - baseline) / denom;
+  const improvement = improvementFromBaseline(baseline, current, lowerBetter);
   for (const [grade, threshold] of TRAJECTORY_THRESHOLDS) {
     if (improvement >= threshold) return grade;
   }
@@ -104,8 +127,14 @@ export function gradeByTrajectory(baseline: number, current: number, lowerBetter
 export function gradeNote(
   grade: Grade,
   readings: number,
-  o: { hasEpoch: boolean; newBest: boolean },
-): "few_readings" | "still_improving" | null {
+  o: { hasEpoch: boolean; newBest: boolean; unsteady?: boolean; runningMean?: boolean },
+): "few_readings" | "still_improving" | "unsteady" | "running_mean" | null {
+  // How the metric is computed comes first: a running average over
+  // overlapping batches (steadiness.ts runningMean).
+  if (o.runningMean) return "running_mean";
+  // Not graded because one reading cannot be set against another
+  // (steadiness.ts): an "I" otherwise means there was nothing to measure.
+  if (o.unsteady) return "unsteady";
   if (grade === "I") return null;
   if (!o.hasEpoch && readings <= 1) return null;
   if (readings < FEW_READINGS) return "few_readings";

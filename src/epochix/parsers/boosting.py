@@ -27,7 +27,7 @@ from typing import cast
 
 from epochix.models import RawMetric
 from epochix.parsers._never_metrics import NEVER_METRICS, is_setting
-from epochix.parsers.base import ParserContext, claim
+from epochix.parsers.base import ParserContext, claim, count_by
 from epochix.parsers.registry import register_parser
 
 # "[12]" or CatBoost's bare "12:" at the start of the line.
@@ -234,7 +234,7 @@ class BoostingParser:
         if ctx.extra.pop("boosting_reprint_next", False):
             return claim(ctx)
         rnd = float(m.group(1) if m.group(1) is not None else m.group(2))
-        ctx.current_epoch = rnd
+        count_by(ctx, "round", rnd)
         ctx.current_step = int(rnd)
 
         body = line[m.end() :]

@@ -21,12 +21,14 @@ import {
   computeGrade,
   gradeByTrajectory,
   gradeNote,
+  hasNoIdeal,
   metricLowerBetter,
   type Grade,
   type TaskType,
 } from "../../story/grader";
 import { lossText } from "../../story/narrator";
 import { computePhase, relativeImprovement } from "../../story/phases";
+import { runningMean, stepText, swing, unsteady } from "../../story/steadiness";
 
 interface Golden {
   compute_grade: [TaskType, number, string | null, Grade][];
@@ -34,7 +36,14 @@ interface Golden {
   metric_lower_better: Record<string, boolean | null>;
   relative_improvement: [number, number, boolean, number | null][];
   compute_phase: [number | null, number, number, boolean, string][];
+  relative_improvement_unbounded: [number, number, boolean, number | null][];
+  compute_phase_unbounded: [number | null, number, number, boolean, string][];
+  has_no_ideal: Record<string, boolean>;
   grade_note: [Grade, number, boolean, boolean, string | null][];
+  grade_note_unsteady: [Grade, number, boolean, boolean, string | null][];
+  grade_note_running_mean: [Grade, number, boolean, string | null][];
+  running_mean: [string | null, boolean][];
+  swing: [number[], [number, number, number, string] | null, boolean][];
   loss_text: [number, string][];
 }
 
@@ -91,6 +100,39 @@ suite("Grading matches the Python engine", () => {
     });
   });
 
+  test("relative_improvement, for a metric with no ideal", () => {
+    check(
+      g.relative_improvement_unbounded,
+      "relative_improvement (unbounded)",
+      ([value, baseline, lower, want]) => {
+        const got = relativeImprovement(value, baseline, lower, null, true);
+        return got === want ? null : `${value} from ${baseline} (${lower}): ${got} != ${want}`;
+      },
+    );
+  });
+
+  test("compute_phase, for a metric with no ideal", () => {
+    check(
+      g.compute_phase_unbounded,
+      "compute_phase (unbounded)",
+      ([progress, value, baseline, lower, want]) => {
+        const got = computePhase(progress, value, baseline, lower, null, true);
+        return got === want
+          ? null
+          : `p=${progress} ${value} from ${baseline} (${lower}): ${got} != ${want}`;
+      },
+    );
+  });
+
+  test("has_no_ideal, for every canonical and raw name", () => {
+    const cases = Object.entries(g.has_no_ideal);
+    assert.ok(cases.some(([, want]) => want), "the golden names no metric without an ideal");
+    check(cases, "has_no_ideal", ([name, want]) => {
+      const got = hasNoIdeal(name);
+      return got === want ? null : `${name}: ${got} != ${want}`;
+    });
+  });
+
   test("loss_text", () => {
     check(g.loss_text, "loss_text", ([value, want]) => {
       const got = lossText(value);
@@ -102,6 +144,44 @@ suite("Grading matches the Python engine", () => {
     check(g.grade_note, "grade_note", ([grade, readings, hasEpoch, newBest, want]) => {
       const got = gradeNote(grade, readings, { hasEpoch, newBest });
       return got === want ? null : `${grade} ${readings} ${hasEpoch} ${newBest}: ${got} != ${want}`;
+    });
+    check(
+      g.grade_note_unsteady,
+      "grade_note (unsteady)",
+      ([grade, readings, hasEpoch, newBest, want]) => {
+        const got = gradeNote(grade, readings, { hasEpoch, newBest, unsteady: true });
+        return got === want ? null : `${grade} ${readings} ${hasEpoch} ${newBest}: ${got} != ${want}`;
+      },
+    );
+    assert.ok(g.grade_note_running_mean.length > 0);
+    check(
+      g.grade_note_running_mean,
+      "grade_note (running mean)",
+      ([grade, readings, isUnsteady, want]) => {
+        const got = gradeNote(grade, readings, {
+          hasEpoch: true, newBest: true, unsteady: isUnsteady, runningMean: true,
+        });
+        return got === want ? null : `${grade} ${readings} ${isUnsteady}: ${got} != ${want}`;
+      },
+    );
+  });
+
+  test("which names are running averages", () => {
+    assert.ok(g.running_mean.some(([, yes]) => yes) && g.running_mean.some(([, yes]) => !yes));
+    check(g.running_mean, "running_mean", ([name, want]) => {
+      const got = runningMean(name);
+      return got === want ? null : `${JSON.stringify(name)}: ${got} != ${want}`;
+    });
+  });
+
+  test("swing and unsteady", () => {
+    assert.ok(g.swing.some(([, , yes]) => yes) && g.swing.some(([, , yes]) => !yes));
+    check(g.swing, "swing", ([values, want, wantUnsteady]) => {
+      const found = swing(values);
+      const got = found === null ? null : [found.readings, found.turns, found.step, stepText(found)];
+      const said = JSON.stringify([got, unsteady(values) !== null]);
+      const expected = JSON.stringify([want, wantUnsteady]);
+      return said === expected ? null : `${JSON.stringify(values.slice(0, 8))}…: ${said} != ${expected}`;
     });
   });
 });

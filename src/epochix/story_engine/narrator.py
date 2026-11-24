@@ -1,11 +1,10 @@
 from __future__ import annotations
 
-import hashlib
-import random
 from pathlib import Path
 
 from epochix.enums import Phase, TaskType
-from epochix.story_engine.messages import message
+from epochix.models import Counter
+from epochix.story_engine.messages import counter_words, message
 
 # Template variants per task × phase (loaded lazily, cached)
 _template_cache: dict[str, list[str]] = {}
@@ -32,6 +31,27 @@ def _load_templates(task: TaskType, phase: Phase, locale: str = "en") -> list[st
     return [fallback]
 
 
+def states_a_change(template: str) -> bool:
+    """Whether a phase template quotes the change since the reading before."""
+    return "{delta}" in template or "{delta_pct}" in template
+
+
+def _pick(templates: list[str], run_id: str) -> str:
+    """One variant, the same for a run id every time it is told.
+
+    A djb2 hash of the run id's UTF-16 code units, as the extension's
+    `pickIndex` (narrator.ts) computes it, so the two engines tell a run id
+    with the same variant. The pick was an MD5-seeded `random.Random` here
+    and djb2 there, and the same log told under the same id in both differed
+    in 4,194 of its 4,206 frames over the corpus; nothing compared them.
+    """
+    h = 5381
+    units = run_id.encode("utf-16-le")
+    for i in range(0, len(units), 2):
+        h = ((h * 33) ^ int.from_bytes(units[i : i + 2], "little")) & 0xFFFFFFFF
+    return templates[h % len(templates)]
+
+
 def _load_special(name: str, locale: str, fallback: str) -> list[str]:
     """Load a phase-independent template set (``_stalled``, ``_pastpeak``)."""
     key = f"{name}/{locale}"
@@ -56,6 +76,7 @@ def narrate_past_peak(
     best_epoch: float | None,
     run_id: str,
     locale: str = "en",
+    counter: Counter | None = None,
 ) -> str:
     """Say the run is past its best instead of calling it "peak form".
 
@@ -65,8 +86,7 @@ def narrate_past_peak(
     the same page, which correctly reported the earlier best checkpoint.
     """
     templates = _load_special("_pastpeak", locale, "The run is past its best value.")
-    seed = int(hashlib.md5(run_id.encode(), usedforsecurity=False).hexdigest()[:8], 16)
-    template = random.Random(seed).choice(templates)
+    template = counter_words(_pick(templates, run_id), counter, locale)
     best_at = str(int(best_epoch)) if best_epoch is not None else "?"
     story = (
         template.replace("{epoch}", str(int(epoch)) if epoch is not None else "?")
@@ -74,7 +94,36 @@ def narrate_past_peak(
         .replace("{best}", f"{best_value:.4f}")
         .replace("{best_epoch}", best_at)
     )
-    return f"{story} {message('next_pastpeak', locale, best_epoch=best_at)}"
+    return f"{story} {message('next_pastpeak', locale, counter, best_epoch=best_at)}"
+
+
+def narrate_below_best(
+    epoch: float | None,
+    primary_value: float,
+    best_value: float,
+    best_epoch: float | None,
+    run_id: str,
+    locale: str = "en",
+    counter: Counter | None = None,
+) -> str:
+    """Say a reading is off the run's best, and nothing more.
+
+    For a reading more than 1% below the best when the ones before it were
+    not, or not for long enough (_PAST_PEAK_READINGS). The past-peak story
+    says the run has slipped and should have stopped; on a plateau that was
+    one reading's wobble. The phase stories say the reading is within 1% of
+    the best, which it is not. This says what it is.
+    """
+    templates = _load_special("_belowbest", locale, "{value}, below the best of {best}.")
+    template = counter_words(_pick(templates, run_id), counter, locale)
+    best_at = str(int(best_epoch)) if best_epoch is not None else "?"
+    story = (
+        template.replace("{epoch}", str(int(epoch)) if epoch is not None else "?")
+        .replace("{value}", f"{primary_value:.4f}")
+        .replace("{best}", f"{best_value:.4f}")
+        .replace("{best_epoch}", best_at)
+    )
+    return f"{story[:1].upper()}{story[1:]}"
 
 
 def narrate_single_reading(
@@ -94,11 +143,74 @@ def narrate_single_reading(
     templates = _load_special(
         "_single_reading", locale, "A single result: {metric} {value}. There is no trend to read."
     )
-    seed = int(hashlib.md5(run_id.encode(), usedforsecurity=False).hexdigest()[:8], 16)
-    template = random.Random(seed).choice(templates)
+    template = _pick(templates, run_id)
     return template.replace("{value}", f"{primary_value:.4f}").replace(
         "{metric}", _display_metric(metric, locale)
     )
+
+
+def narrate_unsteady(
+    epoch: float | None,
+    primary_value: float,
+    *,
+    turns: int,
+    readings: int,
+    step: str,
+    run_id: str,
+    locale: str = "en",
+    metric: str | None = None,
+    counter: Counter | None = None,
+) -> str:
+    """Say what the readings are, and why one of them does not place the run.
+
+    For a metric whose readings rise and fall from one to the next by more
+    than any trend in them (story_engine/steadiness.py). Every other sentence
+    compares this reading with another — "past its best", "a change of …
+    since the previous reading", "has barely moved" — and here that
+    comparison measures the luck of a batch.
+    """
+    templates = _load_special(
+        "_unsteady", locale, "{Counter} {epoch}: {metric} {value}. One reading says little here."
+    )
+    template = counter_words(_pick(templates, run_id), counter, locale)
+    story = (
+        template.replace("{epoch}", str(int(epoch)) if epoch is not None else "?")
+        .replace("{value}", f"{primary_value:.4f}")
+        .replace("{metric}", _display_metric(metric, locale))
+        .replace("{turns}", str(turns))
+        .replace("{readings}", str(readings))
+        .replace("{step}", step)
+    )
+    # A template that opens with the metric's name opens with a capital.
+    return f"{story[:1].upper()}{story[1:]} {message('next_unsteady', locale)}"
+
+
+def narrate_running_mean(
+    epoch: float | None,
+    primary_value: float,
+    *,
+    run_id: str,
+    locale: str = "en",
+    metric: str | None = None,
+    counter: Counter | None = None,
+) -> str:
+    """Say what the reading is, and why it is not set against another.
+
+    For a metric logged as a running average over the last epoch's batches
+    (story_engine/steadiness.py, RUNNING_MEANS). The sentence states how the
+    metric is computed and nothing about the run: the reading, where it was
+    taken, and that its neighbours share all but one batch with it.
+    """
+    templates = _load_special(
+        "_running_mean", locale, "{Counter} {epoch}: {metric} {value}, a running average."
+    )
+    template = counter_words(_pick(templates, run_id), counter, locale)
+    story = (
+        template.replace("{epoch}", str(int(epoch)) if epoch is not None else "?")
+        .replace("{value}", f"{primary_value:.4f}")
+        .replace("{metric}", _display_metric(metric, locale))
+    )
+    return f"{story[:1].upper()}{story[1:]} {message('next_running_mean', locale)}"
 
 
 def _load_stalled(locale: str = "en") -> list[str]:
@@ -126,6 +238,7 @@ def narrate_stalled(
     epochs_seen: int,
     run_id: str,
     locale: str = "en",
+    counter: Counter | None = None,
 ) -> str:
     """Narrate a run that is not learning — honestly, instead of encouragement.
 
@@ -135,8 +248,7 @@ def narrate_stalled(
     points at the usual causes.
     """
     templates = _load_stalled(locale)
-    seed = int(hashlib.md5(run_id.encode(), usedforsecurity=False).hexdigest()[:8], 16)
-    template = random.Random(seed).choice(templates)
+    template = counter_words(_pick(templates, run_id), counter, locale)
     story = (
         template.replace("{epoch}", str(int(epoch)) if epoch is not None else "?")
         .replace("{value}", f"{primary_value:.4f}")
@@ -171,6 +283,7 @@ def narrate_diverged(
     last_epoch: float | None,
     run_id: str,
     locale: str = "en",
+    counter: Counter | None = None,
 ) -> str:
     """Narrate a run that ended with a NaN/infinite metric.
 
@@ -180,8 +293,7 @@ def narrate_diverged(
     earned before it blew up.
     """
     templates = _load_diverged(locale)
-    seed = int(hashlib.md5(run_id.encode(), usedforsecurity=False).hexdigest()[:8], 16)
-    template = random.Random(seed).choice(templates)
+    template = counter_words(_pick(templates, run_id), counter, locale)
     last_at = str(int(last_epoch)) if last_epoch is not None else "?"
     story = (
         template.replace("{epoch}", str(int(epoch)) if epoch is not None else "?")
@@ -189,7 +301,7 @@ def narrate_diverged(
         .replace("{value}", "?" if last_value is None else f"{last_value:.4f}")
         .replace("{metric}", _display_metric(metric, locale))
     )
-    return f"{story} {message('next_diverged', locale, last_epoch=last_at)}"
+    return f"{story} {message('next_diverged', locale, counter, last_epoch=last_at)}"
 
 
 # Most task template sets name their metric in the prose — "Accuracy
@@ -260,12 +372,22 @@ def narrate(
     phase: Phase,
     epoch: float | None,
     primary_value: float,
-    delta: float,
+    delta: float | None,
     run_id: str,
     locale: str = "en",
     metric: str | None = None,
+    counter: Counter | None = None,
 ) -> str:
     """Select and fill a narrative template deterministically for this run + epoch.
+
+    ``delta`` is the change since the reading before, or None when there was
+    none: a run's first reading, or the first of a metric the story moved to.
+    Such a reading is told by a variant that states no change. It was given a
+    change of 0, and 75 first frames of the corpus said "a change of 0 points
+    since the previous reading" of a reading that never was.
+
+    ``counter`` is what the number in ``epoch`` counts — an epoch, a step, an
+    iteration, a boosting round — and the sentence names it by that.
 
     ``metric`` names the series the numbers came from. The regression and gaze
     templates used to write "MAE" into the sentence regardless, so an XGBoost
@@ -274,12 +396,16 @@ def narrate(
     """
     prose_task = task if _prose_fits_metric(task, metric) else TaskType.CUSTOM
     templates = _load_templates(prose_task, phase, locale)
+    picked = _pick(templates, run_id)
+    if delta is None:
+        # Picked again only if the variant states a change, so a first reading
+        # already told without one keeps its sentence. Every phase's set has
+        # such a variant (test_first_reading.py); the fallback is never taken.
+        if states_a_change(picked):
+            picked = _pick([t for t in templates if not states_a_change(t)] or templates, run_id)
+        delta = 0.0
 
-    # Deterministic variant selection: same run_id always gives same story.
-    # MD5 here is a non-cryptographic seed only (not a security primitive).
-    seed = int(hashlib.md5(run_id.encode(), usedforsecurity=False).hexdigest()[:8], 16)
-    rng = random.Random(seed)
-    template = rng.choice(templates)
+    template = counter_words(picked, counter, locale)
 
     epoch_str = str(int(epoch)) if epoch is not None else "?"
     delta_str = f"{delta:+.4f}" if delta != 0 else "0"

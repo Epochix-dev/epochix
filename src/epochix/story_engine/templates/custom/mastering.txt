@@ -1,3 +1,3 @@
-Mastering phase: {metric} {value} at epoch {epoch}.
-Epoch {epoch}: {metric} {value}, a change of {delta} since the previous reading. The run is far along.
-Far along: {metric} {value} at epoch {epoch}.
+Mastering phase: {metric} {value} at {counter} {epoch}.
+{Counter} {epoch}: {metric} {value}, a change of {delta} since the previous reading. The run is far along.
+Far along: {metric} {value} at {counter} {epoch}.

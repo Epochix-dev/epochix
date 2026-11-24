@@ -148,23 +148,32 @@ class TestMarkdownExport:
 
 
 class TestHtmlExport:
+    @pytest.mark.packaged_assets
     def test_html_not_available_without_build(self, server: tuple[TestClient, RunStore]) -> None:
         """HTML export requires the Vite bundle; returns 501 when not built."""
+        from tests._packaged import REQUIRED
+
         client, store = server
         _seed(store)
         r = client.get("/api/export/export-run/html")
-        # 200 if bundle is built, 501 if not
-        assert r.status_code in (200, 501)
+        if REQUIRED:
+            # Where the bundle is vendored, a 501 is the failure this used to
+            # accept.
+            assert r.status_code == 200, r.text
+            assert 'id="run-data"' in r.text
+            assert "export-run" in r.text
+        else:
+            assert r.status_code in (200, 501)
 
     def test_html_404_for_missing_run(self, server: tuple[TestClient, RunStore]) -> None:
         client, _ = server
         assert client.get("/api/export/ghost/html").status_code == 404
 
+    @pytest.mark.packaged_assets
     def test_html_escapes_script_breakout_in_run_data(self) -> None:
         """A malicious run name must not break out of the inlined <script>."""
-        import pytest
-
         from epochix.exporters.html_export import build_html
+        from tests._packaged import unavailable
 
         store = RunStore(":memory:")
         run = Run(
@@ -180,7 +189,7 @@ class TestHtmlExport:
         try:
             html = build_html("xss-run", store)
         except FileNotFoundError:
-            pytest.skip("frontend bundle not built")
+            unavailable("the frontend bundle")
 
         # The raw breakout sequence must not appear inside the run-data block.
         start = html.index('id="run-data">') + len('id="run-data">')

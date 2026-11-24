@@ -54,6 +54,13 @@ def test_grading_tables_are_current() -> None:
     )
 
 
+def test_frontend_direction_is_current() -> None:
+    gen = _generator()
+    assert _committed(gen.FRONTEND_DIRECTION) == gen.render_frontend_direction(), (
+        "frontend/src/direction.generated.js is stale: run `make gen-ts-tables`"
+    )
+
+
 def test_grading_golden_is_current() -> None:
     gen = _generator()
     assert _committed(gen.GRADING_GOLDEN) == gen.render_grading_golden(), (
@@ -113,7 +120,9 @@ def test_parsers_golden_reaches_every_port() -> None:
         "fastai",
         "huggingface",
         "keras_tensorflow",
+        "progress_meter",
         "pytorch_lightning",
+        "step_bar",
         "ultralytics_yolo",
         "universal",
     }
@@ -127,3 +136,49 @@ def test_every_test_that_feeds_a_parser_is_recorded() -> None:
     recorded = {node.split("::")[0] for node in json.loads(_committed(gen.PARSERS_GOLDEN))}
     missing = sorted(set(gen._recorded_test_files()) - recorded)
     assert missing == [], f"not in parsers.golden.json — run: make gen-ts-tables: {missing}"
+
+
+def test_stories_golden_is_current() -> None:
+    """Every corpus log, told by the whole pipeline in every language and variant.
+
+    The extension's engine replays the corpus against it (storiesGolden.test.ts)
+    and must tell it word for word. Corpus parity never compared sentences, and
+    the engines told 4,194 of 4,206 frames differently under one run id.
+    """
+    gen = _generator()
+    assert _committed(gen.STORIES_GOLDEN) == gen.render_stories_golden(), (
+        "stories.golden.json is stale: run `make gen-ts-tables`"
+    )
+
+
+def test_stories_golden_reaches_every_variant() -> None:
+    """The run ids between them pick every variant of every template."""
+    from epochix.story_engine import narrator
+
+    gen = _generator()
+    run_ids = json.loads(_committed(gen.STORIES_GOLDEN))["run_ids"]
+    assert run_ids == gen.stories_run_ids()
+    templates = REPO / "src" / "epochix" / "story_engine" / "templates"
+    for path in templates.rglob("*.txt"):
+        variants = [line for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
+        picked = {narrator._pick(variants, run_id) for run_id in run_ids}
+        assert picked == set(variants), f"{path.relative_to(REPO)}: not every variant is told"
+
+
+def test_stories_golden_tells_the_whole_corpus() -> None:
+    gen = _generator()
+    golden = json.loads(_committed(gen.STORIES_GOLDEN))
+    truth = json.loads((REPO / "tests" / "fixtures" / "corpus_truth.json").read_text("utf-8"))
+    assert sorted(golden["logs"]) == sorted(truth)
+    frames = [f for told in golden["logs"].values() for t in told.values() for f in t["frames"]]
+    kinds = {w[0] for told in golden["logs"].values() for t in told.values() for w in t["warnings"]}
+    # Guards: an emptied golden would pass the extension's replay.
+    assert len(frames) > 3000
+    assert {"lr_drop", "overfit", "overfit_cleared", "plateau", "plateau_cleared"} <= kinds
+
+
+def test_format_golden_is_current() -> None:
+    gen = _generator()
+    assert _committed(gen.FORMAT_GOLDEN) == gen.render_format_golden(), (
+        "format.golden.json is stale: run `make gen-ts-tables`"
+    )

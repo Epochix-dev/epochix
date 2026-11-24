@@ -28,7 +28,7 @@ import logging
 import sys
 from pathlib import Path
 from statistics import fmean, stdev
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, Any, cast
 
 import typer
 import uvicorn
@@ -148,7 +148,13 @@ def cmd_run(  # noqa: C901
         help="Extra ssh -o option(s); repeatable, e.g. --ssh-opt ProxyJump=bastion.",
         show_default=False,
     ),
-    port: int = typer.Option(7860, "--port", "-p", help="Server port."),
+    port: int | None = typer.Option(
+        None,
+        "--port",
+        "-p",
+        help="Server port. [default: EPOCHIX_PORT, or 7860]",
+        show_default=False,
+    ),
     task: str | None = typer.Option(
         None, "--task", "-t", help="Force task type (e.g. biometric).", show_default=False
     ),
@@ -244,6 +250,7 @@ def cmd_run(  # noqa: C901
         raise typer.Exit(1)
 
     run_id = _new_run_id()
+    _, port = _bind_address(settings, None, port)
 
     # Start server + pipeline
     asyncio.run(
@@ -319,6 +326,7 @@ async def _run_batch_or_live(
     )
 
     # Start the uvicorn server in a background task
+    _warn_if_exposed(settings, settings.host, port)
     _require_free_port(settings.host, port)
     config = uvicorn.Config(
         _app,
@@ -411,20 +419,94 @@ async def _run_batch_or_live(
         )
 
 
+def _bind_as_the_server_will(host: str, port: int) -> None:
+    """Bind *host*:*port* the way uvicorn's server will, then let go.
+
+    uvicorn listens through `asyncio.create_server`, so this follows its rules:
+    every address *host* resolves to, `SO_REUSEADDR` on POSIX (not on Windows,
+    where it would let two servers share the port), IPv6 sockets IPv6-only.
+    Raises the OSError the server would meet.
+
+    The probe used to bind one IPv4 socket without `SO_REUSEADDR` everywhere.
+    On Linux and macOS that is refused for a minute after a server on the port
+    stops, while its old connections sit in TIME_WAIT — and the server itself
+    would have started. Restarting `epochix serve` was told the port was in
+    use. `--host ::1`, an address IPv4 cannot hold, was told the same.
+    """
+    import os
+    import socket
+
+    reuse = os.name == "posix" and sys.platform != "cygwin"
+    infos = socket.getaddrinfo(
+        host or None, port, socket.AF_UNSPEC, socket.SOCK_STREAM, 0, socket.AI_PASSIVE
+    )
+    with contextlib.ExitStack() as held:
+        for family, kind, proto, _canonical, address in dict.fromkeys(infos):
+            probe = held.enter_context(socket.socket(family, kind, proto))
+            if reuse:
+                probe.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            if family == socket.AF_INET6 and hasattr(socket, "IPPROTO_IPV6"):
+                probe.setsockopt(socket.IPPROTO_IPV6, socket.IPV6_V6ONLY, 1)
+            probe.bind(address)
+
+
+def _port_taken(exc: OSError) -> bool:
+    """Whether a bind failed because something else holds the port."""
+    import errno
+
+    # Windows reports its own codes: WSAEADDRINUSE, and WSAEACCES for a port
+    # another process holds exclusively.
+    taken = {errno.EADDRINUSE, getattr(errno, "WSAEADDRINUSE", errno.EADDRINUSE)}
+    if sys.platform == "win32":
+        taken.add(getattr(errno, "WSAEACCES", errno.EACCES))
+    return exc.errno in taken or getattr(exc, "winerror", None) in taken
+
+
+# `serve` takes --host; the commands that start a server of their own read
+# the setting.
+_HOST_HINT = "  Use an address this machine has, such as 127.0.0.1 (--host, or EPOCHIX_HOST)."
+
+
+def _bind_address(settings: Settings, host: str | None, port: int | None) -> tuple[str, int]:
+    """Where a server listens: the flag, else EPOCHIX_HOST / EPOCHIX_PORT, else
+    127.0.0.1:7860. `serve` ignored both settings and nothing read
+    EPOCHIX_PORT at all, while the docs gave them as the server's address."""
+    return (host or settings.host, settings.port if port is None else port)
+
+
+def _warn_if_exposed(settings: Settings, host: str, port: int) -> None:
+    """Say so when a server is bound beyond this machine with no token.
+
+    The server treats loopback clients as trusted for writes; bound publicly
+    without a token, anyone who can reach it can create or delete runs. Only
+    `serve` used to say so: `epochix <log>` and `--live` bound EPOCHIX_HOST in
+    silence. On stderr, so `--json` keeps stdout to its one document.
+    """
+    from epochix.server.auth import public_bind_warning
+
+    message = public_bind_warning(settings, host, port)
+    if message:
+        typer.secho(f"⚠  {message}", fg=typer.colors.YELLOW, err=True)
+
+
 def _require_free_port(host: str, port: int) -> None:
     """Fail with a usable message instead of a raw OSError traceback.
 
     The server is started as a background asyncio task, so a bind failure
     surfaced as an unhandled OSError stack trace with no hint about what to do.
+    Only a port something holds is called "in use": every bind failure was,
+    including an address this machine does not have.
     """
     import socket
 
-    # No SO_REUSEADDR: we want the bind to fail exactly when something else is
-    # already listening, on Windows as well as POSIX.
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as probe:
-        try:
-            probe.bind((host, port))
-        except OSError:
+    try:
+        _bind_as_the_server_will(host, port)
+    except socket.gaierror as exc:
+        typer.secho(f"Cannot listen on {host}: {exc.strerror}.", fg=typer.colors.RED, err=True)
+        typer.echo(_HOST_HINT, err=True)
+        raise typer.Exit(1) from None
+    except OSError as exc:
+        if _port_taken(exc):
             typer.secho(
                 f"Port {port} on {host} is already in use.",
                 fg=typer.colors.RED,
@@ -435,7 +517,14 @@ def _require_free_port(host: str, port: int) -> None:
                 f"Try a different port:  --port {port + 1}",
                 err=True,
             )
-            raise typer.Exit(1) from None
+        else:
+            typer.secho(
+                f"Cannot listen on {host} port {port}: {exc.strerror or exc}.",
+                fg=typer.colors.RED,
+                err=True,
+            )
+            typer.echo(_HOST_HINT, err=True)
+        raise typer.Exit(1) from None
 
 
 def _cli_export(
@@ -451,6 +540,21 @@ def _cli_export(
     # printed after it, so `run --json --export md` emitted invalid JSON.
     quiet: bool = False,
 ) -> None:
+    from epochix.plugins.exporter_registry import (
+        BUILTIN_FORMATS,
+        ExporterFailed,
+        available_formats,
+        export_with_plugin,
+        plugin_exporter,
+    )
+
+    # Before "Exporting … →" and before creating its folder: neither is true
+    # of a format nothing can write.
+    if fmt not in BUILTIN_FORMATS and plugin_exporter(fmt) is None:
+        formats = ", ".join(available_formats())
+        typer.echo(f"  Unknown export format: {fmt!r}. Use one of: {formats}.", err=True)
+        raise typer.Exit(1)
+
     outfile = outfile or Path(f"{run_id}.{fmt}")
 
     def say(message: str) -> None:
@@ -529,8 +633,14 @@ def _cli_export(
             typer.echo(f"  {exc}", err=True)
             raise typer.Exit(1) from None
     else:
-        typer.echo(f"  Unknown export format: {fmt!r}. Use html, pdf, md, or json.", err=True)
-        raise typer.Exit(1)
+        # A format an installed plugin adds (`epochix.exporters`), checked to
+        # exist above. Documented for the life of the project and never
+        # loaded: this branch said "Unknown export format" for every one.
+        try:
+            export_with_plugin(fmt, run_id, store, outfile)
+        except (ExporterFailed, ValueError) as exc:
+            typer.echo(f"  {exc}", err=True)
+            raise typer.Exit(1) from None
 
 
 # ------------------------------------------------------------------
@@ -540,8 +650,19 @@ def _cli_export(
 
 @app.command("serve")
 def cmd_serve(
-    port: int = typer.Option(7860, "--port", "-p", help="Port to listen on."),
-    host: str = typer.Option("127.0.0.1", "--host", help="Host to bind to."),
+    port: int | None = typer.Option(
+        None,
+        "--port",
+        "-p",
+        help="Port to listen on. [default: EPOCHIX_PORT, or 7860]",
+        show_default=False,
+    ),
+    host: str | None = typer.Option(
+        None,
+        "--host",
+        help="Host to bind to. [default: EPOCHIX_HOST, or 127.0.0.1]",
+        show_default=False,
+    ),
     log_level: str = typer.Option("INFO", "--log-level"),
 ) -> None:
     """Start the epochix server without processing a run."""
@@ -550,19 +671,8 @@ def cmd_serve(
 
     settings = get_settings()
     _app = create_app(settings=settings)
-
-    # Loud warning when binding non-loopback with no auth token. The server
-    # treats loopback clients as trusted for writes; binding publicly without
-    # a token would otherwise let anyone reach the same machine create or
-    # delete runs.
-    if host not in {"127.0.0.1", "::1", "localhost"} and not settings.auth_token:
-        typer.secho(
-            f"⚠  Binding {host}:{port} without EPOCHIX_AUTH_TOKEN — the "
-            "server is exposed on the network with no authentication. "
-            "Set EPOCHIX_AUTH_TOKEN before publishing this endpoint.",
-            fg=typer.colors.YELLOW,
-            err=True,
-        )
+    host, port = _bind_address(settings, host, port)
+    _warn_if_exposed(settings, host, port)
 
     _require_free_port(host, port)
     typer.echo(f"Starting epochix server on http://{host}:{port}")
@@ -596,7 +706,13 @@ def cmd_list(
 @app.command("open")
 def cmd_open(
     run_id: str = typer.Argument(..., help="Run ID to open."),
-    port: int = typer.Option(7860, "--port", "-p"),
+    port: int | None = typer.Option(
+        None,
+        "--port",
+        "-p",
+        help="Server port. [default: EPOCHIX_PORT, or 7860]",
+        show_default=False,
+    ),
     log_level: str = typer.Option("WARNING", "--log-level"),
 ) -> None:
     """Open a saved run in the browser."""
@@ -609,16 +725,31 @@ def cmd_open(
         raise typer.Exit(1)
     from epochix.server.app import create_app
 
+    # The settings, as every other command that starts a server reads them.
+    # `open` alone bound 127.0.0.1:7860 whatever EPOCHIX_HOST and EPOCHIX_PORT
+    # said, so with EPOCHIX_PORT=9000 it served — and opened the browser on —
+    # a port the user had moved epochix off.
+    host, port = _bind_address(settings, None, port)
+    _warn_if_exposed(settings, host, port)
+    # Before the browser: with the port taken, the page opened was whatever
+    # already listened there — another epochix on another database answering
+    # "run not found", or not epochix at all — while this server failed to bind.
+    _require_free_port(host, port)
     _app = create_app(settings=settings)
     typer.echo(console_safe(f"Opening run {run_id} …"))
-    open_in_browser(f"http://127.0.0.1:{port}/v/{run_id}")
-    uvicorn.run(_app, host="127.0.0.1", port=port, log_level="warning")
+    _open_browser(port, run_id)
+    uvicorn.run(_app, host=host, port=port, log_level="warning")
 
 
 @app.command("export")
 def cmd_export(
     run_id: str = typer.Argument(..., help="Run ID to export."),
-    fmt: str = typer.Option("html", "--format", "-f", help="Format: html|pdf|md|json|gif."),
+    fmt: str = typer.Option(
+        "html",
+        "--format",
+        "-f",
+        help="Format: html|pdf|md|json|gif, or one an installed exporter plugin adds.",
+    ),
     metric: str | None = typer.Option(
         None,
         "--metric",
@@ -678,7 +809,14 @@ def cmd_race(
         typer.echo(f"  Cannot race these runs: {exc}", err=True)
         raise typer.Exit(1) from None
 
-    output.write_bytes(data)
+    # `-o slides/race.gif` should work without a prior mkdir, as export's does.
+    try:
+        if output.parent != Path():
+            output.parent.mkdir(parents=True, exist_ok=True)
+        output.write_bytes(data)
+    except OSError as exc:
+        typer.echo(f"  Cannot write {output}: {exc.strerror}", err=True)
+        raise typer.Exit(1) from None
     typer.echo(f"  Race GIF -> {output}")
 
 
@@ -752,7 +890,9 @@ def cmd_prune(
 
     settings = get_settings()
     store = _open_store(settings)
-    runs = store.list_runs(limit=10000)
+    # Every run: list_runs is newest first, so a cap left out exactly the
+    # oldest — the ones this command exists to delete.
+    runs = store.list_runs(limit=None)
     to_delete = [r for r in runs if r.started_at.replace(tzinfo=timezone.utc) < cutoff]
 
     if not to_delete:
@@ -862,9 +1002,10 @@ def cmd_check(
         typer.echo(f"No such file: {log_file}", err=True)
         raise typer.Exit(1)
 
+    from epochix.models import Counter
     from epochix.normalizer import normalize
     from epochix.parsers.architecture_parser import parse_architecture
-    from epochix.parsers.base import ParserContext
+    from epochix.parsers.base import ParserContext, counter_after
     from epochix.parsers.registry import SNIFF_SAMPLE_LINES, detect_parser
     from epochix.pipeline import _clean_line
     from epochix.story_engine import story_metric
@@ -873,6 +1014,7 @@ def cmd_check(
         configured_path,
         load_grade_config,
     )
+    from epochix.story_engine.messages import counter_words
     from epochix.story_engine.task_classifier import classify_task
 
     raw_lines = log_file.read_text(encoding="utf-8", errors="replace").splitlines()
@@ -887,10 +1029,15 @@ def cmd_check(
     found: dict[str, list[float]] = {}
     seen_keys: set[str] = set()
     epochs: set[float] = set()
+    # What the run counts by: 201 iterations were reported as "epochs seen 201".
+    counter: Counter = "epoch"
 
     for i, line in enumerate(lines):
         ctx.seq = i
-        for raw in parser.parse_line(line, ctx):
+        slot = ctx.current_epoch
+        raw_metrics = parser.parse_line(line, ctx)
+        counter = counter_after(ctx, slot, counter)
+        for raw in raw_metrics:
             try:
                 event = normalize(raw, run_id="check")
             except ValueError:
@@ -934,7 +1081,8 @@ def cmd_check(
     typer.echo(f"  lines         {len(lines)}")
     typer.echo(f"  parser        {parser.name}")
     typer.echo(f"  task          {task.value}")
-    typer.echo(f"  epochs seen   {len(epochs) or '-'}")
+    seen = f"{counter_words('{counters}', counter)} seen"
+    typer.echo(f"  {seen:<13} {len(epochs) or '-'}")
     typer.echo("")
 
     if found:
@@ -1238,35 +1386,89 @@ def cmd_config(
     Config is read from environment variables (EPOCHIX_*) or a .env file.
     Use ``set`` to write to .env in the current directory.
     """
-    settings = get_settings()
     if action == "show":
-        for field, val in settings.model_dump().items():
-            typer.echo(f"  {field} = {val!r}")
+        for field, val in get_settings().model_dump().items():
+            # `config show` is what gets pasted into a bug report.
+            shown = "(set, hidden)" if field in _SECRET_SETTINGS and val else repr(val)
+            typer.echo(f"  {field} = {shown}")
     elif action == "set":
         if key is None or value is None:
             typer.echo("Usage: epochix config set <key> <value>", err=True)
             raise typer.Exit(1)
-        # Accept both "port" and "EPOCHIX_PORT" — blindly prefixing turned the
-        # latter into EPOCHIX_EPOCHIX_PORT, a key nothing ever reads.
-        bare = key.upper().removeprefix("EPOCHIX_")
-        env_key = f"EPOCHIX_{bare}"
-        env_path = Path(".env")
-        lines = env_path.read_text(encoding="utf-8").splitlines() if env_path.exists() else []
-        prefix = f"{env_key}="
-        new_line = f"{env_key}={value}"
-        updated = False
-        for i, line in enumerate(lines):
-            if line.startswith(prefix):
-                lines[i] = new_line
-                updated = True
-                break
-        if not updated:
-            lines.append(new_line)
-        env_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
-        typer.echo(f"  Set {env_key}={value}  (in {env_path})")
+        _config_set(key, value)
     else:
         typer.echo(f"Unknown action: {action!r}. Use 'show' or 'set'.", err=True)
         raise typer.Exit(1)
+
+
+_SECRET_SETTINGS = frozenset({"auth_token", "llm_key"})
+
+
+def _config_set(key: str, value: str) -> None:
+    """Write one setting to ./.env, or refuse and write nothing.
+
+    Every value written here is read back by every later command run from this
+    folder, so it is checked first: an unknown key was written and read by
+    nothing, and a value that does not validate (``port abc``) made every
+    command there fail on start.
+    """
+    from pydantic import ValidationError
+
+    # Accept both "port" and "EPOCHIX_PORT" — blindly prefixing turned the
+    # latter into EPOCHIX_EPOCHIX_PORT, a key nothing ever reads.
+    field = key.lower().removeprefix("epochix_")
+    if field not in Settings.model_fields:
+        typer.echo(
+            f"  Unknown setting {key!r}. Settings: {', '.join(Settings.model_fields)}.",
+            err=True,
+        )
+        raise typer.Exit(1)
+    if "\n" in value or "\r" in value:
+        typer.echo("  A setting's value must be one line.", err=True)
+        raise typer.Exit(1)
+    try:
+        # Without the .env being replaced, so a bad line there can be fixed.
+        candidate: dict[str, Any] = {"_env_file": None, field: value}
+        Settings(**candidate)
+    except ValidationError as exc:
+        typer.echo(f"  Not set: {_settings_problem(exc)}", err=True)
+        raise typer.Exit(1) from None
+
+    env_key = f"EPOCHIX_{field.upper()}"
+    env_path = Path(".env")
+    lines = env_path.read_text(encoding="utf-8").splitlines() if env_path.exists() else []
+    new_line = f"{env_key}={value}"
+
+    def names(line: str) -> bool:
+        # The reader matches names in any case, with `export ` and spaces
+        # around `=`; a line written any of those ways is this setting's.
+        name = line.split("=", 1)[0].strip()
+        return "=" in line and name.removeprefix("export ").strip().upper() == env_key
+
+    at = next((i for i, line in enumerate(lines) if names(line)), None)
+    if at is None:
+        lines.append(new_line)
+    else:
+        lines[at] = new_line
+        # A second line for the same name would decide the value instead.
+        lines = [ln for i, ln in enumerate(lines) if i <= at or not names(ln)]
+    env_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    shown = "(hidden)" if field in _SECRET_SETTINGS else value
+    typer.echo(f"  Set {env_key}={shown}  (in {env_path})")
+
+
+def _settings_problem(exc: Exception) -> str:
+    """One line per invalid setting, naming it as the user would write it."""
+    from pydantic import ValidationError
+
+    if not isinstance(exc, ValidationError):
+        return str(exc)
+    out = []
+    for err in exc.errors():
+        loc = ".".join(str(p) for p in err["loc"])
+        msg = str(err["msg"]).removeprefix("Value error, ")
+        out.append(f"EPOCHIX_{loc.upper()}: {msg}" if loc else msg)
+    return "; ".join(out)
 
 
 # ------------------------------------------------------------------
@@ -1457,7 +1659,22 @@ def main_entry() -> None:
     if first_positional not in _SUBCOMMANDS:
         sys.argv = [sys.argv[0], "run", *argv]
 
-    app()
+    from pydantic import ValidationError
+
+    try:
+        app()
+    except ValidationError as exc:
+        # A setting that does not validate — in the environment or in this
+        # folder's .env — stopped every command with a page of traceback.
+        if exc.title != Settings.__name__:
+            raise
+        typer.secho(f"epochix: {_settings_problem(exc)}", fg=typer.colors.RED, err=True)
+        typer.echo(
+            "  Settings come from EPOCHIX_* environment variables and ./.env; "
+            "see `epochix config set --help`.",
+            err=True,
+        )
+        raise SystemExit(1) from None
 
 
 if __name__ == "__main__":

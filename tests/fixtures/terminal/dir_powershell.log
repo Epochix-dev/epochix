@@ -1,0 +1,16 @@
+
+
+    Directory: C:\tmp\epochix_demos\terminal\project
+
+
+Mode                 LastWriteTime         Length Name                                                                 
+----                 -------------         ------ ----                                                                 
+d-----        11/18/2026   9:20 AM                data                                                                 
+-a----        11/18/2026   9:20 AM            421 app.py                                                               
+-a----        11/18/2026   9:20 AM             74 package.json                                                         
+-a----        11/18/2026   9:20 AM             33 README.md                                                            
+-a----        11/18/2026   9:20 AM             22 requirements.txt                                                     
+-a----        11/18/2026   9:20 AM            523 test_model.py                                                        
+-a----        11/18/2026   9:20 AM            476 train.py                                                             
+
+

@@ -208,6 +208,32 @@ suite("Standalone engine — runs that are not progressing", () => {
     assert.ok(/peak|best|slipped/i.test(r.last.narrative), r.last.narrative);
   });
 
+  // Python: tests/integration/test_past_best.py. One reading more than 1% off
+  // the best was told "slipped … use early stopping": a plateau's wobble.
+  test("past its best only after three readings in a row off it", () => {
+    const told = (accs: number[]): string[] => {
+      const engine = new StandaloneEngine();
+      const lines = accs.map((a, i) => `Epoch ${i + 1}/${accs.length} - loss: 0.5000 - val_accuracy: ${a.toFixed(4)}\n`);
+      const frames = [...engine.feed(lines.join("")), ...engine.flush()];
+      return frames.map((f) => f.narrative);
+    };
+    const past = (s: string): boolean => /slipped|Past its best|below its best/.test(s);
+    const off = (s: string): boolean => s.includes("off the best");
+
+    const dip = told([0.6, 0.7, 0.8, 0.78, 0.81]);
+    assert.ok(off(dip[3]) && !past(dip[3]) && !dip[3].includes("early stopping"), dip[3]);
+    assert.ok(!off(dip[4]) && !past(dip[4]), dip[4]);
+
+    const slip = told([0.6, 0.7, 0.8, 0.78, 0.77, 0.76, 0.75]);
+    assert.deepStrictEqual(slip.slice(3).map(off), [true, true, false, false]);
+    assert.deepStrictEqual(slip.slice(3).map(past), [false, false, true, true]);
+    assert.ok(slip[6].includes("early stopping") && slip[6].includes("0.8000"), slip[6]);
+
+    const reset = told([0.6, 0.8, 0.78, 0.77, 0.82, 0.8, 0.79]);
+    assert.ok(!reset.some(past), reset.join("\n"));
+    assert.deepStrictEqual(reset.map(off), [false, false, true, true, false, true, true]);
+  });
+
   test("a flat run is reported as stalled, with advice", () => {
     const r = drive(range(8, (e) =>
       `Epoch ${e}/8 train_loss=2.3010 val_accuracy=${(0.101 + 0.0005 * e).toFixed(4)}`));
@@ -291,19 +317,57 @@ suite("Standalone engine — warnings and milestones do not lie", () => {
     assert.ok(r.engine.warnings().some((w) => w.kind === "overfit"));
   });
 
-  test("a falling grade is never announced as an improvement", () => {
-    const r = drive(range(25, (e) =>
-      `Epoch ${e}/25 - loss: ${Math.max(0.05, 2.0 * 0.86 ** e).toFixed(4)} - val_accuracy: ${(e <= 8 ? 0.6 + 0.045 * e : 0.96 - 0.03 * (e - 8)).toFixed(4)}`));
-    const grades = r.frames.map((f) => f.grade);
-    for (const m of r.engine.milestones().filter((x) => x.kind === "grade_transition")) {
-      const to = m.message.split(" to ")[1];
-      const idx = grades.lastIndexOf(to as StoryFrameMsg["grade"]);
-      assert.ok(idx > 0, `milestone for a grade no frame had: ${m.message}`);
-    }
-    assert.ok(
-      r.engine.milestones().some((m) => /dropped/.test(m.message)),
-      `a run that fell from A to worse never said so: ${JSON.stringify(r.engine.milestones())}`,
-    );
+  // Python's tests/unit/test_milestone_truthfulness.py, through this engine.
+  test("a loss crosses no percentage", () => {
+    const r = drive(kerasLoss([1.2, 0.9, 0.7, 0.55, 0.5, 0.48]));
+    r.engine.finish();
+    const crossed = r.engine.milestones().filter((m) => m.kind.startsWith("first_above"));
+    assert.deepStrictEqual(crossed, [], `${r.last.primaryMetric} announced thresholds`);
+  });
+
+  test("an accuracy logged as a percentage crosses no threshold early", () => {
+    const r = drive([30, 55, 70, 80, 86, 91].map((a, i) =>
+      `Epoch ${i + 1}/6 - loss: ${(1.2 - i * 0.1).toFixed(4)} - val_accuracy: ${a.toFixed(1)}`));
+    assert.strictEqual(r.last.primaryMetric, "val_accuracy");
+    assert.ok(!r.engine.milestones().some((m) => m.kind.startsWith("first_above")));
+  });
+
+  test("an accuracy crosses each threshold at the epoch it did", () => {
+    const r = drive([0.3, 0.55, 0.7, 0.8, 0.86, 0.91].map((a, i) =>
+      `Epoch ${i + 1}/6 - loss: ${(1.2 - i * 0.1).toFixed(4)} - val_accuracy: ${a.toFixed(4)}`));
+    const crossed = Object.fromEntries(r.engine.milestones()
+      .filter((m) => m.kind.startsWith("first_above")).map((m) => [m.kind, m.epoch]));
+    assert.deepStrictEqual(crossed, {
+      first_above_25: 1, first_above_50: 2, first_above_75: 4, first_above_90: 6,
+    });
+  });
+
+  test("the biggest jump is the largest improvement, at the epoch it happened", () => {
+    // The largest MOVE is the 0.50 -> 1.40 blow-up at epoch 4; the largest
+    // improvement is 1.20 -> 0.80 at epoch 2.
+    const r = drive(kerasLoss([1.2, 0.8, 0.5, 1.4, 1.3, 1.25]));
+    assert.strictEqual(r.last.primaryMetric, "val_loss");
+    r.engine.finish();
+    const jumps = r.engine.milestones().filter((m) => m.kind === "biggest_jump");
+    assert.strictEqual(jumps.length, 1, JSON.stringify(r.engine.milestones()));
+    assert.ok(Math.abs((jumps[0].value ?? 0) - 0.4) < 1e-9, String(jumps[0].value));
+    assert.strictEqual(jumps[0].epoch, 2);
+  });
+
+  test("a run that never improved claims no biggest improvement", () => {
+    const r = drive(kerasLoss([0.5, 0.6, 0.75, 0.9, 1.1, 1.3]));
+    r.engine.finish();
+    const kinds = r.engine.milestones().map((m) => m.kind);
+    assert.ok(!kinds.includes("biggest_jump"), JSON.stringify(kinds));
+    assert.strictEqual(kinds.filter((k) => k === "training_complete").length, 1);
+  });
+
+  test("finishing twice ends the run once", () => {
+    const r = drive(kerasLoss([1.2, 0.8, 0.5]));
+    r.engine.finish();
+    r.engine.finish();
+    assert.strictEqual(
+      r.engine.milestones().filter((m) => m.kind === "training_complete").length, 1);
   });
 
   test("a healthy run trips no warning at all", () => {

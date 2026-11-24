@@ -1,2 +1,2 @@
-Awakening: {metric} {value}° at epoch {epoch}.
-Epoch {epoch}: {metric} {value}°, in the Awakening phase.
+Awakening: {metric} {value}° at {counter} {epoch}.
+{Counter} {epoch}: {metric} {value}°, in the Awakening phase.

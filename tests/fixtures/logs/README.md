@@ -18,6 +18,7 @@ paths they use); never edit a capture by hand.
 | `catboost_real_no_eval_set.log` | CatBoost classifier fitted with no eval set. | `boosting_real_source.py` (`cb_no_eval_set`) |
 | `catboost_real_regressor.log` | CatBoost regressor stopped by its overfitting detector. | `boosting_real_source.py` (`cb_reg`) |
 | `catboost_real_two_eval_sets.log` | CatBoost regressor with two eval sets. | `boosting_real_source.py` (`cb_two_eval_sets`) |
+| `diffusers_lora_real.log` | diffusers 0.42's `train_dreambooth_lora_sdxl.py`: an SDXL LoRA, 120 steps on a GPU, a checkpoint every 40. One tqdm bar for the whole run, redrawn in place — five lines of the file hold every step. | `diffusers_lora_real_source.py` |
 | `fastai_real.log` | fastai 2.8's results table from a tabular learner, 4 epochs. | `fastai_real_source.py` |
 | `gridsearch_real.log` | scikit-learn 1.9's `GridSearchCV` at `verbose=3`, an SVC on the digits. | `gridsearch_real_source.py` (`plain`) |
 | `gridsearch_real_multimetric.log` | The same with two `scoring` names and `return_train_score`: `accuracy: (train=…, test=…) f1_macro: (…)`. | `gridsearch_real_source.py` (`multi`) |
@@ -27,8 +28,11 @@ paths they use); never edit a capture by hand.
 | `keras2_real_verbose1.log` | A small MLP with Keras 2 (TensorFlow 2.15), `verbose=1`, redirected to a file. | `keras2_real_source.py` (`1`) |
 | `keras2_real_verbose2.log` | The same, `verbose=2`. | `keras2_real_source.py` (`2`) |
 | `keras_real_verbose2.log` | The demo CNN with Keras 3, `verbose=2`. | `../../../demo/keras_image_classifier_source.py` (`steady 2`) |
+| `kohya_lora_real.log` | kohya-ss sd-scripts v0.9.1's `sdxl_train_network.py`: an SDXL LoRA on the U-Net, 120 steps (ten epochs of twelve) on a GPU, a checkpoint every 40. One tqdm bar described `steps`, carrying only `avr_loss`, the loss averaged over the last epoch's batches; `epoch N/10` printed between epochs ends its line. | `kohya_lora_real_source.py` |
 | `lightgbm_real_classifier.log` | LightGBM classifier, two eval sets. | `boosting_real_source.py` (`lgb_clf`) |
 | `lightgbm_real_early_stopping.log` | LightGBM's native API with early stopping. | `boosting_real_source.py` (`lgb_native`) |
+| `nanogpt_real.log` | nanoGPT's `train.py` on its character-level Shakespeare config, the README's CPU settings, 2000 iterations: the config file echoed first, then `step N: train loss …, val loss …` and `iter N: loss …, time …ms, mfu …%`. | `nanogpt_real_source.py` |
+| `pytorch_imagenet_real.log` | The PyTorch ImageNet example (`pytorch/examples`, `imagenet/main.py`): ResNet-18 from scratch on scikit-learn's digits written out as an image folder, 8 epochs on CPU. Tab-separated meters, `Name value (average)`. | `pytorch_imagenet_real_source.py` |
 | `resnet18_cifar10.log` | ResNet-18 on CIFAR-10, a hand-written PyTorch loop that prints its own lines. | `resnet18_cifar10_source.py` |
 | `sb3_ppo_real.log` | Stable-Baselines3 2.9's PPO on CartPole-v1, `verbose=1`, 25 iterations on CPU: one table per iteration, the first without a `train/` section. Nothing is read from it yet (ROADMAP "Reinforcement learning"); `corpus_truth.json` pins that until the parser and the task land. | `sb3_ppo_real_source.py` |
 | `tqdm_loop_real.log` | A hand-written PyTorch loop with a tqdm bar over the training and the validation batches, `set_postfix` carrying the numbers. | `tqdm_loop_real_source.py` |

@@ -11,7 +11,9 @@ import { metricDisplayLabel, isPercentMetric } from '../viz-util.js';
 import { escapeHtml as _esc } from '../escape.js';
 import { frameReportButton, reportFrame } from '../report.js';
 import { t } from '../i18n/apply.js';
+import { apiFetch } from '../auth.js';
 import { emptyState, EMPTY_STATE_COMMANDS } from './emptyState.js';
+import { counterWord, frameCounter, latestCounter } from '../counter.js';
 
 const PHASE_ICON = {
   awakening:     '🌱',
@@ -99,7 +101,7 @@ export class JourneyPanel {
             // failed fetch must not stop the user filing.
             let version = '(unknown)';
             try {
-              const r = await fetch('/api/version');
+              const r = await apiFetch('/api/version');
               if (r.ok) version = (await r.json()).version ?? version;
             } catch { /* offline export, or no server */ }
             reportFrame(frame, run, version);
@@ -118,17 +120,20 @@ export class JourneyPanel {
     if (statRow && frame) {
       if (!this._statEls) {
         statRow.innerHTML = `
-          <span class="stat"><span class="stat-label">Epoch</span><span class="stat-val" data-k="epoch">—</span></span>
+          <span class="stat"><span class="stat-label" data-l="counter">Epoch</span><span class="stat-val" data-k="epoch">—</span></span>
           <span class="stat"><span class="stat-label" data-l="metric">Accuracy</span><span class="stat-val" data-k="acc">—</span></span>
           <span class="stat"><span class="stat-label">Progress</span><span class="stat-val" data-k="prog">—</span></span>`;
         this._statEls = {
           epoch:  statRow.querySelector('[data-k="epoch"]'),
+          epochLbl: statRow.querySelector('[data-l="counter"]'),
           acc:    statRow.querySelector('[data-k="acc"]'),
           accLbl: statRow.querySelector('[data-l="metric"]'),
           prog:   statRow.querySelector('[data-k="prog"]'),
         };
       }
       if (frame.epoch != null) _countUp(this._statEls.epoch, frame.epoch, { decimals: 0 });
+      // The number is a step or a boosting round for a run that has no epochs.
+      this._statEls.epochLbl.textContent = counterWord(frameCounter(frame), 'title');
       // The primary metric is NOT always accuracy — for regression/gaze it's
       // MAE/RMSE/loss (raw units), which must never be shown as a percentage
       // (MAE≈7 rendered as "700%" was the classic bug). Label + format follow
@@ -162,7 +167,9 @@ export class JourneyPanel {
 
     // ── How this letter was reached ─────────────────────────────────────────
     const caveatEl = document.getElementById('grade-caveat');
-    if (caveatEl) caveatEl.textContent = gradeCaveatText(frame?.grade_basis, frame?.grade);
+    if (caveatEl) {
+      caveatEl.textContent = gradeCaveatText(frame?.grade_basis, frame?.grade, frame?.grade_note);
+    }
 
     // ── Metaphor cards  ─────────────────────────────────────────────────────
     // Model uses { title, body, icon } — render all three.
@@ -280,7 +287,8 @@ function _renderSparkline(svg, frames) {
   const fmt = (v) => (Math.abs(v) < 10 ? v.toFixed(3) : v.toFixed(1));
   svg.setAttribute(
     'aria-label',
-    `${dominant || 'metric'} from ${fmt(min)} to ${fmt(max)} over ${pts.length} epochs`,
+    // One point per reading: an epoch each for a run read once an epoch.
+    `${dominant || 'metric'} from ${fmt(min)} to ${fmt(max)} over ${pts.length} ${counterWord(latestCounter(frames), 'readings')}`,
   );
   const caption = svg.parentElement?.querySelector('.sc-spark-range');
   if (caption) caption.textContent = `${fmt(min)} – ${fmt(max)}`;
@@ -385,7 +393,10 @@ function _renderEmpty(el, s) {
  * @param {string|null|undefined} basis
  * @param {string|null|undefined} [grade]
  */
-export function gradeCaveatText(basis, grade) {
+export function gradeCaveatText(basis, grade, note) {
+  // The note beside the letter says why there is none; "nothing to measure it
+  // against" is not true of a run with a hundred readings.
+  if (note === 'unsteady' || note === 'running_mean') return '';
   if (grade === 'I') {
     return t('ui.gradeCaveats.ungraded',
       'Not graded: this metric has no fixed scale, and the log gives nothing to measure it against — a single reading, or nothing that says whether a higher or a lower value is better.');
@@ -413,6 +424,14 @@ export function gradeNoteText(note) {
   if (note === 'few_readings') {
     return t('ui.gradeNotes.few_readings',
       'Provisional: this grade rests on fewer than five readings of the metric.');
+  }
+  if (note === 'running_mean') {
+    return t('ui.gradeNotes.running_mean',
+      "Not graded: this metric is a running average over the most recent batches. Each reading shares all but one batch with the one before, and the first readings average fewer batches than the rest, so no reading is a baseline to grade against.");
+  }
+  if (note === 'unsteady') {
+    return t('ui.gradeNotes.unsteady',
+      "Not graded: this metric's readings rise and fall too much from one to the next for a single reading to place the run.");
   }
   if (note === 'still_improving') {
     return t('ui.gradeNotes.still_improving',

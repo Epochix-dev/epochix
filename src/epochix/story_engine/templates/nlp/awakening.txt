@@ -1,2 +1,2 @@
-Awakening: perplexity {value} at epoch {epoch}.
-Epoch {epoch}: perplexity {value}, in the Awakening phase.
+Awakening: perplexity {value} at {counter} {epoch}.
+{Counter} {epoch}: perplexity {value}, in the Awakening phase.

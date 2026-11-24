@@ -14,11 +14,12 @@ axis: every training loop numbers its passes, and a single fit numbers nothing.
 from __future__ import annotations
 
 from datetime import datetime, timezone
+from pathlib import Path
 
 import pytest
 
 from epochix.models import MetricEvent
-from epochix.story_engine import StoryEngine
+from epochix.story_engine import StoryEngine, narrator
 
 # Words that assert a trajectory. None of them can be true of one measurement.
 ARC_WORDS = (
@@ -46,14 +47,14 @@ def _event(key: str, value: float, seq: int, epoch: float | None) -> MetricEvent
     )
 
 
-def _drive(events: list[tuple[str, float, float | None]]) -> str:
+def _drive(events: list[tuple[str, float, float | None]], run_id: str = "r") -> str:
     """Feed a run and return the last narrative.
 
     Frames arrive from process_all once the 3-event warmup clears, and from
     flush_warmup when the run ends before it does. Reading only one of the two
     yields an empty list and every assertion about the text passes vacuously.
     """
-    eng = StoryEngine(run_id="r")
+    eng = StoryEngine(run_id=run_id)
     frames = []
     for seq, (key, value, epoch) in enumerate(events, start=1):
         frames.extend(eng.process_all(_event(key, value, seq, epoch)))
@@ -62,27 +63,46 @@ def _drive(events: list[tuple[str, float, float | None]]) -> str:
     return frames[-1].narrative
 
 
-def _single_fit(key: str, value: float) -> str:
+def _single_fit(key: str, value: float, run_id: str = "r") -> str:
     """A fit-once script: several metrics, each measured once, no epochs."""
-    return _drive([(key, value, None), ("f1", 0.981, None), ("precision", 0.977, None)])
+    events = [(key, value, None), ("f1", 0.981, None), ("precision", 0.977, None)]
+    return _drive(events, run_id)
+
+
+def _every_single_fit() -> list[str]:
+    """The fit told under enough run ids to reach every variant of its sentence.
+
+    The variant is picked from the run id, and these tests read one run id's,
+    so they held a single variant of the four: the one that says neither "no
+    trend" nor "once" went unchecked until the pick changed.
+    """
+    told = {_single_fit("val_accuracy", 0.982, f"r{i}") for i in range(64)}
+    templates = (Path(narrator.__file__).parent / "templates" / "_single_reading.txt").read_text(
+        encoding="utf-8"
+    )
+    variants = [line for line in templates.splitlines() if line.strip()]
+    assert len(told) == len(variants), f"reached {len(told)} of {len(variants)} variants"
+    return sorted(told)
 
 
 class TestASingleFitReadsAsAResult:
     def test_it_does_not_claim_a_trajectory(self) -> None:
-        text = _single_fit("val_accuracy", 0.982).lower()
-        for word in ARC_WORDS:
-            assert word not in text, f"a one-shot result narrated with {word!r}: {text}"
+        for text in _every_single_fit():
+            for word in ARC_WORDS:
+                assert word not in text.lower(), f"a one-shot result narrated with {word!r}: {text}"
 
     def test_it_states_the_measurement(self) -> None:
-        text = _single_fit("val_accuracy", 0.982)
-        assert "0.9820" in text, text
+        for text in _every_single_fit():
+            assert "0.9820" in text, text
 
     def test_it_names_the_metric(self) -> None:
-        assert "accuracy" in _single_fit("val_accuracy", 0.982).lower()
+        for text in _every_single_fit():
+            assert "accuracy" in text.lower(), text
 
     def test_it_says_there_is_no_trend(self) -> None:
-        text = _single_fit("val_accuracy", 0.982).lower()
-        assert any(w in text for w in ("no trend", "no curve", "no trajectory", "once")), text
+        words = ("no trend", "no curve", "no trajectory", "once", "one measurement")
+        for text in _every_single_fit():
+            assert any(w in text.lower() for w in words), text
 
 
 class TestARealRunKeepsItsStory:

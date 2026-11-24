@@ -1,3 +1,3 @@
-The run is under way: {metric} {value} at epoch {epoch}, at or within 1% of its best so far.
-Epoch {epoch}: {metric} {value}, a change of {delta} since the previous reading. The learning phase continues.
-Learning: {metric} {value} at epoch {epoch} — the best this run has reached, or within 1% of it.
+The run is under way: {metric} {value} at {counter} {epoch}, at or within 1% of its best so far.
+{Counter} {epoch}: {metric} {value}, a change of {delta} since the previous reading. The learning phase continues.
+Learning: {metric} {value} at {counter} {epoch} — the best this run has reached, or within 1% of it.

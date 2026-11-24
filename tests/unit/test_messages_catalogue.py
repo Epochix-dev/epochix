@@ -14,10 +14,24 @@ import pytest
 
 from epochix.models import MetricEvent
 from epochix.story_engine import StoryEngine
-from epochix.story_engine.messages import MESSAGES, message
+from epochix.story_engine.messages import COUNTER_FORMS, MESSAGES, message
 
 PERSIAN = re.compile("[؀-ۿ]")
-PLACEHOLDER = re.compile(r"\{[a-z_]+\}")
+PLACEHOLDER = re.compile(r"\{[A-Za-z_]+\}")
+
+
+def _fields(text: str, locale: str) -> list[str]:
+    """A message's placeholders, apart from the forms of the counter's name.
+
+    Each language names the counter in the forms its own grammar needs
+    (COUNTER_FORMS) and only where its sentence does: French writes
+    "{at_the_best_counter}" where English has "the best validation {counter}",
+    and the Farsi plateau warning says "continuing at this rate" where the
+    English one says "more {counters}". A form the language's table does not
+    hold is not one of its forms, so it stays and is reported.
+    """
+    forms = COUNTER_FORMS[locale]["epoch"]
+    return sorted(name for name in set(PLACEHOLDER.findall(text)) if name.strip("{}") not in forms)
 
 
 def test_every_locale_has_every_message_with_the_same_placeholders() -> None:
@@ -25,10 +39,7 @@ def test_every_locale_has_every_message_with_the_same_placeholders() -> None:
     for locale, table in MESSAGES.items():
         assert set(table) == set(english), locale
         for key, text in table.items():
-            assert sorted(PLACEHOLDER.findall(text)) == sorted(PLACEHOLDER.findall(english[key])), (
-                locale,
-                key,
-            )
+            assert _fields(text, locale) == _fields(english[key], "en"), (locale, key)
 
 
 def test_an_unknown_locale_speaks_english() -> None:

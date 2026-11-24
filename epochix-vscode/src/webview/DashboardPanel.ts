@@ -17,7 +17,8 @@ import type { ServerManager } from "../sidecar/ServerManager";
 import * as path from "path";
 import { persistLogFile } from "../sidecar/persistLog";
 import { StatusBar } from "../statusBar";
-import { StandaloneEngine } from "./StandaloneEngine";
+import type { StandaloneEngine } from "./StandaloneEngine";
+import { panelEngine } from "./panelEngine";
 import { resolvedTheme, taskHint } from "../config";
 import { watchGradeConfig, workspaceGradeConfig } from "../gradeConfigFile";
 import { ReplayBuffer, regrade } from "./replay";
@@ -36,6 +37,11 @@ export class DashboardPanel {
   get runId(): string | undefined {
     return this._runId;
   }
+
+  /** Export the run on screen, as the webview's own export buttons do. */
+  exportRun(format: "html" | "pdf" | "md" | "json" | "gif"): void {
+    this._handleExport(format, this._runId);
+  }
   private _architectureSent = false;
   // Whether a log file or a terminal feeds this panel. Opened bare, nothing
   // will ever arrive; the webview then explains how to load something
@@ -44,6 +50,13 @@ export class DashboardPanel {
   // Fires when a watched terminal goes quiet; see feedLines.
   private _idleTimer: ReturnType<typeof setTimeout> | undefined;
   private _metricsSent = 0;
+  // Milestones and warnings already in the webview. They were sent only
+  // with init, so a watched run showed none that arose after the panel
+  // opened, and none of the milestones a run ends with. Milestones are known
+  // by seq and kind: the list is in the order reached, and the biggest jump
+  // joins it at the end, in the middle.
+  private _milestonesSent = new Set<string>();
+  private _warningsSent = 0;
 
   private _disposables: vscode.Disposable[] = [];
   private _sidecar: ServerManager | null;
@@ -68,7 +81,7 @@ export class DashboardPanel {
     // Standalone engine is used when no sidecar is available
     this._engine = sidecar
       ? null
-      : new StandaloneEngine(taskHint(), locale, workspaceGradeConfig());
+      : panelEngine(locale);
 
     this._panel.webview.html = buildWebviewHtml({
       extensionUri,
@@ -209,6 +222,23 @@ export class DashboardPanel {
       this._post({ type: "frame", frame });
       StatusBar.update(frame);
     }
+    this._postNews();
+  }
+
+  /** The milestones and warnings the engine raised since the last post. */
+  private _postNews(): void {
+    if (!this._engine) return;
+    for (const milestone of this._engine.milestones()) {
+      const key = `${milestone.seq}|${milestone.kind}`;
+      if (this._milestonesSent.has(key)) continue;
+      this._milestonesSent.add(key);
+      this._post({ type: "milestone", milestone });
+    }
+    const warnings = this._engine.warnings();
+    for (const warning of warnings.slice(this._warningsSent)) {
+      this._post({ type: "warning", warning });
+    }
+    this._warningsSent = warnings.length;
   }
 
   /**
@@ -224,6 +254,7 @@ export class DashboardPanel {
       StatusBar.update(frame);
     }
     const summary = this._engine.finish();
+    this._postNews();
     if (summary) {
       this._post({ type: "complete", run: summary });
     }
@@ -306,6 +337,11 @@ export class DashboardPanel {
   private _sendInit(): void {
     const hasSidecar = this._sidecar !== null;
     const snapshot: StoryFrameMsg[] = this._engine?.snapshot() ?? [];
+    // Everything up to now rides on init; what follows is posted as it comes.
+    this._milestonesSent = new Set(
+      (this._engine?.milestones() ?? []).map((m) => `${m.seq}|${m.kind}`),
+    );
+    this._warningsSent = this._engine?.warnings().length ?? 0;
     this._post({
       type: "init",
       theme: this._theme,
@@ -336,7 +372,7 @@ export class DashboardPanel {
    */
   private _degradeToStandalone(extensionUri: vscode.Uri, locale: string): void {
     this._sidecar = null;
-    this._engine = new StandaloneEngine(taskHint(), locale, workspaceGradeConfig());
+    this._engine = panelEngine(locale);
     this._panel.webview.html = buildWebviewHtml({
       extensionUri,
       webview: this._panel.webview,
@@ -379,6 +415,7 @@ export class DashboardPanel {
         this._post({ type: "frame", frame });
         StatusBar.update(frame);
       }
+      this._postNews();
     });
 
     stream.on("end", () => {
@@ -391,6 +428,7 @@ export class DashboardPanel {
         StatusBar.update(frame);
       }
       const summary = this._engine!.finish();
+      this._postNews();
       if (summary) {
         this._post({ type: "complete", run: summary });
       }

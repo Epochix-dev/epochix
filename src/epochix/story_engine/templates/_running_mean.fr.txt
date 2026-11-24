@@ -1,0 +1,2 @@
+{Counter} {epoch} : {metric} {value}, une moyenne glissante sur les lots les plus récents. Chaque mesure partage tous ses lots sauf un avec la précédente, et les premières moyennent moins de lots que les autres : aucune n'est comparée à une autre ici.
+{metric} {value} {at_counter} {epoch} : une moyenne sur les lots les plus récents, pas une mesure à part entière. Ses mesures se chevauchent, à un lot près, et les premières moyennent moins de lots que les autres : aucune n'est comparée à une autre ici.

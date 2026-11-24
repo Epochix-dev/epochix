@@ -541,10 +541,10 @@ class TestPlateauSaysOnlyWhatItMeasured:
         )
 
     def test_a_run_that_made_progress_keeps_the_advice(self) -> None:
-        from epochix.story_engine.messages import MESSAGES
+        from epochix.story_engine.messages import message
 
         moved_then_flat = [0.4, 0.55, 0.7, 0.8, 0.8, 0.8, 0.8, 0.8]
-        assert self._message(moved_then_flat) == MESSAGES["en"]["warn_plateau"]
+        assert self._message(moved_then_flat) == message("warn_plateau", "en")
 
     def test_every_locale_has_the_measurement_without_advice(self) -> None:
         from epochix.story_engine.messages import MESSAGES

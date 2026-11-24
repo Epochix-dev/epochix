@@ -10,6 +10,7 @@ import {
   emaSmooth, isLowerBetter, latestPrimaryKey, metricDisplayLabel, metricLabel,
 } from '../viz-util.js';
 import { escapeHtml as _esc } from '../escape.js';
+import { counterWord, latestCounter } from '../counter.js';
 
 export class TechPanel {
   /** @param {import('../store.js').AppState} store */
@@ -215,6 +216,13 @@ export class TechPanel {
   _update(s) {
     const frames = s.frames;
     if (frames.length === 0) return;
+
+    // The axis is named for what the run counts by, on every chart.
+    const axis = counterWord(latestCounter(frames), 'title');
+    for (const chart of [this._lossChart, this._accChart, this._lrChart, this._gapChart]) {
+      const title = chart?.options?.scales?.x?.title;
+      if (title && title.text !== axis) title.text = axis;
+    }
 
     // X axis: epoch (default) or step.
     const labels = this._xStep

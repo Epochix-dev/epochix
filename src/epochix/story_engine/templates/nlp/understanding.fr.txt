@@ -1,2 +1,2 @@
-L'entraînement prend forme : perplexité {value} à l'époque {epoch} — au moins 40 % de moins qu'à la première mesure.
-Époque {epoch} : perplexité {value}, soit {delta} par rapport à la mesure précédente. L'entraînement atteint sa phase de compréhension.
+L'entraînement prend forme : perplexité {value} {at_counter} {epoch} — au moins 40 % de moins qu'à la première mesure.
+{Counter} {epoch} : perplexité {value}, soit {delta} par rapport à la mesure précédente. L'entraînement atteint sa phase de compréhension.

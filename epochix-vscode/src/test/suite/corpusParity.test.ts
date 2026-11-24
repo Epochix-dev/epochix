@@ -18,7 +18,7 @@ import * as path from "path";
 import * as vscode from "vscode";
 
 import { StandaloneEngine } from "../../webview/StandaloneEngine";
-import type { CrossValidation, StoryFrameMsg } from "../../webview/messages";
+import type { CrossValidation, MilestoneMsg, StoryFrameMsg } from "../../webview/messages";
 
 const EXT_ID = "epochix.epochix";
 
@@ -30,11 +30,13 @@ interface Expectation {
   last_value: number | null;
   keys: string[];
   metric_from_epoch: number | null;
+  counter: string | null;
   grade_note: string | null;
   cross_validation: CrossValidation | null;
   final_grade: string | null;
   final_grade_basis: string | null;
   final_phase: string | null;
+  milestones: Pick<MilestoneMsg, "kind" | "epoch" | "value" | "message">[];
 }
 
 function repoRoot(): string {
@@ -53,12 +55,14 @@ function run(file: string): Omit<Expectation, "path"> {
   // As DashboardPanel.openLog: raw text straight into feed().
   const frames: StoryFrameMsg[] = [...engine.feed(fs.readFileSync(file, "utf-8"))];
   frames.push(...engine.flush());
+  engine.finish(); // as the panel does at the end of the file: the run's last milestones
   const last = frames[frames.length - 1];
   const keys = [...new Set(engine.metrics().map((m) => m.canonical_key))];
   const starts = frames
     .filter((f) => last !== undefined && f.primaryMetric === last.primaryMetric)
     .map((f) => f.epoch)
     .filter((e): e is number => e !== null);
+  const counters = [...new Set(frames.map((f) => f.counter))];
   return {
     task: last ? last.taskType : "custom",
     metric: last ? last.primaryMetric : null,
@@ -66,11 +70,20 @@ function run(file: string): Omit<Expectation, "path"> {
     last_value: last ? Math.round(last.primaryMetricValue * 1e4) / 1e4 : null,
     keys: keys.sort((a, b) => (a < b ? -1 : a > b ? 1 : 0)),
     metric_from_epoch: starts.length ? Math.min(...starts) : null,
+    // What the run counts by: a boosting round, an iteration and a step were
+    // each told as an epoch. Every frame of a log counts by one thing.
+    counter: counters.length === 1 ? counters[0] : counters.join("+") || null,
     grade_note: last ? last.gradeNote : null,
     cross_validation: engine.crossValidation(),
     final_grade: last ? last.grade : null,
     final_grade_basis: last ? last.gradeBasis : null,
     final_phase: last ? last.phase : null,
+    milestones: engine.milestones().map((m) => ({
+      kind: m.kind,
+      epoch: m.epoch,
+      value: m.value === null ? null : Math.round(m.value * 1e4) / 1e4,
+      message: m.message,
+    })),
   };
 }
 
@@ -93,11 +106,13 @@ suite("Corpus parity — the extension reads every log as Python does", () => {
       assert.strictEqual(got.frames, want.frames, "frames");
       assert.strictEqual(got.last_value, want.last_value, "last value");
       assert.strictEqual(got.metric_from_epoch, want.metric_from_epoch, "story metric starts at");
+      assert.strictEqual(got.counter, want.counter, "what the run counts by");
       assert.strictEqual(got.grade_note, want.grade_note, "grade note");
       assert.deepStrictEqual(got.cross_validation, want.cross_validation, "folds");
       assert.strictEqual(got.final_grade, want.final_grade, "final grade");
       assert.strictEqual(got.final_grade_basis, want.final_grade_basis, "how it was graded");
       assert.strictEqual(got.final_phase, want.final_phase, "final phase");
+      assert.deepStrictEqual(got.milestones, want.milestones, "milestones");
     });
   }
 });

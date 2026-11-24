@@ -1,2 +1,2 @@
-بیداری: FID {value} در دوره {epoch}.
-دوره {epoch}: FID {value}، در مرحلهٔ بیداری.
+بیداری: FID {value} در {counter} {epoch}.
+{counter} {epoch}: FID {value}، در مرحلهٔ بیداری.

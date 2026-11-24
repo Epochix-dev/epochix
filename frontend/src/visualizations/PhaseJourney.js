@@ -1,5 +1,6 @@
 import { escapeHtml as _esc } from '../escape.js';
 import { t } from '../i18n/apply.js';
+import { counterWord, latestCounter } from '../counter.js';
 /**
  * PhaseJourney.js — horizontal phase-timeline ribbon.
  *
@@ -48,6 +49,7 @@ export class PhaseJourney {
 
   _render(s) {
     const segs = _segments(s.frames ?? []);
+    const short = counterWord(latestCounter(s.frames), 'short');
     const curEpoch = s.currentFrame?.epoch ?? null;
 
     // Skip rework if nothing changed (segment signature + current epoch)
@@ -69,7 +71,7 @@ export class PhaseJourney {
       const widthPct = ((g.endEpoch - g.startEpoch + 1) / totalSpan) * 100;
       const active = curEpoch != null && curEpoch >= g.startEpoch && curEpoch <= g.endEpoch;
       const epochRange = g.startEpoch === g.endEpoch
-        ? `ep ${g.startEpoch}` : `ep ${g.startEpoch}–${g.endEpoch}`;
+        ? `${short} ${g.startEpoch}` : `${short} ${g.startEpoch}–${g.endEpoch}`;
       parts.push(`
         <div class="pj-seg${active ? ' is-active' : ''}"
              style="flex:${widthPct} 1 0; --pj-c:var(--phase-${g.phase}, var(--accent-primary))"

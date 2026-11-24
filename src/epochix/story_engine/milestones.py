@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 
 from epochix.enums import TaskType
-from epochix.models import Milestone
+from epochix.models import Counter, Milestone
 from epochix.story_engine.grade import is_unit_bounded
 from epochix.story_engine.messages import message
 
@@ -28,7 +28,8 @@ class MilestoneTracker:
     _best: float = field(default=float("-inf"), init=False)
     _crossed_thresholds: set[float] = field(default_factory=set, init=False)
     _fired: set[str] = field(default_factory=set, init=False)
-    _deltas: list[float] = field(default_factory=list, init=False)
+    # (gain, seq, epoch) of each reading against the one before it.
+    _deltas: list[tuple[float, int, float | None]] = field(default_factory=list, init=False)
     _metric: str | None = field(default=None, init=False)
 
     def _lower_better(self, lower_better: bool | None) -> bool:
@@ -127,26 +128,36 @@ class MilestoneTracker:
         # jumping up — was reported as the "biggest single-epoch improvement".
         if prev_value is not None and not switched:
             gain = prev_value - primary_value if lower else primary_value - prev_value
-            self._deltas.append(gain)
+            self._deltas.append((gain, seq, epoch))
 
         return fired
 
-    def finalize(self, seq: int, epoch: float | None) -> list[Milestone]:
-        """Call at end-of-run to emit biggest_jump + training_complete."""
+    def finalize(
+        self, seq: int, epoch: float | None, counter: Counter | None = None
+    ) -> list[Milestone]:
+        """Call at end-of-run to emit biggest_jump + training_complete.
+
+        The biggest jump is only known at the end, but it happened at one
+        reading, and carries that reading's seq and epoch. It was stamped with
+        the run's last ones, so a timeline put "biggest single-epoch
+        improvement" at the final epoch. The first of equal gains wins.
+        """
         result: list[Milestone] = []
 
-        best_gain = max(self._deltas, default=0.0)
-        if best_gain > 0 and "biggest_jump" not in self._fired:
-            max_delta = best_gain
+        best = max(self._deltas, key=lambda d: d[0], default=None)
+        if best is not None and best[0] > 0 and "biggest_jump" not in self._fired:
+            max_delta, jump_seq, jump_epoch = best
             self._fired.add("biggest_jump")
             result.append(
                 Milestone(
                     run_id=self.run_id,
-                    seq=seq,
+                    seq=jump_seq,
                     kind="biggest_jump",
-                    epoch=epoch,
+                    epoch=jump_epoch,
                     value=max_delta,
-                    message=message("ms_biggest_jump", self.locale, value=f"{max_delta:.4f}"),
+                    message=message(
+                        "ms_biggest_jump", self.locale, counter, value=f"{max_delta:.4f}"
+                    ),
                 )
             )
 

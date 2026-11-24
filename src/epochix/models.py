@@ -87,7 +87,7 @@ class Warning(BaseModel):
 # Why a frame's letter deserves less weight than it looks, derived from the
 # log alone. None when there is nothing to qualify. The surfaces render it in
 # the reader's language; see story_engine.grade.grade_note.
-GradeNote = Literal["few_readings", "still_improving"]
+GradeNote = Literal["few_readings", "still_improving", "unsteady", "running_mean"]
 
 # How a frame's letter was reached: against fixed thresholds (built in, or a
 # project's own), or by how far the metric improved since its first reading.
@@ -96,11 +96,19 @@ GradeNote = Literal["few_readings", "still_improving"]
 # which was false of each one graded on improvement.
 GradeBasis = Literal["thresholds", "improvement"]
 
+# What the number in a frame's `epoch` slot counts. A run with no epochs has
+# its own counter there — a boosting round, an iteration, a step — and the
+# story called every one of them an epoch. Set where the parser reads the
+# number (parsers.base.count_by) and carried to the frame; None when the slot
+# is empty, and on a frame stored before this was recorded.
+Counter = Literal["epoch", "step", "iteration", "round"]
+
 
 class StoryFrame(BaseModel):
     run_id: str
     seq: int
     epoch: float | None = None
+    counter: Counter | None = None
     progress: float = Field(ge=0.0, le=1.0)
     phase: Phase
     grade: Grade

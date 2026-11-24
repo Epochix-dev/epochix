@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING
 
 from epochix import cross_validation
 from epochix.i18n import t
-from epochix.story_engine.messages import phase_name
+from epochix.story_engine.messages import frames_counter, phase_name
 from epochix.story_engine.warnings import standing_warnings
 
 if TYPE_CHECKING:
@@ -132,7 +132,9 @@ def build_markdown(run_id: str, store: RunStore) -> str:
         f"| **{t('md.primary_metric', locale)}** | {_md_escape(str(run.primary_metric))} |"
     )
     if run.total_epochs_est:
-        lines.append(f"| **{t('md.epochs', locale)}** | {run.total_epochs_est} |")
+        # The run's length, in what it counts by: a LoRA's 120 steps are not epochs.
+        length = t("md.epochs", locale, frames_counter(frames))
+        lines.append(f"| **{length}** | {run.total_epochs_est} |")
     if run.framework_detected:
         lines.append(f"| **{t('md.framework', locale)}** | {run.framework_detected} |")
     if run.finished_at:
@@ -176,20 +178,24 @@ def build_markdown(run_id: str, store: RunStore) -> str:
     lines.extend(_cv_section(run.config or {}, locale))
 
     # ── Milestones ────────────────────────────────────────────────────────
-    milestone_frames = [f for f in frames if f.milestones]
-    if milestone_frames:
+    # Read from the store's own list: frames came back from the store with
+    # none, so this section never appeared, and the milestones a run ends
+    # with belong to no frame.
+    milestones = store.get_milestones(run_id)
+    if milestones:
         lines.append(f"## {t('md.milestones', locale)}")
         lines.append("")
-        for frame in milestone_frames:
-            for m in frame.milestones:
-                emoji = _MILESTONE_EMOJI.get(m.kind, "📌")
-                epoch_str = (
-                    f" ({t('cover.epoch_n', locale)} {frame.epoch:g})"
-                    if frame.epoch is not None
-                    else ""
-                )
-                msg = m.message or m.kind.replace("_", " ").title()
-                lines.append(f"- {emoji} **{msg}**{epoch_str}")
+        # Dated by what the run counts: "(epoch 0)" beside a boosting round.
+        counted = frames_counter(frames)
+        for m in milestones:
+            emoji = _MILESTONE_EMOJI.get(m.kind, "📌")
+            epoch_str = (
+                f" ({t('cover.epoch_n', locale, counted)} {m.epoch:g})"
+                if m.epoch is not None
+                else ""
+            )
+            msg = m.message or m.kind.replace("_", " ").title()
+            lines.append(f"- {emoji} **{msg}**{epoch_str}")
         lines.append("")
 
     # ── Warnings ─────────────────────────────────────────────────────────

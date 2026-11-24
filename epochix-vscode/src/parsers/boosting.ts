@@ -18,7 +18,7 @@
  * The round number is the x-axis: not an epoch in the neural-network sense,
  * but structurally the same — one more unit of fitting.
  */
-import { claim, type Parser, type ParserContext, type RawMetric } from "./base";
+import { claim, countBy, type Parser, type ParserContext, type RawMetric } from "./base";
 import { NEVER_METRICS, isSetting } from "./neverMetrics";
 
 // Bounded quantifiers throughout: an unbounded run before a delimiter is
@@ -175,7 +175,7 @@ export class BoostingParser implements Parser {
       return claim(ctx);
     }
     const round = parseFloat(m[1] ?? m[2]);
-    ctx.currentEpoch = round;
+    countBy(ctx, "round", round);
     ctx.currentStep = Math.round(round);
 
     const body = line.slice(m[0].length);

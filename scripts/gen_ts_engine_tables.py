@@ -23,6 +23,7 @@ from __future__ import annotations
 import json
 import math
 import os
+import random
 import re
 import subprocess
 import sys
@@ -38,7 +39,7 @@ from epochix.enums import Grade, Phase, TaskType  # noqa: E402
 from epochix.normalizer import canonical_keys as ck  # noqa: E402
 from epochix.parsers import architecture_parser as arch  # noqa: E402
 from epochix.parsers._never_metrics import NEVER_METRICS, VALUE_DECIDES  # noqa: E402
-from epochix.parsers.base import LINE_CLAIMED, ParserContext  # noqa: E402
+from epochix.parsers.base import COUNTED_BY, LINE_CLAIMED, ParserContext  # noqa: E402
 from epochix.parsers.registry import SNIFF_SAMPLE_LINES, SNIFF_THRESHOLD, get_registry  # noqa: E402
 from epochix.parsers import universal as universal_parser  # noqa: E402
 from epochix.parsers.universal import _NN_REPR_KWARGS  # noqa: E402
@@ -51,6 +52,8 @@ from epochix.story_engine import (  # noqa: E402  # noqa: E402  # noqa: E402
     phases,
 )
 from epochix.story_engine import config_loader  # noqa: E402
+from epochix.story_engine import milestones as milestones_mod  # noqa: E402
+from epochix.story_engine import steadiness  # noqa: E402
 from epochix.story_engine import warnings as warnings_mod  # noqa: E402
 from epochix.story_engine.task_classifier import _TASK_SIGNALS  # noqa: E402
 
@@ -68,6 +71,10 @@ GOLDEN = REPO / "epochix-vscode" / "src" / "test" / "fixtures" / "canonical.gold
 # improvement ratio, direction pins Python lacked); now every number is
 # generated, and GRADING_GOLDEN pins what the Python functions answer.
 GRADING = REPO / "epochix-vscode" / "src" / "story" / "grading.generated.ts"
+# The dashboard's copy of how a metric name reads: which way is better. It
+# had a list of its own, eleven names long, and read every YOLO loss (box,
+# cls, dfl), every boosting log_loss and error_rate, and val_MAE upside down.
+FRONTEND_DIRECTION = REPO / "frontend" / "src" / "direction.generated.js"
 GRADING_GOLDEN = REPO / "epochix-vscode" / "src" / "test" / "fixtures" / "grading.golden.json"
 # What the Python loader makes of a set of .epochix.yaml files, and which bands
 # it then applies to which metric. The extension's loader replays it.
@@ -78,6 +85,17 @@ CONFIG_GOLDEN = REPO / "epochix-vscode" / "src" / "test" / "fixtures" / "gradeCo
 # engine, so a line one parser read differently could hide behind another.
 # Its test replays every recorded line through its own parser.
 PARSERS_GOLDEN = REPO / "epochix-vscode" / "src" / "test" / "fixtures" / "parsers.golden.json"
+# Every corpus log told by the whole Python pipeline, in each language, under
+# one run id: each frame's sentence and each warning. The extension replays
+# the corpus and must tell it word for word. Nothing compared the two engines'
+# sentences: they picked variants differently, rounded an exact half
+# differently, and the extension raised no learning-rate warning at all.
+STORIES_GOLDEN = REPO / "epochix-vscode" / "src" / "test" / "fixtures" / "stories.golden.json"
+# The stem of the run ids it is told under: see stories_run_ids().
+STORIES_RUN_ID = "corpus"
+# Python's own formatting of numbers into those sentences, which the
+# extension's formatters (story/pyFormat.ts) replay.
+FORMAT_GOLDEN = REPO / "epochix-vscode" / "src" / "test" / "fixtures" / "format.golden.json"
 # Random input and lines megabytes long are not samples worth replaying, and
 # the LLM fallback has no port in the extension.
 _UNRECORDED_TESTS = frozenset(
@@ -325,10 +343,19 @@ def render_narratives() -> str:
         "pastPeak": lambda loc: narrator._load_special(
             "_pastpeak", loc, "The run is past its best value."
         ),
+        "belowBest": lambda loc: narrator._load_special(
+            "_belowbest", loc, "{value}, below the best of {best}."
+        ),
         "stalled": narrator._load_stalled,
         "diverged": narrator._load_diverged,
         "singleReading": lambda loc: narrator._load_special(
             "_single_reading", loc, "A single result: {metric} {value}. There is no trend to read."
+        ),
+        "unsteady": lambda loc: narrator._load_special(
+            "_unsteady", loc, "{Counter} {epoch}: {metric} {value}. One reading says little here."
+        ),
+        "runningMean": lambda loc: narrator._load_special(
+            "_running_mean", loc, "{Counter} {epoch}: {metric} {value}, a running average."
         ),
     }
     lines = [
@@ -359,9 +386,12 @@ def render_narratives() -> str:
         " *  single result with no arc. */",
         "export const SPECIAL_TEMPLATES: Readonly<Record<Locale, Readonly<{",
         "  pastPeak: readonly string[];",
+        "  belowBest: readonly string[];",
         "  stalled: readonly string[];",
         "  diverged: readonly string[];",
         "  singleReading: readonly string[];",
+        "  unsteady: readonly string[];",
+        "  runningMean: readonly string[];",
         "}>>> = {",
     ]
     for loc in LOCALES:
@@ -398,6 +428,26 @@ def render_narratives() -> str:
         "export const MESSAGES: Readonly<Record<Locale, Readonly<Record<string, string>>>> = {",
     ]
     lines += [f"  {loc}: {_js(messages.MESSAGES[loc])}," for loc in LOCALES]
+    lines += [
+        "};",
+        "",
+        "/** What the number in a frame's epoch slot counts (models.Counter). */",
+        f"export const COUNTERS = {_js(list(messages.COUNTERS))} as const;",
+        "export type Counter = (typeof COUNTERS)[number];",
+        "",
+        "/** The counter's name in every form a sentence takes it in, per locale and",
+        " *  kind (messages.COUNTER_FORMS). Whole forms, written by hand: no form is",
+        " *  built from another. */",
+        "export const COUNTER_FORMS: Readonly<",
+        "  Record<Locale, Readonly<Record<Counter, Readonly<Record<string, string>>>>>",
+        "> = {",
+    ]
+    for loc in LOCALES:
+        lines.append(f"  {loc}: {{")
+        lines += [
+            f"    {kind}: {_js(messages.COUNTER_FORMS[loc][kind])}," for kind in messages.COUNTERS
+        ]
+        lines.append("  },")
     lines += ["};", ""]
     return "\n".join(lines)
 
@@ -436,7 +486,7 @@ def render_grading() -> str:
     classification = grade._DEFAULT_THRESHOLDS[TaskType.CLASSIFICATION]
     lines = [
         "// GENERATED by scripts/gen_ts_engine_tables.py from the Python engine",
-        "// (story_engine/grade.py, phases.py, warnings.py, __init__.py).",
+        "// (story_engine/grade.py, phases.py, warnings.py, milestones.py, __init__.py).",
         "// Do not edit: change the Python and regenerate.",
         "",
         "export type TaskType = " + " | ".join(_js(t.value) for t in tasks) + ";",
@@ -495,12 +545,42 @@ def render_grading() -> str:
         + "];",
         "",
         f"export const PAST_PEAK_REL_DROP = {_num(engine._PAST_PEAK_REL_DROP)};",
+        f"export const PAST_PEAK_READINGS = {engine._PAST_PEAK_READINGS};",
         f"export const STALL_MIN_EPOCHS = {engine._STALL_MIN_EPOCHS};",
         f"export const STALL_REL_IMPROVEMENT = {_num(engine._STALL_REL_IMPROVEMENT)};",
         f"export const OVERFIT_WINDOW = {warnings_mod._OVERFIT_WINDOW};",
         f"export const PLATEAU_WINDOW = {warnings_mod._PLATEAU_WINDOW};",
         f"export const PLATEAU_DELTA = {_num(warnings_mod._PLATEAU_DELTA)};",
         f"export const DIVERGE_GROWTH = {_num(warnings_mod._DIVERGE_GROWTH)};",
+        f"export const LR_DROP_RATIO = {_num(warnings_mod._LR_DROP_RATIO)};",
+        "",
+        "/** When one reading cannot be set against another (story_engine/steadiness.py). */",
+        f"export const UNSTEADY_MIN_READINGS = {steadiness.UNSTEADY_MIN_READINGS};",
+        f"export const UNSTEADY_WINDOW = {steadiness.UNSTEADY_WINDOW};",
+        f"export const UNSTEADY_TURN_SHARE = {_num(steadiness.UNSTEADY_TURN_SHARE)};",
+        f"export const UNSTEADY_STEP = {_num(steadiness.UNSTEADY_STEP)};",
+        "/** Names logged as a running average over overlapping batches. */",
+        "export const RUNNING_MEANS: ReadonlySet<string> = new Set("
+        + _js(sorted(steadiness.RUNNING_MEANS))
+        + ");",
+        "",
+        "/** Metrics that cannot leave [0, 1] (grade.UNIT_BOUNDED_METRICS). */",
+        "export const UNIT_BOUNDED_METRICS: ReadonlySet<string> = new Set("
+        + _js(sorted(grade.UNIT_BOUNDED_METRICS))
+        + ");",
+        "/** Higher-is-better metrics with no ideal (grade.NO_IDEAL_METRICS): their",
+        " *  improvement is read from the first reading, not as a share of 1.0. */",
+        "export const NO_IDEAL_METRICS: ReadonlySet<string> = new Set("
+        + _js(sorted(grade.NO_IDEAL_METRICS))
+        + ");",
+        "/** The fractions a milestone announces crossing (story_engine/milestones.py). */",
+        "export const MILESTONE_THRESHOLDS: readonly number[] = ["
+        + ", ".join(_num(t) for t in milestones_mod._ACCURACY_THRESHOLDS)
+        + "];",
+        "/** Bounded to [0, 1] but not a fraction of anything: no \"crossed N%\". */",
+        "export const NOT_A_FRACTION: ReadonlySet<string> = new Set("
+        + _js(sorted(milestones_mod._NOT_A_FRACTION))
+        + ");",
         "",
         "/** How a letter was reached (models.GradeBasis). */",
         'export type GradeBasis = "thresholds" | "improvement";',
@@ -516,6 +596,25 @@ def render_grading() -> str:
         "",
     ]
     return "\n".join(lines)
+
+
+def render_frontend_direction() -> str:
+    """story_engine/grade.py's direction tables, for the dashboard (viz-util.js)."""
+    return "\n".join(
+        [
+            "// GENERATED by scripts/gen_ts_engine_tables.py from story_engine/grade.py.",
+            "// Do not edit: change the Python and regenerate.",
+            "",
+            "/** Which way is better for a metric named exactly so (lower-cased). */",
+            "export const DIRECTION_BY_KEY = "
+            + _js(dict(sorted(grade._DIRECTION_BY_KEY.items())))
+            + ";",
+            "/** Parts of a name that say lower is better, then higher. */",
+            "export const LOWER_NAME_HINTS = " + _js(list(grade._LOWER_NAME_HINTS)) + ";",
+            "export const HIGHER_NAME_HINTS = " + _js(list(grade._HIGHER_NAME_HINTS)) + ";",
+            "",
+        ]
+    )
 
 
 def _sweep(rows: list[tuple[Grade, float]]) -> list[float]:
@@ -571,6 +670,26 @@ def render_grading_golden() -> str:
                     got = phases.compute_phase(progress, value, baseline, lower_better=lower).value
                     phase.append([progress, value, baseline, lower, got])
 
+    # A metric with no ideal: baselines above 1, at 0 and below it (a reward
+    # starts negative), and values that fall, hold, and rise past each bar.
+    relative_unbounded = []
+    phase_unbounded = []
+    for baseline in (-1500.0, -1.0, 0.0, 1e-12, 0.5, 2.0, 20.0):
+        for share in (-0.5, -0.02, 0.0, 0.029, 0.03, 0.39, 0.4, 0.74, 0.75, 0.94, 0.95, 1.0, 3.5):
+            for lower in (True, False):
+                move = abs(baseline) * share
+                value = baseline - move if lower else baseline + move
+                rel = phases.relative_improvement(
+                    value, baseline, lower_better=lower, unbounded=True
+                )
+                relative_unbounded.append([value, baseline, lower, rel])
+                for progress in (None, 0.0, 0.05, 0.1, 0.4, 0.7, 0.95, 1.0):
+                    got = phases.compute_phase(
+                        progress, value, baseline, lower_better=lower, unbounded=True
+                    ).value
+                    phase_unbounded.append([progress, value, baseline, lower, got])
+    no_ideal = {name: grade.has_no_ideal(name) for name in names}
+
     note = []
     for g in (Grade.A, Grade.F, Grade.INCOMPLETE):
         for readings in (0, 1, 2, 4, 5, 6, 200):
@@ -578,6 +697,80 @@ def render_grading_golden() -> str:
                 for new_best in (True, False):
                     got = grade.grade_note(g, readings, has_epoch=has_epoch, new_best=new_best)
                     note.append([g.value, readings, has_epoch, new_best, got])
+
+    note_unsteady = [
+        [
+            g.value,
+            readings,
+            has_epoch,
+            new_best,
+            grade.grade_note(
+                g, readings, has_epoch=has_epoch, new_best=new_best, unsteady=True
+            ),
+        ]
+        for g in Grade
+        for readings in (1, 6, 200)
+        for has_epoch in (True, False)
+        for new_best in (True, False)
+    ]
+
+    note_running_mean = [
+        [
+            g.value,
+            readings,
+            unsteady,
+            grade.grade_note(
+                g, readings, has_epoch=True, new_best=True, unsteady=unsteady, running_mean=True
+            ),
+        ]
+        for g in Grade
+        for readings in (1, 6, 200)
+        for unsteady in (True, False)
+    ]
+    running = [
+        [name, steadiness.running_mean(name)]
+        # Every name the normaliser knows, each in two cases, and the edges.
+        for name in sorted(
+            {n for k in ck.CANONICAL_MAP for n in (k, k.upper())} | {"avg_loss", ""}
+        )
+        + [None]
+    ]
+
+    # Series of every kind the measure has to tell apart: falling, flat,
+    # wobbling a little, wobbling a lot, too short to say, longer than the
+    # window, through zero and below it. Seeded, so the file does not churn.
+    rng = random.Random(20261111)
+    series: list[list[float]] = [
+        [],
+        [1.0, 0.5],
+        [1.0, 2.0, 1.0],
+        [0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+        [4.0, 2.0, 1.0, 0.5, 0.25, 0.125, 0.0625],
+        [0.5, 0.1, 0.4, 0.1, 0.5, 0.1],
+        [0.5, 0.1, 0.4, 0.1, 0.5],
+        [1.0, 0.76, 1.0, 0.76, 1.0, 0.76],
+        [1.0, 0.75, 1.0, 0.75, 1.0, 0.75],
+        [-1.0, 1.0, -1.0, 1.0, -1.0, 1.0, -1.0],
+        [0.3, 0.3, 0.9, 0.9, 0.2, 0.2, 0.8, 0.8],
+    ]
+    for length in (3, 5, 6, 7, 20, 49, 50, 51, 120):
+        for _ in range(2):
+            # One batch's loss; a falling loss with a little wobble; an
+            # accuracy near its ceiling.
+            series.append([round(rng.lognormvariate(-4.5, 1.0), 5) for _ in range(length)])
+            series.append(
+                [round(2.0 * 0.97**i * (1 + 0.02 * rng.uniform(-1, 1)), 4) for i in range(length)]
+            )
+            series.append([round(0.9 + 0.05 * rng.uniform(-1, 1), 4) for _ in range(length)])
+    swings = []
+    for values in series:
+        found = steadiness.swing(values)
+        measured = (
+            None
+            if found is None
+            else [found.readings, found.turns, found.step, found.step_text]
+        )
+        swings.append([values, measured, steadiness.unsteady(values) is not None])
 
     # No value that is an exact tie at four figures: Python rounds those to
     # even and JavaScript up, and a warning's last digit is not worth a port of
@@ -594,7 +787,14 @@ def render_grading_golden() -> str:
         "metric_lower_better": direction,
         "relative_improvement": relative,
         "compute_phase": phase,
+        "relative_improvement_unbounded": relative_unbounded,
+        "compute_phase_unbounded": phase_unbounded,
+        "has_no_ideal": no_ideal,
         "grade_note": note,
+        "grade_note_unsteady": note_unsteady,
+        "grade_note_running_mean": note_running_mean,
+        "running_mean": running,
+        "swing": swings,
         "loss_text": loss,
     }
     return json.dumps(golden, indent=0, ensure_ascii=False, sort_keys=True) + "\n"
@@ -777,11 +977,13 @@ def _compact(value: object) -> str:
 
 def _event_row(event: dict[str, Any]) -> list[Any]:
     """A call as a row: [parser, seq, line, out, claimed, [epoch, step,
-    total_epochs] after it], or [parser, "flush", out]."""
+    total_epochs] after it], or [parser, "flush", out]. A seventh item names
+    what the line counted by, when the parser said it was not an epoch."""
     if event.get("flush"):
         return [event["parser"], "flush", event["out"]]
     keys = ("parser", "seq", "line", "out", "claimed", "state")
-    return [event[k] for k in keys]
+    row = [event[k] for k in keys]
+    return [*row, event["counted"]] if event.get("counted") else row
 
 
 def _dump_parsers_golden(tests: dict[str, list[dict[str, Any]]]) -> str:
@@ -832,15 +1034,19 @@ def replay_parsers_golden(golden: dict[str, list[dict[str, Any]]]) -> list[str]:
                 if row[1] == "flush":
                     out, want, line = parser.flush(ctx), row[2], "flush"
                 else:
-                    _, ctx.seq, line, want, want_claimed, want_state = row
+                    _, ctx.seq, line, want, want_claimed, want_state, *said = row
+                    want_counted = said[0] if said else None
                     ctx.extra.pop(LINE_CLAIMED, None)
+                    ctx.extra.pop(COUNTED_BY, None)
                     out = parser.parse_line(line, ctx)
                     claimed = bool(ctx.extra.get(LINE_CLAIMED))
+                    counted = ctx.extra.get(COUNTED_BY)
                     state = [_golden_number(ctx.current_epoch), ctx.current_step, ctx.total_epochs]
-                    if (claimed, state) != (want_claimed, want_state):
+                    if (claimed, state, counted) != (want_claimed, want_state, want_counted):
                         wrong.append(
-                            f"{where} {line!r}: claimed/state "
-                            f"{claimed, state} != {want_claimed, want_state}"
+                            f"{where} {line!r}: claimed/state/counted "
+                            f"{claimed, state, counted} != "
+                            f"{want_claimed, want_state, want_counted}"
                         )
                 got = [
                     [m.key, _golden_number(m.value), _golden_number(m.epoch), m.step, m.seq]
@@ -851,16 +1057,151 @@ def replay_parsers_golden(golden: dict[str, list[dict[str, Any]]]) -> list[str]:
     return wrong
 
 
+def stories_run_ids() -> list[str]:
+    """Run ids that, between them, reach every variant of every template.
+
+    The variant is the run id's hash modulo the number of variants
+    (narrator._pick). With M the most variants any template has and L the
+    least common multiple of every count, M ids whose hashes are 0 .. M-1
+    modulo L reach every variant of a template with m variants, for each m.
+    One id reached one variant of each, and a drift in a sentence only
+    another variant uses went unseen: the first reading's "+7.8 points".
+    """
+    counts = {
+        len([line for line in path.read_text(encoding="utf-8").splitlines() if line.strip()])
+        for path in (REPO / "src" / "epochix" / "story_engine" / "templates").rglob("*.txt")
+    }
+    counts.discard(0)
+    most = max(counts)
+    lcm = math.lcm(*counts)
+    found: dict[int, str] = {}
+    n = 0
+    while len(found) < most:
+        run_id = f"{STORIES_RUN_ID}-{n}"
+        residue = int(narrator._pick([str(i) for i in range(lcm)], run_id))
+        if residue < most and residue not in found:
+            found[residue] = run_id
+        n += 1
+    return [found[i] for i in range(most)]
+
+
+def render_stories_golden() -> str:
+    """Every log in corpus_truth.json, told in every locale and every variant.
+
+    Each log is told under each of stories_run_ids(). A frame keeps its epoch
+    and its sentence under each id, or one sentence when every id told the
+    same. A frame's warnings are the ones raised at it, so the run's warnings
+    are theirs in frame order, the list the extension's engine keeps; a
+    warning has no variants, and the generator checks every id agrees.
+    """
+    import asyncio
+
+    from epochix.ingester.file_batch import FileBatchIngester
+    from epochix.pipeline import run_pipeline
+    from epochix.server.hub import Hub
+    from epochix.store.sqlite_store import RunStore
+
+    truth = json.loads(
+        (REPO / "tests" / "fixtures" / "corpus_truth.json").read_text(encoding="utf-8")
+    )
+    run_ids = stories_run_ids()
+    # A developer's own .epochix.yaml must not change what is recorded.
+    before = os.environ.get("EPOCHIX_GRADE_CONFIG")
+    os.environ["EPOCHIX_GRADE_CONFIG"] = "off"
+    try:
+        logs: dict[str, dict[str, Any]] = {}
+        for name in sorted(truth):
+            told: dict[str, Any] = {}
+            for locale in LOCALES:
+                runs = []
+                for run_id in run_ids:
+                    store = RunStore(":memory:")
+                    asyncio.run(
+                        run_pipeline(
+                            ingester=FileBatchIngester(run_id, str(REPO / truth[name]["path"])),
+                            run_id=run_id,
+                            store=store,
+                            hub=Hub(),
+                            locale=locale,
+                        )
+                    )
+                    runs.append(store.get_story_frames(run_id))
+                epochs = [[_golden_number(f.epoch) for f in frames] for frames in runs]
+                warnings = [
+                    [
+                        [w.kind, _golden_number(w.epoch), w.message]
+                        for f in frames
+                        for w in f.warnings
+                    ]
+                    for frames in runs
+                ]
+                assert all(e == epochs[0] for e in epochs), f"{name}: epochs vary by run id"
+                assert all(w == warnings[0] for w in warnings), f"{name}: warnings vary by run id"
+                frames_out: list[list[Any]] = []
+                for i, epoch in enumerate(epochs[0]):
+                    said = [frames[i].narrative for frames in runs]
+                    frames_out.append([epoch, said[0] if len(set(said)) == 1 else said])
+                told[locale] = {"frames": frames_out, "warnings": warnings[0]}
+            logs[name] = told
+    finally:
+        if before is None:
+            del os.environ["EPOCHIX_GRADE_CONFIG"]
+        else:
+            os.environ["EPOCHIX_GRADE_CONFIG"] = before
+    golden = {"run_ids": run_ids, "logs": logs}
+    return json.dumps(golden, indent=1, ensure_ascii=False, sort_keys=True) + "\n"
+
+
+def _format_inputs() -> list[float]:
+    """Values worth formatting: exact ties, edges, and a spread of magnitudes."""
+    values = [
+        0.0, -0.0, 1.0, -1.0, 0.5, 1.5, 2.5, -2.5, 0.125, 0.375, -0.375,
+        73.25, 79.25, 89.25, -73.25, 0.7325, 0.00125, 0.00015, 0.99995, 9.9995, 99.995,
+        999.95, 9999.5, 99999.5, 0.0001, 0.00001, 1e-5, 1.5e-5, 2.5e-7, 123456.789, 1e16,
+        1.7976931348623157e308, 5e-324, 2.2250738585072014e-308, 1e-3, 5e-4, 6.07e-4, 3.07e-4,
+        6.98e-06, float("nan"), float("inf"), float("-inf"),
+    ]
+    rng = random.Random(1909)
+    for _ in range(300):
+        values.append(rng.uniform(-1, 1) * 10 ** rng.randint(-8, 8))
+    for _ in range(200):
+        # k / 2**n: exact in binary, so many are exact halves at some digit.
+        values.append(rng.randint(-4096, 4096) / 2 ** rng.randint(1, 16))
+    return values
+
+
+def _format_key(x: float) -> float | str:
+    if math.isnan(x):
+        return "nan"
+    if math.isinf(x):
+        return "inf" if x > 0 else "-inf"
+    if x == 0 and math.copysign(1.0, x) < 0:
+        return "-0"
+    return x
+
+
+def render_format_golden() -> str:
+    cases = [
+        [_format_key(x), f"{x:.4f}", f"{x:.1f}", f"{x * 100:.1f}", f"{x:.2e}", f"{x:.4g}"]
+        for x in _format_inputs()
+    ]
+    golden = {"columns": ["x", ".4f", ".1f", "x*100 .1f", ".2e", ".4g"], "cases": cases}
+    return json.dumps(golden, indent=0, ensure_ascii=False) + "\n"
+
+
 def main() -> int:
     outputs = {
         TARGET: render(),
         NARRATIVES: render_narratives(),
         GOLDEN: render_golden(),
         GRADING: render_grading(),
+        FRONTEND_DIRECTION: render_frontend_direction(),
         GRADING_GOLDEN: render_grading_golden(),
         CONFIG_GOLDEN: render_config_golden(),
         ARCH_GOLDEN: render_arch_golden(),
         PARSERS_GOLDEN: render_parsers_golden(),
+        STORIES_GOLDEN: render_stories_golden(),
+        FORMAT_GOLDEN: render_format_golden(),
     }
     if "--check" in sys.argv:
         stale = [

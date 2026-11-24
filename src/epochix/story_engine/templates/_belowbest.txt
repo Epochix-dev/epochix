@@ -1,0 +1,2 @@
+{Counter} {epoch}: {value}, more than 1% off the best of {best} at {counter} {best_epoch}.
+{value} at {counter} {epoch}, more than 1% off the best of {best} ({counter} {best_epoch}).

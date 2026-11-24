@@ -85,6 +85,11 @@ _EN: dict[str, str] = {
     "readings of the metric.",
     "grade_note.still_improving": "Still improving at the last reading — the grade "
     "shows where the run got to, not where it was heading.",
+    "grade_note.unsteady": "Not graded: this metric's readings rise and fall too much "
+    "from one to the next for a single reading to place the run.",
+    "grade_note.running_mean": "Not graded: this metric is a running average over the most "
+    "recent batches. Each reading shares all but one batch with the one before, and the first "
+    "readings average fewer batches than the rest, so no reading is a baseline to grade against.",
     "md.final_phase": "Final phase",
     "md.primary_metric": "Primary metric",
     "md.epochs": "Epochs",
@@ -97,6 +102,8 @@ _EN: dict[str, str] = {
     "md.final_value": "Final Value",
     "md.milestones": "Milestones",
     "md.warnings": "Warnings",
+    # A comparison's count of readings, where its runs do not all count epochs.
+    "cmp.readings": "Readings",
 }
 
 _FA: dict[str, str] = {
@@ -138,6 +145,7 @@ _FA: dict[str, str] = {
     "md.task": "وظیفه",
     "cmp.title": "مقایسهٔ اجراها",
     "cmp.run": "اجرا",
+    "cmp.readings": "خوانش‌ها",
     "cv.title": "اعتبارسنجی متقابل",
     "cv.search_title": "جست‌وجوی پارامتر",
     "cv.setting": "تنظیم",
@@ -157,6 +165,11 @@ _FA: dict[str, str] = {
     "grade_note.few_readings": "موقت: این نمره بر کمتر از پنج خوانش از سنجه تکیه دارد.",
     "grade_note.still_improving": "در آخرین خوانش هنوز در حال بهبود بود — نمره نشان "
     "می‌دهد اجرا به کجا رسید، نه به کجا می‌رفت.",
+    "grade_note.unsteady": "نمره داده نشد: خوانش‌های این سنجه از یکی به بعدی بیش از آن بالا و "
+    "پایین می‌روند که یک خوانش جای اجرا را نشان دهد.",
+    "grade_note.running_mean": "نمره داده نشد: این سنجه میانگینی متحرک روی تازه‌ترین دسته‌هاست. "
+    "هر خوانش جز در یک دسته با خوانش قبلی یکی است، و خوانش‌های نخست میانگین دسته‌های کمتری از "
+    "بقیه‌اند؛ پس هیچ خوانشی مبنایی برای نمره‌دادن نیست.",
     "md.final_phase": "مرحله نهایی",
     "md.primary_metric": "معیار اصلی",
     "md.epochs": "دوره‌ها",
@@ -232,6 +245,11 @@ _FR: dict[str, str] = {
     "mesures de la métrique.",
     "grade_note.still_improving": "Encore en progrès à la dernière mesure — la note "
     "montre où l'exécution est arrivée, pas où elle allait.",
+    "grade_note.unsteady": "Non noté : les mesures de cette métrique montent et descendent "
+    "trop de l'une à la suivante pour qu'une seule situe l'entraînement.",
+    "grade_note.running_mean": "Non noté : cette métrique est une moyenne glissante sur les lots "
+    "les plus récents. Chaque mesure partage tous ses lots sauf un avec la précédente, et les "
+    "premières moyennent moins de lots que les autres : aucune ne sert de référence pour noter.",
     "md.final_phase": "Phase finale",
     "md.primary_metric": "Métrique principale",
     "md.epochs": "Époques",
@@ -244,20 +262,73 @@ _FR: dict[str, str] = {
     "md.final_value": "Valeur finale",
     "md.milestones": "Jalons",
     "md.warnings": "Avertissements",
+    "cmp.readings": "Mesures",
 }
 
 _LOCALES: dict[str, dict[str, str]] = {"en": _EN, "fa": _FA, "fr": _FR}
 
+
+def _counted(one: str, many: str, title: str, every: str, continued: str) -> dict[str, str]:
+    """The labels that name the counter, for one kind of counter in one language."""
+    return {
+        "col.epoch": one,
+        "cover.epoch_n": one,
+        "cover.epochs": many,
+        "phase.covers": many,
+        "md.epochs": title,
+        # The table has a row for every reading. That is a row an epoch only
+        # for a run read once an epoch: a run told every 250 steps has nine.
+        "pdf.epochs": every,
+        "pdf.epochs_continued": continued,
+    }
+
+
+# The same labels for a run that does not count epochs. A report on a nanoGPT
+# run had a column headed "epoch" running to 2000, and a CatBoost run's sixty
+# rounds were listed under "Every epoch". Whole words per language and kind,
+# as the story's own are (story_engine.messages.COUNTER_FORMS).
+_COUNTED: dict[str, dict[str, dict[str, str]]] = {
+    "en": {
+        "step": _counted("step", "steps", "Steps", "Every reading", "Every reading (continued)"),
+        "iteration": _counted(
+            "iteration", "iterations", "Iterations", "Every reading", "Every reading (continued)"
+        ),
+        "round": _counted(
+            "round", "rounds", "Rounds", "Every reading", "Every reading (continued)"
+        ),
+    },
+    "fa": {
+        "step": _counted("گام", "گام‌ها", "گام‌ها", "همه خوانش‌ها", "همه خوانش‌ها (ادامه)"),
+        "iteration": _counted("تکرار", "تکرارها", "تکرارها", "همه خوانش‌ها", "همه خوانش‌ها (ادامه)"),
+        "round": _counted("دور", "دورها", "دورها", "همه خوانش‌ها", "همه خوانش‌ها (ادامه)"),
+    },
+    "fr": {
+        "step": _counted("étape", "étapes", "Étapes", "Chaque mesure", "Chaque mesure (suite)"),
+        "iteration": _counted(
+            "itération", "itérations", "Itérations", "Chaque mesure", "Chaque mesure (suite)"
+        ),
+        "round": _counted("tour", "tours", "Tours", "Chaque mesure", "Chaque mesure (suite)"),
+    },
+}
+
 SUPPORTED_LOCALES = tuple(_LOCALES)
 
 
-def t(key: str, locale: str = "en") -> str:
+def t(key: str, locale: str = "en", counter: str | None = None) -> str:
     """Translate *key*, falling back to English and then to the key itself.
 
     An unknown locale is not an error: a run created by a newer client, or a
     user passing ``de``, gets English rather than a crash in the middle of an
     export.
+
+    *counter* is what the run counts by (StoryFrame.counter), for a label
+    that names it: "step" where an epoch run's report says "epoch". None, or
+    "epoch", is the label as it has always read.
     """
+    if counter not in (None, "epoch"):
+        counted = _COUNTED.get(locale, _COUNTED["en"]).get(counter or "", {})
+        if key in counted:
+            return counted[key]
     table = _LOCALES.get(locale, _EN)
     return table.get(key) or _EN.get(key) or key
 

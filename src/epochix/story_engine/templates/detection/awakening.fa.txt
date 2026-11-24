@@ -1,2 +1,2 @@
-بیداری: mAP50 {value_pct} در دوره {epoch}.
-دوره {epoch}: mAP50 {value_pct}، در مرحلهٔ بیداری.
+بیداری: mAP50 {value_pct} در {counter} {epoch}.
+{counter} {epoch}: mAP50 {value_pct}، در مرحلهٔ بیداری.

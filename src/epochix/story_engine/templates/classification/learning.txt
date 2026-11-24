@@ -1,3 +1,3 @@
-The run is under way: accuracy {value_pct} at epoch {epoch}, at or within 1% of its best so far.
-Epoch {epoch}: accuracy {value_pct}, a change of {delta_pct} points since the previous reading. The learning phase continues.
-Learning: accuracy {value_pct} at epoch {epoch} — the best this run has reached, or within 1% of it.
+The run is under way: accuracy {value_pct} at {counter} {epoch}, at or within 1% of its best so far.
+{Counter} {epoch}: accuracy {value_pct}, a change of {delta_pct} points since the previous reading. The learning phase continues.
+Learning: accuracy {value_pct} at {counter} {epoch} — the best this run has reached, or within 1% of it.

@@ -6,10 +6,12 @@
  * GET /api/compare?run_ids=a,b,c.
  */
 import {
-  allMetricKeys, emaSmooth, LOWER_IS_BETTER, metricLabel, seriesColor, seriesFromMetrics,
+  allMetricKeys, emaSmooth, metricLabel, metricLowerBetter, seriesColor, seriesFromMetrics,
 } from '../viz-util.js';
 import { escapeHtml as _esc } from '../escape.js';
 import { t } from '../i18n/apply.js';
+import { counterWord, sharedCounter } from '../counter.js';
+import { apiFetch, authToken, saveResponse } from '../auth.js';
 
 const _PREFERRED = ['val_accuracy', 'accuracy', 'val_loss', 'train_loss', 'mAP50'];
 
@@ -33,7 +35,7 @@ export class CompareView {
     this._el.innerHTML = `<div class="cmp-loading">${_esc(t('compare.loading', 'Loading runs…'))}</div>`;
     let data;
     try {
-      const r = await fetch(`/api/compare?run_ids=${encodeURIComponent(runIds.join(','))}`);
+      const r = await apiFetch(`/api/compare?run_ids=${encodeURIComponent(runIds.join(','))}`);
       if (!r.ok) throw new Error(`${r.status}`);
       data = await r.json();
     } catch (err) {
@@ -114,12 +116,12 @@ export class CompareView {
     this._el.querySelector('#cmp-md')?.addEventListener('click', () => {
       const ids = this._runs.map((r) => r.run.id);
       if (ids.length < 2) return;
-      window.location.href = compareMarkdownUrl(ids);
+      _saveExport(compareMarkdownUrl(ids), 'comparison.md');
     });
     this._el.querySelector('#cmp-pdf')?.addEventListener('click', () => {
       const ids = this._runs.map((r) => r.run.id);
       if (ids.length < 2) return;
-      window.location.href = compareMarkdownUrl(ids, 'pdf');
+      _saveExport(compareMarkdownUrl(ids, 'pdf'), 'comparison.pdf');
     });
 
     // The race GIF is the thing people put in a slide, and until now the only
@@ -134,7 +136,7 @@ export class CompareView {
       try {
         const url = `/api/export/compare/gif?runs=${ids.join(',')}` +
                     `&metric=${encodeURIComponent(this._metric)}`;
-        const res = await fetch(url);
+        const res = await apiFetch(url);
         if (!res.ok) {
           let detail = `HTTP ${res.status}`;
           try { detail = (await res.json()).detail || detail; } catch { /* not JSON */ }
@@ -271,7 +273,10 @@ export class CompareView {
       const e = minX + (i / 5) * (maxX - minX);
       ctx.fillText(Math.round(e), xs(e), MT + ch + 14);
     }
-    ctx.fillText('epoch', ML + cw / 2, MT + ch + 26);
+    // One word only where the runs share a counter: an epoch of one run
+    // against a step of another has no common name.
+    const shared = sharedCounter(this._runs.map((cr) => cr.frames));
+    if (shared) ctx.fillText(counterWord(shared), ML + cw / 2, MT + ch + 26);
 
     // lines
     for (const s of series) {
@@ -287,14 +292,14 @@ export class CompareView {
       ctx.fill();
     }
 
-    // "lower is better" hint
-    ctx.fillStyle = _css('--text-muted');
-    ctx.font = '9px DM Sans, sans-serif';
-    ctx.textAlign = 'left';
-    ctx.fillText(
-      LOWER_IS_BETTER.has(this._metric) ? '↓ lower is better' : '↑ higher is better',
-      ML + 2, MT + 10,
-    );
+    // "lower is better" hint — only when the metric's name says which.
+    const dir = metricLowerBetter(this._metric);
+    if (dir !== undefined) {
+      ctx.fillStyle = _css('--text-muted');
+      ctx.font = '9px DM Sans, sans-serif';
+      ctx.textAlign = 'left';
+      ctx.fillText(dir ? '↓ lower is better' : '↑ higher is better', ML + 2, MT + 10);
+    }
   }
 }
 
@@ -306,6 +311,33 @@ function _fmt(v) {
   if (Math.abs(v) >= 100) return v.toFixed(0);
   if (Math.abs(v) >= 1) return v.toFixed(2);
   return v.toFixed(3);
+}
+
+/**
+ * Download one of the comparison's exports. Opening the URL is enough on a
+ * server with no token; with one, the request needs the Bearer header, which a
+ * navigation cannot carry — and the token must not go into a URL a reader can
+ * see — so it is fetched and saved from a blob.
+ */
+async function _saveExport(url, fallbackName) {
+  if (!authToken()) {
+    window.location.href = url;
+    return;
+  }
+  let res;
+  try {
+    res = await apiFetch(url);
+  } catch (err) {
+    alert(err.message);
+    return;
+  }
+  if (!res.ok) {
+    let detail = `HTTP ${res.status}`;
+    try { detail = (await res.json()).detail || detail; } catch { /* not JSON */ }
+    alert(detail);
+    return;
+  }
+  await saveResponse(res, fallbackName);
 }
 
 /** Where the written comparison of these runs downloads from. */

@@ -1,3 +1,3 @@
-The run is taking shape: perplexity {value} at epoch {epoch} — down at least 40% from its first reading.
-Epoch {epoch}: perplexity {value}, a change of {delta} since the previous reading. The run has reached its understanding phase.
-Understanding: perplexity {value} at epoch {epoch} — holding at, or within 1% of, the best this run has reached.
+The run is taking shape: perplexity {value} at {counter} {epoch} — down at least 40% from its first reading.
+{Counter} {epoch}: perplexity {value}, a change of {delta} since the previous reading. The run has reached its understanding phase.
+Understanding: perplexity {value} at {counter} {epoch} — holding at, or within 1% of, the best this run has reached.

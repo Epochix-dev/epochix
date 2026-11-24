@@ -4,8 +4,9 @@
  * fa.json and fr.json held translations for the epoch label, the phase names,
  * the connection dot, task names and more — and no code read them, so those
  * stayed English in every locale. Forty of sixty keys were dead. The reverse
- * gap existed too: the extension's engine emits milestone kinds no dictionary
- * had a title for, so its timeline cards were headed "grade_transition".
+ * gap existed too: the extension's engine emitted milestone kinds no
+ * dictionary had a title for, so its timeline cards were headed with the raw
+ * kind.
  *
  * These pin both directions, against the real sources.
  */
@@ -75,7 +76,8 @@ describe('milestone titles', () => {
   // Every kind either engine can emit, read from the engines themselves.
   const py = fs.readFileSync(path.join(REPO, 'src/epochix/story_engine/milestones.py'), 'utf8')
     + fs.readFileSync(path.join(REPO, 'src/epochix/story_engine/__init__.py'), 'utf8');
-  const ts = fs.readFileSync(path.join(REPO, 'epochix-vscode/src/webview/StandaloneEngine.ts'), 'utf8');
+  const ts = fs.readFileSync(path.join(REPO, 'epochix-vscode/src/webview/StandaloneEngine.ts'), 'utf8')
+    + fs.readFileSync(path.join(REPO, 'epochix-vscode/src/story/milestones.ts'), 'utf8');
   const kinds = new Set([
     ...[...py.matchAll(/kind="(\w+)"/g)].map((m) => m[1]),
     ...[25, 50, 75, 90].map((n) => `first_above_${n}`), // built with an f-string
@@ -83,7 +85,7 @@ describe('milestone titles', () => {
   ]);
 
   it('finds the kinds it is checking', () => {
-    for (const k of ['best_so_far', 'biggest_jump', 'training_complete', 'grade_transition', 'first_metric']) {
+    for (const k of ['best_so_far', 'biggest_jump', 'training_complete', 'divergence']) {
       expect(kinds.has(k), k).toBe(true);
     }
   });
@@ -98,8 +100,8 @@ describe('milestone titles', () => {
   it('a card is titled from the dictionary, not with the raw kind', () => {
     const el = document.createElement('div');
     const tl = new TimelineStory(el, fr.milestones);
-    tl._onState({ milestones: [{ kind: 'grade_transition', epoch: 3, message: 'x' }], live: true, run: null });
-    expect(el.querySelector('.tc-title').textContent).toBe(fr.milestones.grade_transition);
+    tl._onState({ milestones: [{ kind: 'biggest_jump', epoch: 3, message: 'x' }], live: true, run: null });
+    expect(el.querySelector('.tc-title').textContent).toBe(fr.milestones.biggest_jump);
   });
 });
 

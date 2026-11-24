@@ -77,6 +77,58 @@ Either way the grade does not know how hard your dataset is, and the card
 under the grade says which of the two applied. To grade a metric on bands of
 your own, see [Grade thresholds](config.md#grade-thresholds).
 
+### Readings that cannot be compared
+
+Both ways of grading set one reading against something: a band, or the first
+reading. So do "past its best", "barely moved" and the divergence warning.
+That is sound when the next reading of an unchanged model would come out
+about the same. It is not when each reading is the loss of one batch — which
+is all a LoRA or DreamBooth trainer prints, and on a diffusion model moves by
+an order of magnitude from one step to the next with nothing wrong.
+
+epochix measures this on the metric itself. Over its last 50 readings, once
+there are six: if it changes direction at half or more of them **and** the
+typical step between neighbours is a quarter or more of the larger one, the
+metric is unsteady. Then:
+
+- the run gets no letter, and the card says that is why;
+- the story gives the reading and those two measurements, and does not say
+  the run is past its best, stalled or improving;
+- a jump in the training loss is a divergence warning only when it is more
+  than 10 times the highest reading there has been.
+
+The readings are charted exactly as logged. Nothing is averaged or smoothed.
+To get a run that can be graded, log a validation metric, or the loss
+averaged over many batches.
+
+A loss that turns often but moves little beside its trend — a language model's
+loss per iteration, falling from 4.2 to 1.7 — is not unsteady, and is graded
+as before. Nor can the first five readings be: with so few, a batch's luck and
+a real rise look the same.
+
+A running average is the opposite case: it moves smoothly by construction, so
+the measure above passes it, and it still supports none of those
+conclusions. kohya-ss's `avr_loss` averages the batches so far through the
+first epoch, then the last epoch's batches. Each reading shares all but one
+batch with the one before it, and the first readings average fewer batches
+than the rest. On a recorded run the first reading was one batch's loss,
+0.0304, while the next eleven batches lay between 0.003 and 0.011. As that
+batch was averaged away, the run was graded A for an improvement it never
+made, and its ten end-of-epoch values, which share no batch, show no trend.
+A metric known to be computed this way gets no letter, no "past its best" and
+no "stalled": its readings are charted as logged, and the card says why.
+
+### Past its best
+
+The story says a run is past its best, and suggests keeping the earlier
+checkpoint and stopping early, once **three readings in a row** have been more
+than 1% worse than the best. That is what early stopping with a patience of
+three would do. A single reading that far off is said as just that ("more
+than 1% off the best of 0.1491 at round 55"). On a converged run the metric
+wobbles about its best, and one wobble is not a slip. Everything else the story
+says about a reading's progress holds only while that reading is within 1% of
+the best.
+
 ## What not to print
 
 Some things look like metrics and are not, so epochix deliberately ignores

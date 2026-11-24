@@ -11,6 +11,7 @@
 - [ ] The gate, run separately (not chained with `&&`):
   - `uv run --extra dev ruff check src tests`
   - `uv run --extra dev ruff format --check src tests`
+  - `uv run --extra dev bandit -r src/epochix -q -ll`
   - `uv run --extra dev mypy --strict src/epochix`
   - `uv run --extra dev pytest tests/unit tests/integration`
 - [ ] Nothing shown to users is invented: no placeholder numbers, no sample

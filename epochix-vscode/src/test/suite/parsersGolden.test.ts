@@ -6,8 +6,9 @@
  * whole engine, where a line one parser reads differently can be covered by
  * another. src/test/fixtures/parsers.golden.json is every call the Python
  * tests make to a parser directly — the lines they feed it, in order, on one
- * context, and what came back: the metrics, whether the line was claimed, and
- * the epoch, step and epoch count after it; and every sniff score.
+ * context, and what came back: the metrics, whether the line was claimed,
+ * the epoch, step and epoch count after it, and what the parser said the
+ * number in the epoch slot counts; and every sniff score.
  * scripts/gen_ts_engine_tables.py records it (scripts/parser_recorder.py) and
  * tests/unit/test_ts_engine_tables_sync.py replays it through Python, so it
  * is Python's answer. This replays it through the ports.
@@ -24,14 +25,18 @@ import { BoostingParser } from "../../parsers/boosting";
 import { FastAIParser } from "../../parsers/fastai";
 import { HuggingFaceParser } from "../../parsers/huggingface";
 import { KerasParser } from "../../parsers/keras";
+import { ProgressMeterParser } from "../../parsers/progressMeter";
 import { PytorchLightningParser } from "../../parsers/pytorchLightning";
+import { StepBarParser } from "../../parsers/stepBar";
 import { UniversalParser } from "../../parsers/universal";
 import { YoloParser } from "../../parsers/yolo";
 
 type Num = number | string | null;
 type Out = [string, Num, Num, number | null, number][];
 type State = [Num, number | null, number | null];
-type LineRow = [string, number, string, Out, boolean, State];
+/** The seventh item names what the line counted by, when the parser said it
+ *  was not an epoch (a round, an iteration, a step). */
+type LineRow = [string, number, string, Out, boolean, State, string?];
 type FlushRow = [string, "flush", Out];
 
 interface Sniff {
@@ -51,6 +56,8 @@ const PARSERS: Record<string, () => Parser> = {
   fastai: () => new FastAIParser(),
   huggingface: () => new HuggingFaceParser(),
   keras_tensorflow: () => new KerasParser(),
+  progress_meter: () => new ProgressMeterParser(),
+  step_bar: () => new StepBarParser(),
   pytorch_lightning: () => new PytorchLightningParser(),
   universal: () => new UniversalParser(),
   ultralytics_yolo: () => new YoloParser(),
@@ -121,15 +128,16 @@ function replay(g: Golden, only: string): { calls: number; wrong: string[] } {
           }
           continue;
         }
-        const [, seq, line, out, claimed, state] = event;
+        const [, seq, line, out, claimed, state, counted] = event;
         ctx.seq = seq;
         ctx.lineClaimed = false;
+        ctx.countedBy = null;
         const got = rows(parser.parseLine(line, ctx));
         const gotState: State = [encode(ctx.currentEpoch), ctx.currentStep, ctx.totalEpochs];
         if (name !== only) continue;
         calls++;
-        const said = JSON.stringify([got, ctx.lineClaimed, gotState]);
-        const want = JSON.stringify([out, claimed, state]);
+        const said = JSON.stringify([got, ctx.lineClaimed, gotState, ctx.countedBy]);
+        const want = JSON.stringify([out, claimed, state, counted ?? null]);
         if (said !== want) wrong.push(`${where} ${JSON.stringify(line)}:\n    got  ${said}\n    want ${want}`);
       }
     });

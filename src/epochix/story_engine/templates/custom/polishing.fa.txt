@@ -1,2 +1,2 @@
-مرحلهٔ پالایش: {metric} {value} در دوره {epoch}.
-دوره {epoch}: {metric} {value}، با تغییر {delta} نسبت به اندازه‌گیری قبلی. آخرین پرداخت‌ها.
+مرحلهٔ پالایش: {metric} {value} در {counter} {epoch}.
+{counter} {epoch}: {metric} {value}، با تغییر {delta} نسبت به اندازه‌گیری قبلی. آخرین پرداخت‌ها.

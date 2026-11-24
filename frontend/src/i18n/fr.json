@@ -20,17 +20,19 @@
     "lr_drop": "Taux d'apprentissage réduit",
     "divergence": "Divergence de l'entraînement",
     "divergence_cleared": "Perte redescendue",
-    "training_complete": "Entraînement terminé",
-    "first_metric": "Première mesure",
-    "grade_transition": "Changement de note",
-    "phase_transition": "Nouvelle phase"
+    "training_complete": "Entraînement terminé"
   },
   "labels": {
     "epoch": "Époque",
+    "step": "Étape",
+    "iteration": "Itération",
+    "round": "Tour",
     "connected": "En direct",
     "disconnected": "Hors ligne",
     "waiting": "En attente des données d'entraînement…",
     "reconnecting": "Reconnexion…",
+    "token_required": "Ce serveur demande un jeton d'accès. Ouvrez la page une fois avec ?token=<votre jeton> à la fin de son adresse ; cet onglet le garde jusqu'à sa fermeture.",
+    "token_rejected": "Le serveur n'a pas accepté le jeton d'accès de cet onglet. Rouvrez la page avec ?token=<votre jeton> à la fin de son adresse.",
     "frame": "Trame",
     "empty_title": "Rien n'est encore chargé.",
     "empty_what": "Epochix lit ce qu'affiche un entraînement — la perte et la précision à chaque époque — et non votre code source.",
@@ -84,7 +86,9 @@
     },
     "gradeNotes": {
       "few_readings": "Provisoire : cette note repose sur moins de cinq mesures de la métrique.",
-      "still_improving": "Encore en progrès à la dernière mesure — la note montre où l'exécution est arrivée, pas où elle allait."
+      "still_improving": "Encore en progrès à la dernière mesure — la note montre où l'exécution est arrivée, pas où elle allait.",
+      "unsteady": "Non noté : les mesures de cette métrique montent et descendent trop de l'une à la suivante pour qu'une seule situe l'entraînement.",
+      "running_mean": "Non noté : cette métrique est une moyenne glissante sur les lots les plus récents. Chaque mesure partage tous ses lots sauf un avec la précédente, et les premières moyennent moins de lots que les autres : aucune ne sert de référence pour noter."
     }
   },
   "compare": {

@@ -1,2 +1,2 @@
-Awakening: FID {value} at epoch {epoch}.
-Epoch {epoch}: FID {value}, in the Awakening phase.
+Awakening: FID {value} at {counter} {epoch}.
+{Counter} {epoch}: FID {value}, in the Awakening phase.

@@ -5,9 +5,16 @@ import sys
 import threading
 from collections.abc import AsyncIterator
 from datetime import datetime, timezone
+from typing import TYPE_CHECKING, cast
 
 from epochix.ingester import BaseIngester
+from epochix.ingester.live_lines import LiveLines
 from epochix.models import RawLogLine
+
+if TYPE_CHECKING:
+    import io
+
+_CHUNK = 65536
 
 
 class StdinIngester(BaseIngester):
@@ -17,7 +24,16 @@ class StdinIngester(BaseIngester):
       with a :class:`asyncio.StreamReader` — zero blocking.
     - **Windows:** falls back to a background :class:`threading.Thread` because
       ``loop.connect_read_pipe()`` is not supported for stdin on Windows.
-      Lines are forwarded to an :class:`asyncio.Queue` in the event loop.
+      What it reads is forwarded to an :class:`asyncio.Queue` in the event loop.
+
+    Both read bytes as they arrive and split them in
+    :mod:`epochix.ingester.live_lines`: a line ends at its newline, and a bar
+    that runs for the whole training has its finished redraws handed on before
+    then. Neither reads by line. ``StreamReader.readline()`` waits for a
+    newline a LoRA run does not print for hours, and raises once 64 KiB have
+    arrived without one; text-mode ``sys.stdin`` ends a line at every lone
+    carriage return, so each redraw of an epoch's progress bar arrived as a
+    line of its own and was read as a reading.
     """
 
     def __init__(self, run_id: str) -> None:
@@ -42,27 +58,46 @@ class StdinIngester(BaseIngester):
         reader = asyncio.StreamReader()
         protocol = asyncio.StreamReaderProtocol(reader)
         await loop.connect_read_pipe(lambda: protocol, sys.stdin.buffer)
+        held = LiveLines()
         while True:
-            raw = await reader.readline()
-            if not raw:
+            data = await reader.read(_CHUNK)
+            if not data:
                 break
-            yield raw.decode("utf-8", errors="replace").rstrip("\n")
+            for line in held.feed(data):
+                yield line
+        for line in held.end():
+            yield line
 
     async def _win32_lines(self) -> AsyncIterator[str]:
-        queue: asyncio.Queue[str | None] = asyncio.Queue(maxsize=1024)
+        queue: asyncio.Queue[bytes | None] = asyncio.Queue(maxsize=64)
         loop = asyncio.get_event_loop()
+        # read1 returns what has arrived, up to the size asked for; read would
+        # wait for the whole 64 KiB or the end of the stream.
+        read1 = cast("io.BufferedReader", sys.stdin.buffer).read1
+
+        def _put(item: bytes | None) -> None:
+            # Wait for room. A chunk dropped because the queue was full would
+            # take the middle of a line with it.
+            asyncio.run_coroutine_threadsafe(queue.put(item), loop).result()
 
         def _reader() -> None:
             try:
-                for raw_line in sys.stdin:
-                    loop.call_soon_threadsafe(queue.put_nowait, raw_line.rstrip("\n"))
+                while True:
+                    data: bytes = read1(_CHUNK)
+                    if not data:
+                        break
+                    _put(data)
             finally:
-                loop.call_soon_threadsafe(queue.put_nowait, None)
+                _put(None)
 
         thread = threading.Thread(target=_reader, daemon=True, name="stdin-reader")
         thread.start()
+        held = LiveLines()
         while True:
             item = await queue.get()
             if item is None:
                 break
-            yield item
+            for line in held.feed(item):
+                yield line
+        for line in held.end():
+            yield line

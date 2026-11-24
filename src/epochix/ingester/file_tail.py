@@ -8,11 +8,8 @@ from pathlib import Path
 import aiofiles  # type: ignore[import-untyped]
 
 from epochix.ingester import BaseIngester
+from epochix.ingester.live_lines import take_lines
 from epochix.models import RawLogLine
-
-# Flush an un-terminated line once it exceeds this, so a newline-free file can't
-# grow the buffer without bound. Far larger than any real log line.
-_MAX_PARTIAL = 1_048_576  # 1 MiB
 
 
 class FileTailIngester(BaseIngester):
@@ -53,9 +50,11 @@ class FileTailIngester(BaseIngester):
             while True:
                 chunk: str = await fh.read(65536)
                 if chunk:
-                    partial += chunk
-                    while "\n" in partial:
-                        line, partial = partial.split("\n", 1)
+                    # A line ends at its newline; a bar that runs for the whole
+                    # training ends none until the training does, so its
+                    # finished redraws go on as they are written (take_lines).
+                    lines, partial = take_lines(partial + chunk)
+                    for line in lines:
                         yield RawLogLine(
                             seq=seq,
                             timestamp=datetime.now(tz=timezone.utc),
@@ -63,19 +62,6 @@ class FileTailIngester(BaseIngester):
                             text=line,
                         )
                         seq += 1
-                    # A file with no newlines (a binary blob, or one giant JSON
-                    # line) would otherwise grow `partial` without bound. Flush
-                    # it as a line once it's clearly not a normal log line so
-                    # memory stays bounded.
-                    if len(partial) > _MAX_PARTIAL:
-                        yield RawLogLine(
-                            seq=seq,
-                            timestamp=datetime.now(tz=timezone.utc),
-                            source="file",
-                            text=partial,
-                        )
-                        seq += 1
-                        partial = ""
                 else:
                     # No new data — sleep and poll again
                     await asyncio.sleep(self._poll_interval)

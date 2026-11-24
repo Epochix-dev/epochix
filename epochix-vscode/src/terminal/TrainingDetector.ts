@@ -5,6 +5,8 @@
  * the score exceeds OPEN_THRESHOLD.
  */
 
+import { withoutTestReport } from "../parsers/pytestReport";
+
 const OPEN_THRESHOLD = 0.45;
 
 // Strong signals — any one of these is probably ML training
@@ -16,6 +18,12 @@ const STRONG_PATTERNS: RegExp[] = [
   /\bepoch\b.*\bloss\b/i,                        // generic "epoch … loss"
   /Training epoch/i,
   /Step\s+\d+.*loss=/i,
+  // A run-long step bar carrying a value, as the step-bar parser reads it
+  // (parsers/stepBar.ts): "steps:  33%|███▎ | 40/120 [00:28<00:57, avr_loss=0.0112]".
+  // kohya-ss prints nothing else a signal here knew — its "epoch 1/10" is
+  // lower-case and holds no loss — and scored 0.15: a LoRA run in the
+  // terminal never opened the dashboard. Redraws are split by \r, not lines.
+  /(?:^|\r)[ \t]{0,8}steps:[ \t]{1,8}\d{1,3}%\|[^|\r\n]{0,400}\|[ \t]{0,8}\d{1,12}\/\d{1,12}[ \t]{0,8}\[[^\]\r\n]{0,400}?[A-Za-z_]\w{0,63}=[-+]?\d/im,
   // Gradient boosting — XGBoost, LightGBM, CatBoost. A bracketed round number
   // followed by a "name:value" pair. Classical ML scored 0.15 here, below the
   // threshold, so an XGBoost run in the terminal never opened the dashboard
@@ -62,7 +70,9 @@ export function stripAnsi(text: string): string {
  * @returns     0.0–1.0 confidence score.
  */
 export function sniff(text: string): number {
-  const clean = stripAnsi(text);
+  // pytest names metrics in its test ids and prints a failing test's source;
+  // neither is a run (parsers/pytestReport.ts).
+  const clean = withoutTestReport(stripAnsi(text));
 
   // Any strong signal → high confidence
   for (const pat of STRONG_PATTERNS) {

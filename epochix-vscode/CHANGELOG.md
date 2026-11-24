@@ -14,6 +14,116 @@ which covers the extension too; entries here resume with 0.7.16.
 
 ---
 
+## [Unreleased]
+
+### Fixed
+
+- **A run's first reading is not told how it changed** ("a change of 0
+  points since the previous reading"), as in the dashboard and the reports.
+- **A run reads in VS Code in the sentences the dashboard and the reports
+  use.** Numbers are rounded as Python rounds them (73.25% is "73.2%"), a
+  run's first reading no longer claims a change of "+7.8 points" from
+  nothing, a learning rate cut by a schedule is marked as it is in the
+  browser, and two warnings of one frame come in the same order.
+
+## [0.7.43] — 2026-11-23
+
+### Fixed
+
+- **A plateau's wobble is no longer told as a slip.** One reading more than
+  1% below the best was told "performance has slipped … use early stopping",
+  even beside an A+. A run is now past its best once three readings in a row
+  have been more than 1% worse, and one such reading is said as just that.
+
+## [0.7.42] — 2026-11-23
+
+### Added
+
+- **A kohya-ss LoRA run opens the dashboard from a terminal.** Nothing
+  sd-scripts prints counted as a training signal (its `epoch 1/10` is
+  lower-case and carries no loss), so a watched terminal never opened the
+  panel for one. A step bar carrying a value now counts, and the run is told
+  by step.
+
+### Fixed
+
+- **A run without epochs is told in what it counts**: step, iteration or
+  boosting round, in the story, the warnings, the milestones and the panel's
+  axes, not epoch.
+- **A running average over overlapping batches is not graded.** kohya's
+  `avr_loss` averages the last epoch's batches. Read as any other loss, a
+  LoRA run was graded A while its story said "performance has slipped … use
+  early stopping", and neither was true. It is now graded I, with a sentence
+  saying why, and every reading is still charted.
+
+## [0.7.41] — 2026-11-22
+
+### Added
+
+- **A watched terminal says when a command looked like training and was not
+  told.** A command whose output was never recognised gave no panel and no
+  message. When such a command ends, goes quiet, or runs on unrecognised, a
+  status-bar item beside the Epochix pill now says one of two things. It is
+  never a notification. "Run not opened" means the dashboard would tell the
+  run but the terminal feed never recognised it, as with two recorded CatBoost
+  runs and four GridSearchCV runs; it offers to open the run. "Run not read"
+  means the output looked like a training run and tells no story; it says how
+  many lines were printed, what was read, and how to check the format with
+  `epochix check`. It quotes no line of output and no path. Ordinary commands
+  stay silent: recorded `dir`, `ls`, `git log`, `pip install`, `npm install`,
+  `pytest` and a web server. Each command now has its own feed. Before, the
+  first training run latched the watcher, and every later command was fed to
+  its dashboard.
+- **Runs that count steps are told**: nanoGPT, the PyTorch ImageNet example,
+  and a diffusers LoRA bar, read redraw by redraw as it trains.
+
+### Fixed
+
+- **A token exported in your shell no longer breaks the extension's own
+  server.** The extension started its server with your whole environment, so
+  an `EPOCHIX_AUTH_TOKEN` meant for a remote `epochix serve` reached it.
+  Nothing in the extension sends a token, so saving a run failed with
+  `HTTP 401: Bearer token required` and the panel could read no run back. The
+  server is now started with `EPOCHIX_AUTH_TOKEN` and `EPOCHIX_CORS_ORIGINS`
+  emptied. It is always started on `127.0.0.1`, whatever `EPOCHIX_HOST` says.
+- **A loss printed per batch is not graded as one measured per epoch.** A
+  LoRA run's loss of the last batch is graded I as unsteady, not given a
+  letter by the luck of its last batch.
+- **A watched terminal that pauses in a framework's preamble is read in its
+  own format.** Lightning's and Ultralytics' setup lines no longer choose the
+  universal parser.
+- **A pytest run of an ML project no longer opens the dashboard.** A failing
+  test's source is not read as a metric, and test ids no longer count as
+  training output.
+- **"Epochix: Export Run" exports.** After a format was picked it did nothing,
+  every time: it sent the panel a message that nothing handled. It now runs
+  the panel's own export for the run on screen, and with the built-in engine
+  it says why there is no file.
+- **A run's milestones are the ones the browser and the reports show.** The
+  extension raised milestones of its own (the first reading, each new grade,
+  each new phase) and none of the Python engine's: a new best, crossing 25,
+  50, 75 and 90%, the biggest jump and training complete. It now raises
+  Python's, from the same thresholds, and its own three are gone. The
+  learning curve, the phase ribbon and the grade card show grade and phase
+  changes, in both engines.
+- **A watched run's milestones and warnings arrive as it trains.** The panel
+  sent them only when it opened, and a terminal run opens it early, so the
+  timeline and the warning strip stayed as they were at that moment. The
+  milestones a run ends with were never sent. Each is now sent once, as it
+  is reached, and a panel reloaded mid-run is not sent them again.
+- **The dashboard reads which way is better as the engine does.** A falling
+  YOLO loss, `val_MAE` or `log_loss` was drawn as getting worse.
+
+### Tests
+
+- The extension's host tests now run on macOS after a change lands.
+- Every command is run by a test, as the command palette runs it. Six of the
+  eight had never been run.
+- Every corpus log gives the same milestones through the extension's engine
+  as through Python's.
+
+---
+
 ## [0.7.40] — 2026-11-03
 
 ### Fixed

@@ -22,12 +22,13 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 from epochix.story_engine.grade import metric_lower_better
+from epochix.story_engine.messages import counter_words
 from epochix.story_engine.narrator import _load_special
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
 
-    from epochix.models import Run, StoryFrame
+    from epochix.models import Counter, Run, StoryFrame
 
 # A gap must exceed this multiple of the runs' own median epoch-to-epoch
 # movement before it is called a difference. Two runs of the same config
@@ -47,6 +48,8 @@ class RunTrajectory:
     primary_metric: str
     values: list[tuple[float, float]]  # (epoch, value), in epoch order
     grade: str | None = None
+    # What the first number of each pair counts (StoryFrame.counter).
+    counter: Counter | None = None
 
     @property
     def lower_better(self) -> bool:
@@ -138,14 +141,21 @@ def narrate_comparison(runs: list[RunTrajectory], locale: str = "en") -> str:
         # This named the first two runs given, so with three the sentence
         # could quote the best-to-worst gap between a pair it did not describe.
         pair = [r for r in usable if r is winner or r is loser]
+        # The movement is from one reading to the next. That is one epoch only
+        # where both runs count epochs; any other counter says "reading".
+        counted = [r.counter for r in pair if r.counter not in (None, "epoch")]
         return _fill(
-            _load_special(
-                "_compare_noise",
+            counter_words(
+                _load_special(
+                    "_compare_noise",
+                    locale,
+                    "{a} and {b} finished within {gap} of each other ({metric}), which is "
+                    "no larger than the {counter_to_counter} movement in either run. On "
+                    "this evidence there is no meaningful difference between them.",
+                )[0],
+                counted[0] if counted else None,
                 locale,
-                "{a} and {b} finished within {gap} of each other ({metric}), which is "
-                "no larger than the epoch-to-epoch movement in either run. On this "
-                "evidence there is no meaningful difference between them.",
-            )[0],
+            ),
             a=pair[0].name,
             b=pair[1].name,
             gap=_fmt(gap),
@@ -172,13 +182,17 @@ def narrate_comparison(runs: list[RunTrajectory], locale: str = "en") -> str:
         recovered = abs(best_value - winner.final_value)
         parts.append(
             _fill(
-                _load_special(
-                    "_compare_pastpeak",
+                counter_words(
+                    _load_special(
+                        "_compare_pastpeak",
+                        locale,
+                        "{loser} peaked at {best} on {counter} {best_epoch} and ended "
+                        "worse, at {lose_value}. Had it stopped at its best the gap would "
+                        "have been {recovered} rather than {gap}.",
+                    )[0],
+                    loser.counter,
                     locale,
-                    "{loser} peaked at {best} on epoch {best_epoch} and ended worse, at "
-                    "{lose_value}. Had it stopped at its best the gap would have been "
-                    "{recovered} rather than {gap}.",
-                )[0],
+                ),
                 loser=loser.name,
                 best=_fmt(best_value),
                 best_epoch=_epoch(best_epoch),
@@ -204,6 +218,22 @@ def narrate_comparison(runs: list[RunTrajectory], locale: str = "en") -> str:
     return " ".join(parts)
 
 
+def told_on(frames: Sequence[object]) -> str | None:
+    """The metric a run's story is told on, as its latest frame names it.
+
+    A story can start on one metric and move to another: training accuracy
+    until the first validation pass, a box loss until the first mAP. The grade
+    belongs to the metric the run ended on, so that is the one a run is
+    compared, tabulated and animated on. The dashboard reads it the same way
+    (``latestPrimaryKey``). None when no frame names a metric.
+    """
+    for frame in reversed(frames):
+        key = getattr(frame, "primary_metric", None)
+        if key:
+            return str(key)
+    return None
+
+
 def trajectory_from_frames(
     name: str,
     frames: list[object],
@@ -212,45 +242,48 @@ def trajectory_from_frames(
 ) -> RunTrajectory | None:
     """Build a trajectory from stored :class:`StoryFrame` records.
 
-    Frames whose ``primary_metric`` differs from the run's dominant one are
-    dropped: an early frame can predate task detection and measure something
-    else, and mixing them would compare two different quantities.
+    Only the frames on the metric the story ended on (:func:`told_on`): an
+    earlier frame can measure something else, and mixing them would compare
+    two different quantities.
+
+    That metric was once the one most frames carried. A run that validates
+    late has more frames on what it started with, so a Lightning run graded A-
+    on a validation accuracy of 0.876 at epoch 30 was tabulated as training
+    accuracy 0.719 at epoch 9 and called not comparable with a run on
+    validation accuracy, and two detection runs graded on mAP50 were ranked on
+    their box loss. Of the 55 corpus logs that tell a story, 12 change metric
+    once; the majority was the wrong one in 3, the latest in none.
     """
-    counts: dict[str, int] = {}
-    for frame in frames:
-        key = getattr(frame, "primary_metric", None)
-        if key:
-            counts[key] = counts.get(key, 0) + 1
-    if counts:
-        dominant: str | None = max(counts, key=lambda k: counts[k])
-    elif fallback_metric:
-        # Frames can carry a value without naming the metric — every run
-        # written before that name was stored on the frame does. Refusing here
-        # made the comparison narrative come back *empty* rather than wrong,
-        # which is worse: the feature looked absent instead of broken. The run
-        # record still knows which metric these values are.
-        dominant = None
-    else:
+    told = told_on(frames)
+    # No frame names a metric: frames can carry a value without one — every
+    # run written before that name was stored on the frame does. Refusing here
+    # made the comparison narrative come back *empty* rather than wrong, which
+    # is worse: the feature looked absent instead of broken. The run record
+    # still knows which metric these values are, when the caller passes it.
+    if told is None and not fallback_metric:
         return None
 
     values: list[tuple[float, float]] = []
+    counter: Counter | None = None
     for frame in frames:
-        if dominant is not None and getattr(frame, "primary_metric", None) != dominant:
+        if told is not None and getattr(frame, "primary_metric", None) != told:
             continue
         epoch = getattr(frame, "epoch", None)
         value = getattr(frame, "primary_metric_value", None)
         if epoch is None or value is None:
             continue
         values.append((float(epoch), float(value)))
+        counter = getattr(frame, "counter", None)
 
     if len(values) < 2:
         return None
     values.sort(key=lambda ev: ev[0])
     return RunTrajectory(
         name=name,
-        primary_metric=dominant or fallback_metric or "",
+        primary_metric=told or fallback_metric or "",
         values=values,
         grade=grade,
+        counter=counter,
     )
 
 

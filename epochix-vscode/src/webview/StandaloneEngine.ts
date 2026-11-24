@@ -5,7 +5,7 @@
  * (no Python sidecar).  Mirrors the high-level logic of pipeline.py.
  */
 import type { Parser, ParserContext, RawMetric } from "../parsers/base";
-import { makeContext } from "../parsers/base";
+import { counterAfter, makeContext, type Counter } from "../parsers/base";
 import { PytorchLightningParser } from "../parsers/pytorchLightning";
 import { KerasParser } from "../parsers/keras";
 import { HuggingFaceParser } from "../parsers/huggingface";
@@ -32,8 +32,8 @@ import {
   gradeBands,
   gradeByTrajectory,
   gradeNote,
-  gradeRank,
   hasAbsoluteScale,
+  hasNoIdeal,
   metricLowerBetter,
   taskLowerBetter,
 } from "../story/grader";
@@ -41,29 +41,38 @@ import {
 // engine (story_engine/warnings.py and __init__.py) — no longer copied.
 import {
   DIVERGE_GROWTH,
+  LR_DROP_RATIO,
   OVERFIT_WINDOW,
+  PAST_PEAK_READINGS,
   PAST_PEAK_REL_DROP,
   PLATEAU_DELTA,
   PLATEAU_WINDOW,
   STALL_MIN_EPOCHS,
   STALL_REL_IMPROVEMENT,
+  UNSTEADY_MIN_READINGS,
+  UNSTEADY_WINDOW,
 } from "../story/grading.generated";
 import {
   narrate,
   narrateDiverged,
+  narrateBelowBest,
   narratePastPeak,
   narrateSingleReading,
   narrateStalled,
+  narrateRunningMean,
+  narrateUnsteady,
   message,
   displayMetric,
   lossText,
   resolveLocale,
   type Locale,
 } from "../story/narrator";
+import { sci } from "../story/pyFormat";
 import type {
   CrossValidation, GradeBandsMsg, StoryFrameMsg, MilestoneMsg, WarningMsg, RunSummaryMsg,
 } from "./messages";
 import { parseArchitecture, type ArchLayer } from "../story/architecture";
+import { MilestoneTracker } from "../story/milestones";
 import {
   ON_SCALE,
   PREFERRED_KEYS,
@@ -72,8 +81,11 @@ import {
   TASK_SIGNALS,
 } from "../story/engineTables.generated";
 import { canonicalise, isRecognised } from "../story/canonical";
+import { runningMean, stepText, unsteady } from "../story/steadiness";
 import { FastAIParser } from "../parsers/fastai";
 import { AccelerateParser } from "../parsers/accelerate";
+import { ProgressMeterParser } from "../parsers/progressMeter";
+import { isStepBar, StepBarParser, stepBarRedraws } from "../parsers/stepBar";
 
 // Metric names are canonicalised by story/canonical.ts — Python's
 // canonicalize_key over tables generated from it.
@@ -140,6 +152,23 @@ function cleanLine(text: string): string {
   return cr >= 0 ? t.slice(cr + 1) : t;
 }
 
+/**
+ * What to read from one line — Python's _line_states: its final state, and
+ * with one exception nothing before it. The exception is a bar that runs for
+ * the whole training and counts its steps (a LoRA trainer's): its redraws are
+ * the run's only readings, so they are returned in order, the line's final
+ * state last. The length cap then applies to each redraw, not to the line.
+ */
+function lineStates(text: string): string[] {
+  if (text.includes("\r") && (text.includes("teps:") || text.includes("TEPS:"))) {
+    let whole = text.replace(ANSI, "").replace(ORPHAN_SGR, "");
+    if (whole.endsWith("\r")) whole = whole.slice(0, -1);
+    const redraws = stepBarRedraws(whole);
+    if (redraws !== null) return redraws.map(cleanLine);
+  }
+  return [cleanLine(text)];
+}
+
 /** The bands a letter was graded on, as the dashboard draws them (an
  *  open-ended F band is not a line, and JSON has no infinity). Mirrors the
  *  run config Python's pipeline writes (`grade_bands`). */
@@ -197,12 +226,19 @@ function fallbackMetrics(
       boostingReprintNext: false,
       kerasTold: new Map(),
       kerasToldEpoch: null,
+      meterEpoch: null,
+      meterTrainAccuracy: null,
+      stepBarValues: null,
+      countedBy: null,
+      pytestReport: false,
       lineClaimed: false,
     };
     const metrics = fallback.parseLine(line, scratch).filter((m) => isRecognised(m.key));
     if (metrics.length > 0) {
       ctx.currentEpoch = scratch.currentEpoch;
       ctx.totalEpochs = scratch.totalEpochs;
+      // ... and what that number counts, if it is not an epoch.
+      if (scratch.countedBy !== null) ctx.countedBy = scratch.countedBy;
       return metrics;
     }
   }
@@ -256,6 +292,8 @@ function makeParsers(): Parser[] {
     new BoostingParser(),
     new FastAIParser(),
     new AccelerateParser(),
+    new ProgressMeterParser(),
+    new StepBarParser(),
     new UniversalParser(),
   ].sort((a, b) => b.priority - a.priority);
 }
@@ -276,6 +314,9 @@ interface WarmupLine {
   metrics: RawMetric[];
   epoch: number | null;
   totalEpochs: number | null;
+  /** What the epoch slot counted when the line arrived: nanoGPT's first
+   *  `step` row is built into a frame after the `iter` row that follows it. */
+  counter: Counter;
 }
 
 // A model summary is printed once at the top of a run; scanning further is
@@ -293,6 +334,8 @@ export class StandaloneEngine {
   private _seenKeys: string[] = [];
   private _rawKeys = new Set<string>();
   private _keyCounts = new Map<string, number>();
+  // Every reading of every metric, in order — Python's _metric_history.
+  private _history = new Map<string, number[]>();
   private _eventsCount = 0;
   private _taskLocked = false;
   private _primaryKeyUsed: string | null = null;
@@ -300,21 +343,27 @@ export class StandaloneEngine {
   private _warmup: WarmupLine[] = [];
   private _taskDetected = false;
   private _ctx: ParserContext = makeContext();
+  // What the number in the context's epoch slot counts, kept line by line
+  // (counterAfter) — Python's StoryEngine.counter.
+  private _counter: Counter = "epoch";
 
   private _runId = generateId();
   private _task: TaskType = "custom";
   private _primaryMetric = "val_loss";
   private _baseline: number | null = null;
-  private _lastPrimary = 0;
   private _primaryReadings = 0;
   private _best: number | null = null;
   private _bestEpoch: number | null = null;
+  /** Readings in a row more than PAST_PEAK_REL_DROP below the best. */
+  private _belowBestRun = 0;
   // Set once, at the first `key: nan`. A MetricEvent-style value cannot carry
   // NaN (the parsers will not read it), so the raw line is checked instead.
   private _diverged = false;
   // Inputs to the pathology checks, mirroring story_engine/warnings.py.
   private _trainLosses: number[] = [];
   private _valLosses: number[] = [];
+  /** The learning rate at the last frame, for lr_drop. */
+  private _lrPrev: number | null = null;
   private _bestTrainLoss: number | null = null;
   private _trainSeen = 0;
   private _bestValLoss: number | null = null;
@@ -323,9 +372,19 @@ export class StandaloneEngine {
   private _overfitMark: number | null = null;
   /** Best training loss when the divergence warning fired; beating it withdraws the warning. */
   private _divergenceMark: number | null = null;
+  /** The highest training loss before the reading being checked. */
+  private _highTrainLoss: number | null = null;
+  /** The reading a standing divergence warning was raised on and the highest
+   *  before it, while the warning rests on one reading's jump. */
+  private _divergenceAt: [number, number | null] | null = null;
   private _allMetrics: RawMetric[] = [];
   private _frames: StoryFrameMsg[] = [];
   private _milestones: MilestoneMsg[] = [];
+  // Python's MilestoneTracker, ported; and the story metric's reading
+  // before this one (null at the start and after the metric changes).
+  private readonly _tracker: MilestoneTracker;
+  private _prevPrimary: number | null = null;
+  private _finalized = false;
   private _warnings: WarningMsg[] = [];
   /** Whether nothing says which way the latest frame's metric runs — the
    *  plateau warning then states its measurement and no advice. */
@@ -345,9 +404,21 @@ export class StandaloneEngine {
   // The project's .epochix.yaml, or null for the built-in thresholds.
   private readonly _gradeConfig: GradeConfig | null;
 
-  constructor(taskHint?: TaskType, locale?: string, gradeConfig?: GradeConfig | null) {
+  /**
+   * `runId` picks each sentence's variant, as the Python engine's run id does;
+   * a run told under the same id reads the same in both (stories.golden.json).
+   * Left out, the run gets an id of its own.
+   */
+  constructor(
+    taskHint?: TaskType,
+    locale?: string,
+    gradeConfig?: GradeConfig | null,
+    runId?: string,
+  ) {
+    if (runId !== undefined) this._runId = runId;
     this._locale = resolveLocale(locale);
     this._gradeConfig = gradeConfig ?? null;
+    this._tracker = new MilestoneTracker(this._locale);
     this._parsers = makeParsers();
 
     // A task the user pinned (`epochix.taskHint`) is locked in, so detection
@@ -367,14 +438,19 @@ export class StandaloneEngine {
     // Process complete lines
     const parts = this._buffer.split(/\r?\n/);
     this._buffer = parts.pop() ?? "";
-    const lines = parts.map(cleanLine);
+    const states = parts.map(lineStates);
+    const lines = states.flat();
+    // A bar that runs for the whole training ends no line until the training
+    // does (AGENTS.md: streaming has no end). Its finished redraws are read
+    // as they arrive; the one still being drawn stays in the buffer.
+    lines.push(...this._finishedRedraws());
 
     // A model summary is printed once, at the top. Scan a bounded window for
     // one and stop as soon as it is found.
     if (this._archScan.length < _ARCH_SCAN_LINES) {
-      for (const ln of lines) {
+      for (const group of states) {
         if (this._archScan.length >= _ARCH_SCAN_LINES) break;
-        this._archScan.push(ln);
+        this._archScan.push(group[group.length - 1]);
       }
       // Keep the LONGEST parse rather than latching on the first success. A
       // summary arrives one line at a time, so the first successful parse sees
@@ -413,10 +489,10 @@ export class StandaloneEngine {
     const newFrames: StoryFrameMsg[] = [];
 
     if (this._buffer.length > 0) {
-      const last = cleanLine(this._buffer);
+      const last = lineStates(this._buffer);
       this._buffer = "";
-      if (this._activeParsers === null) this._pending.push(last);
-      else newFrames.push(...this._processLine(last));
+      if (this._activeParsers === null) this._pending.push(...last);
+      else for (const state of last) newFrames.push(...this._processLine(state));
     }
 
     newFrames.push(...this._commitPending());
@@ -459,10 +535,35 @@ export class StandaloneEngine {
     return out;
   }
 
+  /**
+   * The finished redraws of a run-long step bar still waiting for its line to
+   * end. Everything before the buffer's last carriage return is complete; what
+   * follows it may be half written, and stays.
+   */
+  private _finishedRedraws(): string[] {
+    const buffer = this._buffer;
+    const cut = buffer.lastIndexOf("\r");
+    if (cut < 0 || !(buffer.includes("teps:") || buffer.includes("TEPS:"))) return [];
+    const bars = buffer.slice(0, cut).split("\r").map(cleanLine).filter(isStepBar);
+    if (bars.length === 0) return [];
+    this._buffer = buffer.slice(cut + 1);
+    return bars;
+  }
+
   /** Finish the run; returns a summary. */
   finish(): RunSummaryMsg | null {
     if (this._frames.length === 0) return null;
     const last = this._frames[this._frames.length - 1];
+    // The milestones a run ends with, once: the biggest jump, at the reading
+    // it happened, and training_complete. Python's pipeline calls finalize
+    // with the last seq and the epoch of the last frame that had one.
+    if (!this._finalized) {
+      this._finalized = true;
+      const last = this._frames[this._frames.length - 1];
+      this._milestones.push(
+        ...this._tracker.finalize(this._ctx.seq, this._lastEpoch(), last?.counter ?? null),
+      );
+    }
     return {
       id: this._runId,
       name: null,
@@ -471,6 +572,18 @@ export class StandaloneEngine {
       storySummary: last.narrative,
       crossValidation: this.crossValidation(),
     };
+  }
+
+  /**
+   * The epoch the run was last told at: an interrupted epoch that printed
+   * only a training loss is not one (interrupted.log ends "Epoch 4/100: 45%").
+   */
+  private _lastEpoch(): number | null {
+    for (let i = this._frames.length - 1; i >= 0; i--) {
+      const epoch = this._frames[i].epoch;
+      if (epoch !== null) return epoch;
+    }
+    return null;
   }
 
   /**
@@ -519,6 +632,11 @@ export class StandaloneEngine {
     return this._primaryMetric;
   }
 
+  /** The parser this run is read with, or null while it is still undecided. */
+  parserName(): string | null {
+    return this._activeParsers?.[0]?.name ?? null;
+  }
+
   metrics(): { canonical_key: string; epoch: number | null; value: number }[] {
     return this._allMetrics.map((m) => ({
       canonical_key: canonicalise(m.key),
@@ -531,8 +649,12 @@ export class StandaloneEngine {
     return [...this._frames];
   }
 
+  /**
+   * In the order the run reached them, as the Python store lists them: the
+   * biggest jump is known only at the end but sits at the reading it was.
+   */
   milestones(): MilestoneMsg[] {
-    return [...this._milestones];
+    return [...this._milestones].sort((a, b) => a.seq - b.seq);
   }
 
   warnings(): WarningMsg[] {
@@ -556,6 +678,7 @@ export class StandaloneEngine {
   /** Parse one line and turn it into a frame (or bank it during warmup). */
   private _processLine(line: string): StoryFrameMsg[] {
     this._ctx.seq++;
+    const slot = this._ctx.currentEpoch;
     let metrics = this._activeParsers![0].parseLine(line, this._ctx);
     // A parser that recognised the line and read no result from it says so;
     // the fallbacks must not read what it declined (as in pipeline.py).
@@ -564,6 +687,9 @@ export class StandaloneEngine {
     if (metrics.length === 0 && !claimed && this._fallbacks.length > 0) {
       metrics = this._fallbackMetrics(line);
     }
+    // What the number these readings are stamped with counts: the story names
+    // a step a step and a boosting round a round, not an epoch.
+    this._counter = counterAfter(this._ctx, slot, this._counter);
 
     // `loss: nan` never reaches the parsers — none of them reads a non-number.
     // Checked on the raw line, requiring `:` or `=` so prose cannot trip it.
@@ -616,6 +742,9 @@ export class StandaloneEngine {
       const key = canonicalise(m.key);
       if (!this._keyCounts.has(key)) this._seenKeys.push(key);
       this._keyCounts.set(key, (this._keyCounts.get(key) ?? 0) + 1);
+      const readings = this._history.get(key);
+      if (readings === undefined) this._history.set(key, [m.value]);
+      else readings.push(m.value);
       this._rawKeys.add(m.key);
       if (key === "train_loss") this._trainLosses.push(m.value);
       else if (key === "val_loss") this._valLosses.push(m.value);
@@ -631,6 +760,7 @@ export class StandaloneEngine {
           metrics,
           epoch,
           totalEpochs: this._ctx.totalEpochs,
+          counter: this._counter,
         });
       }
       return this._eventsCount >= WARMUP_EVENTS ? this._drainWarmup(false) : [];
@@ -638,7 +768,7 @@ export class StandaloneEngine {
 
     if (metrics.length === 0) return [];
     this._primaryMetric = primaryMetricFrom(this._task, this._seenKeys);
-    const frame = this._buildFrame(metrics, epoch, this._ctx.totalEpochs);
+    const frame = this._buildFrame(metrics, epoch, this._ctx.totalEpochs, this._counter);
     return frame ? [this._emit(frame)] : [];
   }
 
@@ -676,7 +806,7 @@ export class StandaloneEngine {
 
     const out: StoryFrameMsg[] = [];
     for (const held of this._warmup) {
-      const frame = this._buildFrame(held.metrics, held.epoch, held.totalEpochs);
+      const frame = this._buildFrame(held.metrics, held.epoch, held.totalEpochs, held.counter);
       if (frame) out.push(this._emit(frame));
     }
     this._warmup = [];
@@ -685,7 +815,6 @@ export class StandaloneEngine {
 
   private _emit(frame: StoryFrameMsg): StoryFrameMsg {
     this._frames.push(frame);
-    this._checkMilestones(frame);
     this._checkWarnings();
     return frame;
   }
@@ -702,7 +831,11 @@ export class StandaloneEngine {
     metrics: RawMetric[],
     epoch: number | null,
     totalEpochs: number | null,
+    countedBy: Counter,
   ): StoryFrameMsg | null {
+    // Nothing in the slot, nothing counted: a script that fits once and
+    // prints a score has no counter to name.
+    const counter: Counter | null = epoch !== null ? countedBy : null;
     const primaryMetrics = metrics.filter(
       (m) => canonicalise(m.key) === this._primaryMetric,
     );
@@ -720,14 +853,17 @@ export class StandaloneEngine {
       this._baseline = null;
       this._best = null;
       this._bestEpoch = null;
-      this._lastPrimary = value;
+      this._belowBestRun = 0;
+      this._prevPrimary = null;
       this._primaryReadings = 0;
     }
     this._primaryKeyUsed = key;
 
     if (this._baseline === null) this._baseline = value;
-    const delta = value - this._lastPrimary;
-    this._lastPrimary = value;
+    // Null with no reading before to measure from, as in Python: measured
+    // from 0 it was "+7.8 points" at a run's first epoch. narrate then picks
+    // a variant that states no change.
+    const delta = this._prevPrimary !== null ? value - this._prevPrimary : null;
     this._primaryReadings++;
 
     // Direction from the metric's own name first: the task default is right
@@ -759,32 +895,65 @@ export class StandaloneEngine {
     // metric, where the value sits on its own scale is the honest reading
     // until there is movement to measure. Python's phase_baseline; this
     // engine never had it.
+    // Everything below sets this reading against another: the first, the
+    // best, the one before. A metric whose readings rise and fall from one to
+    // the next by more than any trend in them supports none of that
+    // (steadiness.ts): no improvement is claimed, no letter is given, and the
+    // story says what the readings are. As in the Python engine.
+    const swing = unsteady(this._history.get(key) ?? []);
+    // A running average over overlapping batches supports none of it either,
+    // whatever its readings look like (steadiness.ts runningMean).
+    const averaged = runningMean(primary.key);
+    const incomparable = swing !== null || averaged;
+    // A metric with no ideal (PSNR, the inception score) has no scale of its
+    // own to sit on: its improvement is read from its first reading, as
+    // gradeByTrajectory reads it. Measured against 1 it was negative, and a
+    // PSNR that climbed 20 to 32 was told it had made no progress.
+    const noIdeal = hasNoIdeal(key);
     const phaseBaseline =
-      this._primaryReadings < 2 && !lowerBetter && value >= 0 && value <= 1
-        ? 0.0
-        : this._baseline;
-    const phase: Phase = computePhase(clock, value, phaseBaseline, lowerBetter);
-    const rel = relativeImprovement(value, this._baseline, lowerBetter);
+      incomparable
+        ? value
+        : this._primaryReadings < 2 && !lowerBetter && !noIdeal && value >= 0 && value <= 1
+          ? 0.0
+          : this._baseline;
+    const phase: Phase = computePhase(clock, value, phaseBaseline, lowerBetter, null, noIdeal);
+    const rel = incomparable
+      ? null
+      : relativeImprovement(value, this._baseline, lowerBetter, null, noIdeal);
     // Honest advancement: the clock when the length is known, otherwise the
     // fraction of achievable improvement realised. Not a made-up constant,
     // which pinned runs without a length in their first phase for life.
     let progress = clock !== null ? clock : rel !== null ? rel : 0.0;
     if (!Number.isFinite(progress)) progress = 0.0;
     progress = Math.max(0.0, Math.min(1.0, progress));
-    const [grade, gradeBasis, gradeBands] = this._grade(value, lowerBetter, directionUnknown);
+    const [grade, gradeBasis, gradeBands]: [Grade, GradeBasis | null, GradeBandsMsg | null] =
+      incomparable ? ["I", null, null] : this._grade(value, lowerBetter, directionUnknown);
 
-    let pastPeak = false;
+    // As StoryEngine._emit: every reading of the story's metric, before the
+    // frame is built; not the frame that closes a run on NaN.
+    this._milestones.push(
+      ...this._tracker.check(epoch, this._ctx.seq, value, this._prevPrimary, key, lowerBetter),
+    );
+    this._prevPrimary = value;
+
+    let belowBest = false;
     if (Math.abs(this._best) > 1e-9) {
       const drop = (lowerBetter ? value - this._best : this._best - value) / Math.abs(this._best);
-      pastPeak = drop > PAST_PEAK_REL_DROP;
+      // Not for an unsteady metric: its best is its luckiest batch. Nor for a
+      // running average: its best is its luckiest window.
+      belowBest = drop > PAST_PEAK_REL_DROP && !incomparable;
     }
+    // Told it is past its best once that many readings in a row have been, as
+    // in the Python engine; a new best starts the count again.
+    this._belowBestRun = belowBest ? this._belowBestRun + 1 : 0;
+    const pastPeak = this._belowBestRun >= PAST_PEAK_READINGS;
     // Stalled means FLAT. A run that got worse clears "less than 3% improvement"
     // exactly as a flat one does, and was told it was "not learning yet".
     const stalled =
       this._primaryReadings >= STALL_MIN_EPOCHS &&
       rel !== null &&
       rel < STALL_REL_IMPROVEMENT &&
-      !pastPeak;
+      !belowBest;
 
     let narrative: string;
     // A result, not a stage of training: one reading and no epoch is a script
@@ -793,15 +962,29 @@ export class StandaloneEngine {
       narrative = narrateSingleReading({
         value, metric: key, runId: this._runId, locale: this._locale,
       });
+    } else if (averaged) {
+      narrative = narrateRunningMean({
+        epoch, value, metric: key, runId: this._runId, locale: this._locale, counter,
+      });
+    } else if (swing !== null) {
+      narrative = narrateUnsteady({
+        epoch, value, metric: key, turns: swing.turns, readings: swing.readings,
+        step: stepText(swing), runId: this._runId, locale: this._locale, counter,
+      });
     } else if (stalled) {
       narrative = narrateStalled({
         epoch, value, baseline: this._baseline,
-        epochsSeen: this._primaryReadings, runId: this._runId, locale: this._locale,
+        epochsSeen: this._primaryReadings, runId: this._runId, locale: this._locale, counter,
       });
     } else if (pastPeak) {
       narrative = narratePastPeak({
         epoch, value, best: this._best, bestEpoch: this._bestEpoch, runId: this._runId,
-        locale: this._locale,
+        locale: this._locale, counter,
+      });
+    } else if (belowBest) {
+      narrative = narrateBelowBest({
+        epoch, value, best: this._best, bestEpoch: this._bestEpoch, runId: this._runId,
+        locale: this._locale, counter,
       });
     } else {
       narrative = narrate({
@@ -813,6 +996,7 @@ export class StandaloneEngine {
         runId: this._runId,
         metric: key,
         locale: this._locale,
+        counter,
       });
     }
 
@@ -820,6 +1004,7 @@ export class StandaloneEngine {
       runId: this._runId,
       seq: this._ctx.seq,
       epoch,
+      counter,
       progress,
       phase,
       grade,
@@ -829,7 +1014,7 @@ export class StandaloneEngine {
       // confidence in the line, which this carried and nothing displayed.
       confidence: progress,
       gradeNote: gradeNote(grade, this._primaryReadings, {
-        hasEpoch: epoch !== null, newBest,
+        hasEpoch: epoch !== null, newBest, unsteady: swing !== null, runningMean: averaged,
       }),
       gradeBasis,
       gradeBands,
@@ -893,6 +1078,7 @@ export class StandaloneEngine {
     // No later reading can withdraw this: a metric stopped being a number.
     this._seenMilestones.add("divergence_warning");
     this._divergenceMark = null;
+    this._divergenceAt = null;
     return {
       ...prev,
       seq: this._ctx.seq,
@@ -903,59 +1089,9 @@ export class StandaloneEngine {
       narrative: narrateDiverged({
         epoch, metric, lastValue: prev.primaryMetricValue,
         lastEpoch: prev.epoch, runId: this._runId, locale: this._locale,
+        counter: prev.counter,
       }),
     };
-  }
-
-  private _checkMilestones(frame: StoryFrameMsg): void {
-    // First improvement
-    if (this._frames.length === 1 && !this._seenMilestones.has("first_metric")) {
-      this._seenMilestones.add("first_metric");
-      this._milestones.push({
-        kind: "first_metric",
-        epoch: frame.epoch,
-        message: message("ms_first_metric", this._locale, {
-          metric: displayMetric(this._primaryMetric, this._locale),
-          value: frame.primaryMetricValue.toFixed(4),
-        }),
-      });
-    }
-
-    // Grade transitions
-    const prevFrame = this._frames.length > 1
-      ? this._frames[this._frames.length - 2]
-      : null;
-    if (prevFrame && prevFrame.grade !== frame.grade) {
-      const key = `grade_${frame.grade}`;
-      if (!this._seenMilestones.has(key)) {
-        this._seenMilestones.add(key);
-        // Every change used to read "Grade improved to …" — including a fall
-        // to F.
-        const rose = gradeRank(frame.grade) > gradeRank(prevFrame.grade);
-        this._milestones.push({
-          kind: "grade_transition",
-          epoch: frame.epoch,
-          message: message(rose ? "ms_grade_up" : "ms_grade_down", this._locale, {
-            grade: frame.grade,
-          }),
-        });
-      }
-    }
-
-    // Phase transitions
-    if (prevFrame && prevFrame.phase !== frame.phase) {
-      const key = `phase_${frame.phase}`;
-      if (!this._seenMilestones.has(key)) {
-        this._seenMilestones.add(key);
-        this._milestones.push({
-          kind: "phase_transition",
-          epoch: frame.epoch,
-          message: message("ms_phase", this._locale, {
-            phase: message(`phase_${frame.phase}`, this._locale),
-          }),
-        });
-      }
-    }
   }
 
   /**
@@ -965,43 +1101,102 @@ export class StandaloneEngine {
    */
   private _checkWarnings(): void {
     const epoch = this._frames.length ? this._frames[this._frames.length - 1].epoch : null;
+    const counter = this._frames.length ? this._frames[this._frames.length - 1].counter : null;
     const warn = (seen: string, kind: string, message: string): void => {
       if (this._seenMilestones.has(seen)) return;
       this._seenMilestones.add(seen);
       this._warnings.push({ kind, epoch, message });
     };
 
-    // Plateau: the primary metric's span over the window is under 1% of where
-    // the window began. Direction-free, which is what makes it correct. The
-    // warning describes those readings, so it is withdrawn once the window is
-    // no longer flat, and may fire again. Mirrors story_engine/warnings.py.
-    if (this._frames.length >= PLATEAU_WINDOW) {
-      const w = this._frames.slice(-PLATEAU_WINDOW).map((f) => f.primaryMetricValue);
-      const span = Math.max(...w) - Math.min(...w);
-      const flat = span / (Math.abs(w[0]) + 1e-9) < PLATEAU_DELTA;
-      if (flat) {
-        // "Progress has slowed … may restart progress" presupposes progress:
-        // not of a metric that has not moved since its first reading, nor of
-        // one nothing says the direction of. Mirrors _plateau_message.
-        const all = this._frames.map((f) => f.primaryMetricValue).filter(Number.isFinite);
-        const unmoved =
-          all.length > 0 &&
-          (Math.max(...all) - Math.min(...all)) / (Math.abs(all[0]) + 1e-9) < PLATEAU_DELTA;
-        const key = !this._directionUnknown && !unmoved ? "warn_plateau" : "warn_plateau_measured";
-        warn("plateau_warning", "plateau", message(key, this._locale));
-      } else if (this._seenMilestones.has("plateau_warning")) {
-        this._seenMilestones.delete("plateau_warning");
+    // In Python's order (story_engine/warnings.py): divergence, overfitting,
+    // plateau, learning rate. Two raised on one frame were listed the other
+    // way round, and a CatBoost run's plateau came before its overfit.
+    const t = this._trainLosses;
+    const v = this._valLosses;
+    // Divergence: a single 10x jump, or a climb to 10x the best loss seen. The
+    // gradual case is the common one — 3.59 -> 2881 over eight epochs never
+    // takes a single 10x step. The ratios need a positive loss to mean anything.
+    // A loss that later beats its best from before the rise was not diverging:
+    // withdraw the warning, and let it fire again if it recurs. Each reading
+    // once, in order: rescanning the whole series on every frame is quadratic
+    // over a long run. Mirrors story_engine/warnings.py.
+    for (; this._trainSeen < t.length; this._trainSeen++) {
+      const x = t[this._trainSeen];
+      const prev = this._trainSeen > 0 ? t[this._trainSeen - 1] : null;
+      const best = this._bestTrainLoss;
+      const high = this._highTrainLoss;
+      // "The reading before" and "its best" are references only when one
+      // reading can be set against another. For a loss that cannot be read
+      // that way the reference is the highest reading there has been, and a
+      // warning already raised on one reading's jump is withdrawn unless it
+      // clears that bar too. Mirrors story_engine/warnings.py.
+      const at0 = Math.max(0, this._trainSeen + 1 - UNSTEADY_WINDOW);
+      const trainSwing =
+        this._trainSeen + 1 >= UNSTEADY_MIN_READINGS
+          ? unsteady(t.slice(at0, this._trainSeen + 1))
+          : null;
+      if (this._seenMilestones.has("divergence_warning")) {
+        const at = this._divergenceAt;
+        if (
+          trainSwing !== null &&
+          at !== null &&
+          !(at[1] !== null && at[1] > 0 && at[0] > at[1] * DIVERGE_GROWTH)
+        ) {
+          this._seenMilestones.delete("divergence_warning");
+          this._divergenceMark = null;
+          this._divergenceAt = null;
+          this._warnings.push({
+            kind: "divergence_cleared",
+            epoch,
+            message: message("warn_divergence_unsteady", this._locale, {
+              turns: String(trainSwing.turns),
+              readings: String(trainSwing.readings),
+              step: stepText(trainSwing),
+            }),
+          });
+        }
+      } else {
+        let said: string | null = null;
+        let markAt = best;
+        if (trainSwing !== null) {
+          if (high !== null && high > 0 && x > high * DIVERGE_GROWTH) {
+            said = message("warn_above", this._locale, { new: lossText(x), high: lossText(high) });
+            markAt = high;
+          }
+        } else if (prev !== null && prev > 0 && x > prev * DIVERGE_GROWTH) {
+          said = message("warn_spike", this._locale, { old: lossText(prev), new: lossText(x) });
+        } else if (best !== null && best > 0 && x > best * DIVERGE_GROWTH) {
+          said = message("warn_climb", this._locale, { new: lossText(x), best: lossText(best) });
+        }
+        if (said !== null) {
+          this._divergenceMark = markAt;
+          this._divergenceAt = [x, high];
+          warn("divergence_warning", "divergence", said);
+        }
+      }
+      const mark = this._divergenceMark;
+      if (mark !== null && x < mark) {
+        this._seenMilestones.delete("divergence_warning");
+        this._divergenceMark = null;
+        this._divergenceAt = null;
         this._warnings.push({
-          kind: "plateau_cleared",
+          kind: "divergence_cleared",
           epoch,
-          message: message("warn_plateau_cleared", this._locale),
+          message: message("warn_divergence_cleared", this._locale, {
+            new: lossText(x),
+            best: lossText(mark),
+          }),
         });
+      }
+      if (Number.isFinite(x) && (this._bestTrainLoss === null || x < this._bestTrainLoss)) {
+        this._bestTrainLoss = x;
+      }
+      if (Number.isFinite(x) && (this._highTrainLoss === null || x > this._highTrainLoss)) {
+        this._highTrainLoss = x;
       }
     }
 
     // Overfitting: validation loss rising while training loss falls.
-    const t = this._trainLosses;
-    const v = this._valLosses;
     if (t.length >= OVERFIT_WINDOW && v.length >= OVERFIT_WINDOW) {
       const tw = t.slice(-OVERFIT_WINDOW);
       const vw = v.slice(-OVERFIT_WINDOW);
@@ -1009,7 +1204,7 @@ export class StandaloneEngine {
       const trainFalling = tw.every((x, i) => i === 0 || x < tw[i - 1]);
       if (valRising && trainFalling && !this._seenMilestones.has("overfit_warning")) {
         this._overfitMark = this._bestValLoss;
-        warn("overfit_warning", "overfit", message("warn_overfit", this._locale));
+        warn("overfit_warning", "overfit", message("warn_overfit", this._locale, {}, counter));
       }
     }
 
@@ -1036,45 +1231,53 @@ export class StandaloneEngine {
       }
     }
 
-    // Divergence: a single 10x jump, or a climb to 10x the best loss seen. The
-    // gradual case is the common one — 3.59 -> 2881 over eight epochs never
-    // takes a single 10x step. The ratios need a positive loss to mean anything.
-    // A loss that later beats its best from before the rise was not diverging:
-    // withdraw the warning, and let it fire again if it recurs. Each reading
-    // once, in order: rescanning the whole series on every frame is quadratic
-    // over a long run. Mirrors story_engine/warnings.py.
-    for (; this._trainSeen < t.length; this._trainSeen++) {
-      const x = t[this._trainSeen];
-      const prev = this._trainSeen > 0 ? t[this._trainSeen - 1] : null;
-      const best = this._bestTrainLoss;
-      if (!this._seenMilestones.has("divergence_warning")) {
-        let said: string | null = null;
-        if (prev !== null && prev > 0 && x > prev * DIVERGE_GROWTH) {
-          said = message("warn_spike", this._locale, { old: lossText(prev), new: lossText(x) });
-        } else if (best !== null && best > 0 && x > best * DIVERGE_GROWTH) {
-          said = message("warn_climb", this._locale, { new: lossText(x), best: lossText(best) });
-        }
-        if (said !== null) {
-          this._divergenceMark = best;
-          warn("divergence_warning", "divergence", said);
-        }
-      }
-      const mark = this._divergenceMark;
-      if (mark !== null && x < mark) {
-        this._seenMilestones.delete("divergence_warning");
-        this._divergenceMark = null;
+    // Plateau: the primary metric's span over the window is under 1% of where
+    // the window began. Direction-free, which is what makes it correct. The
+    // warning describes those readings, so it is withdrawn once the window is
+    // no longer flat, and may fire again. Mirrors story_engine/warnings.py.
+    if (this._frames.length >= PLATEAU_WINDOW) {
+      const w = this._frames.slice(-PLATEAU_WINDOW).map((f) => f.primaryMetricValue);
+      const span = Math.max(...w) - Math.min(...w);
+      const flat = span / (Math.abs(w[0]) + 1e-9) < PLATEAU_DELTA;
+      if (flat) {
+        // "Progress has slowed … may restart progress" presupposes progress:
+        // not of a metric that has not moved since its first reading, nor of
+        // one nothing says the direction of. Mirrors _plateau_message.
+        const all = this._frames.map((f) => f.primaryMetricValue).filter(Number.isFinite);
+        const unmoved =
+          all.length > 0 &&
+          (Math.max(...all) - Math.min(...all)) / (Math.abs(all[0]) + 1e-9) < PLATEAU_DELTA;
+        const key = !this._directionUnknown && !unmoved ? "warn_plateau" : "warn_plateau_measured";
+        warn("plateau_warning", "plateau", message(key, this._locale, {}, counter));
+      } else if (this._seenMilestones.has("plateau_warning")) {
+        this._seenMilestones.delete("plateau_warning");
         this._warnings.push({
-          kind: "divergence_cleared",
+          kind: "plateau_cleared",
           epoch,
-          message: message("warn_divergence_cleared", this._locale, {
-            new: lossText(x),
-            best: lossText(mark),
+          message: message("warn_plateau_cleared", this._locale),
+        });
+      }
+    }
+
+    // Learning rate: one below LR_DROP_RATIO of the reading before was cut by a
+    // schedule. Not a problem (the dashboard does not raise it as one), but a
+    // moment of the run worth marking. The extension never raised it: VS Code
+    // showed none of the 69 a corpus run raises in Python. Mirrors
+    // story_engine/warnings.py, which reads the last learning rate recorded.
+    const lrs = this._history.get("lr");
+    const lr = lrs !== undefined && lrs.length > 0 ? lrs[lrs.length - 1] : null;
+    if (lr !== null) {
+      if (this._lrPrev !== null && lr < this._lrPrev * LR_DROP_RATIO) {
+        this._warnings.push({
+          kind: "lr_drop",
+          epoch,
+          message: message("warn_lr_drop", this._locale, {
+            old: sci(this._lrPrev, 2),
+            new: sci(lr, 2),
           }),
         });
       }
-      if (Number.isFinite(x) && (this._bestTrainLoss === null || x < this._bestTrainLoss)) {
-        this._bestTrainLoss = x;
-      }
+      this._lrPrev = lr;
     }
   }
 }

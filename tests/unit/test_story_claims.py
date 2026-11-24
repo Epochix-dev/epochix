@@ -22,6 +22,7 @@ from __future__ import annotations
 import asyncio
 import itertools
 import re
+from datetime import datetime, timezone
 from pathlib import Path
 
 import pytest
@@ -29,9 +30,11 @@ import pytest
 import epochix.story_engine as engine
 from epochix.enums import Phase
 from epochix.ingester.file_batch import FileBatchIngester
+from epochix.models import MetricEvent
 from epochix.pipeline import run_pipeline
 from epochix.server.hub import Hub
 from epochix.store.sqlite_store import RunStore
+from epochix.story_engine.grade import NO_IDEAL_METRICS
 from epochix.story_engine.phases import PHASE_STEPS, compute_phase
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -196,6 +199,30 @@ def test_an_error_is_down_by_the_share_its_phase_says() -> None:
     assert all(seen.values()), f"the grid never reached a phase: {seen}"
 
 
+def test_a_score_with_no_ideal_is_up_by_the_share_its_phase_says() -> None:
+    """PSNR and the inception score have no top to be a share of the way to,
+    so their phase is read from the rise over the first reading: a phase is
+    reached only once the score is up by that phase's share of it — from a
+    first reading above 1, at 0, or below it (a reward starts negative)."""
+    floor = {Phase.UNDERSTANDING: 0.40, Phase.MASTERING: 0.75, Phase.POLISHING: 0.95}
+    order = list(floor)
+    seen = dict.fromkeys(floor, 0)
+    baselines = [-1500.0, -3.0, 0.5, 2.0, 20.0, 31.5]
+    rises = [i / 20 for i in range(-10, 41)]
+    for baseline, rise, progress in itertools.product(baselines, rises, _PROGRESS):
+        value = baseline + abs(baseline) * rise
+        phase = compute_phase(progress, value, baseline, unbounded=True)
+        if phase in floor:
+            seen[phase] += 1
+            for claimed in order[: order.index(phase) + 1]:
+                cut = floor[claimed]
+                assert value >= baseline + abs(baseline) * cut - 1e-9, (phase, baseline, value)
+        # A score that fell is never told it has come far.
+        if value < baseline:
+            assert phase in (Phase.AWAKENING, Phase.LEARNING), (phase, baseline, value)
+    assert all(seen.values()), f"the grid never reached a phase: {seen}"
+
+
 @pytest.mark.parametrize("task", sorted(SCORE_TASKS))
 def test_score_sentences_state_those_quantities(task: str) -> None:
     assert any("three quarters" in ln for ln in _lines(task, "mastering"))
@@ -261,3 +288,50 @@ def test_what_the_resnet_run_is_told_is_true_of_it() -> None:
         assert not _UNSUPPORTED_EN.search(text), text
     # Guard: the checks above must have run on most of the run, not on nothing.
     assert phase_stories >= 20, phase_stories
+
+
+# ── a metric with no ideal, told end to end ──────────────────────────────────
+
+_PHASE_WORDS = re.compile(r"\b(Awakening|Learning|Understanding|Mastering|Polishing)\b")
+
+
+@pytest.mark.parametrize("key", sorted(NO_IDEAL_METRICS))
+@pytest.mark.parametrize("total_epochs", [None, 20])
+def test_what_a_run_with_no_ideal_is_told_is_true_of_it(key: str, total_epochs: int | None) -> None:
+    """A GENERATIVE run told by PSNR or the inception score: told with the
+    sentences that only name the metric (its prose is about an FID), never
+    "no progress" while it rises, and in the phase each sentence names.
+
+    Over many run ids, because the variant is chosen from the run id."""
+    t0 = datetime(2026, 11, 24, tzinfo=timezone.utc)
+    start = 20.0 if key == "PSNR" else 2.0
+    values = [start * (1 + 1.2 * i / 19) for i in range(20)]
+    phases_seen: set[Phase] = set()
+    variants: set[str] = set()
+    for n in range(24):
+        run_id = f"no-ideal-{n}"
+        story = engine.StoryEngine(run_id=run_id, total_epochs=total_epochs)
+        for i, value in enumerate(values):
+            event = MetricEvent(
+                run_id=run_id,
+                seq=i,
+                timestamp=t0,
+                epoch=float(i + 1),
+                canonical_key=key,
+                raw_key=key,
+                value=value,
+            )
+            for frame in story.process_line([event]):
+                text = frame.narrative
+                phases_seen.add(frame.phase)
+                variants.add(re.sub(r"[\d.+-]+", "#", text))
+                assert "FID" not in text, text
+                assert not re.search(r"progress|barely|where it started|setup", text), text
+                assert not re.search(r"\bdown\b|%|quarter|twentieth|best", text), text
+                assert not _UNSUPPORTED_EN.search(text), text
+                assert f"{frame.primary_metric_value:.4f}" in text, text
+                named = _PHASE_WORDS.findall(text)
+                assert all(word.lower() == frame.phase.value for word in named), (frame.phase, text)
+    # Guard: the run climbed through the phases, and more than one sentence was read.
+    assert {Phase.UNDERSTANDING, Phase.MASTERING, Phase.POLISHING} <= phases_seen, phases_seen
+    assert len(variants) >= 6, variants

@@ -11,6 +11,188 @@ narrative templates are, so both engines fill them identically.
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING, get_args
+
+from epochix.models import Counter
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
+
+    from epochix.models import StoryFrame
+
+COUNTERS: tuple[Counter, ...] = get_args(Counter)
+
+# What a run counts by, in the forms the sentences need it in.
+#
+# A run with no epochs has its own counter in the frame's `epoch` slot — a
+# boosting round, an iteration, a step — and every sentence called it an
+# epoch: nanoGPT's step 2000 was "Epoch 2000", CatBoost's round 59 "Epoch 59".
+# A template names the counter through a placeholder ({Counter}, {counter},
+# {at_counter}, ...) and this table supplies the whole form for the run's
+# kind, written out by hand. Nothing is derived from another form: French
+# elides and agrees ("à l'époque", "au tour", "Les tours suivants"), Farsi
+# joins a plural to what follows (the `later_counters` form), and a rule that built
+# those from a noun would be a rule about grammar.
+#
+# Two kinds of form are not the counter's name for every kind. A run with
+# epochs is read once an epoch, so a number of readings is a number of epochs
+# and the change from one reading to the next is the change of one epoch. A
+# run told every 250 steps is not read once a step: those forms
+# (counter_readings, single_counter, in_one_counter, counter_to_counter) say
+# "readings" for it.
+#
+# Each language lists only the forms its own sentences use
+# (test_counter_words.py: none missing, none unused).
+COUNTER_FORMS: dict[str, dict[Counter, dict[str, str]]] = {
+    "en": {
+        "epoch": {
+            "Counter": "Epoch",
+            "counter": "epoch",
+            "counters": "epochs",
+            "counter_readings": "epochs",
+            "single_counter": "single-epoch",
+            "counter_to_counter": "epoch-to-epoch",
+        },
+        "step": {
+            "Counter": "Step",
+            "counter": "step",
+            "counters": "steps",
+            "counter_readings": "readings",
+            "single_counter": "single-reading",
+            "counter_to_counter": "reading-to-reading",
+        },
+        "iteration": {
+            "Counter": "Iteration",
+            "counter": "iteration",
+            "counters": "iterations",
+            "counter_readings": "readings",
+            "single_counter": "single-reading",
+            "counter_to_counter": "reading-to-reading",
+        },
+        "round": {
+            "Counter": "Round",
+            "counter": "round",
+            "counters": "rounds",
+            "counter_readings": "readings",
+            "single_counter": "single-reading",
+            "counter_to_counter": "reading-to-reading",
+        },
+    },
+    "fa": {
+        "epoch": {
+            "counter": "دوره",
+            "later_counters": "دوره‌های بعدی",
+            "counter_of": "دورهٔ",
+            "counter_readings": "دوره",
+            "in_one_counter": "در یک دوره",
+            "counter_to_counter": "دوره‌به‌دوره",
+        },
+        "step": {
+            "counter": "گام",
+            "later_counters": "گام‌های بعدی",
+            "counter_of": "گام",
+            "counter_readings": "خوانش",
+            "in_one_counter": "در یک خوانش",
+            "counter_to_counter": "خوانش‌به‌خوانش",
+        },
+        "iteration": {
+            "counter": "تکرار",
+            "later_counters": "تکرارهای بعدی",
+            "counter_of": "تکرار",
+            "counter_readings": "خوانش",
+            "in_one_counter": "در یک خوانش",
+            "counter_to_counter": "خوانش‌به‌خوانش",
+        },
+        "round": {
+            "counter": "دور",
+            "later_counters": "دورهای بعدی",
+            "counter_of": "دور",
+            "counter_readings": "خوانش",
+            "in_one_counter": "در یک خوانش",
+            "counter_to_counter": "خوانش‌به‌خوانش",
+        },
+    },
+    "fr": {
+        "epoch": {
+            "Counter": "Époque",
+            "counter": "époque",
+            "counters": "époques",
+            "at_counter": "à l'époque",
+            "the_counter": "l'époque",
+            "of_the_counter": "de l'époque",
+            "Later_counters": "Les époques suivantes",
+            "at_the_best_counter": "à la meilleure époque",
+            "counter_readings": "époques",
+            "in_one_counter": "en une époque",
+            "counter_to_counter": "d'une époque à l'autre",
+        },
+        "step": {
+            "Counter": "Étape",
+            "counter": "étape",
+            "counters": "étapes",
+            "at_counter": "à l'étape",
+            "the_counter": "l'étape",
+            "of_the_counter": "de l'étape",
+            "Later_counters": "Les étapes suivantes",
+            "at_the_best_counter": "à la meilleure étape",
+            "counter_readings": "mesures",
+            "in_one_counter": "en une mesure",
+            "counter_to_counter": "d'une mesure à l'autre",
+        },
+        "iteration": {
+            "Counter": "Itération",
+            "counter": "itération",
+            "counters": "itérations",
+            "at_counter": "à l'itération",
+            "the_counter": "l'itération",
+            "of_the_counter": "de l'itération",
+            "Later_counters": "Les itérations suivantes",
+            "at_the_best_counter": "à la meilleure itération",
+            "counter_readings": "mesures",
+            "in_one_counter": "en une mesure",
+            "counter_to_counter": "d'une mesure à l'autre",
+        },
+        "round": {
+            "Counter": "Tour",
+            "counter": "tour",
+            "counters": "tours",
+            "at_counter": "au tour",
+            "the_counter": "le tour",
+            "of_the_counter": "du tour",
+            "Later_counters": "Les tours suivants",
+            "at_the_best_counter": "au meilleur tour",
+            "counter_readings": "mesures",
+            "in_one_counter": "en une mesure",
+            "counter_to_counter": "d'une mesure à l'autre",
+        },
+    },
+}
+
+
+def frames_counter(frames: Sequence[StoryFrame]) -> Counter | None:
+    """What a run counts by, from its frames: the latest one that says.
+
+    For a report's labels and a comparison, which speak of the run and not of
+    one reading. None when no frame has anything in its epoch slot.
+    """
+    for frame in reversed(frames):
+        if frame.counter is not None:
+            return frame.counter
+    return None
+
+
+def counter_words(text: str, counter: Counter | None, locale: str = "en") -> str:
+    """Fill *text*'s counter placeholders with the forms for *counter*.
+
+    None is a frame with nothing in its epoch slot, or one stored before the
+    counter was: it is worded as an epoch, as every frame used to be.
+    """
+    forms = COUNTER_FORMS.get(locale, COUNTER_FORMS["en"])[counter or "epoch"]
+    for name, word in forms.items():
+        text = text.replace("{" + name + "}", word)
+    return text
+
+
 MESSAGES: dict[str, dict[str, str]] = {
     "en": {
         "warn_nan": "The value of {metric} became undefined (NaN or infinite). "
@@ -21,43 +203,80 @@ MESSAGES: dict[str, dict[str, str]] = {
         "{best}. A lower learning rate or gradient clipping may help.",
         "warn_divergence_cleared": "Training loss fell to {new}, below the {best} it "
         "reached before the rise, so the rise did not last.",
+        # A training loss whose readings cannot be compared one with another
+        # (story_engine/steadiness.py): a jump is measured against the highest
+        # reading there has been, and a warning raised on one reading's jump
+        # is withdrawn once the readings show that is how this loss moves.
+        "warn_above": "Training loss reached {new}, more than 10 times the highest "
+        "reading before it ({high}). A lower learning rate or gradient clipping may help.",
+        "warn_divergence_unsteady": "Training loss changed direction {turns} times in its "
+        "last {readings} readings and typically differs by {step} from one to the next, "
+        "so one jump does not show that it is diverging.",
         "warn_overfit": "Validation loss has risen for two readings in a row while "
         "training loss kept falling, so the model may be memorising "
         "its training data. Next step: stop at the best validation "
-        "epoch, add regularisation (dropout, weight decay) or "
+        "{counter}, add regularisation (dropout, weight decay) or "
         "augmentation, or collect more data.",
         "warn_overfit_cleared": "Validation loss reached a new low again, so the "
         "earlier rise was a blip, not memorising.",
         "warn_plateau": "Progress has slowed: the metric moved less than 1% over "
         "the last 5 readings. Next step: a lower learning rate (for "
         "example a reduce-on-plateau schedule) may restart "
-        "progress; otherwise more epochs at this rate may add "
+        "progress; otherwise more {counters} at this rate may add "
         "little.",
         "warn_plateau_measured": "The metric moved less than 1% over the last 5 readings.",
         "warn_plateau_cleared": "The metric is moving again: at least 1% over the last 5 readings.",
         # The sentence after a past-peak, stalled or diverged story: what to do
         # about it. Appended to every variant, so no run draws one without it.
-        "next_pastpeak": "Next step: keep the checkpoint from epoch {best_epoch} if one "
+        "next_pastpeak": "Next step: keep the checkpoint from {counter} {best_epoch} if one "
         "was saved, and use early stopping on this metric so the next run ends there.",
         "next_stalled": "Next step: check the learning rate first, then the data pipeline "
         "and the label mapping.",
         "next_diverged": "Next step: lower the learning rate or clip the gradients, and "
-        "restart from a checkpoint saved at or before epoch {last_epoch}.",
+        "restart from a checkpoint saved at or before {counter} {last_epoch}.",
+        "next_unsteady": "Next step: log a validation metric, or this one averaged over "
+        "many batches, for readings that can be compared.",
+        "next_running_mean": "Next step: log a validation metric, or a loss averaged "
+        "over batches no other reading shares, for readings that can be compared.",
         "warn_lr_drop": "Learning rate decreased from {old} to {new}.",
         "ms_best": "New best: {value}",
         "ms_crossed": "Crossed {pct}%: {value}",
-        "ms_biggest_jump": "Biggest single-epoch improvement: {value}",
+        "ms_biggest_jump": "Biggest {single_counter} improvement: {value}",
         "ms_complete": "Training completed.",
-        # Kinds only the extension's engine emits.
-        "ms_first_metric": "First {metric} recorded: {value}",
-        "ms_grade_up": "Grade improved to {grade}",
-        "ms_grade_down": "Grade dropped to {grade}",
-        "ms_phase": "Entered the {phase} phase",
         "phase_awakening": "awakening",
         "phase_learning": "learning",
         "phase_understanding": "understanding",
         "phase_mastering": "mastering",
         "phase_polishing": "polishing",
+        # Said only by the VS Code extension, about a command in a watched
+        # terminal whose output it saw and did not tell (terminal/notice.ts).
+        # Every number is counted from that output; `<n>` and `<value>` in the
+        # example line stand for the reader's own and are never filled.
+        "term_status_unread": "Epochix: run not read",
+        "term_status_unopened": "Epochix: run not opened",
+        "term_title_unread": "Epochix saw output that looked like a training run and could "
+        "not tell its story.",
+        "term_title_opened_empty": "The dashboard opened for this output and has no story to show.",
+        "term_title_unopened": "Epochix can tell this command's run, but did not recognise "
+        "its output as training while it ran, so the dashboard did not open.",
+        "term_lines": "The command printed {lines} lines.",
+        "term_sampled": "What follows was read from its first {sampled} lines.",
+        "term_read": "Read from it: {readings}.",
+        "term_read_none": "No reader took a single value from it.",
+        "term_labelled": "Names Epochix knows as metrics stood beside numbers, in a layout "
+        "none of its readers takes: {names}.",
+        "term_values": "{name} ({count} different values)",
+        "term_why_layout": "None of its readers takes this layout, so there was nothing to "
+        "tell a story from.",
+        "term_why_no_score": "None of these is a score or a loss, so there was nothing to "
+        "tell a story by.",
+        "term_story": "Its story would be told by {metric} (readings: {count}).",
+        "term_fix_print": "To have it read, print one line per epoch with name=value pairs, "
+        "for example: Epoch <n>/<total> train_loss=<value> val_accuracy=<value>",
+        "term_fix_check": "To see what Epochix reads from a saved log, run: epochix check <file>",
+        "term_fix_open": "Open it in the dashboard to see it.",
+        "term_action_open": "Open in the dashboard",
+        "term_click": "Click for the details.",
     },
     "fa": {
         "warn_nan": "مقدار {metric} تعریف‌نشده شد (NaN یا بی‌نهایت). "
@@ -70,7 +289,7 @@ MESSAGES: dict[str, dict[str, str]] = {
         "پیش از افزایش؛ پس افزایش دوام نیاورد.",
         "warn_overfit": "خطای اعتبارسنجی دو اندازه‌گیری پیاپی افزایش یافته، در حالی "
         "که خطای آموزش همچنان کاهش می‌یافت؛ شاید مدل داده‌های "
-        "آموزشی را حفظ می‌کند. گام بعدی: در بهترین دورهٔ اعتبارسنجی "
+        "آموزشی را حفظ می‌کند. گام بعدی: در بهترین {counter_of} اعتبارسنجی "
         "متوقف شوید، منظم‌سازی (dropout، weight decay) یا "
         "داده‌افزایی اضافه کنید، یا دادهٔ بیشتری جمع کنید.",
         "warn_overfit_cleared": "خطای اعتبارسنجی دوباره به کمترین مقدار خود رسید؛ "
@@ -82,27 +301,60 @@ MESSAGES: dict[str, dict[str, str]] = {
         "نکند.",
         "warn_plateau_measured": "سنجه در ۵ اندازه‌گیری اخیر کمتر از ۱٪ تغییر کرده است.",
         "warn_plateau_cleared": "سنجه دوباره در حال تغییر است: دست‌کم ۱٪ در ۵ اندازه‌گیری اخیر.",
-        "next_pastpeak": "گام بعدی: اگر نقطهٔ ذخیرهٔ دوره {best_epoch} را دارید همان را "
+        "next_pastpeak": "گام بعدی: اگر نقطهٔ ذخیرهٔ {counter} {best_epoch} را دارید همان را "
         "نگه دارید، و برای این سنجه توقف زودهنگام (early stopping) بگذارید تا اجرای "
         "بعدی همان‌جا متوقف شود.",
         "next_stalled": "گام بعدی: ابتدا نرخ یادگیری را بررسی کنید، سپس خط دادهٔ ورودی "
         "و نگاشت برچسب‌ها را.",
         "next_diverged": "گام بعدی: نرخ یادگیری را کاهش دهید یا گرادیان‌ها را برش دهید، "
-        "و از نقطهٔ ذخیره‌ای در دوره {last_epoch} یا پیش از آن دوباره شروع کنید.",
+        "و از نقطهٔ ذخیره‌ای در {counter} {last_epoch} یا پیش از آن دوباره شروع کنید.",
+        "next_unsteady": "گام بعدی: یک سنجهٔ اعتبارسنجی ثبت کنید، یا میانگین همین سنجه "
+        "روی دسته‌های بسیار را، تا خوانش‌ها با هم قابل مقایسه باشند.",
+        "next_running_mean": "گام بعدی: یک سنجهٔ اعتبارسنجی ثبت کنید، یا خطایی که روی "
+        "دسته‌هایی میانگین گرفته شده که خوانش دیگری در آن‌ها شریک نیست، تا خوانش‌ها "
+        "با هم قابل مقایسه باشند.",
+        "warn_above": "خطای آموزش به {new} رسید، بیش از ۱۰ برابر بالاترین اندازه‌گیری "
+        "پیش از آن ({high}). نرخ یادگیری پایین‌تر یا برش گرادیان ممکن است کمک کند.",
+        "warn_divergence_unsteady": "خطای آموزش در {readings} خوانش اخیر {turns} بار تغییر "
+        "جهت داده و معمولاً {step} با خوانش قبلی فرق دارد؛ پس یک جهش به‌تنهایی نشان "
+        "نمی‌دهد که واگرا می‌شود.",
         "warn_lr_drop": "نرخ یادگیری از {old} به {new} کاهش یافت.",
         "ms_best": "بهترین مقدار تازه: {value}",
         "ms_crossed": "از {pct}% گذشت: {value}",
-        "ms_biggest_jump": "بزرگ‌ترین بهبود در یک دوره: {value}",
+        "ms_biggest_jump": "بزرگ‌ترین بهبود {in_one_counter}: {value}",
         "ms_complete": "آموزش به پایان رسید.",
-        "ms_first_metric": "اولین مقدار {metric}: {value}",
-        "ms_grade_up": "نمره به {grade} بهبود یافت",
-        "ms_grade_down": "نمره به {grade} افت کرد",
-        "ms_phase": "ورود به مرحله‌ی {phase}",
         "phase_awakening": "بیداری",
         "phase_learning": "یادگیری",
         "phase_understanding": "درک",
         "phase_mastering": "تسلط",
         "phase_polishing": "پالایش",
+        "term_status_unread": "Epochix: اجرا خوانده نشد",
+        "term_status_unopened": "Epochix: اجرا باز نشد",
+        "term_title_unread": "Epochix خروجی‌ای دید که شبیه یک اجرای آموزش بود، اما "
+        "نتوانست داستانش را بگوید.",
+        "term_title_opened_empty": "داشبورد برای این خروجی باز شد، اما داستانی برای نشان "
+        "دادن ندارد.",
+        "term_title_unopened": "Epochix می‌تواند داستان اجرای این فرمان را بگوید، اما "
+        "هنگام اجرا خروجی آن را آموزش تشخیص نداد؛ پس داشبورد باز نشد.",
+        "term_lines": "این فرمان {lines} خط چاپ کرد.",
+        "term_sampled": "آنچه در ادامه می‌آید از {sampled} خط نخست آن خوانده شد.",
+        "term_read": "خوانده‌شده از آن: {readings}.",
+        "term_read_none": "هیچ خواننده‌ای حتی یک مقدار از آن برنداشت.",
+        "term_labelled": "نام‌هایی که Epochix آن‌ها را سنجه می‌شناسد کنار عددهایی آمده‌اند، "
+        "در قالبی که هیچ‌یک از خواننده‌هایش نمی‌خواند: {names}.",
+        "term_values": "{name} ({count} مقدار متفاوت)",
+        "term_why_layout": "هیچ‌یک از خواننده‌هایش این قالب را نمی‌خواند؛ پس چیزی نبود که "
+        "داستانی از آن گفته شود.",
+        "term_why_no_score": "هیچ‌یک از این‌ها امتیاز یا خطا (loss) نیست؛ پس چیزی نبود که "
+        "داستان با آن گفته شود.",
+        "term_story": "داستانش با {metric} گفته می‌شود (اندازه‌گیری‌ها: {count}).",
+        "term_fix_print": "برای اینکه خوانده شود، در هر دوره یک خط با جفت‌های name=value "
+        "چاپ کنید، برای نمونه: Epoch <n>/<total> train_loss=<value> val_accuracy=<value>",
+        "term_fix_check": "برای دیدن آنچه Epochix از یک لاگ ذخیره‌شده می‌خواند، اجرا کنید: "
+        "epochix check <file>",
+        "term_fix_open": "برای دیدنش آن را در داشبورد باز کنید.",
+        "term_action_open": "باز کردن در داشبورد",
+        "term_click": "برای جزئیات کلیک کنید.",
     },
     "fr": {
         "warn_nan": "La valeur de {metric} est devenue indéfinie (NaN ou infinie). "
@@ -118,7 +370,7 @@ MESSAGES: dict[str, dict[str, str]] = {
         "warn_overfit": "La perte de validation a augmenté deux mesures de suite "
         "alors que la perte d'entraînement continuait de baisser : "
         "le modèle mémorise peut-être ses données d'entraînement. "
-        "Étape suivante : arrêtez-vous à la meilleure époque de "
+        "Étape suivante : arrêtez-vous {at_the_best_counter} de "
         "validation, ajoutez de la régularisation (dropout, weight "
         "decay) ou de l'augmentation de données, ou collectez plus "
         "de données.",
@@ -128,32 +380,68 @@ MESSAGES: dict[str, dict[str, str]] = {
         "1 % sur les 5 dernières mesures. Étape suivante : baisser "
         "le taux d'apprentissage (par exemple un planificateur "
         "reduce-on-plateau) peut relancer la progression ; sinon, "
-        "d'autres époques à ce taux risquent d'apporter peu.",
+        "d'autres {counters} à ce taux risquent d'apporter peu.",
         "warn_plateau_measured": "La métrique a varié de moins de 1 % sur les 5 dernières mesures.",
         "warn_plateau_cleared": "La métrique évolue de nouveau : au moins 1 % sur les 5 "
         "dernières mesures.",
-        "next_pastpeak": "Étape suivante : conservez le point de contrôle de l'époque "
+        "next_pastpeak": "Étape suivante : conservez le point de contrôle {of_the_counter} "
         "{best_epoch} s'il a été enregistré, et activez l'arrêt anticipé (early stopping) "
         "sur cette métrique pour que la prochaine exécution s'arrête là.",
         "next_stalled": "Étape suivante : vérifiez d'abord le taux d'apprentissage, puis "
         "le pipeline de données et le mappage des étiquettes.",
         "next_diverged": "Étape suivante : réduisez le taux d'apprentissage ou écrêtez "
-        "les gradients, et reprenez depuis un point de contrôle de l'époque {last_epoch} "
+        "les gradients, et reprenez depuis un point de contrôle {of_the_counter} {last_epoch} "
         "ou antérieur.",
+        "next_unsteady": "Étape suivante : enregistrez une métrique de validation, ou "
+        "celle-ci moyennée sur de nombreux lots, pour des mesures comparables entre elles.",
+        "next_running_mean": "Étape suivante : enregistrez une métrique de validation, "
+        "ou une perte moyennée sur des lots qu'aucune autre mesure ne partage, pour des "
+        "mesures comparables entre elles.",
+        "warn_above": "La perte d'entraînement a atteint {new}, soit plus de 10 fois sa "
+        "plus haute mesure précédente ({high}). Un taux d'apprentissage plus bas ou un "
+        "écrêtage des gradients peut aider.",
+        "warn_divergence_unsteady": "La perte d'entraînement a changé de sens {turns} fois "
+        "sur ses {readings} dernières mesures et diffère typiquement de {step} de l'une à "
+        "la suivante : un seul saut ne montre pas qu'elle diverge.",
         "warn_lr_drop": "Le taux d'apprentissage est passé de {old} à {new}.",
         "ms_best": "Nouveau meilleur résultat : {value}",
         "ms_crossed": "Seuil de {pct} % franchi : {value}",
-        "ms_biggest_jump": "Plus forte amélioration en une époque : {value}",
+        "ms_biggest_jump": "Plus forte amélioration {in_one_counter} : {value}",
         "ms_complete": "Entraînement terminé.",
-        "ms_first_metric": "Première mesure de {metric} : {value}",
-        "ms_grade_up": "Note améliorée : {grade}",
-        "ms_grade_down": "Note en baisse : {grade}",
-        "ms_phase": "Nouvelle phase : {phase}",
         "phase_awakening": "éveil",
         "phase_learning": "apprentissage",
         "phase_understanding": "compréhension",
         "phase_mastering": "maîtrise",
         "phase_polishing": "perfectionnement",
+        "term_status_unread": "Epochix : exécution non lue",
+        "term_status_unopened": "Epochix : exécution non ouverte",
+        "term_title_unread": "Epochix a vu une sortie qui ressemblait à un entraînement et "
+        "n'a pas pu en raconter l'histoire.",
+        "term_title_opened_empty": "Le tableau de bord s'est ouvert pour cette sortie et n'a "
+        "aucune histoire à montrer.",
+        "term_title_unopened": "Epochix peut raconter l'exécution de cette commande, mais n'a "
+        "pas reconnu sa sortie comme un entraînement pendant qu'elle tournait : le tableau "
+        "de bord ne s'est donc pas ouvert.",
+        "term_lines": "La commande a affiché {lines} lignes.",
+        "term_sampled": "Ce qui suit a été lu dans ses {sampled} premières lignes.",
+        "term_read": "Lu dans cette sortie : {readings}.",
+        "term_read_none": "Aucun lecteur n'en a tiré une seule valeur.",
+        "term_labelled": "Des noms qu'Epochix connaît comme métriques figuraient à côté de "
+        "nombres, dans une disposition qu'aucun de ses lecteurs ne prend en charge : {names}.",
+        "term_values": "{name} ({count} valeurs différentes)",
+        "term_why_layout": "Aucun de ses lecteurs ne prend en charge cette disposition : il "
+        "n'y avait rien dont tirer une histoire.",
+        "term_why_no_score": "Aucune de ces valeurs n'est un score ni une perte : il n'y "
+        "avait rien pour porter une histoire.",
+        "term_story": "Son histoire serait racontée par {metric} (mesures : {count}).",
+        "term_fix_print": "Pour qu'elle soit lue, affichez une ligne par époque avec des "
+        "paires name=value, par exemple : Epoch <n>/<total> train_loss=<value> "
+        "val_accuracy=<value>",
+        "term_fix_check": "Pour voir ce qu'Epochix lit dans un log enregistré, lancez : "
+        "epochix check <file>",
+        "term_fix_open": "Ouvrez-la dans le tableau de bord pour la voir.",
+        "term_action_open": "Ouvrir dans le tableau de bord",
+        "term_click": "Cliquez pour les détails.",
     },
 }
 
@@ -171,10 +459,15 @@ def phase_name(phase: str, locale: str = "en") -> str:
     return name[:1].upper() + name[1:]
 
 
-def message(key: str, locale: str = "en", **fields: str) -> str:
-    """The message *key* in *locale* (English when there is none), filled in."""
-    table = MESSAGES.get(locale, MESSAGES["en"])
-    text = table.get(key, MESSAGES["en"][key])
+def message(key: str, locale: str = "en", counter: Counter | None = None, **fields: str) -> str:
+    """The message *key* in *locale* (English when there is none), filled in.
+
+    *counter* is what the run counts by, for a message that names it.
+    """
+    table = MESSAGES.get(locale)
+    if table is None or key not in table:
+        table, locale = MESSAGES["en"], "en"
+    text = counter_words(table[key], counter, locale)
     for name, value in fields.items():
         text = text.replace("{" + name + "}", value)
     return text

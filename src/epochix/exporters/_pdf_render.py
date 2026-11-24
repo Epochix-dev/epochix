@@ -11,7 +11,7 @@ does. The text stays real vector text, selectable and searchable, rather than
 a rasterised page.
 
 The layout mirrors the slides the HTML version produced: a cover carrying the
-grade, one page per training phase, milestones, and a final-metrics appendix.
+grade, one page per training phase, and a final-metrics appendix.
 """
 
 from __future__ import annotations
@@ -26,7 +26,7 @@ from epochix import cross_validation
 from epochix.i18n import is_rtl, t
 from epochix.normalizer.canonical_keys import is_recognised
 from epochix.story_engine.grade import metric_lower_better
-from epochix.story_engine.messages import phase_name
+from epochix.story_engine.messages import frames_counter, phase_name
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -433,7 +433,11 @@ def _cover_facts(
     if final is not None:
         rows.append((f"{t('cover.final', locale)} {metric}", _fmt(final.primary_metric_value)))
     if best is not None and final is not None:
-        at = f" ({t('cover.epoch_n', locale)} {best.epoch:g})" if best.epoch is not None else ""
+        at = (
+            f" ({t('cover.epoch_n', locale, best.counter)} {best.epoch:g})"
+            if best.epoch is not None
+            else ""
+        )
         rows.append((f"{t('cover.best', locale)} {metric}", _fmt(best.primary_metric_value) + at))
         # The gap between best and final is the "should I have stopped
         # earlier?" answer, and it was nowhere in the document.
@@ -446,7 +450,8 @@ def _cover_facts(
             direction = t("cover.worse" if worse else "cover.better", locale)
             rows.append((t("cover.since_best", locale), f"{_fmt(abs(drift))} {direction}"))
     if epochs:
-        rows.append((t("cover.epochs", locale), f"{epochs[0]:g} - {epochs[-1]:g} ({len(epochs)})"))
+        counted = t("cover.epochs", locale, frames_counter(frames))
+        rows.append((counted, f"{epochs[0]:g} - {epochs[-1]:g} ({len(epochs)})"))
     if run.parser_used:
         rows.append((t("cover.read_by", locale), run.parser_used))
 
@@ -498,8 +503,10 @@ def _epoch_table(
     lower_better = metric_lower_better(metric) or False
     best, _ = _best_and_final(rows, lower_better)
 
+    # A step or a boosting round is not an epoch, and a row is a reading.
+    counter = frames_counter(rows)
     columns = (
-        (t("col.epoch", locale), 22.0),
+        (t("col.epoch", locale, counter), 22.0),
         (metric or t("col.value", locale), 34.0),
         (t("col.change", locale), 26.0),
         (t("col.phase", locale), 34.0),
@@ -517,7 +524,7 @@ def _epoch_table(
         doc.cell(
             0,
             12,
-            _s(doc, t("pdf.epochs" if first else "pdf.epochs_continued", locale)),
+            _s(doc, t("pdf.epochs" if first else "pdf.epochs_continued", locale, counter)),
             align=_lead(locale),
             new_x="LMARGIN",
             new_y="NEXT",
@@ -669,6 +676,7 @@ def _final_metrics_table(
     doc: Any,  # noqa: ANN401
     events: Sequence[MetricEvent],
     locale: str,
+    counter: str | None = None,
 ) -> None:
     """Every series with its final value, its best, and how far it moved.
 
@@ -720,7 +728,11 @@ def _final_metrics_table(
         best_epoch, best = (
             min(points, key=lambda pt: pt[1]) if lower_better else max(points, key=lambda pt: pt[1])
         )
-        at = f" ({t('cover.epoch_n', locale)} {best_epoch:g})" if best_epoch is not None else ""
+        at = (
+            f" ({t('cover.epoch_n', locale, counter)} {best_epoch:g})"
+            if best_epoch is not None
+            else ""
+        )
 
         _text(doc, 9, _INK)
         doc.cell(widths[0], 5.5, _s(doc, key))
@@ -880,7 +892,7 @@ def render_pdf(
     events: Sequence[MetricEvent],
     locale: str = "en",
 ) -> bytes:
-    """The run as a PDF: cover, one page per phase, milestones, metrics."""
+    """The run as a PDF: cover, one page per phase, metrics."""
     # Decide once how this locale is drawn: the core fonts when Latin-1 is
     # enough, the embedded Persian font when it is not and the shaper is
     # installed. Otherwise the chrome falls back to English so the document
@@ -957,9 +969,9 @@ def render_pdf(
         _text(doc, 11, _MUTED)
         if epochs:
             span = (
-                f"{t('cover.epoch_n', locale)} {epochs[0]:g}"
+                f"{t('cover.epoch_n', locale, first.counter)} {epochs[0]:g}"
                 if epochs[0] == epochs[-1]
-                else f"{t('phase.covers', locale)} {epochs[0]:g} - {epochs[-1]:g}"
+                else f"{t('phase.covers', locale, first.counter)} {epochs[0]:g} - {epochs[-1]:g}"
             )
         else:
             span = ""
@@ -1009,7 +1021,7 @@ def render_pdf(
                 doc.set_x(doc.w - doc.r_margin - width)
             doc.multi_cell(width, 8, _s(doc, last.narrative), align=_lead(locale))
 
-    _final_metrics_table(doc, events, locale)
+    _final_metrics_table(doc, events, locale, frames_counter(frames))
     _skills_and_model(doc, run, frames, locale)
 
     return bytes(doc.output())
