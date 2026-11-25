@@ -111,4 +111,6 @@ def test_epochix_check_reads_the_run() -> None:
     assert re.search(r"parser\s+stable_baselines3", out), out
     assert re.search(r"task\s+reinforcement", out), out
     assert re.search(r"iterations seen\s+25", out), out
-    assert re.search(r"ep_rew_mean +25 values +21.2 -> 395", out), out
+    # The arrow is "→" where the console can print it and "->" where it cannot
+    # (a Windows code page), as the CLI chooses.
+    assert re.search(r"ep_rew_mean +25 values +21\.2 (?:->|→) 395", out), out
