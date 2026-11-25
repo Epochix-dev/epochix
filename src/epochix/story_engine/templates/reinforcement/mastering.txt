@@ -1,0 +1,2 @@
+Mastering: mean episode reward {value} at {counter} {epoch} — up on its first reading by at least three quarters of that reading's size.
+{Counter} {epoch}: mean episode reward {value}, a change of {delta} since the previous reading, at or within 1% of the best this run has reached.

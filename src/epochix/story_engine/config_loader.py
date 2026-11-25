@@ -75,10 +75,11 @@ _LABEL_ORDER: tuple[str, ...] = tuple(g.value for g in Grade if g is not Grade.I
 # metric's scale and mean nothing on another: a `regression` entry holds error
 # bands in the target's units, and applied to an R² it graded 0.99 a B.
 #
-# Mostly these are the metrics the built-in task bands grade. Two are not, on
-# purpose. Regression and generative runs are graded on improvement by default,
-# because the scale of an MAE or an FID is not knowable from a log — but a
-# project that writes the bands down has just supplied it.
+# Mostly these are the metrics the built-in task bands grade. Three are not, on
+# purpose. Regression, generative and reinforcement-learning runs are graded on
+# improvement by default, because the scale of an MAE, an FID or an episode
+# reward is not knowable from a log — but a project that writes the bands down
+# has just supplied it (CartPole pays at most 500 an episode).
 #
 # A `custom` entry has no metric of its own: it applies to whatever the run is
 # told by.
@@ -91,6 +92,7 @@ GOVERNED_METRICS: dict[TaskType, frozenset[str]] = {
     TaskType.GAZE: frozenset({"val_MAE", "MAE"}),
     TaskType.REGRESSION: frozenset({"val_MAE", "MAE"}),
     TaskType.GENERATIVE: frozenset({"fid"}),
+    TaskType.REINFORCEMENT: frozenset({"ep_rew_mean"}),
 }
 
 _TASK_NAMES = frozenset(task.value for task in TaskType)

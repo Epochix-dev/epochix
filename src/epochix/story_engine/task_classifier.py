@@ -10,6 +10,9 @@ _GAZE_HINT = re.compile(r"gaze|angular|pitch|yaw|eye_|_eye\b|fixation", re.IGNOR
 
 # Keys that strongly imply a task type
 _TASK_SIGNALS: list[tuple[frozenset[str], TaskType]] = [
+    # First: an episode reward says what the run is whatever else it logs (an
+    # RL run's losses and explained variance are its own, not a task's).
+    (frozenset({"ep_rew_mean"}), TaskType.REINFORCEMENT),
     (frozenset({"EER", "TAR", "FAR", "TAR_at_FAR_0_001"}), TaskType.BIOMETRIC),
     # Segmentation before detection: a segmentation run often logs mAP-style
     # keys too, but IoU/Dice are the decisive signal for what it actually is.

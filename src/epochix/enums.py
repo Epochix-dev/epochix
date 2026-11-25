@@ -33,6 +33,7 @@ class TaskType(str, Enum):
     GAZE = "gaze"
     NLP = "nlp"
     GENERATIVE = "generative"
+    REINFORCEMENT = "reinforcement"
     CUSTOM = "custom"
 
 

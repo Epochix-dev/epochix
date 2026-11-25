@@ -130,6 +130,13 @@ grade_thresholds:
   #   D: 300.0
   #   F: .inf
 
+  # reinforcement:          # applies to: ep_rew_mean, the mean episode reward
+  #   A: 475                # (higher is better; what an episode can pay is the
+  #   B: 400                #  environment's, and no log states it)
+  #   C: 300
+  #   D: 200
+  #   F: 0
+
   # custom:                 # applies to whatever a run with no known task is told by
   #   A: 0.90
   #   B: 0.75

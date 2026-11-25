@@ -64,6 +64,10 @@ export const CANONICAL_MAP: ReadonlyMap<string, string> = new Map([
   ["far", "FAR"],
   ["tar_at_far_0001", "TAR_at_FAR_0_001"],
   ["tar_at_far_0.001", "TAR_at_FAR_0_001"],
+  ["rollout/ep_rew_mean", "ep_rew_mean"],
+  ["ep_rew_mean", "ep_rew_mean"],
+  ["rollout/ep_len_mean", "ep_len_mean"],
+  ["ep_len_mean", "ep_len_mean"],
   ["fid", "fid"],
   ["is", "is_score"],
   ["is_score", "is_score"],
@@ -204,6 +208,7 @@ export const UNIT_SUFFIXES: readonly string[] = ["_cm", "_mm", "_deg", "_rad", "
 
 /** First match wins; a run matching none is "custom". */
 export const TASK_SIGNALS: ReadonlyArray<readonly [TaskType, ReadonlySet<string>]> = [
+  ["reinforcement", new Set(["ep_rew_mean"])],
   ["biometric", new Set(["EER", "FAR", "TAR", "TAR_at_FAR_0_001"])],
   ["segmentation", new Set(["Dice", "IoU", "mIoU", "pixel_accuracy"])],
   ["detection", new Set(["box_loss", "cls_loss", "mAP", "mAP50"])],
@@ -224,6 +229,7 @@ export const PREFERRED_KEYS: Readonly<Record<TaskType, readonly string[]>> = {
   gaze: ["val_MAE", "val_RMSE", "MAE", "RMSE"],
   nlp: ["perplexity", "bleu", "rouge", "WER", "CER", "BPC", "val_loss", "loss", "train_loss"],
   generative: ["fid", "is_score", "PSNR", "SSIM", "LPIPS", "val_loss", "loss", "train_loss"],
+  reinforcement: ["ep_rew_mean"],
   custom: ["val_loss", "train_loss", "custom"],
 };
 
@@ -238,6 +244,7 @@ export const ON_SCALE: Readonly<Record<TaskType, ReadonlySet<string>>> = {
   gaze: new Set(["MAE", "val_MAE"]),
   nlp: new Set(["perplexity"]),
   generative: new Set([]),
+  reinforcement: new Set([]),
   custom: new Set([]),
 };
 

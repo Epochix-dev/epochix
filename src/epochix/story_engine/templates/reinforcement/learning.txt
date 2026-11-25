@@ -1,0 +1,3 @@
+The run is under way: mean episode reward {value} at {counter} {epoch}, at or within 1% of its best so far.
+{Counter} {epoch}: mean episode reward {value}, a change of {delta} since the previous reading. The learning phase continues.
+Learning: mean episode reward {value} at {counter} {epoch} — the best this run has reached, or within 1% of it.

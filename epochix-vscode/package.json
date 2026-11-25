@@ -239,7 +239,8 @@
             "gaze",
             "nlp",
             "segmentation",
-            "generative"
+            "generative",
+            "reinforcement"
           ],
           "default": "auto",
           "description": "Force a task type instead of auto-detecting from the log. Applies to logs the extension reads itself: opened files, the demo and watched terminals."

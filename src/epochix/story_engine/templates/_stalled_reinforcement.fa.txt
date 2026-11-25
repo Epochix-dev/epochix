@@ -1,0 +1,2 @@
+{counter} {epoch}: میانگین پاداش هر اپیزود تقریباً تغییری نکرده — از {baseline} به {value} در {epochs_seen} {counter_readings}.
+پس از {epochs_seen} {counter_readings}، میانگین پاداش هر اپیزود روی {value} مانده؛ تقریباً همان‌جا که شروع شد ({baseline}).

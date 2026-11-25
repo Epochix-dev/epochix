@@ -1,0 +1,2 @@
+Awakening: mean episode reward {value} at {counter} {epoch}.
+{Counter} {epoch}: mean episode reward {value}, in the Awakening phase.

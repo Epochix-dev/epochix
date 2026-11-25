@@ -239,6 +239,7 @@ def narrate_stalled(
     run_id: str,
     locale: str = "en",
     counter: Counter | None = None,
+    task: TaskType | None = None,
 ) -> str:
     """Narrate a run that is not learning — honestly, instead of encouragement.
 
@@ -246,8 +247,15 @@ def narrate_stalled(
     model stuck at chance level still got "the model is a diligent student".
     That asserts progress the data does not show; this says what is true and
     points at the usual causes.
+
+    A reinforcement-learning run has its own sentences. The general ones say a
+    flat metric "usually points to a setup problem" and send you to the data
+    pipeline and the label mapping; an agent has neither, and the recorded DQN
+    run (sb3_dqn_real.log) is flat for its first 32 readings by design, while
+    it explores before it trains.
     """
-    templates = _load_stalled(locale)
+    own = task is TaskType.REINFORCEMENT
+    templates = _load_stalled_reinforcement(locale) if own else _load_stalled(locale)
     template = counter_words(_pick(templates, run_id), counter, locale)
     story = (
         template.replace("{epoch}", str(int(epoch)) if epoch is not None else "?")
@@ -255,7 +263,17 @@ def narrate_stalled(
         .replace("{baseline}", f"{baseline:.4f}")
         .replace("{epochs_seen}", str(epochs_seen))
     )
-    return f"{story} {message('next_stalled', locale)}"
+    next_step = "next_stalled_reinforcement" if own else "next_stalled"
+    return f"{story} {message(next_step, locale)}"
+
+
+def _load_stalled_reinforcement(locale: str = "en") -> list[str]:
+    """The stall sentences of a run told by its episode reward."""
+    return _load_special(
+        "_stalled_reinforcement",
+        locale,
+        "The mean episode reward has not moved meaningfully yet.",
+    )
 
 
 def _load_diverged(locale: str = "en") -> list[str]:
@@ -332,6 +350,8 @@ _PROSE_ASSUMES: dict[TaskType, frozenset[str]] = {
     TaskType.NLP: frozenset({"perplexity", "val_perplexity"}),
     TaskType.BIOMETRIC: frozenset({"EER", "val_EER"}),
     TaskType.GENERATIVE: frozenset({"fid", "FID", "val_fid", "val_FID"}),
+    # Its prose names the mean episode reward in words.
+    TaskType.REINFORCEMENT: frozenset({"ep_rew_mean"}),
     # REGRESSION and GAZE templates name the series with "{metric}", but their
     # prose is about an ERROR: "Error falls steadily", "l'erreur est en baisse".
     # R² is regression's first-choice metric and rises as the model improves,

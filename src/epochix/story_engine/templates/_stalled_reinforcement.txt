@@ -1,0 +1,2 @@
+{Counter} {epoch}: the mean episode reward has barely moved — {baseline} to {value} over {epochs_seen} {counter_readings}.
+After {epochs_seen} {counter_readings} the mean episode reward sits at {value}, essentially where it started ({baseline}).

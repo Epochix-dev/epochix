@@ -125,6 +125,48 @@ what the story is told by; from then on it is told by validation accuracy.
 
 ---
 
+## Stable-Baselines3
+
+The table Stable-Baselines3 prints at `verbose=1`: every rollout for PPO and
+A2C, every `log_interval` episodes for DQN, SAC and TD3.
+
+**Auto-detection:** two or more section rows (`| rollout/ |`, `| time/ |`) and
+two rules of dashes.
+
+**Sample:**
+
+```
+-----------------------------------------
+| rollout/                |             |
+|    ep_len_mean          | 25.8        |
+|    ep_rew_mean          | 25.8        |
+| time/                   |             |
+|    iterations           | 2           |
+|    total_timesteps      | 4096        |
+| train/                  |             |
+|    loss                 | 7.28        |
+|    n_updates            | 10          |
+-----------------------------------------
+```
+
+**What is read:** every row, under its section's name (`rollout/ep_rew_mean`,
+`train/loss`), one frame a table. The run is told by the mean episode reward,
+as a reinforcement-learning task: graded on its rise from the first reading,
+since what an episode can pay belongs to the environment and no log states it
+(a project that knows can give bands, `reinforcement` in `.epochix.yaml`).
+
+**What it counts by:** a table with `time/iterations` (PPO, A2C) counts by
+iteration — not by epoch: PPO runs ten epochs over each rollout. One without
+(DQN, SAC, TD3) counts by step, `time/total_timesteps`.
+
+**What is not:** the `time/` section (the counters, frames per second, seconds
+elapsed) and `train/n_updates`. The episode length is read but given no
+direction: longer is better in CartPole and worse in MountainCar. An
+`EvalCallback`'s `eval/` section is read under its own names, but has not been
+recorded, and the story is not told by it.
+
+---
+
 ## A run-long step bar
 
 One tqdm bar for the whole training, described `Steps`, as the diffusers

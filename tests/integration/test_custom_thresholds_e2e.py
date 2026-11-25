@@ -221,15 +221,39 @@ class TestATaskEntryAppliesToItsOwnMetric:
         assert frames[-1].grade is Grade.C
         assert grade_by_trajectory(9.0, 3.0, True).value.startswith("A")
 
+    def test_a_reinforcement_entry_grades_the_recorded_reward(self, project: Path) -> None:
+        """CartPole pays at most 500 an episode, which no log states: a project
+        that knows it can say what a reward is worth. The recorded PPO run
+        ends at 395, an A+ on its rise from 21.2."""
+        lines = (REPO / "tests" / "fixtures" / "logs" / "sb3_ppo_real.log").read_text(
+            encoding="utf-8"
+        )
+        before = _told(project, lines.splitlines(), config=None)
+        assert before[-1].primary_metric == "ep_rew_mean"
+        assert (before[-1].grade, before[-1].grade_basis) == (Grade.A_PLUS, "improvement")
+        config = """            version: 1
+            grade_thresholds:
+              reinforcement:
+                A: 475
+                B: 400
+                C: 300
+                D: 200
+                F: 0
+            """
+        after = _told(project, lines.splitlines(), config=config)
+        assert after[-1].primary_metric_value == 395.0
+        assert (after[-1].grade, after[-1].grade_basis) == (Grade.C, "thresholds")
+
     def test_every_task_entry_names_metrics_that_task_can_be_told_by(self) -> None:
         for task, metrics in GOVERNED_METRICS.items():
             assert metrics <= set(_PREFERRED_KEYS_FOR_TASK[task]), task
 
     def test_it_is_the_metric_the_built_in_bands_grade_where_there_are_any(self) -> None:
-        """Regression and generative differ on purpose: no built-in bands grade
-        an MAE or an FID, and the file is how a project supplies them."""
+        """Regression, generative and reinforcement learning differ on purpose:
+        no built-in bands grade an MAE, an FID or an episode reward, and the
+        file is how a project supplies them."""
         for task, metrics in GOVERNED_METRICS.items():
-            if task in (TaskType.REGRESSION, TaskType.GENERATIVE):
+            if task in (TaskType.REGRESSION, TaskType.GENERATIVE, TaskType.REINFORCEMENT):
                 continue
             on_scale = (
                 _ON_SCALE_KEYS[task]
@@ -468,6 +492,7 @@ class TestTheExampleFile:
             "gaze",
             "regression",
             "generative",
+            "reinforcement",
             "custom",
         }
         assert list(config.metric_thresholds) == ["val_f1"]

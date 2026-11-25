@@ -35,8 +35,10 @@ pipe). The project they list, test and serve is made by that script.
 None. `tests/fixtures/logs/garbage.log`, a hand-written web server log, is
 driven through the watcher too, from its own folder.
 
-The training run in a layout nothing reads is in the log corpus as well:
-`tests/fixtures/logs/sb3_ppo_real.log`, Stable-Baselines3 PPO on CartPole at
-`verbose=1`, a table per iteration (`|    loss | 7.28 |`). It is recorded
-there, with its script, and `corpus_truth.json` pins that nothing is read
-from it. A reader for that layout leaves this suite needing another.
+A Stable-Baselines3 run is driven through the watcher from the log corpus:
+`tests/fixtures/logs/sb3_ppo_real.log`, PPO on CartPole at `verbose=1`. It
+was this suite's training run in a layout nothing reads until the SB3 parser
+read it; it now opens the dashboard and is not spoken of. No recorded
+training layout that nothing reads is in the repository now, so that case is
+built in the tests themselves (`epochix-vscode/src/test/suite/unreadLayout.ts`),
+as what it is: a constructed table, not any library's output.

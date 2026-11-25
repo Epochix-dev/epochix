@@ -65,6 +65,8 @@ export function metricLabel(key) {
     val_accuracy: 'val accuracy', accuracy: 'accuracy',
     mAP: 'mAP', mAP50: 'mAP50', MAE: 'MAE', RMSE: 'RMSE',
     EER: 'EER', perplexity: 'perplexity', lr: 'learning rate',
+    // Stable-Baselines3's rollout/ep_rew_mean: the mean reward of its last episodes.
+    ep_rew_mean: 'mean episode reward', ep_len_mean: 'mean episode length',
   })[key] ?? key.replace(/_/g, ' ');
 }
 

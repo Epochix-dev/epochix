@@ -30,7 +30,7 @@ import pytest
 import epochix.story_engine as engine
 from epochix.enums import Phase
 from epochix.ingester.file_batch import FileBatchIngester
-from epochix.models import MetricEvent
+from epochix.models import MetricEvent, StoryFrame
 from epochix.pipeline import run_pipeline
 from epochix.server.hub import Hub
 from epochix.store.sqlite_store import RunStore
@@ -43,6 +43,9 @@ TASKS = sorted(p.name for p in TEMPLATES.iterdir() if p.is_dir())
 PHASES = [p.value for p in Phase]
 SCORE_TASKS = {"classification", "detection", "segmentation"}
 ERROR_TASKS = {"nlp", "biometric", "generative", "regression", "gaze"}
+# Told by a score with no ideal (grade.NO_IDEAL_METRICS): its phase is its rise
+# over the first reading, as a share of that reading's size.
+NO_IDEAL_TASKS = {"reinforcement"}
 
 
 def _lines(task: str, phase: str, suffix: str = ".txt") -> list[str]:
@@ -55,8 +58,8 @@ def _all_english() -> list[tuple[str, str, str]]:
 
 
 def test_the_tasks_are_the_ones_these_tests_know() -> None:
-    assert set(TASKS) == SCORE_TASKS | ERROR_TASKS | {"custom"}
-    assert len(_all_english()) >= 9 * 5 * 2
+    assert set(TASKS) == SCORE_TASKS | ERROR_TASKS | NO_IDEAL_TASKS | {"custom"}
+    assert len(_all_english()) >= 10 * 5 * 2
 
 
 # ── words that claim what a log cannot show ──────────────────────────────────
@@ -67,7 +70,7 @@ _UNSUPPORTED_EN = re.compile(
     r"\b("
     r"expert|human|publication|competition|clinical|surgical|photoreal\w{0,8}|indistinguishable|"
     r"deploy\w{0,6}|ship|ready|field|world|exceptional|excellence|optimal|perfect(?!\sscore)|"
-    r"robust|reliable|flawless|limit|ceiling|capacity|peak|"
+    r"robust|reliable|flawless|limit|ceiling|capacity|peak|solv\w{0,4}|"
     r"faces?|glasses|makeup|occlusions?|pose|illumination|ageing|iris|bicycle|cat|dog|"
     r"anchors?|boxes|recall|nms|blobs?|textures?|grammar|n-gram|discourse|tokens?|"
     r"memoris\w{0,6}|generalis\w{0,8}|neurons?|gradients?|narrows?|climbs?|falling|rising|steadily"
@@ -129,7 +132,8 @@ def test_an_unrecognised_metric_is_only_named() -> None:
 _TOO_EARLY = {
     ".txt": re.compile(r"\b(begin\w{0,4}|open\w{0,4}|early|first)\b", re.I),
     ".fr.txt": re.compile(r"commenc\w{0,6}|première|début\w{0,2}|tôt", re.I),
-    ".fa.txt": re.compile(r"آغاز|تازه|زود|نخستین"),
+    # At the start of a word: "episode" is اپیزود, which ends in زود ("early").
+    ".fa.txt": re.compile(r"(?<!\w)(?:آغاز|تازه|زود|نخستین)"),
 }
 
 
@@ -236,6 +240,27 @@ def test_error_sentences_state_those_quantities(task: str) -> None:
     assert any("down at least 95%" in ln for ln in _lines(task, "polishing"))
 
 
+_RISE_STATED = {
+    ".txt": ("by at least {} of that reading's size", ("40%", "three quarters", "95%")),
+    ".fr.txt": ("d'au moins {} de sa valeur absolue", ("40 %", "trois quarts", "95 %")),
+    ".fa.txt": ("به اندازهٔ {} قدر مطلق نخستین", ("۴۰٪", "سه‌چهارم", "۹۵٪")),
+}
+
+
+@pytest.mark.parametrize("task", sorted(NO_IDEAL_TASKS))
+@pytest.mark.parametrize("suffix", sorted(_RISE_STATED))
+def test_no_ideal_sentences_state_those_quantities(task: str, suffix: str) -> None:
+    """A rise, never a fall and never a share of the way to a perfect score,
+    and as a share of the first reading's SIZE: a reward can start below zero
+    (Pendulum's does), where "40% above -1500" says nothing clear."""
+    pattern, shares = _RISE_STATED[suffix]
+    for phase, share in zip(("understanding", "mastering", "polishing"), shares, strict=True):
+        assert any(pattern.format(share) in ln for ln in _lines(task, phase, suffix)), phase
+    for phase in PHASES:
+        for line in _lines(task, phase, suffix):
+            assert not re.search(r"\bdown\b|de moins|کمتر|perfect|parfait|کامل", line), line
+
+
 # ── the journey ──────────────────────────────────────────────────────────────
 
 
@@ -295,7 +320,11 @@ def test_what_the_resnet_run_is_told_is_true_of_it() -> None:
 _PHASE_WORDS = re.compile(r"\b(Awakening|Learning|Understanding|Mastering|Polishing)\b")
 
 
-@pytest.mark.parametrize("key", sorted(NO_IDEAL_METRICS))
+# An episode reward has its own prose; see test_what_the_rl_runs_are_told_is_true_of_them.
+_GENERATIVE_NO_IDEAL = sorted(NO_IDEAL_METRICS - {"ep_rew_mean"})
+
+
+@pytest.mark.parametrize("key", _GENERATIVE_NO_IDEAL)
 @pytest.mark.parametrize("total_epochs", [None, 20])
 def test_what_a_run_with_no_ideal_is_told_is_true_of_it(key: str, total_epochs: int | None) -> None:
     """A GENERATIVE run told by PSNR or the inception score: told with the
@@ -335,3 +364,63 @@ def test_what_a_run_with_no_ideal_is_told_is_true_of_it(key: str, total_epochs: 
     # Guard: the run climbed through the phases, and more than one sentence was read.
     assert {Phase.UNDERSTANDING, Phase.MASTERING, Phase.POLISHING} <= phases_seen, phases_seen
     assert len(variants) >= 6, variants
+
+
+# ── an episode reward, told from the recordings ──────────────────────────────
+
+_RISE_SHARE = {"three quarters": 0.75, "40%": 0.40, "95%": 0.95}
+
+
+def _told(log: str, run_id: str) -> list[StoryFrame]:
+    store = RunStore(":memory:")
+    path = ROOT / "tests" / "fixtures" / "logs" / log
+    asyncio.run(
+        run_pipeline(
+            ingester=FileBatchIngester(run_id, str(path)), run_id=run_id, store=store, hub=Hub()
+        )
+    )
+    return store.get_story_frames(run_id)
+
+
+@pytest.mark.parametrize("log", ["sb3_ppo_real.log", "sb3_dqn_real.log"])
+def test_what_the_rl_runs_are_told_is_true_of_them(log: str) -> None:
+    """Every phase sentence of the two recorded Stable-Baselines3 runs,
+    checked against its frame's own numbers: the rise it states over the
+    first reading, the "within 1% of the best" it states, and nothing about
+    solving the environment. A reading more than 1% off the best is told by
+    its own story, never a phase one.
+
+    Under several run ids, because the variant is chosen from the run id."""
+    variants: set[str] = set()
+    rises = 0
+    for n in range(8):
+        frames = _told(log, f"rl-{n}")
+        assert len(frames) >= 25
+        first = frames[0].primary_metric_value
+        best = float("-inf")
+        phase_stories = 0
+        for frame in frames:
+            assert frame.primary_metric == "ep_rew_mean"
+            value = frame.primary_metric_value
+            best = max(best, value)
+            text = frame.narrative
+            assert not _UNSUPPORTED_EN.search(text), text
+            assert not re.search(r"setup problem|data pipeline|label", text), text
+            if "mean episode reward" not in text:
+                assert value < best - 0.01 * abs(best), f"a phase story without its metric: {text}"
+                continue
+            phase_stories += 1
+            variants.add(re.sub(r"[\d.+-]+", "#", text))
+            assert value >= best - 0.01 * abs(best) - 1e-9, text
+            assert f"{value:.4f}" in text, text
+            named = _PHASE_WORDS.findall(text)
+            assert all(word.lower() == frame.phase.value for word in named), (frame.phase, text)
+            for words, share in _RISE_SHARE.items():
+                if f"at least {words} of that reading" in text:
+                    rises += 1
+                    assert value >= first + abs(first) * share - 1e-9, text
+        # Guard: the checks ran on much of the run (DQN spends half of it off its best).
+        assert phase_stories >= len(frames) // 3, phase_stories
+    # ...and on the rise sentences, and on more than one variant.
+    assert rises > 0
+    assert len(variants) >= 4, variants

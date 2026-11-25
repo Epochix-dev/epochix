@@ -208,6 +208,10 @@ _PREFERRED_KEYS_FOR_TASK: dict[TaskType, tuple[str, ...]] = {
     # no event, and a log reporting nothing but an unnamed score — scikit-learn's
     # own `cross_val_score` verbose output is exactly that — produced no frames,
     # no grade and no summary at all.
+    # The mean reward of the last episodes. Nothing else an RL run logs says
+    # how the agent is doing: its losses are the optimiser's, and the episode
+    # length is better longer in one environment and shorter in another.
+    TaskType.REINFORCEMENT: ("ep_rew_mean",),
     TaskType.CUSTOM: ("val_loss", "train_loss", "custom"),
 }
 
@@ -264,6 +268,12 @@ _ON_SCALE_KEYS: dict[TaskType, frozenset[str]] = {
     # graded on improvement from baseline instead, like a loss, and its
     # lower-is-better direction comes from grade._DIRECTION_BY_KEY.
     TaskType.GENERATIVE: frozenset(),
+    # Deliberately EMPTY as well. An episode reward is whatever the
+    # environment pays: 500 is CartPole's most, and Pendulum's best is near 0
+    # from below. No band can know which, so a reward is graded on its rise
+    # from the first reading. A project that knows its environment can give
+    # its own bands (`reinforcement` in .epochix.yaml).
+    TaskType.REINFORCEMENT: frozenset(),
 }
 
 _PRIMARY_KEY_FOR_TASK: dict[TaskType, str] = {
@@ -957,6 +967,7 @@ class StoryEngine:
                 run_id=self.run_id,
                 locale=self.locale,
                 counter=counter,
+                task=self._effective_task(),
             )
         elif past_peak and self._best_primary is not None:
             narrative = narrate_past_peak(

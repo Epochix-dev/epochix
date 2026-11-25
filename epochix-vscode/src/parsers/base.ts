@@ -67,6 +67,11 @@ export interface ParserContext {
   meterTrainAccuracy: [string, number] | null;
   /** Step bar: the values last read off the bar, to tell a redraw from a reading. */
   stepBarValues: string | null;
+  /** Stable-Baselines3: the rows of the table being read, by section/key, null
+   *  outside a table; and the section the rows now belong to (Python's
+   *  extra["sb3_table"], extra["sb3_section"]). */
+  sb3Table: Map<string, number> | null;
+  sb3Section: string | null;
   /** Set by a parser that puts something other than an epoch in
    *  `currentEpoch` — a boosting round, an iteration, a step — naming what it
    *  is. Cleared after every line: it says what THIS line counted by, so the
@@ -111,6 +116,8 @@ export function makeContext(): ParserContext {
     meterEpoch: null,
     meterTrainAccuracy: null,
     stepBarValues: null,
+    sb3Table: null,
+    sb3Section: null,
     countedBy: null,
     pytestReport: false,
     lineClaimed: false,

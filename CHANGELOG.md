@@ -9,6 +9,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **A Stable-Baselines3 run is told, as reinforcement learning.** Two real
+  runs on CartPole (`tests/fixtures/logs/sb3_ppo_real.log`, PPO, and
+  `sb3_dqn_real.log`, DQN with the RL Zoo's settings) were read as nothing:
+  parser `universal`, task `custom`, no frames. A new parser reads SB3's
+  table, one frame a table, every row under its section's name
+  (`rollout/ep_rew_mean`). A table with `time/iterations` counts by
+  iteration, not epoch — PPO runs ten epochs over each rollout — and one
+  without (DQN, SAC, TD3) by step. The `time/` section and `train/n_updates`
+  are not charted. The run is a new task, `reinforcement`, told by the mean
+  episode reward: pinned higher-is-better, graded on its rise from the first
+  reading (what an episode can pay is the environment's, and no log states
+  it), and placed in a phase by that rise, as PSNR is. The PPO run goes 21.2
+  to 395 and ends in Polishing; the DQN run 25.8 to 249, with its dip from
+  136 to 108 told as below its best. Its sentences, in three languages, name
+  the reward, the counter and the change, and state the rise each phase
+  guarantees; a flat reward is told so without the general "setup problem"
+  and "check the data pipeline and the label mapping", which an agent has
+  neither of. The episode length is read and given no direction: longer is
+  better in CartPole and worse in MountainCar. A `reinforcement` entry in
+  `.epochix.yaml` grades the reward on a project's own bands. Both engines;
+  in VS Code a PPO run in a watched terminal now opens the dashboard at its
+  first table. An `EvalCallback`'s `eval/` section has not been recorded,
+  and the story is not told by it.
+
 ### Fixed
 
 - **A run's first reading is not told how it changed.** It has no reading

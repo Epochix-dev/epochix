@@ -124,6 +124,7 @@ fastai            = "epochix.parsers.fastai:FastAIParser"
 accelerate        = "epochix.parsers.accelerate:AccelerateParser"
 boosting          = "epochix.parsers.boosting:BoostingParser"
 progress_meter    = "epochix.parsers.progress_meter:ProgressMeterParser"
+stable_baselines3 = "epochix.parsers.stable_baselines3:StableBaselines3Parser"
 step_bar          = "epochix.parsers.step_bar:StepBarParser"
 universal         = "epochix.parsers.universal:UniversalParser"
 

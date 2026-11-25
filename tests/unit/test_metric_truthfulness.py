@@ -113,7 +113,15 @@ class TestMetricDirection:
         ("score", False),
         ("val_score", False),
         ("train_score", False),
+        # The reward an RL agent is trained to raise.
+        ("ep_rew_mean", False),
     ]
+
+    def test_an_episode_length_has_no_direction(self) -> None:
+        """Longer is better in CartPole, where the pole stays up, and worse in
+        MountainCar, where every step costs: pinned either way, half of all
+        runs would be graded backwards on it."""
+        assert metric_lower_better("ep_len_mean") is None
 
     @pytest.mark.parametrize(("metric", "lower_better"), TRUTH)
     def test_direction_is_known_and_correct(self, metric: str, lower_better: bool) -> None:

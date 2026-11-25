@@ -51,6 +51,7 @@
     "gaze": "Estimation du regard",
     "nlp": "TALN",
     "generative": "Génératif",
+    "reinforcement": "Apprentissage par renforcement",
     "custom": "Tâche personnalisée"
   },
   "ui": {

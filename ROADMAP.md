@@ -29,11 +29,13 @@ The engine is sound on what it reads; the gap is what it does not read. Two of
 the audit's items shipped in 0.7.41 (2026-11-22) and are not listed: runs that
 count steps (nanoGPT, the PyTorch ImageNet example, a diffusers LoRA bar), and
 a notice when a watched terminal's command is seen and not told. So did
-everything the first coverage run found unexecuted (item 7). 0.7.42
+everything the first coverage run found unexecuted (item 6). 0.7.42
 (2026-11-23) shipped two of the three parts left in item 3: a kohya-ss run,
 and a step bar read as it is drawn over a pipe or SSH. 0.7.43, the same day,
 shipped one fix that was on no list here: a run is told it is past its best
-only after three readings in a row more than 1% off it (#197).
+only after three readings in a row more than 1% off it (#197). Reinforcement
+learning (Stable-Baselines3, PPO and DQN recorded) is done and not yet
+released; it is in CHANGELOG.md under Unreleased.
 
 Two kinds of evidence appear below, and they are not the same:
 
@@ -100,32 +102,7 @@ tailed over SSH (#195), as it already was from a file. Not done, as
   …, Val took …s`) has not been recorded: it needs Apple silicon. Record it on
   a Mac or leave it out.
 
-### 4. Reinforcement learning
-
-**Measured.** `tests/fixtures/logs/sb3_ppo_real.log` is a real PPO run on
-CartPole (Stable-Baselines3 2.9, CPU, 25 iterations; script beside it), and
-nothing is read from it: parser `universal`, task `custom`, no frames.
-`corpus_truth.json` pins that. Each iteration prints one table between rules
-of dashes: a section row (`| rollout/ |`), its rows indented under it
-(`|    ep_rew_mean | 395 |`), and `time/iterations` and
-`time/total_timesteps` (`iterations × 2048`). The first table has no
-`train/` section. An iteration is not an epoch: PPO runs ten optimisation
-epochs in each (`train/n_updates` reads 10, 20 … 240), so it is told by
-iteration (`Counter` "iteration"). Off-policy algorithms (DQN, SAC, TD3) print
-`time/episodes` and no iterations, according to SB3's source; record a DQN run
-before writing the parser, so it is not shaped by PPO alone.
-
-The story's metric is mean episode reward. It has no fixed scale, so it is
-graded on improvement, and it has no ideal, so it belongs in
-`grade.NO_IDEAL_METRICS`, whose phases are read from the rise since the first
-reading. Still needed: the parser in both engines (one frame per table, every
-row claimed, `time/*` never a metric), a `TaskType` with its classifier
-signal, the reward keys' direction pinned higher-is-better (and episode length
-left without one: longer is better in CartPole and worse in MountainCar),
-templates in three languages that claim only what the numbers support, the
-dashboard not calling the reward an accuracy, and the corpus entries.
-
-### 5. A page that tells a pasted log's story
+### 4. A page that tells a pasted log's story
 
 The extension's engine (`StandaloneEngine.ts`, `parsers/`, `story/`) imports
 nothing from `vscode`; it is plain TypeScript that turns text into frames. A
@@ -143,7 +120,7 @@ leave the browser, and make that true (no network calls; assert it). Start
 with grade, phase, story sentence and the learning curve; the full dashboard
 is a separate question.
 
-### 6. One engine, or a cheaper second one — a spike
+### 5. One engine, or a cheaper second one — a spike
 
 Every engine change is written twice. #150 and #152 were each a Python change
 and a hand port to `StandaloneEngine.ts` (1,194 lines in 0.7.41, 1,229 in
@@ -192,7 +169,7 @@ extension. (b) would have caught both bugs above in the port without a
 hand-written mirror test. Measure before deciding; the extension working with
 no Python installed is a feature and stays.
 
-### 7. Code no test executes
+### 6. Code no test executes
 
 **Measured.** Coverage ran for the first time on 2026-11-10 (CI job
 `coverage`: `tests/unit` and `tests/integration` on ubuntu and Python 3.12,
@@ -231,7 +208,7 @@ CI.
 What each takes is written in the pull request that added the `coverage`
 job.
 
-### 8. The parser docs leave out four libraries
+### 7. The parser docs leave out four libraries
 
 **Measured.** `docs/parsers.md` ("Supported Frameworks") has no section for
 XGBoost, LightGBM, CatBoost or scikit-learn's `GridSearchCV`; none of the four
@@ -241,7 +218,7 @@ example lines copied from those recordings, not typed, and a test that fails
 when a parser in the registry has no section, so the next one cannot be left
 out the same way.
 
-### 9. The PDF report has no milestones
+### 8. The PDF report has no milestones
 
 **Measured.** Since 0.7.41 a run's milestones are stored and read back, and
 the HTML and Markdown reports list them with their epochs. The PDF lists

@@ -280,6 +280,9 @@ _DIRECTION_BY_KEY: dict[str, bool] = {
     "score": False,
     "val_score": False,
     "train_score": False,
+    # An episode's reward is what the agent is trained to raise. No hint
+    # fragment reaches it, so unpinned it took its task's default.
+    "ep_rew_mean": False,
 }
 
 
@@ -619,7 +622,12 @@ UNIT_BOUNDED_METRICS = frozenset(
 # 32 was placed in Awakening and told "No meaningful progress yet ... a setup
 # problem" beside an A. Their improvement is measured from the first reading
 # instead (improvement_from_baseline).
-NO_IDEAL_METRICS = frozenset({"PSNR", "is_score"})
+#
+# An episode reward has no ideal either: it is what the environment pays, 500
+# at most in CartPole and below zero throughout in Pendulum. A recorded PPO
+# run (sb3_ppo_real.log) climbing 21.2 to 395 would otherwise have been told
+# it had not moved.
+NO_IDEAL_METRICS = frozenset({"PSNR", "is_score", "ep_rew_mean"})
 
 
 def has_no_ideal(metric: str | None) -> bool:

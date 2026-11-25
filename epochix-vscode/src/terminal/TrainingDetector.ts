@@ -36,6 +36,11 @@ const STRONG_PATTERNS: RegExp[] = [
   // no way to reach the threshold. Both halves are required, so an "iter 5"
   // in ordinary build output is not enough.
   /^\s*(?:iter|iteration|round)\s+\d+\b.*\b(?:loss|rmse|mae|mape|r2|acc|accuracy|auc|f1)\b/im,
+  // Stable-Baselines3's table: an episode reward indented under its section,
+  // "|    ep_rew_mean          | 25.8        |" (parsers/stableBaselines3.ts).
+  // Its rows name no epoch and put no loss beside a colon, so a PPO run in a
+  // terminal reached no signal here and never opened the dashboard.
+  /^\| {4}ep_rew_mean {1,40}\| {0,4}[-+]?\d/m,
 ];
 
 // Supporting signals — need several of these

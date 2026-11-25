@@ -26,6 +26,7 @@ import { FastAIParser } from "../../parsers/fastai";
 import { HuggingFaceParser } from "../../parsers/huggingface";
 import { KerasParser } from "../../parsers/keras";
 import { ProgressMeterParser } from "../../parsers/progressMeter";
+import { StableBaselines3Parser } from "../../parsers/stableBaselines3";
 import { PytorchLightningParser } from "../../parsers/pytorchLightning";
 import { StepBarParser } from "../../parsers/stepBar";
 import { UniversalParser } from "../../parsers/universal";
@@ -57,6 +58,7 @@ const PARSERS: Record<string, () => Parser> = {
   huggingface: () => new HuggingFaceParser(),
   keras_tensorflow: () => new KerasParser(),
   progress_meter: () => new ProgressMeterParser(),
+  stable_baselines3: () => new StableBaselines3Parser(),
   step_bar: () => new StepBarParser(),
   pytorch_lightning: () => new PytorchLightningParser(),
   universal: () => new UniversalParser(),

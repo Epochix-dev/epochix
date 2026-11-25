@@ -347,6 +347,7 @@ def render_narratives() -> str:
             "_belowbest", loc, "{value}, below the best of {best}."
         ),
         "stalled": narrator._load_stalled,
+        "stalledReinforcement": narrator._load_stalled_reinforcement,
         "diverged": narrator._load_diverged,
         "singleReading": lambda loc: narrator._load_special(
             "_single_reading", loc, "A single result: {metric} {value}. There is no trend to read."
@@ -388,6 +389,7 @@ def render_narratives() -> str:
         "  pastPeak: readonly string[];",
         "  belowBest: readonly string[];",
         "  stalled: readonly string[];",
+        "  stalledReinforcement: readonly string[];",
         "  diverged: readonly string[];",
         "  singleReading: readonly string[];",
         "  unsteady: readonly string[];",
