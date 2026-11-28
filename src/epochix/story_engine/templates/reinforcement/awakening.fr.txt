@@ -1,0 +1,2 @@
+Éveil : récompense moyenne par épisode {value} {at_counter} {epoch}.
+{Counter} {epoch} : récompense moyenne par épisode {value}, en phase d'éveil.

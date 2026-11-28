@@ -232,6 +232,10 @@ MESSAGES: dict[str, dict[str, str]] = {
         "was saved, and use early stopping on this metric so the next run ends there.",
         "next_stalled": "Next step: check the learning rate first, then the data pipeline "
         "and the label mapping.",
+        # An agent has no data pipeline or labels: what it learns from is the
+        # environment's reward.
+        "next_stalled_reinforcement": "Next step: if it stays there, check the learning "
+        "rate and what the environment rewards.",
         "next_diverged": "Next step: lower the learning rate or clip the gradients, and "
         "restart from a checkpoint saved at or before {counter} {last_epoch}.",
         "next_unsteady": "Next step: log a validation metric, or this one averaged over "
@@ -306,6 +310,8 @@ MESSAGES: dict[str, dict[str, str]] = {
         "بعدی همان‌جا متوقف شود.",
         "next_stalled": "گام بعدی: ابتدا نرخ یادگیری را بررسی کنید، سپس خط دادهٔ ورودی "
         "و نگاشت برچسب‌ها را.",
+        "next_stalled_reinforcement": "گام بعدی: اگر همان‌جا بماند، نرخ یادگیری و آنچه "
+        "محیط به آن پاداش می‌دهد را بررسی کنید.",
         "next_diverged": "گام بعدی: نرخ یادگیری را کاهش دهید یا گرادیان‌ها را برش دهید، "
         "و از نقطهٔ ذخیره‌ای در {counter} {last_epoch} یا پیش از آن دوباره شروع کنید.",
         "next_unsteady": "گام بعدی: یک سنجهٔ اعتبارسنجی ثبت کنید، یا میانگین همین سنجه "
@@ -389,6 +395,8 @@ MESSAGES: dict[str, dict[str, str]] = {
         "sur cette métrique pour que la prochaine exécution s'arrête là.",
         "next_stalled": "Étape suivante : vérifiez d'abord le taux d'apprentissage, puis "
         "le pipeline de données et le mappage des étiquettes.",
+        "next_stalled_reinforcement": "Étape suivante : si elle en reste là, vérifiez le "
+        "taux d'apprentissage et ce que l'environnement récompense.",
         "next_diverged": "Étape suivante : réduisez le taux d'apprentissage ou écrêtez "
         "les gradients, et reprenez depuis un point de contrôle {of_the_counter} {last_epoch} "
         "ou antérieur.",

@@ -478,6 +478,7 @@ class TaskType(str, Enum):
     GAZE = "gaze"
     NLP = "nlp"
     GENERATIVE = "generative"
+    REINFORCEMENT = "reinforcement"
     CUSTOM = "custom"
 ```
 
@@ -703,6 +704,7 @@ Fires *once per run* when ≥3 metric events have arrived. Decision table:
 | `perplexity` / `bleu`   | nlp                   |
 | `accuracy` only         | classification        |
 | `fid` / `is_score`      | generative            |
+| `ep_rew_mean`           | reinforcement         |
 | (nothing matches)       | custom                |
 
 Override: `epochix --task biometric`, or `LiveReporter(task="biometric")`.

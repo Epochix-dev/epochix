@@ -179,17 +179,22 @@ export function narrateBelowBest(o: {
   return `${story.slice(0, 1).toUpperCase()}${story.slice(1)}`;
 }
 
+/** Mirrors narrate_stalled: a run told by its episode reward has its own
+ *  sentences and next step (an agent has no data pipeline or labels). */
 export function narrateStalled(o: {
   epoch: number | null; value: number; baseline: number;
   epochsSeen: number; runId: string; locale?: string; counter?: Counter | null;
+  task?: TaskType;
 }): string {
   const loc = resolveLocale(o.locale);
-  const story = counterWords(pick(SPECIAL_TEMPLATES[loc].stalled, o.runId), o.counter, loc)
+  const own = o.task === "reinforcement";
+  const templates = own ? SPECIAL_TEMPLATES[loc].stalledReinforcement : SPECIAL_TEMPLATES[loc].stalled;
+  const story = counterWords(pick(templates, o.runId), o.counter, loc)
     .replace(/\{epoch\}/g, fmtEpoch(o.epoch))
     .replace(/\{value\}/g, fixed(o.value, 4))
     .replace(/\{baseline\}/g, fixed(o.baseline, 4))
     .replace(/\{epochs_seen\}/g, String(o.epochsSeen));
-  return `${story} ${message("next_stalled", o.locale)}`;
+  return `${story} ${message(own ? "next_stalled_reinforcement" : "next_stalled", o.locale)}`;
 }
 
 export function narrateDiverged(o: {

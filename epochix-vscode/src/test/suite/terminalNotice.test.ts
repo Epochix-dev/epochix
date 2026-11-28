@@ -6,10 +6,13 @@
  * dashboard; a command whose output the terminal feed never recognised
  * produced no panel and no message, so nobody knew their run had been seen.
  *
- * The rule is held to recordings (tests/fixtures/terminal): ordinary commands,
- * recorded from a neutral folder, must say nothing; a Stable-Baselines3 run,
- * a layout nothing reads, must say it was seen and not read. And to the whole
- * corpus: no training log may end silent, with neither a dashboard nor a word.
+ * The rule is held to recordings: ordinary commands (tests/fixtures/terminal),
+ * recorded from a neutral folder, must say nothing, and a Stable-Baselines3
+ * run (tests/fixtures/logs/sb3_ppo_real.log), read since the SB3 parser,
+ * opens the dashboard and is not spoken of. A layout nothing reads is
+ * constructed (unreadLayout.ts): the SB3 recording was the one recorded
+ * example, and no other is in the repository. And to the whole corpus: no
+ * training log may end silent, with neither a dashboard nor a word.
  */
 import * as assert from "assert";
 import * as fs from "fs";
@@ -20,6 +23,7 @@ import * as vscode from "vscode";
 import { CommandReading, LABELLED_MIN_VALUES, labelledNumbers, type Verdict } from "../../terminal/CommandReading";
 import { noticeText } from "../../terminal/noticeText";
 import { StandaloneEngine } from "../../webview/StandaloneEngine";
+import { unreadLosses, unreadTable } from "./unreadLayout";
 
 const EXT_ID = "epochix.epochix";
 const LOCALES = ["en", "fa", "fr"] as const;
@@ -33,6 +37,9 @@ function repoRoot(): string {
 
 const terminalLog = (name: string): string =>
   path.join(repoRoot(), "tests", "fixtures", "terminal", name);
+
+/** A log of the corpus: the Stable-Baselines3 recording lives there. */
+const corpusLog = (name: string): string => path.join(repoRoot(), "tests", "fixtures", "logs", name);
 
 /** Terminals do not respect line endings: chunks of n characters. */
 function chunked(text: string, n: number): string[] {
@@ -53,7 +60,7 @@ function read(text: string, n = 997): { reading: CommandReading; verdict: Verdic
 function ordinaryRecordings(): string[] {
   const readme = fs.readFileSync(terminalLog("README.md"), "utf-8");
   const names = [...readme.matchAll(/^\| `([\w.-]{1,80}\.log)` \|/gm)].map((m) => m[1]);
-  return names.filter((n) => n !== "sb3_ppo_real.log");
+  return names;
 }
 
 interface Expectation {
@@ -130,8 +137,18 @@ suite("A watched command that was not told", () => {
     }
   });
 
-  test("a Stable-Baselines3 run is seen and not read", () => {
-    const text = fs.readFileSync(terminalLog("sb3_ppo_real.log"), "utf-8");
+  test("a Stable-Baselines3 run is read, and nothing is said of it", () => {
+    // It was this suite's run in a layout nothing reads, until the SB3 parser.
+    const text = fs.readFileSync(corpusLog("sb3_ppo_real.log"), "utf-8");
+    for (const n of [997, 64]) {
+      const { reading, verdict } = read(text, n);
+      assert.strictEqual(reading.opened, true, `chunks of ${n}: the dashboard did not open`);
+      assert.strictEqual(verdict, null, `chunks of ${n}: ${JSON.stringify(verdict)}`);
+    }
+  });
+
+  test("a table no reader takes is seen and not read", () => {
+    const text = unreadTable(20);
     const { reading, verdict } = read(text);
     assert.ok(verdict !== null && verdict.kind === "unread", JSON.stringify(verdict));
     assert.strictEqual(reading.opened, false, "the premise: the dashboard never opened for it");
@@ -140,19 +157,15 @@ suite("A watched command that was not told", () => {
     assert.strictEqual(verdict.lines, text.split("\n").length - (text.endsWith("\n") ? 1 : 0));
     assert.strictEqual(verdict.sampled, null);
 
-    // The values beside `loss`, counted here without the scan.
-    const losses = new Set(
-      [...text.matchAll(/^\|\s+loss\s+\|\s+(\S+)\s+\|/gm)].map((m) => String(parseFloat(m[1]))),
-    );
-    assert.ok(losses.size >= LABELLED_MIN_VALUES);
-    assert.deepStrictEqual(verdict.labelled.find(([name]) => name === "loss"), ["loss", losses.size]);
+    assert.ok(unreadLosses(20) >= LABELLED_MIN_VALUES);
+    assert.deepStrictEqual(verdict.labelled.find(([name]) => name === "loss"), ["loss", unreadLosses(20)]);
 
     const said = noticeText(verdict, "en");
     assert.strictEqual(said.canOpen, false);
     assert.ok(said.sentences.some((s) => s.includes(`${verdict.lines} lines`)), said.sentences.join(" "));
     assert.ok(said.sentences.some((s) => s.includes("None of its readers takes this layout")));
     assert.ok(said.sentences.some((s) => s.includes("train_loss=<value>")), "no fix was offered");
-    assertRendered(verdict, text, "sb3_ppo_real.log");
+    assertRendered(verdict, text, "an unread table");
   });
 
   test("no training log in the corpus ends silent", () => {
@@ -218,7 +231,7 @@ suite("A watched command that was not told", () => {
   });
 
   test("output beyond the capture is read from its start, and said so", () => {
-    const text = fs.readFileSync(terminalLog("sb3_ppo_real.log"), "utf-8");
+    const text = unreadTable(40);
     const big = text.repeat(Math.ceil((4 * 1024 * 1024) / text.length) + 1);
     const { verdict } = read(big, 65536);
     assert.ok(verdict !== null && verdict.kind === "unread");

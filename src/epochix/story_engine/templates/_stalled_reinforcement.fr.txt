@@ -1,0 +1,2 @@
+{Counter} {epoch} : la récompense moyenne par épisode a à peine bougé — de {baseline} à {value} en {epochs_seen} {counter_readings}.
+Après {epochs_seen} {counter_readings}, la récompense moyenne par épisode reste à {value}, quasiment son point de départ ({baseline}).

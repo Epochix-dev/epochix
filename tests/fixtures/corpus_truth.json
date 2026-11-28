@@ -2656,6 +2656,94 @@
    }
   ]
  },
+ "sb3_dqn_real.log": {
+  "path": "tests/fixtures/logs/sb3_dqn_real.log",
+  "task": "reinforcement",
+  "metric": "ep_rew_mean",
+  "frames": 105,
+  "last_value": 249.0,
+  "keys": [
+   "ep_len_mean",
+   "ep_rew_mean",
+   "rollout/exploration_rate",
+   "train/learning_rate",
+   "train/loss"
+  ],
+  "metric_from_epoch": 103.0,
+  "counter": "step",
+  "grade_note": "still_improving",
+  "cross_validation": null,
+  "final_grade": "A+",
+  "final_grade_basis": "improvement",
+  "final_phase": "polishing",
+  "milestones": [
+   {
+    "kind": "best_so_far",
+    "epoch": 103.0,
+    "value": 25.8,
+    "message": "New best: 25.8000"
+   },
+   {
+    "kind": "biggest_jump",
+    "epoch": 47783.0,
+    "value": 13.0,
+    "message": "Biggest single-reading improvement: 13.0000"
+   },
+   {
+    "kind": "training_complete",
+    "epoch": 49105.0,
+    "value": 249.0,
+    "message": "Training completed."
+   }
+  ]
+ },
+ "sb3_ppo_real.log": {
+  "path": "tests/fixtures/logs/sb3_ppo_real.log",
+  "task": "reinforcement",
+  "metric": "ep_rew_mean",
+  "frames": 25,
+  "last_value": 395.0,
+  "keys": [
+   "ep_len_mean",
+   "ep_rew_mean",
+   "train/approx_kl",
+   "train/clip_fraction",
+   "train/clip_range",
+   "train/entropy_loss",
+   "train/explained_variance",
+   "train/learning_rate",
+   "train/loss",
+   "train/policy_gradient_loss",
+   "train/value_loss"
+  ],
+  "metric_from_epoch": 1.0,
+  "counter": "iteration",
+  "grade_note": "still_improving",
+  "cross_validation": null,
+  "final_grade": "A+",
+  "final_grade_basis": "improvement",
+  "final_phase": "polishing",
+  "milestones": [
+   {
+    "kind": "best_so_far",
+    "epoch": 1.0,
+    "value": 21.2,
+    "message": "New best: 21.2000"
+   },
+   {
+    "kind": "biggest_jump",
+    "epoch": 12.0,
+    "value": 21.0,
+    "message": "Biggest single-reading improvement: 21.0000"
+   },
+   {
+    "kind": "training_complete",
+    "epoch": 25.0,
+    "value": 395.0,
+    "message": "Training completed."
+   }
+  ]
+ },
  "scientific_notation.log": {
   "path": "tests/fixtures/logs/scientific_notation.log",
   "task": "custom",

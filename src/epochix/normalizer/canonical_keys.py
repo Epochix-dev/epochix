@@ -74,6 +74,14 @@ CANONICAL_MAP: dict[str, str] = {
     "far": "FAR",
     "tar_at_far_0001": "TAR_at_FAR_0_001",
     "tar_at_far_0.001": "TAR_at_FAR_0_001",
+    # Reinforcement learning: Stable-Baselines3 records the mean reward and
+    # length of its last 100 episodes under `rollout/`. The mean reward is the
+    # story; the length is kept under its own name and given no direction —
+    # longer is better in CartPole and worse in MountainCar.
+    "rollout/ep_rew_mean": "ep_rew_mean",
+    "ep_rew_mean": "ep_rew_mean",
+    "rollout/ep_len_mean": "ep_len_mean",
+    "ep_len_mean": "ep_len_mean",
     # Generative
     "fid": "fid",
     "is": "is_score",

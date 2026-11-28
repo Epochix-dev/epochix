@@ -2,11 +2,11 @@
 // (story_engine/grade.py, phases.py, warnings.py, milestones.py, __init__.py).
 // Do not edit: change the Python and regenerate.
 
-export type TaskType = "classification" | "detection" | "segmentation" | "regression" | "biometric" | "gaze" | "nlp" | "generative" | "custom";
+export type TaskType = "classification" | "detection" | "segmentation" | "regression" | "biometric" | "gaze" | "nlp" | "generative" | "reinforcement" | "custom";
 export type Grade = "A+" | "A" | "A-" | "B+" | "B" | "B-" | "C+" | "C" | "C-" | "D" | "F" | "I";
 export type Phase = "awakening" | "learning" | "understanding" | "mastering" | "polishing";
 export type Threshold = [Grade, number];
-export const TASK_TYPES: readonly TaskType[] = ["classification", "detection", "segmentation", "regression", "biometric", "gaze", "nlp", "generative", "custom"];
+export const TASK_TYPES: readonly TaskType[] = ["classification", "detection", "segmentation", "regression", "biometric", "gaze", "nlp", "generative", "reinforcement", "custom"];
 
 /** Letter grades best first, without I (incomplete). */
 export const GRADE_ORDER: readonly Grade[] = ["A+", "A", "A-", "B+", "B", "B-", "C+", "C", "C-", "D", "F"];
@@ -21,6 +21,7 @@ export const DEFAULT_THRESHOLDS: Readonly<Record<TaskType, readonly Threshold[]>
   gaze: [["A+", 0.5], ["A", 1.0], ["A-", 1.5], ["B+", 2.5], ["B", 4.0], ["B-", 6.0], ["C+", 9.0], ["C", 12.0], ["C-", 16.0], ["D", 22.0], ["F", Infinity]],
   nlp: [["A+", 10.0], ["A", 20.0], ["A-", 30.0], ["B+", 50.0], ["B", 80.0], ["B-", 120.0], ["C+", 180.0], ["C", 250.0], ["C-", 350.0], ["D", 500.0], ["F", Infinity]],
   generative: [["A+", 0.95], ["A", 0.9], ["A-", 0.87], ["B+", 0.82], ["B", 0.75], ["B-", 0.7], ["C+", 0.65], ["C", 0.6], ["C-", 0.55], ["D", 0.5], ["F", 0.0]],
+  reinforcement: [["A+", 0.95], ["A", 0.9], ["A-", 0.87], ["B+", 0.82], ["B", 0.75], ["B-", 0.7], ["C+", 0.65], ["C", 0.6], ["C-", 0.55], ["D", 0.5], ["F", 0.0]],
   custom: [["A+", 0.95], ["A", 0.9], ["A-", 0.87], ["B+", 0.82], ["B", 0.75], ["B-", 0.7], ["C+", 0.65], ["C", 0.6], ["C-", 0.55], ["D", 0.5], ["F", 0.0]],
 };
 
@@ -36,7 +37,7 @@ export const METRIC_THRESHOLDS: Readonly<Record<string, readonly Threshold[]>> =
   "val_f1": [["A+", 0.95], ["A", 0.9], ["A-", 0.87], ["B+", 0.82], ["B", 0.75], ["B-", 0.7], ["C+", 0.65], ["C", 0.6], ["C-", 0.55], ["D", 0.5], ["F", 0.0]],
 };
 
-export const DIRECTION_BY_KEY: Readonly<Record<string, boolean>> = {"balanced_accuracy": false, "bpc": true, "brier": true, "cer": true, "error_rate": true, "explained_variance": false, "far": true, "fid": true, "huber": true, "inception_score": false, "is_score": false, "kappa": false, "kid": true, "l1": true, "l2": true, "log_loss": true, "lpips": true, "mape": true, "mcc": false, "medae": true, "meteor": false, "mrr": false, "ndcg": false, "nll": true, "pearson": false, "pixel_accuracy": false, "quantile_loss": true, "rmsle": true, "rouge": false, "rouge1": false, "rouge2": false, "rougel": false, "score": false, "sensitivity": false, "silhouette": false, "smape": true, "spearman": false, "specificity": false, "tar": false, "tar_at_far_0_001": false, "top5_accuracy": false, "train_l1": true, "train_l2": true, "train_score": false, "val_accuracy": false, "val_auc": false, "val_error_rate": true, "val_f1": false, "val_far": true, "val_fid": true, "val_kid": true, "val_l1": true, "val_l2": true, "val_log_loss": true, "val_mae": true, "val_mape": true, "val_medae": true, "val_meteor": false, "val_mse": true, "val_r2": false, "val_rmse": true, "val_rmsle": true, "val_rouge": false, "val_score": false, "val_tar": false, "val_tar_at_far_0_001": false, "wer": true};
+export const DIRECTION_BY_KEY: Readonly<Record<string, boolean>> = {"balanced_accuracy": false, "bpc": true, "brier": true, "cer": true, "ep_rew_mean": false, "error_rate": true, "explained_variance": false, "far": true, "fid": true, "huber": true, "inception_score": false, "is_score": false, "kappa": false, "kid": true, "l1": true, "l2": true, "log_loss": true, "lpips": true, "mape": true, "mcc": false, "medae": true, "meteor": false, "mrr": false, "ndcg": false, "nll": true, "pearson": false, "pixel_accuracy": false, "quantile_loss": true, "rmsle": true, "rouge": false, "rouge1": false, "rouge2": false, "rougel": false, "score": false, "sensitivity": false, "silhouette": false, "smape": true, "spearman": false, "specificity": false, "tar": false, "tar_at_far_0_001": false, "top5_accuracy": false, "train_l1": true, "train_l2": true, "train_score": false, "val_accuracy": false, "val_auc": false, "val_error_rate": true, "val_f1": false, "val_far": true, "val_fid": true, "val_kid": true, "val_l1": true, "val_l2": true, "val_log_loss": true, "val_mae": true, "val_mape": true, "val_medae": true, "val_meteor": false, "val_mse": true, "val_r2": false, "val_rmse": true, "val_rmsle": true, "val_rouge": false, "val_score": false, "val_tar": false, "val_tar_at_far_0_001": false, "wer": true};
 export const LOWER_NAME_HINTS: readonly string[] = ["loss", "error", "err", "mae", "mse", "rmse", "perplexity", "ppl", "eer", "nll"];
 export const HIGHER_NAME_HINTS: readonly string[] = ["acc", "accuracy", "f1", "auc", "map", "precision", "recall", "iou", "dice", "bleu", "psnr", "ssim", "r2"];
 
@@ -71,7 +72,7 @@ export const RUNNING_MEANS: ReadonlySet<string> = new Set(["avr_loss"]);
 export const UNIT_BOUNDED_METRICS: ReadonlySet<string> = new Set(["AUC", "Dice", "EER", "IoU", "MRR", "NDCG", "PR_AUC", "R2", "SSIM", "TAR", "accuracy", "f1", "mAP", "mAP50", "mAP75", "mIoU", "pixel_accuracy", "precision", "recall", "specificity", "top5_accuracy", "train_accuracy", "val_accuracy"]);
 /** Higher-is-better metrics with no ideal (grade.NO_IDEAL_METRICS): their
  *  improvement is read from the first reading, not as a share of 1.0. */
-export const NO_IDEAL_METRICS: ReadonlySet<string> = new Set(["PSNR", "is_score"]);
+export const NO_IDEAL_METRICS: ReadonlySet<string> = new Set(["PSNR", "ep_rew_mean", "is_score"]);
 /** The fractions a milestone announces crossing (story_engine/milestones.py). */
 export const MILESTONE_THRESHOLDS: readonly number[] = [0.25, 0.5, 0.75, 0.9];
 /** Bounded to [0, 1] but not a fraction of anything: no "crossed N%". */
@@ -83,4 +84,4 @@ export type GradeBasis = "thresholds" | "improvement";
 /** .epochix.yaml: other spellings of a grade label (config_loader.py). */
 export const LABEL_ALIASES: Readonly<Record<string, string>> = {"AMINUS": "A-", "APLUS": "A+", "A_MINUS": "A-", "A_PLUS": "A+", "BMINUS": "B-", "BPLUS": "B+", "B_MINUS": "B-", "B_PLUS": "B+", "CMINUS": "C-", "CPLUS": "C+", "C_MINUS": "C-", "C_PLUS": "C+"};
 /** .epochix.yaml: the metric a task's entry is written for. */
-export const GOVERNED_METRICS: Readonly<Record<string, readonly string[]>> = {"classification": ["accuracy", "val_accuracy"], "detection": ["mAP50"], "segmentation": ["mIoU"], "nlp": ["perplexity"], "biometric": ["EER"], "gaze": ["MAE", "val_MAE"], "regression": ["MAE", "val_MAE"], "generative": ["fid"]};
+export const GOVERNED_METRICS: Readonly<Record<string, readonly string[]>> = {"classification": ["accuracy", "val_accuracy"], "detection": ["mAP50"], "segmentation": ["mIoU"], "nlp": ["perplexity"], "biometric": ["EER"], "gaze": ["MAE", "val_MAE"], "regression": ["MAE", "val_MAE"], "generative": ["fid"], "reinforcement": ["ep_rew_mean"]};

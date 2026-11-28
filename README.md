@@ -215,8 +215,8 @@ trainer = pl.Trainer(callbacks=[StoryCallback()])
 
 | | |
 |---|---|
-| **10 log parsers** | PyTorch Lightning · Keras/TF · HuggingFace · YOLO · FastAI · Accelerate · **Gradient boosting** (XGBoost/LightGBM/CatBoost) · PyTorch example meters · a run-long step bar (diffusers LoRA) · Universal — plus an opt-in **LLM fallback** (Ollama/OpenAI) for formats none of them recognise |
-| **8 task types** | Classification · Detection · **Segmentation** · Regression · Biometric · Gaze · NLP · Generative |
+| **11 log parsers** | PyTorch Lightning · Keras/TF · HuggingFace · YOLO · FastAI · Accelerate · **Gradient boosting** (XGBoost/LightGBM/CatBoost) · **Stable-Baselines3** (PPO, DQN, …) · PyTorch example meters · a run-long step bar (diffusers LoRA) · Universal — plus an opt-in **LLM fallback** (Ollama/OpenAI) for formats none of them recognise |
+| **9 task types** | Classification · Detection · **Segmentation** · Regression · Biometric · Gaze · NLP · Generative · Reinforcement learning |
 | **5 training phases** | Awakening → Learning → Understanding → Mastering → Polishing |
 | **11 letter grades** | A+ through F, task-specific thresholds, configurable via `.epochix.yaml` |
 | **Live streaming** | WebSocket + SSE with ring-buffer replay on reconnect |

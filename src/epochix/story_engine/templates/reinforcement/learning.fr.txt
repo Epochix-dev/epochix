@@ -1,0 +1,2 @@
+L'entraînement est en cours : récompense moyenne par épisode {value} {at_counter} {epoch}, à 1 % près de son meilleur niveau jusqu'ici.
+{Counter} {epoch} : récompense moyenne par épisode {value}, soit {delta} par rapport à la mesure précédente. La phase d'apprentissage se poursuit.

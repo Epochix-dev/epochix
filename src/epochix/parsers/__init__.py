@@ -18,6 +18,7 @@ from epochix.parsers import (  # noqa: E402, F401
     keras_tensorflow,
     progress_meter,
     pytorch_lightning,
+    stable_baselines3,
     step_bar,
     ultralytics_yolo,
     universal,

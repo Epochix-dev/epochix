@@ -432,6 +432,8 @@
     "dense"
    ]
   ],
+  "tests/fixtures/logs/sb3_dqn_real.log": [],
+  "tests/fixtures/logs/sb3_ppo_real.log": [],
   "tests/fixtures/logs/scientific_notation.log": [],
   "tests/fixtures/logs/single_epoch.log": [],
   "tests/fixtures/logs/tqdm_loop_real.log": [],

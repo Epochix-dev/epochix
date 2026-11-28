@@ -51,6 +51,7 @@
     "gaze": "Gaze Estimation",
     "nlp": "NLP",
     "generative": "Generative",
+    "reinforcement": "Reinforcement Learning",
     "custom": "Custom Task"
   },
   "ui": {

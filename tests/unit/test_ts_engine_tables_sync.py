@@ -122,6 +122,7 @@ def test_parsers_golden_reaches_every_port() -> None:
         "keras_tensorflow",
         "progress_meter",
         "pytorch_lightning",
+        "stable_baselines3",
         "step_bar",
         "ultralytics_yolo",
         "universal",

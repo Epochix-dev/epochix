@@ -85,6 +85,7 @@ import { runningMean, stepText, unsteady } from "../story/steadiness";
 import { FastAIParser } from "../parsers/fastai";
 import { AccelerateParser } from "../parsers/accelerate";
 import { ProgressMeterParser } from "../parsers/progressMeter";
+import { StableBaselines3Parser } from "../parsers/stableBaselines3";
 import { isStepBar, StepBarParser, stepBarRedraws } from "../parsers/stepBar";
 
 // Metric names are canonicalised by story/canonical.ts — Python's
@@ -293,6 +294,7 @@ function makeParsers(): Parser[] {
     new FastAIParser(),
     new AccelerateParser(),
     new ProgressMeterParser(),
+    new StableBaselines3Parser(),
     new StepBarParser(),
     new UniversalParser(),
   ].sort((a, b) => b.priority - a.priority);
@@ -975,6 +977,7 @@ export class StandaloneEngine {
       narrative = narrateStalled({
         epoch, value, baseline: this._baseline,
         epochsSeen: this._primaryReadings, runId: this._runId, locale: this._locale, counter,
+        task: this._task,
       });
     } else if (pastPeak) {
       narrative = narratePastPeak({

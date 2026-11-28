@@ -10,6 +10,7 @@
  */
 import * as assert from "assert";
 import * as fs from "fs";
+import * as os from "os";
 import * as path from "path";
 
 import * as vscode from "vscode";
@@ -18,6 +19,7 @@ import { NOTICE_COMMAND } from "../../terminal/notice";
 import { TerminalWatcher } from "../../terminal/TerminalWatcher";
 import { DashboardPanel } from "../../webview/DashboardPanel";
 import type { StoryFrameMsg } from "../../webview/messages";
+import { unreadLosses, unreadTable } from "./unreadLayout";
 
 const EXT_ID = "epochix.epochix";
 
@@ -59,9 +61,15 @@ function execution(text: string, n = 701): Pick<vscode.TerminalShellExecution, "
 }
 
 async function play(watcher: TerminalWatcher, terminal: vscode.Terminal, file: string): Promise<void> {
-  const text = fs.readFileSync(file, "utf-8");
+  await playText(watcher, terminal, fs.readFileSync(file, "utf-8"));
+}
+
+async function playText(watcher: TerminalWatcher, terminal: vscode.Terminal, text: string): Promise<void> {
   await (watcher as unknown as Watched)._consumeExecution(terminal, execution(text));
 }
+
+/** A layout no reader takes (unreadLayout.ts), 20 tables of it: 80 lines. */
+const UNREAD = unreadTable(20);
 
 suite("The terminal notice in a real host", () => {
   const owned: vscode.Disposable[] = [];
@@ -71,9 +79,9 @@ suite("The terminal notice in a real host", () => {
   });
 
   test("a run in a layout nothing reads is said once, in the status bar", async () => {
-    const { watcher, terminal, root } = await setUp();
+    const { watcher, terminal } = await setUp();
     owned.push(watcher, terminal);
-    await play(watcher, terminal, path.join(root, "tests", "fixtures", "terminal", "sb3_ppo_real.log"));
+    await playText(watcher, terminal, UNREAD);
 
     assert.strictEqual(DashboardPanel.current, undefined, "a dashboard was opened");
     const shown = watcher.notice.shown;
@@ -83,14 +91,25 @@ suite("The terminal notice in a real host", () => {
     // The command the item runs is the activated extension's.
     assert.ok((await vscode.commands.getCommands(true)).includes(NOTICE_COMMAND));
     const said = shown.text.sentences;
-    assert.ok(said.includes("The command printed 518 lines."), said.join(" "));
-    assert.ok(said.some((s) => s.includes("loss (24 different values)")), said.join(" "));
+    assert.ok(said.includes("The command printed 80 lines."), said.join(" "));
+    assert.ok(said.some((s) => s.includes(`loss (${unreadLosses(20)} different values)`)), said.join(" "));
     // The tooltip says the same, sentence for sentence (escaped as Markdown).
     const tooltip = (shown.item.tooltip as vscode.MarkdownString).value.replace(/&nbsp;/g, " ");
-    assert.ok(tooltip.includes("The command printed 518 lines."), tooltip);
+    assert.ok(tooltip.includes("The command printed 80 lines."), tooltip);
     // No button: there is nothing the dashboard could show.
     watcher.notice.open();
     assert.strictEqual(DashboardPanel.current, undefined);
+  });
+
+  test("a Stable-Baselines3 run opens the dashboard and is not spoken of", async () => {
+    const { watcher, terminal, root } = await setUp();
+    owned.push(watcher, terminal);
+    await play(watcher, terminal, path.join(root, "tests", "fixtures", "logs", "sb3_ppo_real.log"));
+
+    const panel = DashboardPanel.current as unknown as Inner | undefined;
+    assert.ok(panel?._engine, "a PPO run in a terminal opened no dashboard");
+    assert.strictEqual(panel._engine.snapshot().length, 25, "the run was not told in full");
+    assert.strictEqual(watcher.notice.shown, null, "a run the dashboard tells was spoken of");
   });
 
   test("a run the dashboard tells but never opened for can be opened", async () => {
@@ -124,7 +143,7 @@ suite("The terminal notice in a real host", () => {
 
   test("a real shell's command reaches the notice through shell integration", async function () {
     this.timeout(90_000);
-    const { watcher, terminal, root } = await setUp();
+    const { watcher, terminal } = await setUp();
     owned.push(watcher, terminal);
     watcher.attachToActiveAutomatically();
     terminal.show();
@@ -142,7 +161,8 @@ suite("The terminal notice in a real host", () => {
       }));
     assert.ok(integration, "shell integration never activated in the test terminal");
 
-    const log = path.join(root, "tests", "fixtures", "terminal", "sb3_ppo_real.log");
+    const log = path.join(fs.mkdtempSync(path.join(os.tmpdir(), "epochix-notice-")), "unread.log");
+    fs.writeFileSync(log, UNREAD, "utf-8");
     const quoted = `'${log.replace(/'/g, "''")}'`;
     integration.executeCommand(
       process.platform === "win32" ? `Get-Content -Raw ${quoted}` : `cat ${quoted}`,
@@ -158,9 +178,9 @@ suite("The terminal notice in a real host", () => {
   });
 
   test("a recognised run withdraws what was said while it was not", async () => {
-    const { watcher: quick, terminal, root } = await setUp({ quietMs: 50 });
+    const { watcher: quick, terminal } = await setUp({ quietMs: 50 });
     owned.push(quick, terminal);
-    const sb3 = fs.readFileSync(path.join(root, "tests", "fixtures", "terminal", "sb3_ppo_real.log"), "utf-8");
+    const unread = UNREAD;
     let epochs = "";
     for (let e = 1; e <= 4; e++) {
       epochs += `Epoch ${e}/4\n100/100 - 2s - loss: ${(2 - e * 0.3).toFixed(3)} - val_accuracy: ${(0.5 + e * 0.1).toFixed(3)}\n`;
@@ -171,7 +191,7 @@ suite("The terminal notice in a real host", () => {
     const pause = new Promise<void>((r) => (release = r));
     const stream: Pick<vscode.TerminalShellExecution, "read"> = {
       read: async function* () {
-        yield sb3;
+        yield unread;
         await pause;
         yield epochs;
       },

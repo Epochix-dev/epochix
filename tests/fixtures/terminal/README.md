@@ -29,9 +29,16 @@ pipe). The project they list, test and serve is made by that script.
 | `npm_install.log` | `npm install express`. | `ordinary_commands_source.py` |
 | `uvicorn_server.log` | A uvicorn server answering six requests, then stopped. | `ordinary_commands_source.py` |
 | `http_server.log` | `python -m http.server` answering the same six requests. | `ordinary_commands_source.py` |
-| `sb3_ppo_real.log` | Stable-Baselines3 PPO on CartPole, `verbose=1`: a table per iteration (`\|    loss \| 7.28 \|`), a layout no parser reads. | `sb3_ppo_real_source.py` |
 
 ## Format samples
 
 None. `tests/fixtures/logs/garbage.log`, a hand-written web server log, is
 driven through the watcher too, from its own folder.
+
+A Stable-Baselines3 run is driven through the watcher from the log corpus:
+`tests/fixtures/logs/sb3_ppo_real.log`, PPO on CartPole at `verbose=1`. It
+was this suite's training run in a layout nothing reads until the SB3 parser
+read it; it now opens the dashboard and is not spoken of. No recorded
+training layout that nothing reads is in the repository now, so that case is
+built in the tests themselves (`epochix-vscode/src/test/suite/unreadLayout.ts`),
+as what it is: a constructed table, not any library's output.

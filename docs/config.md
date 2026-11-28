@@ -121,16 +121,18 @@ grade.
 | `gaze` | `val_MAE`, `MAE` (degrees) |
 | `regression` | `val_MAE`, `MAE` |
 | `generative` | `fid` |
+| `reinforcement` | `ep_rew_mean` (the mean episode reward) |
 | `custom` | whatever a run with no recognised task is told by |
 | a metric's name, such as `val_f1` or `R2` | that metric, in any run |
 
 A task's entry is not applied to the task's other metrics: thresholds written
 for accuracy mean nothing for an AUC. Name the metric to set bands for it.
 
-A `regression`, `generative` or `custom` entry does more than move cut-offs.
-Those runs are graded on how far the metric improved, because a log cannot say
-what a good MAE is; your entry supplies that, and the run is graded on it
-instead.
+A `regression`, `generative`, `reinforcement` or `custom` entry does more than
+move cut-offs. Those runs are graded on how far the metric improved, because a
+log cannot say what a good MAE or a good episode reward is (CartPole pays at
+most 500 an episode; no log says so); your entry supplies that, and the run is
+graded on it instead.
 
 **Checking it.** `epochix check train.log` prints the file in use and whether
 an entry applies to that log, and reports anything in the file it could not

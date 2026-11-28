@@ -40,6 +40,7 @@ from epochix.parsers.huggingface import HFParser
 from epochix.parsers.keras_tensorflow import KerasParser
 from epochix.parsers.progress_meter import ProgressMeterParser
 from epochix.parsers.pytorch_lightning import PLParser
+from epochix.parsers.stable_baselines3 import StableBaselines3Parser
 from epochix.parsers.step_bar import StepBarParser
 from epochix.parsers.ultralytics_yolo import YOLOParser
 from epochix.parsers.universal import UniversalParser
@@ -53,6 +54,7 @@ PORTED = (
     KerasParser,
     PLParser,
     ProgressMeterParser,
+    StableBaselines3Parser,
     StepBarParser,
     UniversalParser,
     YOLOParser,
